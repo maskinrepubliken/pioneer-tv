@@ -59,6 +59,7 @@ window.PioneerTV = window.PioneerTV || {};
       this.root = root;
       this.pre = pre;
       M.nav.captured = this;
+      M.bridge && M.bridge.emit('logs:open');
       this.refresh();
     },
 
@@ -67,6 +68,7 @@ window.PioneerTV = window.PioneerTV || {};
       if (this.root) this.root.remove();
       this.root = null;
       if (M.nav.captured === this) M.nav.captured = null;
+      M.bridge && M.bridge.emit('logs:close');
     },
 
     async refresh() {

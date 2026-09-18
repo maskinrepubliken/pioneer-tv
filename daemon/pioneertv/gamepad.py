@@ -68,12 +68,21 @@ QUIRKS = [
 ]
 
 
+# Buttons that still reach the shell while a game has the pad (see passthrough).
+SHELL_BUTTONS = {e.BTN_MODE, e.BTN_START, e.BTN_SELECT, e.KEY_HOMEPAGE}
+
+
 class Gamepad:
-    def __init__(self, dev: evdev.InputDevice, cfg: dict, dispatcher: Dispatcher, mouse) -> None:
+    def __init__(self, dev: evdev.InputDevice, cfg: dict, dispatcher: Dispatcher, mouse, shared: dict | None = None) -> None:
         self.dev = dev
         self.cfg = cfg["gamepad"]
         self.dispatcher = dispatcher
         self.mouse = mouse
+        # Shared with the manager: {"passthrough": bool}. In passthrough the pad
+        # is left to the page (Chromium's Gamepad API, e.g. RomM's emulator):
+        # no key translation, no pointer, only Guide, and long presses on
+        # Start (menu) and Select (TV), so there is always a way out.
+        self.shared = shared if shared is not None else {"passthrough": False}
         button_map = dict(self.cfg["buttons"])
         for needle, quirk in QUIRKS:
             if needle.lower() in dev.name.lower() and quirk.get("buttons"):
@@ -144,12 +153,25 @@ class Gamepad:
             _trace(self.dev.name, "key", name, value, describe(action))
         if action is None or value == 2:  # 2 = autorepeat
             return
+        if self.shared.get("passthrough"):
+            if code not in SHELL_BUTTONS:
+                return
+            if code == e.BTN_START:
+                action = self._passthrough_start
+            elif code == e.BTN_SELECT:
+                action = self._passthrough_select
         if value:
             await self.dispatcher.press(action)
         else:
             await self.dispatcher.release(action)
 
+    # Stable objects: the dispatcher keys its long-press state on identity.
+    _passthrough_start = {"long": {"system": "menu"}}
+    _passthrough_select = {"long": {"cec": "tv_toggle"}}
+
     async def on_abs(self, code: int, value: int) -> None:
+        if self.shared.get("passthrough"):
+            return
         spec = self.axes.get(code)
         v = self.normalize(code, value) if code in self.absinfo else float(value)
         # Pointer axes would flood the trace; hats, triggers and unmapped axes matter.
@@ -259,16 +281,35 @@ class GamepadManager:
         self.on_keyboard = on_keyboard
         self.active: dict[str, asyncio.Task] = {}
         self.instances: dict[str, Gamepad] = {}
+        self.shared = {"passthrough": False}
+        self._passthrough_until = 0.0
         self.keyboards: set[str] = set()
         self.keyboard_present = False
 
     def pads(self) -> list[Gamepad]:
         return list(self.instances.values())
 
+    async def set_passthrough(self, on: bool, ttl: float = 12.0) -> bool:
+        """Game mode. Kept alive by heartbeats; expires on its own if the page vanishes."""
+        changed = on != self.shared["passthrough"]
+        self.shared["passthrough"] = on
+        self._passthrough_until = time.monotonic() + ttl if on else 0.0
+        if changed:
+            log.info("gamepad passthrough %s", "on" if on else "off")
+            for pad in self.pads():
+                await pad.release_everything()
+            self.dispatcher.vinput.release_all()
+        return changed
+
+    def passthrough_expired(self) -> bool:
+        return self.shared["passthrough"] and time.monotonic() > self._passthrough_until
+
     async def run(self) -> None:
         while True:
             try:
                 await self.scan()
+                if self.passthrough_expired():
+                    await self.set_passthrough(False)
             except Exception as exc:
                 log.warning("scan failed: %s", exc)
             await asyncio.sleep(2)
@@ -286,7 +327,7 @@ class GamepadManager:
                 continue
             if is_gamepad(dev):
                 present.add(path)
-                pad = Gamepad(dev, self.cfg, self.dispatcher, self.mouse)
+                pad = Gamepad(dev, self.cfg, self.dispatcher, self.mouse, self.shared)
                 self.instances[path] = pad
                 self.active[path] = asyncio.create_task(pad.run())
                 log.info("gamepad connected: %s", dev.name)

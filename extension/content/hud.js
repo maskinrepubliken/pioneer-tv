@@ -68,11 +68,13 @@ window.PioneerTV = window.PioneerTV || {};
         this.index = 0;
         this.highlight();
         M.nav.captured = this;
+        M.bridge && M.bridge.emit('menu:open');
       },
       close() {
         if (this.root) this.root.remove();
         this.root = null;
         if (M.nav.captured === this) M.nav.captured = null;
+        M.bridge && M.bridge.emit('menu:close');
       },
       // Compact status rows at the top of the menu: Wi-Fi, Tailscale, pads, temperature.
       statusBlock(s, connected) {

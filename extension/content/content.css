@@ -29,6 +29,7 @@
   filter: drop-shadow(0 2px 3px rgba(43, 36, 25, 0.35));
 }
 .pioneertv-cursor-show { opacity: 1; }
+html.pioneertv-game .pioneertv-cursor { display: none; }
 .pioneertv-cursor-press svg { transform: translate(1px, 1px) scale(0.94); }
 .pioneertv-hover { }
 

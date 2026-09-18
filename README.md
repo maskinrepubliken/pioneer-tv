@@ -87,6 +87,15 @@ devices, with Tailscale doing the authentication. If you instead bind the daemon
 to `0.0.0.0` in `config.toml`, set an access key under Fjärråtkomst; non-local
 requests must then carry it (`?token=` once, stored as a cookie).
 
+## Game mode
+
+On RomM's player (and any fullscreen page with a big canvas) the extension
+tells the daemon to leave the pad alone, so the page sees it as a real gamepad
+through Chromium's Gamepad API and the emulator's own mapping applies. No key
+translation, no pointer. Guide still goes home, holding Start opens the quick
+menu, holding Select toggles the TV; while an overlay is open the pad drives it
+as usual. Game mode ends when the page goes away or stops sending heartbeats.
+
 ## Logs and CEC debugging
 
 Start → Meny → **Loggar** opens a log sheet over whatever is on screen. Left

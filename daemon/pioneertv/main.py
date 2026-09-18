@@ -58,6 +58,10 @@ async def amain(cfg: dict) -> None:
             vinput.tap(str(msg.get("key")), msg.get("modifiers"))
         elif msg.get("type") == "update":
             asyncio.create_task(update_from_menu())
+        elif msg.get("type") == "gamemode":
+            on = bool(msg.get("on"))
+            if await pads_mgr.set_passthrough(on) and on:
+                await toast("Spelläge: handkontrollen går till spelet · Guide: hem · håll Start: meny", "gamepad")
         else:
             log.debug("unknown command %s", msg)
 

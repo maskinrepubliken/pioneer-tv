@@ -34,6 +34,7 @@
         "content/hud.js",
         "content/logs.js",
         "content/cursor.js",
+        "content/game.js",
         "content/main.js"
       ],
       "css": [

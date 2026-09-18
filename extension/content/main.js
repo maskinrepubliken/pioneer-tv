@@ -7,6 +7,7 @@
   M.bridge.init();
   M.nav.init();
   M.cursor.init();
+  M.game.init();
 
   const b = M.bridge;
   b.on('keyboard', () => M.keyboard.toggle());
