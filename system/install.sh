@@ -77,6 +77,7 @@ sed -i \
   -e 's|^BTN_EAST   = { key = "KEY_ESC" }$|BTN_EAST   = { key = "KEY_ESC", long = { system = "back" } }       # hold B: one page back|' \
   -e 's|^BTN_NORTH  = { system = "keyboard" }$|BTN_NORTH  = { system = "keyboard", long = { system = "menu" } }  # hold Y: quick menu|' \
   -e 's|^color = "#b5122b"$|color = "#b8940c"|' \
+  -e 's|^tagline = "Serier, nyheter och dokumentärer"$|tagline = "Public service"|' \
   /etc/pioneer-tv/config.toml
 # New default services are appended once; edit or remove them on the Tjänster page.
 if ! grep -q '^id = "romm"' /etc/pioneer-tv/config.toml; then

@@ -15,7 +15,7 @@ window.PioneerTV.defaultServices = [
   {
     id: 'svtplay',
     name: 'SVT Play',
-    tagline: 'Serier, nyheter och dokumentärer',
+    tagline: 'Public service',
     url: 'https://www.svtplay.se/',
     search_url: 'https://www.svtplay.se/sok?q={query}',
     color: '#1f7a4d',

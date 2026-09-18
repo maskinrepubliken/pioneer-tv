@@ -126,34 +126,42 @@ window.PioneerTV = window.PioneerTV || {};
       <path d="M22 84 L138 84" stroke="#ffffff" stroke-width="1" opacity="0.35"/>
     `),
 
-    // RomM: a game cartridge standing on its edge, label in the service colour,
-    // with a small controller resting against it.
+    // RomM: a chunky gamepad in the service colour, seen slightly from above.
     romm: (c) => wrap('romm', c, `
-      <linearGradient id="shell-U" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8f8a80"/><stop offset="0.5" stop-color="#6d685f"/><stop offset="1" stop-color="#46423b"/></linearGradient>
-      <linearGradient id="shellside-U" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3f3b35"/><stop offset="1" stop-color="#2b2824"/></linearGradient>
-      <linearGradient id="label-U" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${light(c, 0.35)}"/><stop offset="0.6" stop-color="${c}"/><stop offset="1" stop-color="${dark(c, 0.3)}"/></linearGradient>
-      <linearGradient id="pad-U" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3ecd8"/><stop offset="1" stop-color="#cdbf9c"/></linearGradient>
-      <linearGradient id="gloss2-U" x1="0" y1="0" x2="0.3" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity="0.45"/><stop offset="0.6" stop-color="#ffffff" stop-opacity="0"/></linearGradient>`, `
-      <!-- cartridge: side, then front -->
-      <path d="M96 20 L106 26 L106 92 L96 98 Z" fill="url(#shellside-U)"/>
-      <path d="M40 98 L96 98 L106 92 L50 92 Z" fill="#22201c"/>
-      <rect x="40" y="20" width="56" height="78" rx="4" fill="url(#shell-U)" stroke="${INK}" stroke-width="1.3"/>
-      <!-- grip ridges -->
-      <g stroke="#2b2824" stroke-width="1.4" opacity="0.7"><path d="M46 26 h44 M46 30 h44 M46 34 h44"/></g>
-      <!-- label -->
-      <rect x="47" y="42" width="42" height="40" rx="2.5" fill="url(#label-U)" stroke="${dark(c, 0.5)}" stroke-width="1"/>
-      <rect x="47" y="42" width="42" height="14" rx="2.5" fill="url(#gloss2-U)"/>
-      <rect x="52" y="64" width="24" height="4" rx="2" fill="${PAPER}" opacity="0.9"/>
-      <rect x="52" y="71" width="16" height="4" rx="2" fill="${PAPER}" opacity="0.6"/>
-      <!-- notch at the bottom edge -->
-      <rect x="56" y="88" width="24" height="10" fill="#2b2824"/>
-      <!-- controller leaning against it -->
-      <g transform="rotate(-8 118 84)">
-        <rect x="100" y="74" width="40" height="18" rx="6" fill="url(#pad-U)" stroke="${INK}" stroke-width="1.2"/>
-        <path d="M108 79 v8 M104 83 h8" stroke="${INK}" stroke-width="2.2" stroke-linecap="round"/>
-        <circle cx="126" cy="81" r="2.6" fill="${c}"/><circle cx="133" cy="85" r="2.6" fill="${dark(c, 0.3)}"/>
-        <path d="M100 82 L92 80" stroke="${INK}" stroke-width="1.6" stroke-linecap="round"/>
+      <linearGradient id="body-U" x1="0" y1="0" x2="0.6" y2="1"><stop offset="0" stop-color="${light(c, 0.4)}"/><stop offset="0.55" stop-color="${c}"/><stop offset="1" stop-color="${dark(c, 0.4)}"/></linearGradient>
+      <linearGradient id="under-U" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${dark(c, 0.45)}"/><stop offset="1" stop-color="${dark(c, 0.7)}"/></linearGradient>
+      <linearGradient id="face-U" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fbf6e6"/><stop offset="1" stop-color="#ddd1ad"/></linearGradient>
+      <linearGradient id="btnA-U" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e88a7a"/><stop offset="1" stop-color="#a8352a"/></linearGradient>
+      <linearGradient id="btnB-U" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f4d98a"/><stop offset="1" stop-color="#b8940c"/></linearGradient>
+      <linearGradient id="btnX-U" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9fc7a8"/><stop offset="1" stop-color="#3d6f4a"/></linearGradient>
+      <linearGradient id="btnY-U" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b7a3d6"/><stop offset="1" stop-color="#5a3f8a"/></linearGradient>
+      <linearGradient id="gloss3-U" x1="0" y1="0" x2="0.2" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity="0.45"/><stop offset="0.7" stop-color="#ffffff" stop-opacity="0"/></linearGradient>`, `
+      <!-- underside (thickness) -->
+      <path d="M22 66 C 22 50, 34 42, 48 42 L 112 42 C 126 42, 138 50, 138 66 L 140 88 C 141 98, 130 104, 122 98 L 108 86 L 52 86 L 38 98 C 30 104, 19 98, 20 88 Z" fill="url(#under-U)" transform="translate(0 6)"/>
+      <!-- body -->
+      <path d="M22 66 C 22 50, 34 42, 48 42 L 112 42 C 126 42, 138 50, 138 66 L 140 88 C 141 98, 130 104, 122 98 L 108 86 L 52 86 L 38 98 C 30 104, 19 98, 20 88 Z" fill="url(#body-U)" stroke="${INK}" stroke-width="1.4"/>
+      <path d="M30 50 Q 80 40 130 50 L 128 56 Q 80 48 32 58 Z" fill="url(#gloss3-U)"/>
+      <!-- shoulder buttons -->
+      <rect x="40" y="34" width="26" height="10" rx="4" fill="${dark(c, 0.3)}" stroke="${INK}" stroke-width="1.1"/>
+      <rect x="94" y="34" width="26" height="10" rx="4" fill="${dark(c, 0.3)}" stroke="${INK}" stroke-width="1.1"/>
+      <!-- d-pad -->
+      <g transform="translate(46 66)">
+        <path d="M-4 -12 h8 v8 h8 v8 h-8 v8 h-8 v-8 h-8 v-8 h8 z" fill="#2f2a24" stroke="${INK}" stroke-width="1"/>
+        <path d="M-3 -11 h6 v7 h7 v6" stroke="#5a544b" stroke-width="1" fill="none" opacity="0.8"/>
       </g>
+      <!-- face buttons -->
+      <circle cx="114" cy="56" r="5.2" fill="url(#btnY-U)" stroke="${INK}" stroke-width="0.9"/>
+      <circle cx="104" cy="66" r="5.2" fill="url(#btnX-U)" stroke="${INK}" stroke-width="0.9"/>
+      <circle cx="124" cy="66" r="5.2" fill="url(#btnA-U)" stroke="${INK}" stroke-width="0.9"/>
+      <circle cx="114" cy="76" r="5.2" fill="url(#btnB-U)" stroke="${INK}" stroke-width="0.9"/>
+      <!-- start / select -->
+      <rect x="70" y="62" width="8" height="3.4" rx="1.7" fill="${dark(c, 0.55)}"/>
+      <rect x="82" y="62" width="8" height="3.4" rx="1.7" fill="${dark(c, 0.55)}"/>
+      <!-- sticks -->
+      <circle cx="66" cy="80" r="7" fill="url(#face-U)" stroke="${INK}" stroke-width="1.1"/><circle cx="66" cy="80" r="4" fill="#3a352e"/>
+      <circle cx="94" cy="80" r="7" fill="url(#face-U)" stroke="${INK}" stroke-width="1.1"/><circle cx="94" cy="80" r="4" fill="#3a352e"/>
+      <!-- cable -->
+      <path d="M80 42 C 80 28, 100 30, 112 18 C 122 8, 140 12, 148 6" stroke="${INK}" stroke-width="2.2" fill="none" stroke-linecap="round" opacity="0.85"/>
     `),
 
     // Default: a cinema ticket with a torn stub, lying at an angle.
