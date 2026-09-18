@@ -173,7 +173,8 @@ A pad that does not reconnect after the box reboots is normal for Bluetooth:
 the pad pages the host for a while, gives up before Bluetooth is back, and
 sleeps. The daemon therefore dials paired, trusted pads every few seconds for
 the first minutes after start and once a minute after that, and BlueZ is set to
-answer pages fast and to retry a dropped link. Waking the pad with any button
+answer pages fast, to retry a dropped link, and not to re-run service discovery
+on every incoming connection (the Stratus XL drops the link when it does). Waking the pad with any button
 still helps if it went to sleep. A pad that was never trusted needs
 `bluetoothctl trust <MAC>`; pairing from the settings page does this for you.
 

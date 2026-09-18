@@ -144,7 +144,11 @@ if [ -f "$BT_CONF" ]; then
     -e 's|^#\?ReconnectAttempts=.*|ReconnectAttempts=7|' \
     -e 's|^#\?ReconnectIntervals=.*|ReconnectIntervals=1,2,4,8,16,32,64|' \
     -e 's|^#\?AutoEnable=.*|AutoEnable=true|' \
+    -e 's|^#\?ReverseServiceDiscovery *=.*|ReverseServiceDiscovery = false|' \
     "$BT_CONF"
+  # Gamepads (Stratus XL among them) drop the link when BlueZ re-runs service
+  # discovery on every incoming connection; the key must exist to be off.
+  grep -q '^ReverseServiceDiscovery' "$BT_CONF" || sed -i '/^\[General\]/a ReverseServiceDiscovery = false' "$BT_CONF"
   # sed above may prepend the HID UUID twice on a rerun; keep one.
   sed -i 's|^ReconnectUUIDs=\(00001124-0000-1000-8000-00805f9b34fb,\)\+|ReconnectUUIDs=00001124-0000-1000-8000-00805f9b34fb,|' "$BT_CONF"
   [ "$BT_BEFORE" = "$(md5sum "$BT_CONF")" ] || systemctl try-restart bluetooth || true

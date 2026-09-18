@@ -150,6 +150,7 @@ async def amain(cfg: dict) -> None:
     })
 
     async def on_gamepad_change(connected: bool, name: str) -> None:
+        bluetooth.note_seen(name)
         await emit({"type": "event", "name": "gamepad", "connected": connected, "device": name})
         if connected and cfg["cec"]["tv_on_gamepad_connect"]:
             try:

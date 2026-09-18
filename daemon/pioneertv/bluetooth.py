@@ -21,7 +21,15 @@ log = logging.getLogger("pioneertv.bluetooth")
 HID_UUID = "00001124"
 RE_DEVICE = re.compile(r"^Device ([0-9A-F:]{17}) (.*)$", re.M)
 BURST_SECONDS = 150   # dial often this long after the daemon starts
-BURST_INTERVAL = 6
+BURST_INTERVAL = 20
+QUIET_AFTER_SEEN = 90  # a pad that showed up on its own this recently is left alone: it is dialing in
+
+# Set by the gamepad manager whenever a pad appears or disappears.
+last_seen: dict[str, float] = {}
+
+
+def note_seen(name: str) -> None:
+    last_seen[name] = time.monotonic()
 
 
 async def paired_hid_devices() -> list[dict]:
@@ -41,6 +49,10 @@ async def paired_hid_devices() -> list[dict]:
 async def dial_once(on_change=None) -> None:
     for d in await paired_hid_devices():
         if d.get("Connected") or not d.get("Trusted"):
+            continue
+        seen = last_seen.get(d["name"])
+        if seen is not None and time.monotonic() - seen < QUIET_AFTER_SEEN:
+            log.debug("not dialing %s: it connected on its own %.0f s ago", d["name"], time.monotonic() - seen)
             continue
         log.debug("dialing %s (%s)", d["name"], d["mac"])
         rc, out = await sysinfo.run("bluetoothctl", "connect", d["mac"], timeout=15)
