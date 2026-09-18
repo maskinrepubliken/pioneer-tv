@@ -106,5 +106,6 @@ window.PioneerTV = window.PioneerTV || {};
     active() { return Date.now() - state.lastMove < ACTIVE_MS; },
     click() { button('left', true); setTimeout(() => button('left', false), 60); },
     position() { return { x: state.x, y: state.y }; },
+    elementUnder() { return under(); },
   };
 })(window.PioneerTV);

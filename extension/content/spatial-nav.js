@@ -156,10 +156,16 @@ window.PioneerTV = window.PioneerTV || {};
       if (!this.enabled || !e.isTrusted) return; // synthetic events come from our own keyboard
       // A clicks at the pointer when it was just used, also inside our overlays
       // (the on-screen keyboard, the menu), so the stick can drive them too.
-      if (e.key === 'Enter' && M.cursor && M.cursor.active() && !this.isTextField(document.activeElement)) {
-        e.preventDefault(); e.stopImmediatePropagation();
-        M.cursor.click();
-        return;
+      if (e.key === 'Enter' && M.cursor && M.cursor.active()) {
+        // With an overlay open the text field keeps focus, so decide by what is
+        // under the pointer instead: a key, a menu row, a tab.
+        const under = M.cursor.elementUnder();
+        const inOverlay = !!(under && under.closest && under.closest('[data-pioneertv-overlay]'));
+        if (this.captured ? inOverlay : !this.isTextField(document.activeElement)) {
+          e.preventDefault(); e.stopImmediatePropagation();
+          M.cursor.click();
+          return;
+        }
       }
       if (this.captured) { this.captured.onKeyDown(e); return; }
       const active = document.activeElement;
