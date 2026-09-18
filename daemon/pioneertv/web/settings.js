@@ -69,7 +69,7 @@
         { id: 'cineasterna', name: 'Cineasterna', tagline: 'Film från biblioteket', url: 'https://www.cineasterna.se/', search_url: 'https://www.cineasterna.se/sv/search?q={query}', color: '#b8940c', glyph: 'C' },
         { id: 'svtplay', name: 'SVT Play', tagline: 'Public service', url: 'https://www.svtplay.se/', search_url: 'https://www.svtplay.se/sok?q={query}', color: '#1f7a4d', glyph: 'S' },
         { id: 'jellyfin', name: 'Jellyfin', tagline: 'Egna filmer', url: 'http://100.123.142.8:8096/web/', color: '#7b5ea7', glyph: 'J' },
-        { id: 'romm', name: 'RomM', tagline: 'Retrospel', url: 'http://100.123.142.8:8081/', color: '#3b6ea5', glyph: 'R' } ],
+        { id: 'romm', name: 'Spel', tagline: 'RomM', url: 'http://100.123.142.8:8081/', color: '#3b6ea5', glyph: 'R' } ],
       service_fields: ['id', 'name', 'tagline', 'url', 'search_url', 'color', 'glyph', 'logo'],
     });
     if (path.startsWith('/api/wifi/networks')) return wait([

@@ -98,10 +98,10 @@ glyph = "J"
 
 [[services]]
 id = "romm"
-name = "RomM"
-tagline = "Retrospel"
+name = "Spel"
+tagline = "RomM"
 # RomM's web player runs in the browser (EmulatorJS); change the address to your instance.
 url = "http://100.123.142.8:8081/"
-search_url = "http://100.123.142.8:8081/search?searchTerm={query}"
+search_url = "http://100.123.142.8:8081/search?search={query}"
 color = "#3b6ea5"
 glyph = "R"

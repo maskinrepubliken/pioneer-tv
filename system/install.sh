@@ -79,6 +79,9 @@ sed -i \
   -e 's|^color = "#b5122b"$|color = "#b8940c"|' \
   -e 's|^tagline = "Serier, nyheter och dokumentärer"$|tagline = "Public service"|' \
   -e 's|100\.123\.142\.8:8080/|100.123.142.8:8081/|g' \
+  -e 's|8081/search?searchTerm={query}|8081/search?search={query}|' \
+  -e 's|^name = "RomM"$|name = "Spel"|' \
+  -e 's|^tagline = "Retrospel"$|tagline = "RomM"|' \
   /etc/pioneer-tv/config.toml
 # New default services are appended once; edit or remove them on the Tjänster page.
 if ! grep -q '^id = "romm"' /etc/pioneer-tv/config.toml; then
