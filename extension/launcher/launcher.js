@@ -121,6 +121,20 @@
   }
   b.on('state', (s) => applyStatus(s.status));
 
+  // The page does not scroll, and the keyboard sheet covers its lower third.
+  // Lift the page just enough to keep the field being typed into visible.
+  const page = document.querySelector('.page');
+  b.on('keyboard:open', () => requestAnimationFrame(() => {
+    const kb = document.querySelector('.pioneertv-keyboard');
+    const field = document.activeElement && M.nav.isTextField(document.activeElement) ? document.activeElement : searchInput;
+    if (!kb || !field) return;
+    const box = (field.closest('.search') || field).getBoundingClientRect();
+    const visibleBottom = window.innerHeight - kb.getBoundingClientRect().height;
+    const shift = Math.max(0, box.bottom + 24 - visibleBottom);
+    page.style.transform = shift ? `translateY(${-shift}px)` : '';
+  }));
+  b.on('keyboard:close', () => { page.style.transform = ''; });
+
   // Embers drifting up from the hearth: a handful of small warm dots.
   (function embers() {
     const host = $('embers');
