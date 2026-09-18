@@ -47,7 +47,13 @@ echo "pioneer-tv: $($BIN --version 2>/dev/null), board $BOARD ${WIDTH}x${HEIGHT}
 # Chromium picks its audio backend at start: wait for PipeWire's Pulse socket
 # so sound goes through it (and on to HDMI) instead of raw ALSA.
 for i in $(seq 1 40); do [ -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/pulse/native" ] && break; sleep 0.5; done
-[ -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/pulse/native" ] && echo "pioneer-tv: sound server ready" || echo "pioneer-tv: no sound server after 20 s, Chromium will use ALSA"
+if [ -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/pulse/native" ]; then
+  echo "pioneer-tv: sound server ready"
+  # Volume is the TV's business (CEC); the Pi's own output stays at full scale.
+  command -v wpctl >/dev/null && wpctl set-volume @DEFAULT_AUDIO_SINK@ 1.0 2>/dev/null
+else
+  echo "pioneer-tv: no sound server after 20 s, Chromium will use ALSA"
+fi
 
 # Open the launcher through the DevTools port once Chromium is up (see open-launcher.py).
 python3 "$PIONEER_TV_DIR/system/open-launcher.py" "$DEVTOOLS_PORT" "$EXT_ID" 120 &
