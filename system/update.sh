@@ -7,6 +7,10 @@ REPO=$(cat /etc/pioneer-tv/repo)
 STATE=/var/lib/pioneer-tv
 mkdir -p "$STATE"
 cd "$REPO"
+# We run as root but the checkout belongs to the user who cloned it; git
+# refuses to touch a repository owned by someone else ("dubious ownership").
+OWNER=$(stat -c %U "$REPO")
+git() { if [ "$OWNER" != root ]; then runuser -u "$OWNER" -- git "$@"; else command git "$@"; fi; }
 
 log() { echo "[update] $*"; }
 finish() {

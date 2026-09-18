@@ -29,6 +29,14 @@ def repo_path() -> Path | None:
 
 
 async def _git(repo: Path, *args: str, timeout: float = 30) -> tuple[int, str]:
+    # The daemon runs as root; the checkout belongs to whoever cloned it, and
+    # git refuses repositories owned by another user. Run git as the owner.
+    try:
+        owner = repo.owner()
+    except (KeyError, OSError):
+        owner = "root"
+    if owner != "root":
+        return await sysinfo.run("runuser", "-u", owner, "--", "git", "-C", str(repo), *args, timeout=timeout)
     return await sysinfo.run("git", "-C", str(repo), *args, timeout=timeout)
 
 
