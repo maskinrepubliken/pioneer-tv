@@ -126,6 +126,36 @@ window.PioneerTV = window.PioneerTV || {};
       <path d="M22 84 L138 84" stroke="#ffffff" stroke-width="1" opacity="0.35"/>
     `),
 
+    // RomM: a game cartridge standing on its edge, label in the service colour,
+    // with a small controller resting against it.
+    romm: (c) => wrap('romm', c, `
+      <linearGradient id="shell-U" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8f8a80"/><stop offset="0.5" stop-color="#6d685f"/><stop offset="1" stop-color="#46423b"/></linearGradient>
+      <linearGradient id="shellside-U" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3f3b35"/><stop offset="1" stop-color="#2b2824"/></linearGradient>
+      <linearGradient id="label-U" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${light(c, 0.35)}"/><stop offset="0.6" stop-color="${c}"/><stop offset="1" stop-color="${dark(c, 0.3)}"/></linearGradient>
+      <linearGradient id="pad-U" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3ecd8"/><stop offset="1" stop-color="#cdbf9c"/></linearGradient>
+      <linearGradient id="gloss2-U" x1="0" y1="0" x2="0.3" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity="0.45"/><stop offset="0.6" stop-color="#ffffff" stop-opacity="0"/></linearGradient>`, `
+      <!-- cartridge: side, then front -->
+      <path d="M96 20 L106 26 L106 92 L96 98 Z" fill="url(#shellside-U)"/>
+      <path d="M40 98 L96 98 L106 92 L50 92 Z" fill="#22201c"/>
+      <rect x="40" y="20" width="56" height="78" rx="4" fill="url(#shell-U)" stroke="${INK}" stroke-width="1.3"/>
+      <!-- grip ridges -->
+      <g stroke="#2b2824" stroke-width="1.4" opacity="0.7"><path d="M46 26 h44 M46 30 h44 M46 34 h44"/></g>
+      <!-- label -->
+      <rect x="47" y="42" width="42" height="40" rx="2.5" fill="url(#label-U)" stroke="${dark(c, 0.5)}" stroke-width="1"/>
+      <rect x="47" y="42" width="42" height="14" rx="2.5" fill="url(#gloss2-U)"/>
+      <rect x="52" y="64" width="24" height="4" rx="2" fill="${PAPER}" opacity="0.9"/>
+      <rect x="52" y="71" width="16" height="4" rx="2" fill="${PAPER}" opacity="0.6"/>
+      <!-- notch at the bottom edge -->
+      <rect x="56" y="88" width="24" height="10" fill="#2b2824"/>
+      <!-- controller leaning against it -->
+      <g transform="rotate(-8 118 84)">
+        <rect x="100" y="74" width="40" height="18" rx="6" fill="url(#pad-U)" stroke="${INK}" stroke-width="1.2"/>
+        <path d="M108 79 v8 M104 83 h8" stroke="${INK}" stroke-width="2.2" stroke-linecap="round"/>
+        <circle cx="126" cy="81" r="2.6" fill="${c}"/><circle cx="133" cy="85" r="2.6" fill="${dark(c, 0.3)}"/>
+        <path d="M100 82 L92 80" stroke="${INK}" stroke-width="1.6" stroke-linecap="round"/>
+      </g>
+    `),
+
     // Default: a cinema ticket with a torn stub, lying at an angle.
     default: (c) => wrap('ticket', c, `
       <linearGradient id="tk-U" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${light(c, 0.45)}"/><stop offset="1" stop-color="${dark(c, 0.15)}"/></linearGradient>`, `

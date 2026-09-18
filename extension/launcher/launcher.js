@@ -15,6 +15,7 @@
 
   function render() {
     tilesEl.innerHTML = '';
+    tilesEl.style.setProperty('--tiles', String(Math.max(1, Math.min(services.length, 5))));
     for (const s of services) {
       const a = document.createElement('a');
       a.className = 'tile pioneertv-card';

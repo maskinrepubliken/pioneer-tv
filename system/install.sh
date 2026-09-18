@@ -78,6 +78,10 @@ sed -i \
   -e 's|^BTN_NORTH  = { system = "keyboard" }$|BTN_NORTH  = { system = "keyboard", long = { system = "menu" } }  # hold Y: quick menu|' \
   -e 's|^color = "#b5122b"$|color = "#b8940c"|' \
   /etc/pioneer-tv/config.toml
+# New default services are appended once; edit or remove them on the Tjänster page.
+if ! grep -q '^id = "romm"' /etc/pioneer-tv/config.toml; then
+  sed -n '/^\[\[services\]\]$/,$p' "$REPO/daemon/config.example.toml" | awk 'BEGIN{RS=""; ORS="\n\n"} /id = "romm"/' >> /etc/pioneer-tv/config.toml
+fi
 [ -f /etc/pioneer-tv/chromium.env ] || cp "$REPO/system/chromium.env" /etc/pioneer-tv/chromium.env
 sed "s/@MODE@/$MODE/" "$REPO/system/weston.ini" > "$HOME_DIR/.config/weston.ini"
 cat > /etc/pioneer-tv/board.env <<EOF

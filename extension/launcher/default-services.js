@@ -30,4 +30,13 @@ window.PioneerTV.defaultServices = [
     color: '#7b5ea7',
     glyph: 'J',
   },
+  {
+    id: 'romm',
+    name: 'RomM',
+    tagline: 'Retrospel',
+    url: 'http://100.123.142.8:8080/',
+    search_url: 'http://100.123.142.8:8080/search?searchTerm={query}',
+    color: '#3b6ea5',
+    glyph: 'R',
+  },
 ];

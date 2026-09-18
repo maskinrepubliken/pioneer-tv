@@ -1,6 +1,6 @@
 # Pioneer TV
 
-Maskinrepubliken's Raspberry Pi TV box for a 32" TV: Cineasterna, SVT Play and Jellyfin as
+Maskinrepubliken's Raspberry Pi TV box for a 32" TV: Cineasterna, SVT Play, Jellyfin and RomM as
 web pages in a kiosk Chromium on Weston, driven by a Bluetooth gamepad, with
 HDMI-CEC for the TV's volume and power.
 

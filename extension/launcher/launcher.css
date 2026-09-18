@@ -28,7 +28,9 @@ body {
 /* ---- content ---- */
 .content { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 3vh; }
 
-.tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+.tiles { display: grid; grid-template-columns: repeat(var(--tiles, 3), 1fr); gap: 1.3rem; }
+.tiles[style*="--tiles: 4"] .tile .name, .tiles[style*="--tiles:4"] .tile .name { font-size: 1.7rem; }
+.tiles[style*="--tiles: 4"] .tile .tagline, .tiles[style*="--tiles:4"] .tile .tagline { font-size: 1.05rem; }
 .tile {
   position: relative; display: flex; flex-direction: column; justify-content: flex-end;
   height: 46vh; padding: 1.2rem 1.5rem 1.2rem;
