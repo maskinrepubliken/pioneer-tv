@@ -1,7 +1,7 @@
 [Unit]
 Description=Pioneer TV display (Weston + Chromium)
-After=systemd-user-sessions.service plymouth-quit-wait.service pioneer-tv-daemon.service
-Wants=pioneer-tv-daemon.service
+After=systemd-user-sessions.service plymouth-quit-wait.service pioneer-tv-daemon.service user@1000.service
+Wants=pioneer-tv-daemon.service user@1000.service
 Conflicts=getty@tty1.service
 RequiresMountsFor=/run
 

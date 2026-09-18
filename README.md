@@ -242,6 +242,16 @@ for a few seconds after it last moved, and is the normal "select" otherwise.
 `cursor.css` also hides any system cursor in case a real mouse is plugged in;
 that would still crash Weston on this board, so do not.
 
+## Sound
+
+Audio goes to the TV over HDMI through PipeWire, which runs as the kiosk user
+(`loginctl enable-linger` keeps it up from boot). A WirePlumber rule in
+`system/wireplumber-pioneer-tv.conf` disables the 3.5 mm jack and prefers
+HDMI0, and the Chromium start script waits for the sound server before
+launching so Chromium binds to it rather than raw ALSA. Volume is the TV's,
+over CEC; Chromium itself stays at 100 %. To check from a shell as `pi`:
+`XDG_RUNTIME_DIR=/run/user/1000 wpctl status`.
+
 ## Performance notes
 
 - Players cap stream quality to the window size, so the video mode is also the

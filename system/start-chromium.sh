@@ -44,6 +44,11 @@ BIN=${PIONEER_TV_CHROMIUM_BIN:-$(command -v chromium-browser || command -v chrom
 DEVTOOLS_PORT=${PIONEER_TV_DEVTOOLS_PORT:-9222}   # 127.0.0.1 only; used to open the launcher
 echo "pioneer-tv: $($BIN --version 2>/dev/null), board $BOARD ${WIDTH}x${HEIGHT}, extension $PIONEER_TV_DIR/extension ($(grep -o '"version": "[^"]*"' "$PIONEER_TV_DIR/extension/manifest.json")), gpu: $GPU_FLAGS, extra: ${EXTRA_FLAGS:-none}"
 
+# Chromium picks its audio backend at start: wait for PipeWire's Pulse socket
+# so sound goes through it (and on to HDMI) instead of raw ALSA.
+for i in $(seq 1 40); do [ -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/pulse/native" ] && break; sleep 0.5; done
+[ -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/pulse/native" ] && echo "pioneer-tv: sound server ready" || echo "pioneer-tv: no sound server after 20 s, Chromium will use ALSA"
+
 # Open the launcher through the DevTools port once Chromium is up (see open-launcher.py).
 python3 "$PIONEER_TV_DIR/system/open-launcher.py" "$DEVTOOLS_PORT" "$EXT_ID" 120 &
 

@@ -51,6 +51,7 @@ apt-get install -y --no-install-recommends \
   bluez \
   python3 python3-evdev python3-aiohttp \
   rsync git curl \
+  pipewire pipewire-pulse wireplumber pipewire-alsa \
   fonts-noto-core
 # Raspberry Pi OS ships its own Chromium build (with Widevine support) as
 # chromium-browser; plain Debian calls it chromium.
@@ -98,6 +99,9 @@ PIONEER_TV_HEIGHT=$(echo "$MODE" | sed 's/^[0-9]*x//; s/@.*//')
 EOF
 chown -R "$USER_NAME:$USER_NAME" "$HOME_DIR/.config"
 cp "$REPO/system/99-pioneer-tv.rules" /etc/udev/rules.d/
+# Sound: PipeWire runs as the kiosk user; WirePlumber sends everything to HDMI.
+mkdir -p "$HOME_DIR/.config/wireplumber/wireplumber.conf.d"
+cp "$REPO/system/wireplumber-pioneer-tv.conf" "$HOME_DIR/.config/wireplumber/wireplumber.conf.d/50-pioneer-tv.conf"
 # Chromium policies: no translate bubble, password prompts, notifications, sign-in.
 mkdir -p /etc/chromium/policies/managed
 cp "$REPO/system/chromium-policies.json" /etc/chromium/policies/managed/pioneer-tv.json
@@ -162,6 +166,12 @@ systemctl disable hciuart 2>/dev/null || true   # legacy; fails on Bookworm's ke
 rfkill unblock bluetooth 2>/dev/null || true
 systemctl enable zramswap 2>/dev/null || true
 systemctl enable pioneer-tv-daemon.service pioneer-tv-weston.service
+# The user's service manager (and with it PipeWire) must be up before the display starts.
+loginctl enable-linger "$USER_NAME" || true
+if systemctl --user --machine="$USER_NAME@.host" is-active pipewire >/dev/null 2>&1 || systemctl --user --machine="$USER_NAME@.host" list-units >/dev/null 2>&1; then
+  systemctl --user --machine="$USER_NAME@.host" enable --now pipewire pipewire-pulse wireplumber 2>/dev/null || true
+  systemctl --user --machine="$USER_NAME@.host" restart wireplumber 2>/dev/null || true
+fi
 # Pick up new code if the box is already running (no-op on first install).
 systemctl try-restart pioneer-tv-daemon.service pioneer-tv-weston.service || true
 
