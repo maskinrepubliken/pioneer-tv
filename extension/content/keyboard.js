@@ -35,6 +35,9 @@ window.PioneerTV = window.PioneerTV || {};
       this.row = 1; this.col = 0;
       this.highlight();
       M.nav.captured = this;
+      // A types on release; holding A jumps to the Sök key instead.
+      this._onKeyUp = (e) => this.onKeyUp(e);
+      window.addEventListener('keyup', this._onKeyUp, true);
       document.documentElement.classList.add('pioneertv-keyboard-open');
       try { this.target.scrollIntoView({ block: 'start' }); } catch {}
       M.bridge && M.bridge.emit('keyboard:open');
@@ -44,6 +47,8 @@ window.PioneerTV = window.PioneerTV || {};
       if (this.root) this.root.remove();
       this.root = null;
       if (M.nav.captured === this) M.nav.captured = null;
+      if (this._onKeyUp) { window.removeEventListener('keyup', this._onKeyUp, true); this._onKeyUp = null; }
+      clearTimeout(this._holdTimer); this._holdTimer = null; this._holdFired = false;
       document.documentElement.classList.remove('pioneertv-keyboard-open');
       M.bridge && M.bridge.emit('keyboard:close');
     },
@@ -107,7 +112,7 @@ window.PioneerTV = window.PioneerTV || {};
       }
       const hint = document.createElement('div');
       hint.className = 'pioneertv-keyhint';
-      hint.textContent = 'A skriv · B stäng · Y tangentbord';
+      hint.textContent = 'A skriv · håll A: sök · B stäng · Y tangentbord';
       root.appendChild(hint);
       document.documentElement.appendChild(root);
       this.root = root;
@@ -158,9 +163,30 @@ window.PioneerTV = window.PioneerTV || {};
         case 'ArrowDown': this.moveRow(1); break;
         case 'ArrowLeft': this.col = (this.col - 1 + this.buttons[this.row].length) % this.buttons[this.row].length; this.highlight(); break;
         case 'ArrowRight': this.col = (this.col + 1) % this.buttons[this.row].length; this.highlight(); break;
-        case 'Enter': this.press(this.buttons[this.row][this.col].def); break;
+        case 'Enter':
+          if (e.repeat || this._holdTimer) break; // already holding
+          this._holdFired = false;
+          this._holdTimer = setTimeout(() => {
+            this._holdTimer = null; this._holdFired = true;
+            this.jumpTo('done');
+          }, 550);
+          break;
         case 'Escape': this.close(); break;
       }
+    },
+
+    onKeyUp(e) {
+      if (e.key !== 'Enter' || !e.isTrusted) return;
+      const held = !!this._holdTimer;
+      clearTimeout(this._holdTimer); this._holdTimer = null;
+      if (this._holdFired) { this._holdFired = false; return; } // the jump was the action
+      if (held) this.press(this.buttons[this.row][this.col].def); // a short tap: type
+    },
+
+    // Move the highlight to a key by its id, e.g. 'done' (Sök).
+    jumpTo(key) {
+      this.buttons.forEach((row, ri) => row.forEach(({ def }, ci) => { if (def.k === key) { this.row = ri; this.col = ci; } }));
+      this.highlight();
     },
 
     press(def) {

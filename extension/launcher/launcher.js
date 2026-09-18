@@ -135,6 +135,27 @@
   }));
   b.on('keyboard:close', () => { page.style.transform = ''; });
 
+  // Flames along the bottom edge: a few blurred tongues, each with its own rhythm.
+  (function flames() {
+    const host = $('flames');
+    if (!host || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const n = 9;
+    for (let i = 0; i < n; i++) {
+      const f = document.createElement('span');
+      f.className = 'flame';
+      const big = i % 3 === 1;
+      f.style.setProperty('--x', `${(i / n) * 100 - 6 + Math.random() * 6}vw`);
+      f.style.setProperty('--w', `${(big ? 22 : 14) + Math.random() * 8}vw`);
+      f.style.setProperty('--h', `${(big ? 30 : 20) + Math.random() * 10}vh`);
+      f.style.setProperty('--blur', `${big ? 34 : 24}px`);
+      f.style.setProperty('--dur', `${1.6 + Math.random() * 1.4}s`);
+      f.style.setProperty('--fdur', `${0.9 + Math.random() * 0.8}s`);
+      f.style.setProperty('--delay', `${-Math.random() * 3}s`);
+      f.style.setProperty('--peak', String((big ? 0.55 : 0.4) + Math.random() * 0.2));
+      host.appendChild(f);
+    }
+  })();
+
   // Embers drifting up from the hearth: a handful of small warm dots.
   (function embers() {
     const host = $('embers');
