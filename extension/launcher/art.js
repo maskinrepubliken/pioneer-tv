@@ -31,40 +31,39 @@ window.PioneerTV = window.PioneerTV || {};
   }
 
   const ART = {
-    // A film reel standing at an angle with a strip of film curling away.
-    cineasterna: (c) => wrap('cine', c, `
-      <linearGradient id="face-U" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stop-color="${light(c, 0.35)}"/><stop offset="0.6" stop-color="${c}"/><stop offset="1" stop-color="${dark(c, 0.3)}"/>
-      </linearGradient>
-      <linearGradient id="rim-U" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="${dark(c, 0.15)}"/><stop offset="1" stop-color="${dark(c, 0.55)}"/>
-      </linearGradient>
-      <linearGradient id="strip-U" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0" stop-color="#4a4036"/><stop offset="1" stop-color="#2b2419"/>
-      </linearGradient>
-      <radialGradient id="hole-U" cx="40%" cy="35%" r="70%">
-        <stop offset="0" stop-color="${PAPER}"/><stop offset="1" stop-color="#ddd1ad"/>
-      </radialGradient>`, `
-      <!-- film strip -->
-      <path d="M92 66 C 112 58, 128 62, 150 52 L 152 68 C 130 78, 114 74, 94 82 Z" fill="url(#strip-U)"/>
-      <g fill="${PAPER}" opacity="0.9">
-        <rect x="98" y="66" width="5" height="3.5" rx="0.6" transform="rotate(-14 100 68)"/><rect x="109" y="63" width="5" height="3.5" rx="0.6" transform="rotate(-14 111 65)"/>
-        <rect x="120" y="60" width="5" height="3.5" rx="0.6" transform="rotate(-14 122 62)"/><rect x="131" y="57" width="5" height="3.5" rx="0.6" transform="rotate(-14 133 59)"/>
-        <rect x="100" y="77" width="5" height="3.5" rx="0.6" transform="rotate(-14 102 79)"/><rect x="111" y="74" width="5" height="3.5" rx="0.6" transform="rotate(-14 113 76)"/>
-        <rect x="122" y="71" width="5" height="3.5" rx="0.6" transform="rotate(-14 124 73)"/><rect x="133" y="68" width="5" height="3.5" rx="0.6" transform="rotate(-14 135 70)"/>
-      </g>
-      <!-- reel rim (thickness) -->
-      <ellipse cx="62" cy="62" rx="40" ry="38" fill="url(#rim-U)"/>
-      <!-- reel face -->
-      <ellipse cx="58" cy="56" rx="40" ry="38" fill="url(#face-U)"/>
-      <ellipse cx="58" cy="56" rx="9" ry="8.5" fill="url(#hole-U)"/>
-      <ellipse cx="58" cy="32" rx="8" ry="7.5" fill="url(#hole-U)"/>
-      <ellipse cx="58" cy="80" rx="8" ry="7.5" fill="url(#hole-U)"/>
-      <ellipse cx="34" cy="56" rx="8" ry="7.5" fill="url(#hole-U)"/>
-      <ellipse cx="82" cy="56" rx="8" ry="7.5" fill="url(#hole-U)"/>
-      <!-- highlight -->
-      <ellipse cx="44" cy="34" rx="14" ry="7" fill="#ffffff" opacity="0.28" transform="rotate(-35 44 34)"/>
-    `),
+    // Cineasterna's mark is a golden palm frond (a nod to the Palme d'Or):
+    // a curved stem with tapered leaflets, gold lit from the top left.
+    cineasterna: (c) => {
+      const gold = '#c9a227', deep = '#8f6d0a', pale = '#f1dc8a';
+      // Quadratic stem from the base at bottom-left to the tip at top-right.
+      const A = [26, 98], C = [52, 22], B = [146, 18];
+      const pt = (t) => [(1 - t) ** 2 * A[0] + 2 * (1 - t) * t * C[0] + t * t * B[0], (1 - t) ** 2 * A[1] + 2 * (1 - t) * t * C[1] + t * t * B[1]];
+      const tan = (t) => { const [x0, y0] = pt(Math.max(0, t - 0.01)), [x1, y1] = pt(Math.min(1, t + 0.01)); const l = Math.hypot(x1 - x0, y1 - y0) || 1; return [(x1 - x0) / l, (y1 - y0) / l]; };
+      const leaflets = [];
+      for (let i = 0; i < 15; i++) {
+        const t = 0.06 + i * 0.062;
+        const [x, y] = pt(t), [dx, dy] = tan(t);
+        const len = 30 * (1 - t * 0.55) * (i < 2 ? 0.7 : 1);
+        for (const side of [-1, 1]) {
+          // leaflet direction: stem tangent rotated ~55° to the side, leaning toward the tip
+          const a = side * 0.95;
+          const ux = dx * Math.cos(a) - dy * Math.sin(a), uy = dx * Math.sin(a) + dy * Math.cos(a);
+          const tx = x + ux * len + dx * len * 0.45, ty = y + uy * len + dy * len * 0.45;
+          const nx = -uy, ny = ux; // normal for the leaf width
+          const w = 2.6 * (1 - t * 0.4);
+          const c1x = x + ux * len * 0.5 + nx * w * side, c1y = y + uy * len * 0.5 + ny * w * side;
+          const c2x = x + ux * len * 0.5 - nx * w * side, c2y = y + uy * len * 0.5 - ny * w * side;
+          const shade = side < 0 ? 'leafL' : 'leafR';
+          leaflets.push(`<path d="M${x.toFixed(1)} ${y.toFixed(1)} Q${c1x.toFixed(1)} ${c1y.toFixed(1)} ${tx.toFixed(1)} ${ty.toFixed(1)} Q${c2x.toFixed(1)} ${c2y.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)}Z" fill="url(#${shade}-U)"/>`);
+        }
+      }
+      const stem = `<path d="M${A[0]} ${A[1]} Q${C[0]} ${C[1]} ${B[0]} ${B[1]}" stroke="url(#stem-U)" stroke-width="3.2" stroke-linecap="round" fill="none"/>`;
+      return wrap('cine', c, `
+      <linearGradient id="leafL-U" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${pale}"/><stop offset="0.55" stop-color="${gold}"/><stop offset="1" stop-color="${deep}"/></linearGradient>
+      <linearGradient id="leafR-U" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="${deep}"/><stop offset="0.5" stop-color="${gold}"/><stop offset="1" stop-color="${pale}"/></linearGradient>
+      <linearGradient id="stem-U" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="${deep}"/><stop offset="0.6" stop-color="${gold}"/><stop offset="1" stop-color="${pale}"/></linearGradient>`,
+      `${leaflets.join('')}${stem}`);
+    },
 
     // A retro television seen slightly from above, screen lit, showing play.
     svtplay: (c) => wrap('svt', c, `

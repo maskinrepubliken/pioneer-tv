@@ -66,7 +66,7 @@
           { path: 'remote.token', type: 'text', label: 'Åtkomstnyckel', secret: true, value: '', is_set: false } ] },
       ],
       services: [
-        { id: 'cineasterna', name: 'Cineasterna', tagline: 'Film från biblioteket', url: 'https://www.cineasterna.se/', search_url: 'https://www.cineasterna.se/sv/search?q={query}', color: '#b5122b', glyph: 'C' },
+        { id: 'cineasterna', name: 'Cineasterna', tagline: 'Film från biblioteket', url: 'https://www.cineasterna.se/', search_url: 'https://www.cineasterna.se/sv/search?q={query}', color: '#b8940c', glyph: 'C' },
         { id: 'svtplay', name: 'SVT Play', tagline: 'Serier', url: 'https://www.svtplay.se/', search_url: 'https://www.svtplay.se/sok?q={query}', color: '#1f7a4d', glyph: 'S' },
         { id: 'jellyfin', name: 'Jellyfin', tagline: 'Egna filmer', url: 'http://100.123.142.8:8096/web/', color: '#7b5ea7', glyph: 'J' } ],
       service_fields: ['id', 'name', 'tagline', 'url', 'search_url', 'color', 'glyph', 'logo'],

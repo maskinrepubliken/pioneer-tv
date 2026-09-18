@@ -9,7 +9,7 @@ window.PioneerTV.defaultServices = [
     tagline: 'Film från biblioteket',
     url: 'https://www.cineasterna.com/sv/library/5/discover',
     search_url: 'https://www.cineasterna.com/sv/library/5/search?q={query}&page=1',
-    color: '#b5122b',
+    color: '#b8940c',
     glyph: 'C',
   },
   {
