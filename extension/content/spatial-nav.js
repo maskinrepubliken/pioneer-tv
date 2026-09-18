@@ -26,6 +26,8 @@ window.PioneerTV = window.PioneerTV || {};
       if (!el) return false;
       if (el.isContentEditable) return true;
       if (el.tagName === 'TEXTAREA') return true;
+      const role = el.getAttribute && el.getAttribute('role');
+      if (role === 'textbox' || role === 'searchbox') return true;
       return el.tagName === 'INPUT' && TEXT_INPUT.test(el.type || 'text');
     },
 
@@ -136,26 +138,62 @@ window.PioneerTV = window.PioneerTV || {};
       return true;
     },
 
+    // Sliders, seek bars, volume bars, selects and media elements swallow the
+    // arrow keys. They only get them after A "engages" the control; before
+    // that, arrows keep navigating. B or moving away disengages.
+    engaged: null,
+    isControl(el) {
+      if (!el || el === document.body) return false;
+      return el.tagName === 'VIDEO' || el.tagName === 'AUDIO' || el.tagName === 'SELECT' || el.type === 'range'
+        || el.getAttribute('role') === 'slider' || el.getAttribute('role') === 'spinbutton';
+    },
+    engage(el) {
+      this.engaged = el;
+      M.hud && M.hud.toast(el.tagName === 'SELECT' ? 'Upp/ner väljer · B lämnar' : 'Vänster/höger justerar · B lämnar', 'info', 2500);
+    },
+
     onKeyDown(e) {
       if (!this.enabled || !e.isTrusted) return; // synthetic events come from our own keyboard
+      // A clicks at the pointer when it was just used, also inside our overlays
+      // (the on-screen keyboard, the menu), so the stick can drive them too.
+      if (e.key === 'Enter' && M.cursor && M.cursor.active() && !this.isTextField(document.activeElement)) {
+        e.preventDefault(); e.stopImmediatePropagation();
+        M.cursor.click();
+        return;
+      }
       if (this.captured) { this.captured.onKeyDown(e); return; }
       const active = document.activeElement;
+      if (this.engaged && this.engaged !== active) this.engaged = null;
       const dir = DIRS[e.key];
       if (dir) {
-        if (this.isTextField(active) && (dir === 'left' || dir === 'right')) return; // caret movement
-        if (active && (active.tagName === 'VIDEO' || active.tagName === 'AUDIO' || active.type === 'range' || active.getAttribute('role') === 'slider')) {
-          if (dir === 'left' || dir === 'right') return; // seek / slider
+        const physical = M.bridge && M.bridge.state.physicalKeyboard;
+        // Caret movement only with a real keyboard; the on-screen keyboard has its own caret keys.
+        if (this.isTextField(active) && (dir === 'left' || dir === 'right') && physical) return;
+        if (this.isControl(active) && this.engaged === active) {
+          const horizontal = dir === 'left' || dir === 'right';
+          if (active.tagName === 'SELECT' ? !horizontal : horizontal) return; // the control gets it
         }
-        if (active && active.tagName === 'SELECT' && (dir === 'up' || dir === 'down')) return;
+        this.engaged = null;
         e.preventDefault();
         e.stopImmediatePropagation();
         this.move(dir);
         return;
       }
+      if (e.key === 'Escape' && this.engaged) {
+        e.preventDefault(); e.stopImmediatePropagation();
+        this.engaged = null;
+        return;
+      }
       if (e.key === 'Enter') {
-        if (M.cursor && M.cursor.active() && !this.isTextField(active)) {
+        if (this.isControl(active)) {
+          if (active.tagName === 'SELECT') {
+            // Enter on a select opens it natively; let that happen, but note it as engaged.
+            this.engaged = active;
+            return;
+          }
           e.preventDefault(); e.stopImmediatePropagation();
-          M.cursor.click();
+          if (this.engaged === active) { this.engaged = null; M.hud && M.hud.toast('Lämnade reglaget', 'info', 1200); }
+          else this.engage(active);
           return;
         }
         if (this.isTextField(active)) {

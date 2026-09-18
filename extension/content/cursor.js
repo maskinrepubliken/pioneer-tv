@@ -82,7 +82,8 @@ window.PioneerTV = window.PioneerTV || {};
       ensure().classList.add('pioneertv-cursor-press');
       fire(t, 'mousedown', { button: which, buttons: which === 2 ? 2 : 1 });
       // Focus like a real click would, so typing and Enter go to the right place.
-      const focusable = t && t.closest && t.closest('input, textarea, select, button, a[href], [tabindex], [contenteditable="true"]');
+      const inOverlay = t && t.closest && t.closest('[data-pioneertv-overlay]');
+      const focusable = !inOverlay && t && t.closest && t.closest('input, textarea, select, button, a[href], [tabindex], [contenteditable="true"]');
       if (focusable) { try { focusable.focus({ preventScroll: true }); } catch {} }
     } else {
       state.pressed = false;

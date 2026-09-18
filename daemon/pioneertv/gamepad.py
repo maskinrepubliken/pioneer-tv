@@ -152,7 +152,8 @@ class Gamepad:
     async def on_abs(self, code: int, value: int) -> None:
         spec = self.axes.get(code)
         v = self.normalize(code, value) if code in self.absinfo else float(value)
-        if abs(v) > 0.9 or value == 0:  # full swings and releases only
+        # Pointer axes would flood the trace; hats, triggers and unmapped axes matter.
+        if not (spec and "mouse" in spec) and (abs(v) > 0.5 or value == 0):
             _trace(self.dev.name, "abs", e.ABS.get(code, str(code)), value, describe(spec))
         if spec is None:
             return

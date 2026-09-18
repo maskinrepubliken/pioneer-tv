@@ -50,11 +50,34 @@ window.PioneerTV = window.PioneerTV || {};
 
     toggle() {
       if (this.isOpen()) return this.close();
-      const active = document.activeElement;
+      const active = this.deepActive();
       if (M.nav.isTextField(active)) return this.open(active);
-      const first = document.querySelector('input[type="search"], input[type="text"], textarea');
+      const first = this.findTextField();
       if (first) { M.nav.focus(first); this.open(first); }
       else M.hud && M.hud.toast('Inget textfält på sidan', 'keyboard');
+    },
+
+    // The focused element, following open shadow roots.
+    deepActive() {
+      let el = document.activeElement;
+      while (el && el.shadowRoot && el.shadowRoot.activeElement) el = el.shadowRoot.activeElement;
+      return el;
+    },
+
+    // First visible text field on the page, search fields first. Looks into
+    // open shadow roots too (Jellyfin and friends build inputs that way).
+    findTextField() {
+      const SEL = 'input:not([type]), input[type="search"], input[type="text"], input[type="email"], input[type="url"], input[type="number"], input[type="tel"], input[type="password"], textarea, [contenteditable="true"], [role="searchbox"], [role="textbox"]';
+      const found = [];
+      const walk = (root, depth) => {
+        for (const el of root.querySelectorAll(SEL)) if (!el.disabled && !el.readOnly && M.nav.isVisible(el)) found.push(el);
+        if (depth > 3) return;
+        for (const host of root.querySelectorAll('*')) if (host.shadowRoot) walk(host.shadowRoot, depth + 1);
+      };
+      walk(document, 0);
+      const score = (el) => (el.type === 'search' || /s[öo]k|search/i.test((el.placeholder || '') + (el.getAttribute('aria-label') || '') + (el.name || '') + (el.id || '')) ? 0 : 1);
+      found.sort((a, b) => score(a) - score(b));
+      return found[0] || null;
     },
 
     build() {
