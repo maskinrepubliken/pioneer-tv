@@ -119,13 +119,14 @@
     wifi.title = w.state === 'connected' ? `${w.ssid} ${w.signal != null ? w.signal + '%' : ''}` : eth ? `Ethernet ${eth.addresses[0]}` : 'Inget nätverk';
     const ts = $('pill-tailscale');
     ts.classList.toggle('on', t.state === 'running');
-    ts.classList.toggle('warn', t.state === 'running' && t.plex_online === false);
-    ts.title = t.state === 'running' ? `Tailscale ${(t.ips || [])[0] || ''}${t.plex_online != null ? (t.plex_online ? ', Plex online' : ', Plex offline') : ''}` : `Tailscale ${t.state || 'okänd'}`;
+    const srv = t.server_name || 'Server';
+    ts.classList.toggle('warn', t.state === 'running' && t.server_online === false);
+    ts.title = t.state === 'running' ? `Tailscale ${(t.ips || [])[0] || ''}${t.server_online != null ? (t.server_online ? `, ${srv} online` : `, ${srv} offline`) : ''}` : `Tailscale ${t.state || 'okänd'}`;
     $('pill-gamepad').classList.toggle('on', (s.gamepads || []).length > 0);
   }
   b.on('state', (s) => applyStatus(s.status));
 
-  // Embers drifting up from the hearth: a handful of pixel squares.
+  // Embers drifting up from the hearth: a handful of small warm dots.
   (function embers() {
     const host = $('embers');
     if (!host || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -144,6 +145,15 @@
       host.appendChild(e);
     }
   })();
+
+  // ?demo=keyboard|menu|logs opens an overlay after load, for design screenshots.
+  const demo = new URLSearchParams(location.search).get('demo');
+  if (demo) setTimeout(() => {
+    if (demo === 'keyboard') { M.nav.focus(searchInput); M.keyboard.open(searchInput); }
+    else if (demo === 'menu') M.hud.menu.open();
+    else if (demo === 'logs') M.logs.open(0);
+    else if (demo === 'toast') M.hud.toast('Handkontroll ansluten', 'gamepad', 60000);
+  }, 900);
 
   render();
   // Land on the first tile, not the search field, so Enter does not pop the keyboard.

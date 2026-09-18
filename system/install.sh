@@ -1,6 +1,9 @@
 #!/bin/bash
-# Installs Pioneer TV on Raspberry Pi OS Bookworm (64-bit). Run as root from the repo:
+# Installs Pioneer TV on Raspberry Pi OS (64-bit, Bookworm or Trixie). Run as
+# root from the repo:
 #   sudo system/install.sh
+# Works on a Pi 4/5 (1080p, GPU compositing) and a Pi 3 (720p, software
+# drawing); the board is detected from the device tree.
 set -euo pipefail
 
 REPO=$(cd "$(dirname "$0")/.." && pwd)
@@ -9,6 +12,14 @@ USER_NAME=${PIONEER_TV_USER:-pi}
 HOME_DIR=$(getent passwd "$USER_NAME" | cut -d: -f6)
 BOOT=/boot/firmware
 [ -d "$BOOT" ] || BOOT=/boot
+
+MODEL=$(tr -d '\0' < /proc/device-tree/model 2>/dev/null || echo unknown)
+case "$MODEL" in
+  *"Pi 5"*|*"Pi 4"*|*"Compute Module 4"*|*"Pi 500"*|*"Pi 400"*) BOARD=pi4; MODE=1920x1080@60 ;;
+  *) BOARD=pi3; MODE=1280x720@60 ;;
+esac
+MODE=${PIONEER_TV_MODE:-$MODE}
+echo "== board: $MODEL ($BOARD, $MODE)"
 
 echo "== preflight"
 FREE_MB=$(df -Pm / | awk 'NR==2 {print $4}')
@@ -54,7 +65,13 @@ chmod +x "$TARGET/system/start-chromium.sh" "$TARGET/system/update.sh" "$TARGET/
 mkdir -p /var/lib/pioneer-tv
 [ -f /etc/pioneer-tv/config.toml ] || cp "$REPO/daemon/config.example.toml" /etc/pioneer-tv/config.toml
 [ -f /etc/pioneer-tv/chromium.env ] || cp "$REPO/system/chromium.env" /etc/pioneer-tv/chromium.env
-cp "$REPO/system/weston.ini" "$HOME_DIR/.config/weston.ini"
+sed "s/@MODE@/$MODE/" "$REPO/system/weston.ini" > "$HOME_DIR/.config/weston.ini"
+cat > /etc/pioneer-tv/board.env <<EOF
+# Written by install.sh from the device tree; start-chromium.sh reads it.
+PIONEER_TV_BOARD=$BOARD
+PIONEER_TV_WIDTH=${MODE%%x*}
+PIONEER_TV_HEIGHT=$(echo "$MODE" | sed 's/^[0-9]*x//; s/@.*//')
+EOF
 chown -R "$USER_NAME:$USER_NAME" "$HOME_DIR/.config"
 cp "$REPO/system/99-pioneer-tv.rules" /etc/udev/rules.d/
 # Chromium policies: no translate bubble, password prompts, notifications, sign-in.
@@ -74,13 +91,15 @@ if touch "$BOOT/.pioneer-tv-write-test" 2>/dev/null; then
   rm -f "$BOOT/.pioneer-tv-write-test"
   grep -q '^dtoverlay=vc4-kms-v3d' "$BOOT/config.txt" || echo 'dtoverlay=vc4-kms-v3d' >> "$BOOT/config.txt"
   grep -q '^disable_overscan=1' "$BOOT/config.txt" || echo 'disable_overscan=1' >> "$BOOT/config.txt"
-  if ! grep -q 'video=HDMI-A-1' "$BOOT/cmdline.txt"; then
-    sed -i '1 s/$/ video=HDMI-A-1:1280x720@60D/' "$BOOT/cmdline.txt"
+  if grep -q 'video=HDMI-A-1' "$BOOT/cmdline.txt"; then
+    sed -i "s/video=HDMI-A-1:[^ ]*/video=HDMI-A-1:${MODE}D/" "$BOOT/cmdline.txt"
+  else
+    sed -i "1 s/\$/ video=HDMI-A-1:${MODE}D/" "$BOOT/cmdline.txt"
   fi
 else
   echo "warning: $BOOT is not writable (read-only after an unclean shutdown?)." >&2
   echo "  Repair with: sudo umount $BOOT && sudo fsck.fat -a $(findmnt -n -o SOURCE "$BOOT" || echo /dev/mmcblk0p1) && sudo mount $BOOT" >&2
-  echo "  Skipping config.txt/cmdline.txt (720p mode); rerun the installer afterwards." >&2
+  echo "  Skipping config.txt/cmdline.txt (video mode); rerun the installer afterwards." >&2
 fi
 # Bluetooth: Xbox controllers need ERTM off to pair.
 echo 'options bluetooth disable_ertm=1' > /etc/modprobe.d/pioneer-tv-bluetooth.conf
@@ -107,7 +126,7 @@ systemctl try-restart pioneer-tv-daemon.service pioneer-tv-weston.service || tru
 
 cat <<MSG
 
-Pioneer TV installed to $TARGET.
+Pioneer TV installed to $TARGET ($BOARD, $MODE).
   config:   /etc/pioneer-tv/config.toml
   chromium: /etc/pioneer-tv/chromium.env
 Pair a gamepad with bluetoothctl (scan on / pair / trust / connect), then reboot.

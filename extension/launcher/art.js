@@ -1,4 +1,4 @@
-// Pioneer TV service illustrations: ink line art with a halftone fill in the
+// Pioneer TV service illustrations: ink line art with a soft tint in the
 // service colour. Keyed by service id; anything unknown gets the ticket.
 // A service with a `logo` URL in its config uses that image instead.
 window.PioneerTV = window.PioneerTV || {};
@@ -7,17 +7,9 @@ window.PioneerTV = window.PioneerTV || {};
   const PAPER = '#f4edda';
 
   function wrap(id, color, body) {
-    const pid = `dither-${id}-${color.replace('#', '')}`;
     return `<svg class="art-svg" viewBox="0 0 160 104" width="100%" height="100%" aria-hidden="true">
-      <defs>
-        <pattern id="${pid}" width="4" height="4" patternUnits="userSpaceOnUse" shape-rendering="crispEdges">
-          <rect width="4" height="4" fill="${PAPER}"/>
-          <rect width="2" height="2" fill="${color}"/>
-          <rect x="2" y="2" width="2" height="2" fill="${color}"/>
-        </pattern>
-      </defs>
-      <g fill="none" stroke="${INK}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-        ${body.replace(/FILL/g, `url(#${pid})`).replace(/PAPER/g, PAPER).replace(/INK/g, INK).replace(/COLOR/g, color)}
+      <g fill="none" stroke="${INK}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        ${body.replace(/fill="FILL"/g, `fill="${color}" fill-opacity="0.35"`).replace(/PAPER/g, PAPER).replace(/INK/g, INK).replace(/COLOR/g, color)}
       </g>
     </svg>`;
   }
@@ -58,7 +50,7 @@ window.PioneerTV = window.PioneerTV || {};
     `),
 
     // A shelf of your own films and series, one case leaning.
-    plex: (c) => wrap('plex', c, `
+    jellyfin: (c) => wrap('jellyfin', c, `
       <rect x="30" y="44" width="14" height="42" fill="FILL" stroke-width="2.5"/>
       <rect x="48" y="34" width="12" height="52" fill="PAPER" stroke-width="2.5"/>
       <rect x="64" y="48" width="16" height="38" fill="FILL" stroke-width="2.5"/>
@@ -82,6 +74,8 @@ window.PioneerTV = window.PioneerTV || {};
       </g>
     `),
   };
+
+  ART.plex = ART.jellyfin;
 
   P.art = {
     html(id, color) {

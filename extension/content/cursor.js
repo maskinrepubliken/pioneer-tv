@@ -3,14 +3,13 @@
 // There is no Wayland pointer on the box: Weston 14 on the Pi 3 aborts the
 // moment a client cursor reaches the hardware cursor plane. The daemon
 // streams right-stick motion as "pointer" events instead, and this script
-// draws a paper-style arrow, moves it, and delivers hover, clicks and
+// draws a paper arrow, moves it, and delivers hover, clicks and
 // edge-scrolling to whatever is under it. A (Enter) clicks while the pointer
 // has been used within the last few seconds.
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
-  const ARROW = '<svg viewBox="0 0 12 18" width="24" height="36" shape-rendering="crispEdges" aria-hidden="true">'
-    + '<path fill="#f4edda" d="M0 0h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h-5v1h1v1h1v1h1v1h1v1h-3v-1h-1v-1h-1v-1h-1v-1h-1v-1h-2v1h-1v1h-1v1h-1z"/>'
-    + '<path fill="#2b2419" d="M1 1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h-4v1h1v1h1v1h1v1h-2v-1h-1v-1h-1v-1h-1v-1h-1v-1h-1v1h-1v1h-1v1h-1z"/>'
+  const ARROW = '<svg viewBox="0 0 24 36" width="24" height="36" aria-hidden="true">'
+    + '<path d="M3 2.5 L3 27 L9.5 21.5 L14 31 L18 29.2 L13.6 19.8 L21 19.2 Z" fill="#f4edda" stroke="#2b2419" stroke-width="1.6" stroke-linejoin="round"/>'
     + '</svg>';
   const ACTIVE_MS = 5000;   // A clicks at the pointer this long after it last moved
   const EDGE = 28;          // px from the edge where the page scrolls

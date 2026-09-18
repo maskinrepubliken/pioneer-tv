@@ -22,12 +22,12 @@ window.PioneerTV.defaultServices = [
     glyph: 'S',
   },
   {
-    id: 'plex',
-    name: 'Plex',
+    id: 'jellyfin',
+    name: 'Jellyfin',
     tagline: 'Egna filmer och serier',
-    url: 'http://plex.local:32400/web',
-    search_url: 'http://plex.local:32400/web/index.html#!/search?query={query}',
-    color: '#c98a12',
-    glyph: 'P',
+    url: 'http://100.123.142.8:8096/web/',
+    search_url: 'http://100.123.142.8:8096/web/#/search.html?query={query}',
+    color: '#7b5ea7',
+    glyph: 'J',
   },
 ];

@@ -27,7 +27,7 @@
         "<all_urls>"
       ],
       "js": [
-        "content/pixel-icons.js",
+        "content/icons.js",
         "content/bridge.js",
         "content/spatial-nav.js",
         "content/keyboard.js",

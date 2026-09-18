@@ -111,9 +111,11 @@ async def wifi_forget(ssid: str) -> tuple[bool, str]:
     return rc == 0, out.strip()
 
 
-async def tailscale_status(plex_url: str | None = None) -> dict:
+async def tailscale_status(server_url: str | None = None, server_name: str | None = None) -> dict:
+    """Tailscale state plus whether the media server (a service URL on the tailnet) is online."""
     rc, out = await run("tailscale", "status", "--json")
-    info = {"installed": rc != 127, "state": "unknown", "ips": [], "dns_name": None, "peers": [], "plex_online": None}
+    info = {"installed": rc != 127, "state": "unknown", "ips": [], "dns_name": None, "peers": [],
+            "server_name": server_name, "server_online": None}
     if rc != 0:
         info["state"] = "stopped" if rc != 127 else "not installed"
         return info
@@ -125,13 +127,15 @@ async def tailscale_status(plex_url: str | None = None) -> dict:
     self_ = data.get("Self") or {}
     info["ips"] = self_.get("TailscaleIPs") or []
     info["dns_name"] = (self_.get("DNSName") or "").rstrip(".") or None
-    plex_host = urlparse(plex_url).hostname.lower().split(".")[0] if plex_url else None
+    target = (urlparse(server_url).hostname or "").lower() if server_url else ""
+    target_host = target.split(".")[0]
     for peer in (data.get("Peer") or {}).values():
         host = peer.get("HostName") or ""
         online = bool(peer.get("Online"))
-        info["peers"].append({"host": host, "online": online, "ips": peer.get("TailscaleIPs") or []})
-        if plex_host and host.lower() == plex_host:
-            info["plex_online"] = online
+        ips = peer.get("TailscaleIPs") or []
+        info["peers"].append({"host": host, "online": online, "ips": ips})
+        if target and (target in ips or (target_host and host.lower() == target_host)):
+            info["server_online"] = online
     info["peers"].sort(key=lambda p: (not p["online"], p["host"]))
     return info
 

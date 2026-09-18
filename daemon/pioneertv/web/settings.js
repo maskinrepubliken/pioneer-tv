@@ -44,8 +44,8 @@
     const wait = (v, ms = 250) => new Promise((r) => setTimeout(() => r(v), ms));
     if (path === '/api/status') return wait({
       wifi: { available: true, device: 'wlan0', state: 'connected', ssid: 'Lyresten', signal: 72 },
-      tailscale: { installed: true, state: 'running', ips: ['100.101.102.103'], dns_name: 'pioneer-tv.tail1234.ts.net', plex_online: true,
-        peers: [{ host: 'plex', online: true }, { host: 'laptop', online: true }, { host: 'phone', online: false }] },
+      tailscale: { installed: true, state: 'running', ips: ['100.101.102.103'], dns_name: 'pioneer-tv.tail1234.ts.net', server_name: 'Jellyfin', server_online: true,
+        peers: [{ host: 'jellyfin', online: true }, { host: 'laptop', online: true }, { host: 'phone', online: false }] },
       interfaces: [{ name: 'eth0', up: true, addresses: ['192.168.1.40'] }, { name: 'wlan0', up: true, addresses: ['192.168.1.41'] }],
       system: { hostname: 'pioneer-tv', temp_c: 54.3, throttled: 0, throttled_now: false, throttled_ever: false, mem_total_mb: 921, mem_available_mb: 380, uptime_s: 86400 * 3 + 3600, load1: 0.8, disk: { total_mb: 29000, free_mb: 21000 } },
       gamepads: [{ name: 'Wireless Controller', battery: 65 }, { name: '8BitDo Pro 2', battery: null }],
@@ -68,7 +68,7 @@
       services: [
         { id: 'cineasterna', name: 'Cineasterna', tagline: 'Film från biblioteket', url: 'https://www.cineasterna.se/', search_url: 'https://www.cineasterna.se/sv/search?q={query}', color: '#b5122b', glyph: 'C' },
         { id: 'svtplay', name: 'SVT Play', tagline: 'Serier', url: 'https://www.svtplay.se/', search_url: 'https://www.svtplay.se/sok?q={query}', color: '#1f7a4d', glyph: 'S' },
-        { id: 'plex', name: 'Plex', tagline: 'Egna filmer', url: 'http://plex.local:32400/web', color: '#c98a12', glyph: 'P' } ],
+        { id: 'jellyfin', name: 'Jellyfin', tagline: 'Egna filmer', url: 'http://100.123.142.8:8096/web/', color: '#7b5ea7', glyph: 'J' } ],
       service_fields: ['id', 'name', 'tagline', 'url', 'search_url', 'color', 'glyph', 'logo'],
     });
     if (path.startsWith('/api/wifi/networks')) return wait([
@@ -89,7 +89,7 @@
   }
 
   // ---------------------------------------------------------------- helpers
-  const bars = (sig) => sig == null ? '' : '####'.slice(0, Math.max(1, Math.round(sig / 25))).padEnd(4, '.');
+  const bars = (sig) => sig == null ? '' : '▂▄▆█'.slice(0, Math.max(1, Math.round(sig / 25))).padEnd(4, '·');
   const icon = (name) => (window.PioneerTV && PioneerTV.icons) ? h('span', { class: 'item-icon' }, PioneerTV.icons.svg(name)) : h('span', { class: 'item-icon' }, '·');
   const dot = (cls) => h('span', { class: `dot ${cls}` });
   const fmtUptime = (s) => s == null ? '–' : (s >= 86400 ? `${Math.floor(s / 86400)} d ` : '') + `${Math.floor((s % 86400) / 3600)} h ${Math.floor((s % 3600) / 60)} min`;
@@ -120,7 +120,7 @@
             kv([['Ethernet', eth && eth.addresses.length ? `${eth.addresses.join(', ')}` : 'ej ansluten'], ['Wi-Fi IP', ((s.interfaces || []).find((i) => i.name.startsWith('w')) || { addresses: [] }).addresses.join(', ') || '–']])),
           h('div', { class: 'card pioneertv-card' }, h('h3', {}, 'Tailscale'),
             h('div', { class: 'big' }, dot(tsState), t.state === 'running' ? 'Ansluten' : t.installed ? `Tailscale ${t.state}` : 'Ej installerat'),
-            kv([['IP', (t.ips || []).join(', ') || '–'], ['Namn', t.dns_name || '–'], ['Plex', t.plex_online == null ? 'okänd (ingen peer med det namnet)' : t.plex_online ? h('span', {}, dot('ok'), 'online') : h('span', {}, dot('bad'), 'offline')], ['Peers', `${(t.peers || []).filter((p) => p.online).length} av ${(t.peers || []).length} online`]]),
+            kv([['IP', (t.ips || []).join(', ') || '–'], ['Namn', t.dns_name || '–'], [t.server_name || 'Server', t.server_online == null ? 'okänd (ingen peer med den adressen)' : t.server_online ? h('span', {}, dot('ok'), 'online') : h('span', {}, dot('bad'), 'offline')], ['Peers', `${(t.peers || []).filter((p) => p.online).length} av ${(t.peers || []).length} online`]]),
             t.installed && t.state !== 'running' ? h('div', { class: 'actions' }, h('button', { class: 'small', onclick: () => sysAction('tailscale_up') }, 'Starta Tailscale')) : ''),
           h('div', { class: 'card pioneertv-card' }, h('h3', {}, 'TV (HDMI-CEC)'),
             h('div', { class: 'big' }, dot(s.cec.enabled ? (s.cec.tv_power === 'on' ? 'ok' : 'warn') : 'bad'), s.cec.enabled ? (s.cec.tv_power === 'on' ? 'TV på' : s.cec.tv_power ? `TV ${s.cec.tv_power}` : 'TV okänd') : 'CEC av'),
