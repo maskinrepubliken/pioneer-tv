@@ -77,6 +77,7 @@ sed -i \
   -e 's|^BTN_EAST   = { key = "KEY_ESC" }$|BTN_EAST   = { key = "KEY_ESC", long = { system = "back" } }       # hold B: one page back|' \
   -e 's|^BTN_NORTH  = { system = "keyboard" }$|BTN_NORTH  = { system = "keyboard", long = { system = "menu" } }  # hold Y: quick menu|' \
   -e 's|^color = "#b5122b"$|color = "#b8940c"|' \
+  -e 's|^auto_connect = false$|auto_connect = true|' \
   -e 's|^tagline = "Serier, nyheter och dokumentärer"$|tagline = "Public service"|' \
   -e 's|100\.123\.142\.8:8080/|100.123.142.8:8081/|g' \
   -e 's|8081/search?searchTerm={query}|8081/search?search={query}|' \
@@ -126,6 +127,23 @@ else
 fi
 # Bluetooth: Xbox controllers need ERTM off to pair.
 echo 'options bluetooth disable_ertm=1' > /etc/modprobe.d/pioneer-tv-bluetooth.conf
+# BlueZ: answer pages from pads quickly, retry a dropped HID link ourselves,
+# accept a pad that re-pairs, power the adapter as soon as it appears.
+BT_CONF=/etc/bluetooth/main.conf
+if [ -f "$BT_CONF" ]; then
+  BT_BEFORE=$(md5sum "$BT_CONF")
+  sed -i \
+    -e 's|^#\?FastConnectable *=.*|FastConnectable = true|' \
+    -e 's|^#\?JustWorksRepairing *=.*|JustWorksRepairing = always|' \
+    -e 's|^#\?ReconnectUUIDs=\(.*\)|ReconnectUUIDs=00001124-0000-1000-8000-00805f9b34fb,\1|' \
+    -e 's|^#\?ReconnectAttempts=.*|ReconnectAttempts=7|' \
+    -e 's|^#\?ReconnectIntervals=.*|ReconnectIntervals=1,2,4,8,16,32,64|' \
+    -e 's|^#\?AutoEnable=.*|AutoEnable=true|' \
+    "$BT_CONF"
+  # sed above may prepend the HID UUID twice on a rerun; keep one.
+  sed -i 's|^ReconnectUUIDs=\(00001124-0000-1000-8000-00805f9b34fb,\)\+|ReconnectUUIDs=00001124-0000-1000-8000-00805f9b34fb,|' "$BT_CONF"
+  [ "$BT_BEFORE" = "$(md5sum "$BT_CONF")" ] || systemctl try-restart bluetooth || true
+fi
 # uinput at boot
 echo uinput > /etc/modules-load.d/pioneer-tv.conf
 

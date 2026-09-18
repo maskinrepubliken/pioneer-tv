@@ -169,13 +169,13 @@ bluetoothctl
   connect <MAC>
 ```
 
-A pad that was paired but does not reconnect on its own was not trusted:
-`bluetoothctl trust <MAC>`. Pairing from the settings page does this for you.
-If the onboard radio is dead and you use a USB adapter, put
-`dtoverlay=disable-bt` in config.txt: with two adapters, one of them silent,
-pads connect and drop within a second.
-A Switch Pro Controller reconnects when you press its Home button; it does
-not wake on any button like a PlayStation pad.
+A pad that does not reconnect after the box reboots is normal for Bluetooth:
+the pad pages the host for a while, gives up before Bluetooth is back, and
+sleeps. The daemon therefore dials paired, trusted pads every few seconds for
+the first minutes after start and once a minute after that, and BlueZ is set to
+answer pages fast and to retry a dropped link. Waking the pad with any button
+still helps if it went to sleep. A pad that was never trusted needs
+`bluetoothctl trust <MAC>`; pairing from the settings page does this for you.
 
 If `bluetoothctl` says "No default controller available", the kernel did not
 bring up the onboard chip. On Bookworm the kernel attaches it itself (the old

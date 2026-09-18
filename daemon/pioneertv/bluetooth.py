@@ -1,16 +1,18 @@
 """Keep trusted gamepads connected.
 
-Off by default: SteelSeries, Nintendo and 8BitDo pads all dial the host when
-switched on, and a host that keeps paging them collides with that dial (seen
-on a Stratus XL: connect, then drop within the same second). Enable only for
-a pad that never dials in; then the daemon pages paired, trusted HID devices
-that are not connected, once per interval.
+Pads dial the host themselves when switched on, but after a reboot of the box
+the pad's own reconnect window has usually closed before Bluetooth is back,
+and it sits there asleep. So the daemon dials paired, trusted HID devices
+that are not connected: quickly for the first minutes after start (while a
+pad that was on during the reboot is still trying), then once per interval.
+A pad that is off answers "Host is down", which is harmless.
 """
 from __future__ import annotations
 
 import asyncio
 import logging
 import re
+import time
 
 from . import sysinfo
 
@@ -18,6 +20,8 @@ log = logging.getLogger("pioneertv.bluetooth")
 
 HID_UUID = "00001124"
 RE_DEVICE = re.compile(r"^Device ([0-9A-F:]{17}) (.*)$", re.M)
+BURST_SECONDS = 150   # dial often this long after the daemon starts
+BURST_INTERVAL = 6
 
 
 async def paired_hid_devices() -> list[dict]:
@@ -34,24 +38,30 @@ async def paired_hid_devices() -> list[dict]:
     return devices
 
 
+async def dial_once(on_change=None) -> None:
+    for d in await paired_hid_devices():
+        if d.get("Connected") or not d.get("Trusted"):
+            continue
+        log.debug("dialing %s (%s)", d["name"], d["mac"])
+        rc, out = await sysinfo.run("bluetoothctl", "connect", d["mac"], timeout=15)
+        if "Connection successful" in out:
+            log.info("connected %s", d["name"])
+            if on_change:
+                await on_change(True, d["name"])
+
+
 async def reconnect_loop(cfg: dict, on_change=None) -> None:
     bt = cfg.get("bluetooth") or {}
-    interval = float(bt.get("reconnect_interval", 20))
+    interval = float(bt.get("reconnect_interval", 60))
     if not bt.get("auto_connect", True):
-        log.info("auto-connect dialing off (pads dial in themselves)")
+        log.info("auto-connect dialing off")
         return
-    await asyncio.sleep(5)
+    started = time.monotonic()
+    await asyncio.sleep(3)
     while True:
         try:
-            for d in await paired_hid_devices():
-                if d.get("Connected") or not d.get("Trusted"):
-                    continue
-                log.debug("dialing %s (%s)", d["name"], d["mac"])
-                rc, out = await sysinfo.run("bluetoothctl", "connect", d["mac"], timeout=15)
-                if "Connection successful" in out:
-                    log.info("connected %s", d["name"])
-                    if on_change:
-                        await on_change(True, d["name"])
+            await dial_once(on_change)
         except Exception as exc:
             log.warning("reconnect loop: %s", exc)
-        await asyncio.sleep(interval)
+        burst = time.monotonic() - started < BURST_SECONDS
+        await asyncio.sleep(BURST_INTERVAL if burst else interval)
