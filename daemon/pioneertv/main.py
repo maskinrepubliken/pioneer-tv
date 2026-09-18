@@ -84,9 +84,9 @@ async def amain(cfg: dict) -> None:
         async with status_lock:
             if not force and last_status and time.monotonic() - status_at < 3:
                 return last_status
-            wifi, ts, ifaces, sysstat, ver = await asyncio.gather(
+            wifi, ts, ifaces, sysstat, ver, audio = await asyncio.gather(
                 sysinfo.wifi_status(), sysinfo.tailscale_status(*media_server()), sysinfo.interfaces(), sysinfo.system_status(),
-                updater.version(),
+                updater.version(), sysinfo.audio_status(),
             )
             batteries = sysinfo.gamepad_batteries()
             pads = [{"name": p.dev.name, "path": p.dev.path, "battery": batteries.get(p.dev.name)} for p in pads_mgr.pads()]
@@ -100,6 +100,7 @@ async def amain(cfg: dict) -> None:
                 "gamepads": pads,
                 "keyboard_present": pads_mgr.keyboard_present,
                 "cec": {"enabled": cec.enabled, "phys_addr": cec.phys_addr, "tv_power": cec.last_power},
+                "audio": audio,
                 "version": __version__,
                 "git": ver,
                 "page": server.current_url,

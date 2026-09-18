@@ -50,7 +50,7 @@
       system: { hostname: 'pioneer-tv', temp_c: 54.3, throttled: 0, throttled_now: false, throttled_ever: false, mem_total_mb: 921, mem_available_mb: 380, uptime_s: 86400 * 3 + 3600, load1: 0.8, disk: { total_mb: 29000, free_mb: 21000 } },
       gamepads: [{ name: 'Wireless Controller', battery: 65 }, { name: '8BitDo Pro 2', battery: null }],
       keyboard_present: false,
-      cec: { enabled: true, phys_addr: '1.0.0.0', tv_power: 'on' },
+      cec: { enabled: true, phys_addr: '1.0.0.0', tv_power: 'on' }, audio: { available: true, sink: { name: 'TV (HDMI)', volume: 1 } },
       version: '0.1.0', git: { available: true, commit: '1a2b3c4', branch: 'main', date: '2026-09-10' }, page: 'https://www.svtplay.se/',
     });
     if (path === '/api/settings' && method === 'GET') return wait({
@@ -140,6 +140,7 @@
               ['Minne', sys.mem_total_mb ? `${sys.mem_available_mb} MB ledigt av ${sys.mem_total_mb}` : '–'],
               ['Last', sys.load1 != null ? sys.load1.toFixed(2) : '–'], ['Upptid', fmtUptime(sys.uptime_s)],
               ['Disk', sys.disk && sys.disk.total_mb ? `${Math.round(sys.disk.free_mb / 1024)} GB ledigt` : '–'],
+              ['Ljud', !s.audio || !s.audio.available ? 'ingen ljudserver' : s.audio.sink ? `${s.audio.sink.name} · ${Math.round(s.audio.sink.volume * 100)} %` : 'ingen utgång vald'],
               ['Visar', s.page || '–']])),
         ),
       );

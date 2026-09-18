@@ -251,6 +251,32 @@ async def system_status() -> dict:
     }
 
 
+async def audio_status(uid: int = 1000) -> dict:
+    """Default PipeWire sink for the kiosk user (name and volume), via wpctl."""
+    env_prefix = ["env", f"XDG_RUNTIME_DIR=/run/user/{uid}"]
+    rc, out = await run(*env_prefix, "wpctl", "status", timeout=5)
+    if rc != 0:
+        return {"available": False}
+    sink = None
+    in_sinks = False
+    for line in out.splitlines():
+        if "Sinks:" in line:
+            in_sinks = True
+            continue
+        if in_sinks:
+            if "Sources:" in line or line.strip(" │") == "":
+                if sink:
+                    break
+                if "Sources:" in line:
+                    break
+                continue
+            if "*" in line:
+                m = re.search(r"\*\s+\d+\.\s+(.*?)\s+\[vol: ([\d.]+)", line)
+                if m:
+                    sink = {"name": m.group(1).strip(), "volume": float(m.group(2))}
+    return {"available": True, "sink": sink}
+
+
 def gamepad_batteries() -> dict[str, int]:
     """Battery levels the kernel exposes for controllers (hid-playstation, xpadneo, ...)."""
     out = {}
