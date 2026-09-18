@@ -21,22 +21,25 @@
 </head>
 <body>
   <div class="app">
-    <nav class="sidebar" id="nav">
-      <div class="brand">Pioneer TV</div>
-      <div class="brand-sub">Inställningar</div>
-      <a href="#status" data-view="status" data-pioneertv-initial>Status</a>
-      <a href="#wifi" data-view="wifi">Wi-Fi</a>
-      <a href="#gamepads" data-view="gamepads">Handkontroller</a>
-      <a href="#services" data-view="services">Tjänster</a>
-      <a href="#controls" data-view="controls">Kontroller</a>
-      <a href="#tv" data-view="tv">TV</a>
-      <a href="#remote" data-view="remote">Fjärråtkomst</a>
-      <a href="#system" data-view="system">System</a>
-      <div class="sidebar-foot" id="foot"></div>
-    </nav>
+    <header class="top">
+      <div class="brand">Inställningar</div>
+      <!-- One row of tabs: left/right switches view as soon as a tab gets focus,
+           down goes into the view. No sidebar to enter and leave. -->
+      <nav class="tabs" id="nav">
+        <a href="#status" data-view="status" data-pioneertv-initial>Status</a>
+        <a href="#gamepads" data-view="gamepads">Handkontroller</a>
+        <a href="#wifi" data-view="wifi">Wi-Fi</a>
+        <a href="#services" data-view="services">Tjänster</a>
+        <a href="#tv" data-view="tv">TV</a>
+        <a href="#controls" data-view="controls">Kontroller</a>
+        <a href="#remote" data-view="remote">Fjärråtkomst</a>
+        <a href="#system" data-view="system">System</a>
+      </nav>
+    </header>
     <main class="main" id="main">
       <p class="muted">Laddar…</p>
     </main>
+    <footer class="foot" id="foot"></footer>
   </div>
   <div class="toast pioneertv-card" id="toast"></div>
   <script src="/static/settings.js"></script>

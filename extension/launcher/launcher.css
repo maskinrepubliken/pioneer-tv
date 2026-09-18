@@ -2,7 +2,7 @@
    Designed on a 1280x720 canvas. 1rem = 1/80 of the width (16px at 1280),
    so a laptop window and the TV look the same. Tokens live in paper.css. */
 
-html { font-size: 1.25vw; }
+html { font-size: 1.45vw; }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
 body {
@@ -17,17 +17,26 @@ body {
 /* ---- hearth: warm light breathing at the bottom, embers drifting up ----
    Only transform and opacity animate, so the compositor does the work. */
 .hearth { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.warmth {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 55vh;
+  background: linear-gradient(to top, rgba(222, 150, 62, 0.42) 0%, rgba(226, 164, 70, 0.18) 45%, rgba(226, 164, 70, 0) 100%);
+  animation: warmth 11s ease-in-out infinite alternate; will-change: opacity;
+}
+@keyframes warmth { from { opacity: 0.75; } to { opacity: 1; } }
 .glow {
   position: absolute; border-radius: 50%; will-change: transform, opacity;
-  background: radial-gradient(circle, rgba(226, 164, 70, 0.62) 0%, rgba(226, 164, 70, 0.26) 30%, rgba(226, 164, 70, 0) 62%);
+  background: radial-gradient(circle, rgba(232, 160, 60, 0.85) 0%, rgba(226, 164, 70, 0.38) 30%, rgba(226, 164, 70, 0) 64%);
 }
-.glow-1 { width: 110vw; height: 110vw; left: -30vw; bottom: -78vw; animation: breathe-1 14s ease-in-out infinite alternate; }
-.glow-2 { width: 70vw; height: 70vw; left: 18vw; bottom: -50vw; animation: breathe-2 9s ease-in-out infinite alternate; opacity: 0.8;
-  background: radial-gradient(circle, rgba(214, 120, 52, 0.45) 0%, rgba(214, 120, 52, 0.16) 30%, rgba(214, 120, 52, 0) 62%); }
-.glow-3 { width: 60vw; height: 60vw; right: -22vw; bottom: -42vw; animation: breathe-3 19s ease-in-out infinite alternate; opacity: 0.6; }
+.glow-1 { width: 130vw; height: 130vw; left: -35vw; bottom: -88vw; animation: breathe-1 14s ease-in-out infinite alternate; }
+.glow-2 { width: 90vw; height: 90vw; left: 10vw; bottom: -60vw; animation: breathe-2 9s ease-in-out infinite alternate; opacity: 0.9;
+  background: radial-gradient(circle, rgba(214, 110, 44, 0.7) 0%, rgba(214, 120, 52, 0.26) 30%, rgba(214, 120, 52, 0) 64%); }
+.glow-3 { width: 80vw; height: 80vw; right: -28vw; bottom: -52vw; animation: breathe-3 19s ease-in-out infinite alternate; opacity: 0.75; }
+.glow-4 { width: 50vw; height: 50vw; left: 30vw; bottom: -30vw; animation: breathe-4 6s ease-in-out infinite alternate; opacity: 0.6;
+  background: radial-gradient(circle, rgba(240, 190, 90, 0.7) 0%, rgba(240, 190, 90, 0.2) 35%, rgba(240, 190, 90, 0) 66%); }
 @keyframes breathe-1 { from { transform: translate3d(0, 0, 0) scale(1); opacity: 0.85; } 50% { opacity: 1; } to { transform: translate3d(3vw, -1.5vw, 0) scale(1.06); opacity: 0.9; } }
-@keyframes breathe-2 { from { transform: translate3d(0, 0, 0) scale(0.96); opacity: 0.55; } 40% { opacity: 0.9; } 70% { opacity: 0.7; } to { transform: translate3d(-2vw, -1vw, 0) scale(1.08); opacity: 0.85; } }
-@keyframes breathe-3 { from { transform: scale(1); opacity: 0.5; } to { transform: translate3d(-1.5vw, 0, 0) scale(1.1); opacity: 0.7; } }
+@keyframes breathe-2 { from { transform: translate3d(0, 0, 0) scale(0.96); opacity: 0.6; } 40% { opacity: 1; } 70% { opacity: 0.8; } to { transform: translate3d(-2vw, -1vw, 0) scale(1.08); opacity: 0.95; } }
+@keyframes breathe-3 { from { transform: scale(1); opacity: 0.6; } to { transform: translate3d(-1.5vw, 0, 0) scale(1.1); opacity: 0.85; } }
+@keyframes breathe-4 { from { transform: translate3d(0, 0, 0) scale(0.9); opacity: 0.35; } 30% { opacity: 0.75; } 60% { opacity: 0.45; } to { transform: translate3d(4vw, -2vw, 0) scale(1.15); opacity: 0.7; } }
 .ember {
   position: absolute; left: var(--x); bottom: -1vh; width: var(--size); height: var(--size); border-radius: 50%;
   opacity: 0; will-change: transform, opacity;
@@ -37,11 +46,11 @@ body {
   0%   { transform: translate3d(0, 0, 0); opacity: 0; }
   12%  { opacity: var(--peak); }
   55%  { opacity: calc(var(--peak) * 0.6); }
-  100% { transform: translate3d(var(--dx), -48vh, 0); opacity: 0; }
+  100% { transform: translate3d(var(--dx), -62vh, 0); opacity: 0; }
 }
 
 /* ---- masthead ---- */
-.masthead { display: flex; align-items: center; justify-content: space-between; height: 2.4rem; }
+.masthead { display: flex; align-items: center; justify-content: space-between; height: 2.2rem; }
 .dateline { font-size: 1.15rem; font-variant: small-caps; letter-spacing: 0.06em; color: var(--pioneertv-ink-2); }
 .masthead-right { display: flex; align-items: center; gap: 0.9rem; }
 .pill { display: inline-flex; font-size: 1.1rem; color: var(--pioneertv-line); }
@@ -54,12 +63,12 @@ body {
 /* ---- content ---- */
 .content { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 2.4vh; }
 .hero { margin-bottom: 0.8vh; }
-.greeting { margin: 0; font-size: 3.2rem; font-weight: 600; line-height: 1.05; letter-spacing: -0.01em; }
+.greeting { margin: 0; font-size: 3.1rem; font-weight: 600; line-height: 1.05; letter-spacing: -0.01em; }
 
 .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
 .tile {
   position: relative; display: flex; flex-direction: column; justify-content: flex-end;
-  height: 33vh; padding: 1rem 1.3rem 1rem;
+  height: 38vh; padding: 1rem 1.3rem 1rem;
   color: var(--pioneertv-ink); text-decoration: none; overflow: hidden;
   transition: transform 180ms ease-out, box-shadow 180ms ease-out, border-color 180ms ease-out;
   animation: tile-in 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
@@ -78,30 +87,23 @@ body {
   background: var(--tile-color, var(--pioneertv-ink)); opacity: 0.85;
 }
 .tile .logo { object-fit: contain; }
-.tile .name { font-size: 1.9rem; font-weight: 600; line-height: 1.1; }
+.tile .name { font-size: 2rem; font-weight: 600; line-height: 1.1; }
 .tile .tagline { font-size: 1.15rem; font-style: italic; color: var(--pioneertv-ink-2); margin-top: 0.2rem; }
 .tile .index { position: absolute; bottom: 1rem; right: 1.2rem; font-size: 0.95rem; font-variant-numeric: tabular-nums; color: var(--pioneertv-ink-3); }
 .tile.pioneertv-focus, .tile:hover { border-color: var(--pioneertv-ink); box-shadow: var(--pioneertv-lift-strong), 0 0 0 1px var(--pioneertv-ink); transform: translateY(-0.25rem); }
 .tile.pioneertv-focus .art-svg, .tile.pioneertv-focus .logo { animation-duration: 4s; }
 
 /* ---- search row ---- */
-.row { display: grid; grid-template-columns: 1fr auto auto; gap: 1.5rem; align-items: stretch; }
+.row { display: grid; grid-template-columns: 1fr; gap: 1.5rem; align-items: stretch; }
 .search { display: flex; align-items: center; gap: 0.8rem; padding-left: 1rem; margin: 0; }
 .search-icon { font-size: 1.6rem; color: var(--pioneertv-ink-2); display: inline-flex; }
 .search input {
-  flex: 1; height: 3.6rem; background: transparent; border: 0; outline: 0;
-  color: var(--pioneertv-ink); font: 1.5rem var(--pioneertv-serif);
+  flex: 1; height: 3.8rem; background: transparent; border: 0; outline: 0;
+  color: var(--pioneertv-ink); font: 1.6rem var(--pioneertv-serif);
 }
 .search input::placeholder { color: var(--pioneertv-ink-3); font-style: italic; }
 .search input.pioneertv-focus { outline: none !important; box-shadow: none !important; }
 .search.pioneertv-card:focus-within { border-color: var(--pioneertv-ink); box-shadow: var(--pioneertv-lift-strong), 0 0 0 1px var(--pioneertv-ink); }
-.small-tile {
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.15rem;
-  min-width: 8.5rem; padding-left: 0.8rem; padding-top: 0.2rem;
-  color: var(--pioneertv-ink-2); font: 1.05rem var(--pioneertv-serif); font-variant: small-caps; letter-spacing: 0.06em; cursor: pointer;
-}
-.small-tile .small-icon { font-size: 1.5rem; display: inline-flex; color: var(--pioneertv-ink-2); }
-.small-tile.pioneertv-focus, .small-tile:hover { border-color: var(--pioneertv-ink); box-shadow: var(--pioneertv-lift-strong), 0 0 0 1px var(--pioneertv-ink); }
 
 /* ---- search targets ---- */
 .search-targets { padding-top: 0.6rem; }

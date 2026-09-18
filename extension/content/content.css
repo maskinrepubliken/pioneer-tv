@@ -43,22 +43,22 @@
   animation: pioneertv-sheet-in 220ms cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 @keyframes pioneertv-sheet-in { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
-html.pioneertv-keyboard-open { scroll-padding-bottom: 320px; }
+html.pioneertv-keyboard-open { scroll-padding-bottom: 360px; }
 .pioneertv-keyrow { display: flex; gap: 10px; margin-bottom: 10px; }
 .pioneertv-key {
-  height: 52px; padding: 0; margin: 0;
-  font: 600 22px "EB Garamond", Georgia, serif; line-height: 1; color: #2b2419;
+  height: 62px; padding: 0; margin: 0;
+  font: 600 26px "EB Garamond", Georgia, serif; line-height: 1; color: #2b2419;
   background: #f4edda; border: 1px solid #c9bd9c; border-radius: 10px;
   box-shadow: 0 1px 0 #d9cdaa;
   cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
   transition: background 120ms, transform 120ms, box-shadow 120ms;
 }
-.pioneertv-key .pioneertv-icon { font-size: 22px; }
+.pioneertv-key .pioneertv-icon { font-size: 26px; }
 .pioneertv-key:hover { background: #ebe2c8; }
 .pioneertv-key-accent { background: #e4c56a; border-color: #d0ad4c; }
 .pioneertv-key-active { background: #2b2419 !important; border-color: #2b2419 !important; color: #f4edda !important; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(43, 36, 25, 0.25); }
 .pioneertv-keyhint {
-  font: 15px "EB Garamond", Georgia, serif; font-variant: small-caps; letter-spacing: 0.06em;
+  font: 18px "EB Garamond", Georgia, serif; font-variant: small-caps; letter-spacing: 0.06em;
   color: #a89a80; text-align: right;
 }
 
@@ -66,15 +66,15 @@ html.pioneertv-keyboard-open { scroll-padding-bottom: 320px; }
 .pioneertv-toast {
   position: fixed; top: 24px; right: 24px; z-index: 2147483001;
   display: flex; align-items: center; gap: 12px;
-  padding: 12px 20px 10px 16px;
-  font-size: 22px; line-height: 1.2;
+  padding: 14px 24px 12px 18px;
+  font-size: 26px; line-height: 1.2;
   background: #f4edda; border: 1px solid #c9bd9c; border-radius: 14px;
   box-shadow: 0 2px 0 #d9cdaa, 0 16px 36px rgba(43, 36, 25, 0.14);
   opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(-8px);
   transition: opacity 180ms, transform 180ms, visibility 180ms;
 }
 .pioneertv-toast-show { opacity: 1; visibility: visible; transform: none; }
-.pioneertv-toast-icon { display: inline-flex; font-size: 22px; color: #6f6350; }
+.pioneertv-toast-icon { display: inline-flex; font-size: 26px; color: #6f6350; }
 
 /* ---- log viewer ---- */
 .pioneertv-logs {
@@ -90,17 +90,17 @@ html.pioneertv-keyboard-open { scroll-padding-bottom: 320px; }
   animation: pioneertv-sheet-in 220ms cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 .pioneertv-logs-head { display: flex; align-items: baseline; gap: 22px; border-bottom: 1px solid #c9bd9c; padding-bottom: 10px; }
-.pioneertv-logs-title { font-size: 28px; font-weight: 600; }
+.pioneertv-logs-title { font-size: 32px; font-weight: 600; }
 .pioneertv-logs-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
 .pioneertv-logs-tab {
   padding: 4px 12px 3px; border-radius: 999px;
-  font: 16px "EB Garamond", Georgia, serif; font-variant: small-caps; letter-spacing: 0.05em; color: #6f6350; cursor: pointer;
+  font: 19px "EB Garamond", Georgia, serif; font-variant: small-caps; letter-spacing: 0.05em; color: #6f6350; cursor: pointer;
 }
 .pioneertv-logs-tab-active { background: #2b2419; color: #f4edda; }
 .pioneertv-logs-body {
   flex: 1; margin: 0; overflow: auto; padding: 12px 14px;
   background: #ebe2c8; border: 1px solid #d9cdaa; border-radius: 10px;
-  font: 13px/1.5 "SF Mono", Menlo, Consolas, monospace; color: #2b2419; white-space: pre-wrap; word-break: break-word;
+  font: 15px/1.5 "SF Mono", Menlo, Consolas, monospace; color: #2b2419; white-space: pre-wrap; word-break: break-word;
 }
 .pioneertv-logs .pioneertv-keyhint .pioneertv-icon { font-size: 13px; }
 
@@ -111,32 +111,32 @@ html.pioneertv-keyboard-open { scroll-padding-bottom: 320px; }
   display: flex; align-items: stretch; justify-content: flex-end;
 }
 .pioneertv-menu-panel {
-  width: 380px; height: 100%; padding: 30px 26px 22px;
+  width: 460px; height: 100%; padding: 26px 30px 18px;
   background: #f4edda;
   border-left: 1px solid #c9bd9c;
   box-shadow: -16px 0 48px rgba(43, 36, 25, 0.25);
-  display: flex; flex-direction: column; gap: 4px;
+  display: flex; flex-direction: column; gap: 2px;
   animation: pioneertv-panel-in 220ms cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 @keyframes pioneertv-panel-in { from { transform: translateX(40px); opacity: 0; } to { transform: none; opacity: 1; } }
 .pioneertv-menu-title {
-  font: 600 28px "EB Garamond", Georgia, serif; margin-bottom: 8px;
-  padding-bottom: 10px; border-bottom: 1px solid #c9bd9c;
+  font: 600 32px "EB Garamond", Georgia, serif; margin-bottom: 6px;
+  padding-bottom: 8px; border-bottom: 1px solid #c9bd9c;
 }
 .pioneertv-menu-status {
-  display: flex; flex-direction: column; gap: 6px; margin: 6px 0 12px; padding-bottom: 12px;
-  border-bottom: 1px solid #c9bd9c; font-size: 17px; color: #6f6350;
+  display: flex; flex-direction: column; gap: 4px; margin: 4px 0 8px; padding-bottom: 8px;
+  border-bottom: 1px solid #c9bd9c; font-size: 19px; color: #6f6350;
 }
 .pioneertv-menu-statusrow { display: flex; align-items: center; gap: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pioneertv-menu-statusrow .pioneertv-menu-icon { width: 20px; font-size: 17px; display: inline-flex; color: #6f6350; }
+.pioneertv-menu-statusrow .pioneertv-menu-icon { width: 24px; font-size: 20px; display: inline-flex; color: #6f6350; }
 .pioneertv-menu-dot { width: 8px; height: 8px; border-radius: 50%; background: #a89a80; flex: none; }
 .pioneertv-menu-dot.ok { background: #5d6f3f; } .pioneertv-menu-dot.warn { background: #d4a92c; } .pioneertv-menu-dot.bad { background: #b5442a; }
 .pioneertv-menu-item {
   display: flex; align-items: center; gap: 14px;
-  padding: 10px 14px 8px; font-size: 24px; cursor: pointer; border-radius: 10px;
+  padding: 7px 16px 5px; font-size: 27px; cursor: pointer; border-radius: 12px;
   transition: background 120ms;
 }
-.pioneertv-menu-icon { width: 30px; text-align: center; font-size: 22px; display: inline-flex; justify-content: center; color: #6f6350; }
+.pioneertv-menu-icon { width: 34px; text-align: center; font-size: 26px; display: inline-flex; justify-content: center; color: #6f6350; }
 .pioneertv-menu-active { background: #2b2419; color: #f4edda; }
 .pioneertv-menu-active .pioneertv-menu-icon { color: #f4edda; }
 .pioneertv-menu-disabled { opacity: 0.35; }

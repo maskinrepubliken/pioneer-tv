@@ -67,11 +67,6 @@
   });
   searchInput.addEventListener('input', () => { if (!searchInput.value.trim()) targetsSection.hidden = true; });
 
-  $('btn-menu').addEventListener('click', () => M.hud.menu.toggle());
-  $('btn-tv').addEventListener('click', () => {
-    if (b.state.daemonConnected) b.cec('tv_off');
-    else M.hud.toast('Ingen daemon: skulle stänga av TV:n', '⏻');
-  });
 
   function tick() {
     const d = new Date();
@@ -131,16 +126,16 @@
     const host = $('embers');
     if (!host || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const colors = ['#e0a840', '#d98a3a', '#c9662e', '#e6c46a'];
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < 22; i++) {
       const e = document.createElement('span');
       e.className = 'ember';
-      const size = 3 + Math.round(Math.random() * 2);
-      e.style.setProperty('--x', `${4 + Math.random() * 52}vw`);
+      const size = 3 + Math.round(Math.random() * 4);
+      e.style.setProperty('--x', `${2 + Math.random() * 96}vw`);
       e.style.setProperty('--dx', `${(Math.random() - 0.5) * 12}vw`);
       e.style.setProperty('--dur', `${11 + Math.random() * 9}s`);
       e.style.setProperty('--delay', `${-Math.random() * 20}s`);
       e.style.setProperty('--size', `${size}px`);
-      e.style.setProperty('--peak', String(0.45 + Math.random() * 0.4));
+      e.style.setProperty('--peak', String(0.55 + Math.random() * 0.4));
       e.style.background = colors[i % colors.length];
       host.appendChild(e);
     }

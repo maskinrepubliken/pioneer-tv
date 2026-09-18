@@ -126,7 +126,7 @@ branch you want to follow.
 | L1, R1 | Shift+Tab, Tab (previous, next focusable) |
 | L2, R2 | TV volume down, up (CEC, repeats while held) |
 | Right stick | Mouse pointer; click on the stick to left-click |
-| Start | Quick menu |
+| Start | Quick menu (also: hold Y) |
 | Select | Status toast; hold to toggle TV power |
 | Guide / PS / Xbox | Home. Also wakes the TV and switches input when the pad connects |
 

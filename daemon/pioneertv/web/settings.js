@@ -417,6 +417,11 @@
     (views[view] || views.status)(show).catch((e) => { show(h('h1', {}, 'Fel'), h('p', {}, e.message)); });
   }
   window.addEventListener('hashchange', route);
+  // Focusing a tab shows its view, so the d-pad only ever moves along the row.
+  document.getElementById('nav').addEventListener('focusin', (e) => {
+    const view = e.target && e.target.dataset && e.target.dataset.view;
+    if (view && location.hash !== '#' + view) location.hash = '#' + view;
+  });
   route();
   api('GET', '/api/status').then((s) => { $('#foot').textContent = `Maskinrepubliken · ${s.system.hostname} · ${s.git && s.git.commit ? s.git.commit : 'v' + s.version}${MOCK ? ' · mock' : ''}`; }).catch(() => {});
 })();

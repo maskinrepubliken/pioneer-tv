@@ -28,16 +28,17 @@ window.PioneerTV = window.PioneerTV || {};
         const b = M.bridge;
         const tv = b && b.state.daemonConnected;
         this.items = [
+          // Most used first; housekeeping last.
           { label: 'Hem', icon: 'home', run: () => b.home() },
-          { label: 'Inställningar', icon: 'gear', run: () => b.settings() },
-          { label: 'Tangentbord', icon: 'keyboard', run: () => M.keyboard.toggle() },
           { label: 'Tillbaka', icon: 'back', run: () => (b.available ? b.send({ type: 'back' }) : history.back()) },
-          { label: 'Loggar', icon: 'menu', run: () => M.logs.open() },
-          { label: 'Ladda om sidan', icon: 'reload', run: () => location.reload() },
-          { label: 'Uppdatera systemet', icon: 'gear', run: () => b.daemon({ type: 'update' }), keep: true, disabled: !tv },
+          { label: 'Tangentbord', icon: 'keyboard', run: () => M.keyboard.toggle() },
           { label: 'Volym +', icon: 'volume', run: () => b.cec('volume_up'), keep: true, disabled: !tv },
           { label: 'Volym −', icon: 'mute', run: () => b.cec('volume_down'), keep: true, disabled: !tv },
           { label: 'Stäng av TV', icon: 'power', run: () => b.cec('tv_off'), disabled: !tv },
+          { label: 'Ladda om sidan', icon: 'reload', run: () => location.reload() },
+          { label: 'Inställningar', icon: 'gear', run: () => b.settings() },
+          { label: 'Loggar', icon: 'menu', run: () => M.logs.open() },
+          { label: 'Uppdatera systemet', icon: 'reload', run: () => b.daemon({ type: 'update' }), keep: true, disabled: !tv },
         ];
         const root = document.createElement('div');
         root.className = 'pioneertv-menu';
