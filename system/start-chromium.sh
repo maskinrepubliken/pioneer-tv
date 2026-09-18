@@ -51,6 +51,7 @@ python3 "$PIONEER_TV_DIR/system/open-launcher.py" "$DEVTOOLS_PORT" "$EXT_ID" 120
   --remote-debugging-port="$DEVTOOLS_PORT" \
   --ozone-platform=wayland \
   --kiosk \
+  --hide-scrollbars \
   --window-size="$WIDTH,$HEIGHT" \
   --window-position=0,0 \
   --user-data-dir="$PROFILE" \
