@@ -213,8 +213,11 @@ The installer reads the model from the device tree and writes
 `/etc/pioneer-tv/board.env`. A Pi 4 or 5 runs at 1920x1080 with Chromium
 compositing and rasterising on the GPU; a Pi 3 runs at 1280x720 with
 `--disable-gpu`, because its VideoCore IV cannot give Chromium the GLES 3 context
-it wants. Override with `PIONEER_TV_MODE=1280x720@60` when running the installer
-or `PIONEER_TV_GPU_FLAGS` in `chromium.env`. A Pi 3 was too slow for
+it wants. To cap a Pi 4 at 720p, run the installer once as
+`PIONEER_TV_MODE=1280x720@60 sudo system/install.sh`; the choice is written to
+`/etc/pioneer-tv/mode` and kept by later updates (delete the file to go back to
+the board default). GPU flags can be overridden with `PIONEER_TV_GPU_FLAGS` in
+`chromium.env`. A Pi 3 was too slow for
 Cineasterna's software-decoded Widevine video; a Pi 4 with 4 GB is comfortable.
 
 ## Known board quirk: no hardware cursor

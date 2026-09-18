@@ -18,6 +18,14 @@ case "$MODEL" in
   *"Pi 5"*|*"Pi 4"*|*"Compute Module 4"*|*"Pi 500"*|*"Pi 400"*) BOARD=pi4; MODE=1920x1080@60 ;;
   *) BOARD=pi3; MODE=1280x720@60 ;;
 esac
+# A chosen mode sticks: PIONEER_TV_MODE=1280x720@60 sudo system/install.sh
+# writes /etc/pioneer-tv/mode, which later installs and updates honour.
+mkdir -p /etc/pioneer-tv
+if [ -n "${PIONEER_TV_MODE:-}" ]; then
+  echo "$PIONEER_TV_MODE" > /etc/pioneer-tv/mode
+elif [ -f /etc/pioneer-tv/mode ]; then
+  PIONEER_TV_MODE=$(cat /etc/pioneer-tv/mode)
+fi
 MODE=${PIONEER_TV_MODE:-$MODE}
 echo "== board: $MODEL ($BOARD, $MODE)"
 
