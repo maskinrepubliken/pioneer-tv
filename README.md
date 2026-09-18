@@ -137,7 +137,7 @@ The TV remote works too: keys the TV forwards over CEC are mapped in `[cec.remot
 Raspberry Pi OS Lite, 64-bit, Bookworm, user `pi`, wired Ethernet.
 
 ```
-git clone -b main https://github.com/lyret/pioneer-tv.git
+git clone -b main https://github.com/maskinrepubliken/pioneer-tv.git
 cd pioneer-tv
 sudo system/install.sh
 sudo reboot
