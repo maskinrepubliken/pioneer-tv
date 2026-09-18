@@ -41,18 +41,19 @@ if [ "$FREE_MB" -lt 1500 ] && [ "${PIONEER_TV_SKIP_APT:-0}" != "1" ]; then
   [ "${PIONEER_TV_IGNORE_SPACE:-0}" = "1" ] || exit 1
 fi
 
+REQUIRED="weston seatd v4l-utils bluez python3 python3-evdev python3-aiohttp rsync git curl pipewire pipewire-pulse wireplumber pipewire-alsa fonts-noto-core"
+missing_required() { for p in $REQUIRED; do dpkg -s "$p" >/dev/null 2>&1 || return 0; done; return 1; }
+# Skipping apt is for quick reinstalls; a required package that is not there yet gets installed anyway.
+if [ "${PIONEER_TV_SKIP_APT:-0}" = "1" ] && missing_required; then
+  echo "== packages: required packages missing, installing despite PIONEER_TV_SKIP_APT"
+  PIONEER_TV_SKIP_APT=0
+fi
 if [ "${PIONEER_TV_SKIP_APT:-0}" != "1" ]; then
 echo "== packages"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
-apt-get install -y --no-install-recommends \
-  weston seatd \
-  v4l-utils \
-  bluez \
-  python3 python3-evdev python3-aiohttp \
-  rsync git curl \
-  pipewire pipewire-pulse wireplumber pipewire-alsa \
-  fonts-noto-core
+# shellcheck disable=SC2086
+apt-get install -y --no-install-recommends $REQUIRED
 # Raspberry Pi OS ships its own Chromium build (with Widevine support) as
 # chromium-browser; plain Debian calls it chromium.
 apt-get install -y --no-install-recommends chromium-browser \

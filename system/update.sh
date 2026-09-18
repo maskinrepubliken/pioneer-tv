@@ -36,9 +36,9 @@ CHANGED=$(git diff --name-only "HEAD..origin/$BRANCH" || true)
 git merge --ff-only --quiet "origin/$BRANCH"
 log "updated $FROM -> $TO"
 
-# Only spend time on apt when the installer itself changed.
-if echo "$CHANGED" | grep -q '^system/install.sh$'; then
-  log "installer changed, running full install"
+# Only spend time on apt when the installer itself changed, or when forced.
+if echo "$CHANGED" | grep -q '^system/install.sh$' || [ "${PIONEER_TV_FORCE:-0}" = "1" ]; then
+  log "running full install"
   "$REPO/system/install.sh"
 else
   PIONEER_TV_SKIP_APT=1 "$REPO/system/install.sh"
