@@ -212,8 +212,18 @@ window.PioneerTV = window.PioneerTV || {};
         if (this.activate(active)) { e.preventDefault(); e.stopImmediatePropagation(); }
         return;
       }
-      if (e.key === 'Escape' && this.isTextField(active)) {
-        active.blur();
+      if (e.key === 'Escape') {
+        // B means "back". Escape has already had its chances above: overlays,
+        // an engaged control. What is left: leave a text field, leave
+        // fullscreen video, or go back a page. Never from the launcher itself.
+        if (this.isTextField(active)) { active.blur(); this.focus(active, { scroll: false }); return; }
+        if (document.fullscreenElement) return; // the page's Escape exits fullscreen
+        if (location.protocol === 'chrome-extension:' || location.protocol === 'file:') return;
+        const now = Date.now();
+        if (now - (this._lastBack || 0) < 600) return; // one step per press, even with key repeat
+        this._lastBack = now;
+        if (M.bridge && M.bridge.available) M.bridge.send({ type: 'back' });
+        else history.back();
       }
     },
 

@@ -120,7 +120,7 @@ branch you want to follow.
 | --- | --- |
 | D-pad, left stick | Move focus (arrow keys) |
 | A / Cross | Select (Enter) |
-| B / Circle | Back (Escape) |
+| B / Circle | Back: closes an overlay, leaves a text field or fullscreen video, otherwise one page back (also sent as Escape) |
 | X / Square | Play, pause (Space) |
 | Y / Triangle | On-screen keyboard |
 | L1, R1 | Shift+Tab, Tab (previous, next focusable) |
