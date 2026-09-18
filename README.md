@@ -22,10 +22,10 @@ Type is EB Garamond throughout, bundled under the SIL Open Font License in
 `extension/fonts/`. Icons are simple line icons in `extension/content/icons.js`,
 and the service illustrations are ink line art with a soft tint in
 `extension/launcher/art.js`, keyed by service id (a service with a `logo` URL
-shows that instead). The front page has a hearth: warm light breathing at the
-bottom, a few embers drifting up, tiles that rise in once, illustrations that
-float. Only transform and opacity animate, so the compositor carries it, and it
-all stops under prefers-reduced-motion.
+shows that instead), drawn as soft 3D objects. Tiles rise in once on load and
+the illustrations float; the focused card grows and gets a mustard ring while
+the others step back. Only transform and opacity animate, and it all stops
+under prefers-reduced-motion.
 
 ## Designing the launcher (no Pi needed)
 

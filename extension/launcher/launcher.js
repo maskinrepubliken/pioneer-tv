@@ -135,47 +135,6 @@
   }));
   b.on('keyboard:close', () => { page.style.transform = ''; });
 
-  // Flames along the bottom edge: a few blurred tongues, each with its own rhythm.
-  (function flames() {
-    const host = $('flames');
-    if (!host || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const n = 9;
-    for (let i = 0; i < n; i++) {
-      const f = document.createElement('span');
-      f.className = 'flame';
-      const big = i % 3 === 1;
-      f.style.setProperty('--x', `${(i / n) * 100 - 6 + Math.random() * 6}vw`);
-      f.style.setProperty('--w', `${(big ? 22 : 14) + Math.random() * 8}vw`);
-      f.style.setProperty('--h', `${(big ? 30 : 20) + Math.random() * 10}vh`);
-      f.style.setProperty('--blur', `${big ? 34 : 24}px`);
-      f.style.setProperty('--dur', `${1.6 + Math.random() * 1.4}s`);
-      f.style.setProperty('--fdur', `${0.9 + Math.random() * 0.8}s`);
-      f.style.setProperty('--delay', `${-Math.random() * 3}s`);
-      f.style.setProperty('--peak', String((big ? 0.55 : 0.4) + Math.random() * 0.2));
-      host.appendChild(f);
-    }
-  })();
-
-  // Embers drifting up from the hearth: a handful of small warm dots.
-  (function embers() {
-    const host = $('embers');
-    if (!host || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const colors = ['#e0a840', '#d98a3a', '#c9662e', '#e6c46a'];
-    for (let i = 0; i < 22; i++) {
-      const e = document.createElement('span');
-      e.className = 'ember';
-      const size = 3 + Math.round(Math.random() * 4);
-      e.style.setProperty('--x', `${2 + Math.random() * 96}vw`);
-      e.style.setProperty('--dx', `${(Math.random() - 0.5) * 12}vw`);
-      e.style.setProperty('--dur', `${11 + Math.random() * 9}s`);
-      e.style.setProperty('--delay', `${-Math.random() * 20}s`);
-      e.style.setProperty('--size', `${size}px`);
-      e.style.setProperty('--peak', String(0.55 + Math.random() * 0.4));
-      e.style.background = colors[i % colors.length];
-      host.appendChild(e);
-    }
-  })();
-
   // ?demo=keyboard|menu|logs opens an overlay after load, for design screenshots.
   const demo = new URLSearchParams(location.search).get('demo');
   if (demo) setTimeout(() => {
