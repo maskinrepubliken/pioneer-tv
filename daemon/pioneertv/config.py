@@ -51,9 +51,9 @@ DEFAULTS: dict[str, Any] = {
             "BTN_DPAD_LEFT": {"key": "KEY_LEFT"},
             "BTN_DPAD_RIGHT": {"key": "KEY_RIGHT"},
             "BTN_SOUTH": {"key": "KEY_ENTER"},
-            "BTN_EAST": {"key": "KEY_ESC"},
+            "BTN_EAST": {"key": "KEY_ESC", "long": {"system": "back"}},      # hold: one page back
             "BTN_WEST": {"key": "KEY_SPACE"},
-            "BTN_NORTH": {"system": "keyboard"},
+            "BTN_NORTH": {"system": "keyboard", "long": {"system": "menu"}},  # hold: quick menu
             "BTN_TL": {"key": "KEY_TAB", "modifiers": ["KEY_LEFTSHIFT"]},  # previous focusable
             "BTN_TR": {"key": "KEY_TAB"},                                  # next focusable
             "BTN_TL2": {"cec": "volume_down", "repeat": True},

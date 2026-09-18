@@ -50,15 +50,15 @@ def describe(action) -> str | None:
 # (merged over the configured button map). The Nintendo driver reports stick
 # Y with up as positive; the SteelSeries Stratus XL numbers its buttons in
 # order (X=BTN_C, Y=BTN_NORTH, L1=BTN_WEST, R1=BTN_Z, L2=BTN_TL, R2=BTN_TR)
-# and has no Start or Guide, so a long press on B opens the menu.
+# and has no Start or Guide; holding Y opens the menu, holding B goes back.
 QUIRKS = [
     ("Pro Controller", {"invert": ["ABS_Y", "ABS_RY"]}),
     ("Joy-Con", {"invert": ["ABS_Y", "ABS_RY"]}),
     ("Nintendo", {"invert": ["ABS_Y", "ABS_RY"]}),
     ("Stratus XL", {"invert": ["ABS_Y", "ABS_RZ"], "buttons": {
-        "BTN_B": {"key": "KEY_ESC", "long": {"system": "menu"}},
+        "BTN_B": {"key": "KEY_ESC", "long": {"system": "back"}},
         "BTN_C": {"key": "KEY_SPACE"},                                  # X
-        "BTN_NORTH": {"system": "keyboard"},                            # Y
+        "BTN_NORTH": {"system": "keyboard", "long": {"system": "menu"}},  # Y
         "BTN_WEST": {"key": "KEY_TAB", "modifiers": ["KEY_LEFTSHIFT"]}, # L1: previous focusable
         "BTN_Z": {"key": "KEY_TAB"},                                    # R1: next focusable
         "BTN_TL": {"cec": "volume_down", "repeat": True},               # L2
@@ -79,12 +79,12 @@ class Gamepad:
             if needle.lower() in dev.name.lower() and quirk.get("buttons"):
                 button_map.update(quirk["buttons"])
                 log.info("%s: using button profile", dev.name)
-        # A pad without Start or Guide still needs a way to the menu: long-press B.
+        # A pad without Start or Guide still needs a way to the menu: holding Y.
         keys = set(dev.capabilities().get(e.EV_KEY, []))
-        if e.BTN_START not in keys and e.BTN_MODE not in keys and e.BTN_EAST in keys:
-            b = dict(button_map.get("BTN_EAST") or {"key": "KEY_ESC"})
-            b.setdefault("long", {"system": "menu"})
-            button_map["BTN_EAST"] = b
+        if e.BTN_START not in keys and e.BTN_MODE not in keys and e.BTN_NORTH in keys:
+            y = dict(button_map.get("BTN_NORTH") or {"system": "keyboard"})
+            y.setdefault("long", {"system": "menu"})
+            button_map["BTN_NORTH"] = y
         self.buttons: dict[int, dict] = {}
         for name, action in button_map.items():
             code = getattr(e, name, None)

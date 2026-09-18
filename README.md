@@ -120,9 +120,9 @@ branch you want to follow.
 | --- | --- |
 | D-pad, left stick | Move focus (arrow keys) |
 | A / Cross | Select (Enter) |
-| B / Circle | Back: closes an overlay, leaves a text field or fullscreen video, otherwise one page back (also sent as Escape) |
+| B / Circle | Escape: closes an overlay, releases an engaged slider, leaves a text field. Hold: one page back |
 | X / Square | Play, pause (Space) |
-| Y / Triangle | On-screen keyboard |
+| Y / Triangle | On-screen keyboard. Hold: quick menu |
 | L1, R1 | Shift+Tab, Tab (previous, next focusable) |
 | L2, R2 | TV volume down, up (CEC, repeats while held) |
 | Right stick | Mouse pointer; click on the stick to left-click |
