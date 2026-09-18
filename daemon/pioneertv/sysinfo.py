@@ -111,6 +111,21 @@ async def wifi_forget(ssid: str) -> tuple[bool, str]:
     return rc == 0, out.strip()
 
 
+async def wifi_add(ssid: str, password: str | None, hidden: bool = False, priority: int = 10) -> tuple[bool, str]:
+    """Save a network that need not be in range; NetworkManager joins it when it appears."""
+    if not ssid:
+        return False, "no SSID"
+    await run("nmcli", "connection", "delete", "id", ssid, timeout=15)  # replace an old profile of the same name
+    cmd = ["nmcli", "connection", "add", "type", "wifi", "con-name", ssid, "ifname", "wlan0", "ssid", ssid,
+           "connection.autoconnect", "yes", "connection.autoconnect-priority", str(int(priority))]
+    if password:
+        cmd += ["wifi-sec.key-mgmt", "wpa-psk", "wifi-sec.psk", password]
+    if hidden:
+        cmd += ["802-11-wireless.hidden", "yes"]
+    rc, out = await run(*cmd, timeout=20)
+    return rc == 0, out.strip()
+
+
 async def tailscale_status(server_url: str | None = None, server_name: str | None = None) -> dict:
     """Tailscale state plus whether the media server (a service URL on the tailnet) is online."""
     rc, out = await run("tailscale", "status", "--json")

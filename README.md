@@ -65,7 +65,8 @@ way. The quick menu itself shows Wi-Fi, Tailscale (and whether the Jellyfin peer
 online), connected gamepads with battery, and temperature.
 
 The page has: status (network, Tailscale, CEC, gamepads, thermals and power
-throttling), Wi-Fi networks with connect and forget, Bluetooth scan and pairing
+throttling), Wi-Fi networks with connect and forget plus saving a network that
+is not in range yet, Bluetooth scan and pairing
 for any number of gamepads, the services shown on the launcher, controller
 tuning, TV behaviour, and system actions (restart Chromium, reboot, update from
 git, logs). Changes are saved to `/etc/pioneer-tv/settings.json` and applied

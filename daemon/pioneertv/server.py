@@ -45,6 +45,7 @@ class Server:
             ("GET", "/api/wifi/networks", self.api_wifi_networks),
             ("POST", "/api/wifi/connect", self.api_wifi_connect),
             ("POST", "/api/wifi/forget", self.api_wifi_forget),
+            ("POST", "/api/wifi/add", self.api_wifi_add),
             ("GET", "/api/bluetooth/devices", self.api_bt_devices),
             ("POST", "/api/bluetooth/scan", self.api_bt_scan),
             ("POST", "/api/bluetooth/pair", self.api_bt_pair),
@@ -175,6 +176,11 @@ class Server:
     async def api_wifi_connect(self, request: web.Request) -> web.Response:
         data = await self._json(request)
         ok, msg = await sysinfo.wifi_connect(str(data.get("ssid", "")), data.get("password") or None)
+        return web.json_response({"ok": ok, "message": msg}, status=200 if ok else 400)
+
+    async def api_wifi_add(self, request: web.Request) -> web.Response:
+        data = await self._json(request)
+        ok, msg = await sysinfo.wifi_add(str(data.get("ssid", "")).strip(), data.get("password") or None, bool(data.get("hidden")))
         return web.json_response({"ok": ok, "message": msg}, status=200 if ok else 400)
 
     async def api_wifi_forget(self, request: web.Request) -> web.Response:

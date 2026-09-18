@@ -174,7 +174,20 @@
         );
         list.append(item);
       }
-      show(h('h1', {}, 'Wi-Fi'), h('div', { class: 'actions' }, h('button', { onclick: () => views.wifi() }, 'Sök igen')), list.childElementCount ? list : h('p', { class: 'muted' }, 'Inga nätverk hittades (Ethernet är ändå att föredra för strömning).'));
+      // Save a network that is not in range right now (home Wi-Fi before the box moves).
+      const addSsid = h('input', { type: 'text', placeholder: 'Nätverkets namn (SSID)' });
+      const addPw = h('input', { type: 'password', placeholder: 'Lösenord' });
+      const addHidden = h('button', { class: 'toggle', role: 'switch', 'aria-checked': 'false', title: 'Dolt nätverk', onclick: (e) => e.currentTarget.setAttribute('aria-checked', String(e.currentTarget.getAttribute('aria-checked') !== 'true')) });
+      const addBtn = h('button', { class: 'primary small', onclick: async () => {
+        if (!addSsid.value.trim()) { toast('Skriv nätverkets namn'); return; }
+        addBtn.disabled = true;
+        try { const r = await api('POST', '/api/wifi/add', { ssid: addSsid.value.trim(), password: addPw.value, hidden: addHidden.getAttribute('aria-checked') === 'true' }); toast(r.ok ? `Sparade ${addSsid.value.trim()}` : r.message); views.wifi(); }
+        catch (e) { toast(`Misslyckades: ${e.message}`); addBtn.disabled = false; }
+      } }, 'Spara');
+      const addForm = h('div', {}, h('h2', {}, 'Spara ett nätverk som inte är i närheten'),
+        h('p', { class: 'muted' }, 'Boxen ansluter när nätverket dyker upp, till exempel hemma efter att den satts upp någon annanstans.'),
+        h('div', { class: 'inline-form' }, addSsid, addPw, h('span', { class: 'hint' }, 'Dolt'), addHidden, addBtn));
+      show(h('h1', {}, 'Wi-Fi'), h('div', { class: 'actions' }, h('button', { onclick: () => views.wifi() }, 'Sök igen')), list.childElementCount ? list : h('p', { class: 'muted' }, 'Inga nätverk hittades (Ethernet är ändå att föredra för strömning).'), addForm);
     },
 
     async gamepads(show) {
