@@ -9,6 +9,7 @@ window.PioneerTV = window.PioneerTV || {};
         this.toastEl = document.createElement('div');
         this.toastEl.className = 'pioneertv-toast pioneertv-card';
         this.toastEl.setAttribute('data-pioneertv-overlay', '');
+        M.bridge.sealOverlay(this.toastEl);
         document.documentElement.appendChild(this.toastEl);
       }
       this.toastEl.innerHTML = '';
@@ -43,6 +44,7 @@ window.PioneerTV = window.PioneerTV || {};
         const root = document.createElement('div');
         root.className = 'pioneertv-menu';
         root.setAttribute('data-pioneertv-overlay', '');
+        M.bridge.sealOverlay(root);
         const panel = document.createElement('div');
         panel.className = 'pioneertv-menu-panel';
         const title = document.createElement('div');

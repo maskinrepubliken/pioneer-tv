@@ -27,8 +27,15 @@ async def amain(cfg: dict) -> None:
     async def emit(msg: dict) -> None:
         await server.broadcast(msg)
 
+    async def on_cec_event(msg: dict) -> None:
+        """CEC events reach the extension; standby also sends the box home."""
+        await emit(msg)
+        if msg.get("name") == "tv" and msg.get("power") == "standby" and cfg["cec"].get("home_on_standby", True):
+            log.info("TV went to standby: back to the launcher")
+            await emit({"type": "event", "name": "home"})
+
     vinput = VirtualInput(with_mouse=cfg["mouse"].get("mode", "virtual") == "uinput")
-    cec = Cec(cfg, emit)
+    cec = Cec(cfg, on_cec_event)
     dispatcher = Dispatcher(cfg, vinput, cec, emit)
     mouse = MouseDriver(cfg, vinput, emit)
 
@@ -130,8 +137,21 @@ async def amain(cfg: dict) -> None:
             return last_status
 
     async def status_loop() -> None:
+        """Broadcast status, and keep the TV's power state fresh: a TV switched
+        off with its own remote does not always announce it."""
+        ticks = 0
         while True:
             try:
+                ticks += 1
+                if cec.enabled and ticks % 3 == 1:
+                    was = cec.last_power
+                    try:
+                        now = await cec.power_status()
+                    except Exception:
+                        now = was
+                    if now != was and now in ("on", "standby"):
+                        log.info("TV power: %s -> %s", was, now)
+                        await on_cec_event({"type": "event", "name": "tv", "power": now})
                 s = await status()
                 await emit(s)
             except Exception as exc:

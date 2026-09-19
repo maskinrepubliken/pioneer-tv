@@ -12,6 +12,8 @@ device = "/dev/cec0"
 osd_name = "Pioneer TV"
 tv_address = 0
 tv_on_gamepad_connect = true   # PS/Xbox button wakes the TV and switches input
+wake_on_input = true           # any pad button while the TV is off turns it on (and does nothing else)
+home_on_standby = true         # the TV going to standby sends the box back to the launcher
 monitor = true                 # follow TV standby and TV remote keys
 
 [bluetooth]

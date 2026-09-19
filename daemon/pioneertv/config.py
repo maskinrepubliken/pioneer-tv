@@ -16,6 +16,8 @@ DEFAULTS: dict[str, Any] = {
         "osd_name": "Pioneer TV",
         "tv_address": 0,
         "tv_on_gamepad_connect": True,
+        "wake_on_input": True,      # a pad button while the TV is off turns it on instead
+        "home_on_standby": True,    # the TV going to standby sends the box back to the launcher
         "monitor": True,
         # TV remote key (cec-ctl ui-cmd name) → action
         "remote": {

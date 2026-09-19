@@ -96,6 +96,23 @@ translation, no pointer. Guide still goes home, holding Start opens the quick
 menu, holding Select toggles the TV; while an overlay is open the pad drives it
 as usual. Game mode ends when the page goes away or stops sending heartbeats.
 
+## The TV (HDMI-CEC)
+
+The daemon claims a CEC playback address and follows the bus, so the box and
+the TV stay in step:
+
+- A gamepad connecting wakes the TV and switches it to the Pi's input.
+- Any pad button while the TV is off turns it on and does nothing else, so a
+  press never lands on a screen nobody can see (`cec.wake_on_input`).
+- The TV going to standby sends the box back to the launcher and pauses any
+  video, so the next time it wakes it is on the home page
+  (`cec.home_on_standby`).
+- The TV's own remote keys arrive over CEC and are mapped in `[cec.remote]`.
+
+Both behaviours are toggles on the TV page in settings. The daemon also polls
+the TV's power state every 30 seconds, because a set switched off with its own
+remote does not always announce it.
+
 ## Games (RomM, EmulatorJS)
 
 A service with `mode = "game"` (the id `romm` counts as one) puts the box in

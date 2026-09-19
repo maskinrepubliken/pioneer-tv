@@ -34,15 +34,26 @@ class Dispatcher:
         # mapped: home, the quick menu (long press) and TV volume.
         self.game_mode = False
         self._begun: set[int] = set()
+        self._swallowed: set[int] = set()
 
     @staticmethod
     def _allowed_in_game(action: Action) -> bool:
         return action.get("system") in ("home", "menu") or "cec" in action
 
     # ------------------------------------------------------------ public
+    def _tv_is_off(self) -> bool:
+        return bool(self.cfg["cec"].get("wake_on_input", True)) and self.cec.enabled and self.cec.last_power == "standby"
+
     async def press(self, action: Action) -> None:
         aid = id(action)
         self._pressed_at[aid] = time.monotonic()
+        # With the TV off, the first button press only turns it back on: what
+        # it would otherwise do happens on a screen nobody can see.
+        if self._tv_is_off() and "cec" not in action:
+            self._swallowed.add(aid)
+            log.info("TV is off: waking it instead of %s", action)
+            await self.cec_command("tv_on")
+            return
         if "long" in action and (not self.game_mode or self._allowed_in_game(action["long"])):
             # Defer the short action until release; fire long after the delay.
             self._long_tasks[aid] = asyncio.create_task(self._long_after(action))
@@ -54,6 +65,9 @@ class Dispatcher:
 
     async def release(self, action: Action) -> None:
         aid = id(action)
+        if aid in self._swallowed:
+            self._swallowed.discard(aid)
+            return
         if task := self._long_tasks.pop(aid, None):
             task.cancel()
             if aid in self._long_fired:

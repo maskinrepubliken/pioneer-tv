@@ -20,6 +20,19 @@ window.PioneerTV = window.PioneerTV || {};
       tvMode: params.has('tv'),
     },
 
+    // Our overlays sit in the page's DOM, so a click inside one bubbles on to
+    // the site's own document listeners. Seal each overlay root: the event
+    // still reaches our own handlers on the way down and at the target, but
+    // stops before it leaves the overlay.
+    sealOverlay(root) {
+      if (!root || root.dataset.pioneertvSealed) return root;
+      root.dataset.pioneertvSealed = '1';
+      for (const type of ['mousedown', 'mouseup', 'click', 'dblclick', 'contextmenu', 'pointerdown', 'pointerup', 'pointermove', 'mousemove', 'mouseover', 'mouseout', 'wheel', 'touchstart', 'touchend']) {
+        root.addEventListener(type, (e) => e.stopPropagation());
+      }
+      return root;
+    },
+
     on(name, fn) { (listeners[name] = listeners[name] || []).push(fn); },
     emit(name, data) { (listeners[name] || []).forEach((fn) => { try { fn(data); } catch (e) { console.error(e); } }); },
 

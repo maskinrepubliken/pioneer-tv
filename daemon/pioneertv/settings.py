@@ -32,6 +32,8 @@ SCHEMA: list[dict] = [
         "fields": [
             {"path": "cec.enabled", "type": "bool", "label": "HDMI-CEC"},
             {"path": "cec.tv_on_gamepad_connect", "type": "bool", "label": "Väck TV:n när en handkontroll ansluter"},
+            {"path": "cec.wake_on_input", "type": "bool", "label": "Väck TV:n med valfri knapp på handkontrollen"},
+            {"path": "cec.home_on_standby", "type": "bool", "label": "Gå till startsidan när TV:n stängs av"},
             {"path": "cec.monitor", "type": "bool", "label": "Lyssna på TV:ns fjärrkontroll och standby"},
             {"path": "cec.osd_name", "type": "text", "label": "Namn som TV:n visar", "maxlength": 14},
         ],

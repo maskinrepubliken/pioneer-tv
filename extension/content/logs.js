@@ -27,6 +27,7 @@ window.PioneerTV = window.PioneerTV || {};
       const root = document.createElement('div');
       root.className = 'pioneertv-logs';
       root.setAttribute('data-pioneertv-overlay', '');
+      M.bridge.sealOverlay(root);
       const sheet = document.createElement('div');
       sheet.className = 'pioneertv-logs-sheet';
       const head = document.createElement('div');

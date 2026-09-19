@@ -89,6 +89,7 @@ window.PioneerTV = window.PioneerTV || {};
       const root = document.createElement('div');
       root.className = 'pioneertv-keyboard';
       root.setAttribute('data-pioneertv-overlay', '');
+      M.bridge.sealOverlay(root);
       root.addEventListener('mousedown', (e) => e.preventDefault()); // keep focus in the field
       const rows = LAYERS[this.layer];
       this.buttons = rows.map((row, ri) => row.map((key, ci) => {
