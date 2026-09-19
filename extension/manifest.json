@@ -35,6 +35,7 @@
         "content/logs.js",
         "content/cursor.js",
         "content/game.js",
+        "content/video.js",
         "content/main.js"
       ],
       "css": [

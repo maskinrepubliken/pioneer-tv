@@ -7,6 +7,7 @@
   M.bridge.init();
   M.nav.init();
   M.cursor.init();
+  M.video.init();
   M.game.init();
 
   const b = M.bridge;
