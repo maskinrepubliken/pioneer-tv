@@ -52,9 +52,17 @@ window.PioneerTV = window.PioneerTV || {};
       const ct = r.headers.get('content-type') || '';
       return ct.includes('json') ? r.json() : r.text();
     },
+    // Is this page a game service (RomM, EmulatorJS)? Then the pad belongs to it.
+    gameMode() {
+      const services = (this.state.config && this.state.config.services) || [];
+      return services.some((s) => {
+        if (s.mode !== 'game' && s.id !== 'romm') return false;
+        try { const u = new URL(s.url); return u.hostname === location.hostname && (u.port || '') === (location.port || ''); } catch { return false; }
+      });
+    },
     // Should Enter in a text field pop the on-screen keyboard?
     autoKeyboard() {
-      if (!this.state.tvMode || this.state.physicalKeyboard) return false;
+      if (!this.state.tvMode || this.state.physicalKeyboard || this.gameMode()) return false;
       const ui = (this.state.config && this.state.config.ui) || {};
       return ui.auto_keyboard !== false;
     },

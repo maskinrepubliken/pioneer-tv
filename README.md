@@ -96,6 +96,16 @@ translation, no pointer. Guide still goes home, holding Start opens the quick
 menu, holding Select toggles the TV; while an overlay is open the pad drives it
 as usual. Game mode ends when the page goes away or stops sending heartbeats.
 
+## Games (RomM, EmulatorJS)
+
+A service with `mode = "game"` (the id `romm` counts as one) puts the box in
+game mode while its pages are on screen: the daemon stops turning pad buttons
+into arrows, Enter and Escape, so the emulator reads the pad itself through
+the browser's Gamepad API and nothing else reacts. Guide still goes home,
+holding Y (or Start) still opens the quick menu, and the triggers still do TV
+volume. The extension leaves the page's keys alone too. A toast announces the
+mode when the page opens.
+
 ## Logs and CEC debugging
 
 Start → Meny → **Loggar** opens a log sheet over whatever is on screen. Left

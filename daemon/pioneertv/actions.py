@@ -29,15 +29,27 @@ class Dispatcher:
         self._long_fired: set[int] = set()
         self._long_tasks: dict[int, asyncio.Task] = {}
         self._key_down_at: dict[int, float] = {}
+        # Game mode (a browser emulator is on screen): the pad belongs to the
+        # game, which reads it through the Gamepad API. Only the way out stays
+        # mapped: home, the quick menu (long press) and TV volume.
+        self.game_mode = False
+        self._begun: set[int] = set()
+
+    @staticmethod
+    def _allowed_in_game(action: Action) -> bool:
+        return action.get("system") in ("home", "menu") or "cec" in action
 
     # ------------------------------------------------------------ public
     async def press(self, action: Action) -> None:
         aid = id(action)
         self._pressed_at[aid] = time.monotonic()
-        if "long" in action:
+        if "long" in action and (not self.game_mode or self._allowed_in_game(action["long"])):
             # Defer the short action until release; fire long after the delay.
             self._long_tasks[aid] = asyncio.create_task(self._long_after(action))
             return
+        if self.game_mode and not self._allowed_in_game(action):
+            return
+        self._begun.add(aid)
         await self._begin(action)
 
     async def release(self, action: Action) -> None:
@@ -46,9 +58,12 @@ class Dispatcher:
             task.cancel()
             if aid in self._long_fired:
                 self._long_fired.discard(aid)
-            else:
+            elif not self.game_mode or self._allowed_in_game(action):
                 await self.fire(action)  # short press
             return
+        if aid not in self._begun:
+            return  # never began (game mode)
+        self._begun.discard(aid)
         await self._end(action)
 
     async def fire(self, action: Action) -> None:

@@ -154,6 +154,9 @@ window.PioneerTV = window.PioneerTV || {};
 
     onKeyDown(e) {
       if (!this.enabled || !e.isTrusted) return; // synthetic events come from our own keyboard
+      // A game page gets every key untouched (the daemon sends none anyway; a
+      // real keyboard may be plugged in for the emulator's own shortcuts).
+      if (!this.captured && M.bridge && M.bridge.gameMode()) return;
       // A clicks at the pointer when it was just used, also inside our overlays
       // (the on-screen keyboard, the menu), so the stick can drive them too.
       if (e.key === 'Enter' && M.cursor && M.cursor.active()) {
