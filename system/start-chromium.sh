@@ -17,7 +17,9 @@ WIDTH=${PIONEER_TV_WIDTH:-1280}
 HEIGHT=${PIONEER_TV_HEIGHT:-720}
 if [ -z "${PIONEER_TV_GPU_FLAGS+x}" ]; then
   if [ "$BOARD" = pi4 ]; then
-    GPU_FLAGS="--ignore-gpu-blocklist --enable-gpu-rasterization --enable-zero-copy"
+    # Only keep GPU compositing on; forcing rasterisation and zero-copy on V3D
+    # cost CPU during video playback (measured: 10 % dropped frames at 1080p).
+    GPU_FLAGS="--ignore-gpu-blocklist"
   else
     GPU_FLAGS="--disable-gpu"
   fi

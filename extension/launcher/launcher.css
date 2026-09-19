@@ -43,7 +43,11 @@ body {
 .tile .art { flex: 1; display: flex; align-items: center; justify-content: center; padding: 0.6rem 0.4rem 0; min-height: 0; }
 .tile .art .art-svg, .tile .art .logo {
   max-height: 100%; max-width: 100%; width: auto; height: 100%;
-  animation: float 7s ease-in-out infinite alternate; animation-delay: calc(var(--i, 0) * -2.3s);
+}
+/* Only the focused illustration floats: three animating every frame kept two
+   Chromium processes at 40 % CPU while the box sat on the launcher. */
+.tile.pioneertv-focus .art .art-svg, .tile.pioneertv-focus .art .logo {
+  animation: float 5s ease-in-out infinite alternate; will-change: transform;
 }
 @keyframes float { from { transform: translate3d(0, 0.15rem, 0); } to { transform: translate3d(0, -0.25rem, 0); } }
 .tile .text { padding-top: 0.5rem; }
@@ -63,7 +67,6 @@ body {
 .tile, .search, .target { transition: opacity 180ms ease-out, filter 180ms ease-out, transform 180ms ease-out, box-shadow 180ms ease-out, border-color 180ms ease-out; }
 .tile.pioneertv-focus, .tile:hover { border-color: var(--pioneertv-ink); box-shadow: 0 0 0 0.55rem var(--pioneertv-accent), 0 1.4rem 3rem rgba(43, 36, 25, 0.28) !important; transform: translateY(-0.5rem) scale(1.05); z-index: 2; }
 .tile.pioneertv-focus .name { text-decoration: underline; text-decoration-color: var(--pioneertv-accent); text-decoration-thickness: 0.2rem; text-underline-offset: 0.2em; }
-.tile.pioneertv-focus .art-svg, .tile.pioneertv-focus .logo { animation-duration: 4s; }
 
 /* ---- search row ---- */
 .row { display: grid; grid-template-columns: 1fr; gap: 1.5rem; align-items: stretch; }
