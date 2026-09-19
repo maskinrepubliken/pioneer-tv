@@ -15,11 +15,12 @@ tv_on_gamepad_connect = true   # PS/Xbox button wakes the TV and switches input
 monitor = true                 # follow TV standby and TV remote keys
 
 [bluetooth]
-# Dial paired, trusted pads that are not connected: every few seconds for the
-# first minutes after boot (a pad that was on during the reboot is still
-# trying then), afterwards once per interval.
+# Dial paired, trusted pads that are not connected: every 20 s for the first
+# minutes after boot (a pad that was on during the reboot is still trying
+# then), afterwards only once per interval as a safety net. Pads dial in by
+# themselves when switched on; a host that pages often gets in their way.
 auto_connect = true
-reconnect_interval = 60      # seconds
+reconnect_interval = 300     # seconds
 
 [gamepad]
 stick_deadzone = 0.45

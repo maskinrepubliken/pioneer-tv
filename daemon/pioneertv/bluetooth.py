@@ -4,8 +4,10 @@ Pads dial the host themselves when switched on, but after a reboot of the box
 the pad's own reconnect window has usually closed before Bluetooth is back,
 and it sits there asleep. So the daemon dials paired, trusted HID devices
 that are not connected: quickly for the first minutes after start (while a
-pad that was on during the reboot is still trying), then once per interval.
-A pad that is off answers "Host is down", which is harmless.
+pad that was on during the reboot is still trying), then only rarely, as a
+safety net; a host that pages often collides with a pad that is paging in
+("Operation already in progress"). A pad that is off answers "Host is down",
+which is harmless.
 """
 from __future__ import annotations
 
@@ -64,7 +66,7 @@ async def dial_once(on_change=None) -> None:
 
 async def reconnect_loop(cfg: dict, on_change=None) -> None:
     bt = cfg.get("bluetooth") or {}
-    interval = float(bt.get("reconnect_interval", 60))
+    interval = float(bt.get("reconnect_interval", 300))
     if not bt.get("auto_connect", True):
         log.info("auto-connect dialing off")
         return

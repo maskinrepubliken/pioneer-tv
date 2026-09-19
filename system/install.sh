@@ -80,6 +80,7 @@ sed -i \
   -e 's|^BTN_NORTH  = { system = "keyboard" }$|BTN_NORTH  = { system = "keyboard", long = { system = "menu" } }  # hold Y: quick menu|' \
   -e 's|^color = "#b5122b"$|color = "#b8940c"|' \
   -e 's|^auto_connect = false$|auto_connect = true|' \
+  -e 's|^reconnect_interval = 60 .*|reconnect_interval = 300     # seconds|' \
   -e 's|^tagline = "Serier, nyheter och dokumentärer"$|tagline = "Public service"|' \
   -e 's|100\.123\.142\.8:8080/|100.123.142.8:8081/|g' \
   -e 's|8081/search?searchTerm={query}|8081/search?search={query}|' \

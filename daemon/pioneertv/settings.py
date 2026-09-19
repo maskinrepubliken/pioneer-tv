@@ -39,7 +39,7 @@ SCHEMA: list[dict] = [
     {
         "id": "controls_bt", "title": "Bluetooth",
         "fields": [
-            {"path": "bluetooth.auto_connect", "type": "bool", "label": "Ring upp parade handkontroller som inte är anslutna (tätt efter start, sedan var minut)"},
+            {"path": "bluetooth.auto_connect", "type": "bool", "label": "Ring upp parade handkontroller som inte är anslutna (tätt efter start, sedan var femte minut)"},
         ],
     },
     {
