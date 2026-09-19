@@ -52,7 +52,9 @@ class Dispatcher:
         if self._tv_is_off() and "cec" not in action:
             self._swallowed.add(aid)
             log.info("TV is off: waking it instead of %s", action)
-            await self.cec_command("tv_on")
+            # Waking verifies and retries, which takes seconds; do not block
+            # the pad's read loop on it.
+            asyncio.create_task(self.cec_command("tv_on"))
             return
         if "long" in action and (not self.game_mode or self._allowed_in_game(action["long"])):
             # Defer the short action until release; fire long after the delay.

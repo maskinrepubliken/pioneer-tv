@@ -104,7 +104,25 @@ class Cec:
         self.last_power = m.group(1).lower() if m else "unknown"
         return self.last_power
 
-    async def tv_on(self) -> None:
+    async def tv_on(self, verify: bool = True, attempts: int = 3) -> bool:
+        """Wake the TV and take the input. One image-view-on is not always
+        enough (a set just entering standby ignores it), so check and retry."""
+        for attempt in range(1, attempts + 1):
+            await self._tv_on_once()
+            if not verify:
+                return True
+            await asyncio.sleep(2.0)
+            try:
+                state = await self.power_status()
+            except Exception:
+                return True                      # no answer: assume it took
+            if state.startswith("on") or state.startswith("to-on") or state == "unknown":
+                self.last_power = "on"
+                return True
+            log.info("TV still %s after wake attempt %d", state, attempt)
+        return False
+
+    async def _tv_on_once(self) -> None:
         self.last_power = "on"
         await self.to_tv("--image-view-on")
         await self._ctl("--active-source", f"phys-addr={self.phys_addr}")
