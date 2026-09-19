@@ -12,6 +12,8 @@ set -u
 # Board facts from the installer, then site overrides, so both take effect below.
 [ -f /etc/pioneer-tv/board.env ] && . /etc/pioneer-tv/board.env
 [ -f /etc/pioneer-tv/chromium.env ] && . /etc/pioneer-tv/chromium.env
+# The kiosk user's own override, for experiments without root.
+[ -f "$HOME/.pioneer-tv/chromium.env" ] && . "$HOME/.pioneer-tv/chromium.env"
 BOARD=${PIONEER_TV_BOARD:-pi3}
 WIDTH=${PIONEER_TV_WIDTH:-1280}
 HEIGHT=${PIONEER_TV_HEIGHT:-720}
