@@ -14,6 +14,10 @@ window.PioneerTV = window.PioneerTV || {};
   ].join(',');
   const TEXT_INPUT = /^(text|search|email|url|number|password|tel)$/;
   const DIRS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
+  // Everything the gamepad can produce. While an overlay has the input these
+  // must never reach the page: left/right would seek the video behind the
+  // menu, space would pause it, tab would move its focus.
+  const PAD_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Escape', 'Tab', 'PageUp', 'PageDown', 'Home', 'End']);
   const FOCUS_CLASS = 'pioneertv-focus';
 
   const nav = {
@@ -165,12 +169,19 @@ window.PioneerTV = window.PioneerTV || {};
         const under = M.cursor.elementUnder();
         const inOverlay = !!(under && under.closest && under.closest('[data-pioneertv-overlay]'));
         if (this.captured ? inOverlay : !this.isTextField(document.activeElement)) {
-          e.preventDefault(); e.stopImmediatePropagation();
+          this.eat(e);
           M.cursor.click();
           return;
         }
       }
-      if (this.captured) { this.captured.onKeyDown(e); return; }
+      if (this.captured) {
+        this.captured.onKeyDown(e);
+        // A layer only acts on the keys it knows; swallow the rest as well so
+        // the page underneath stays untouched. captureAll === false (the
+        // on-screen keyboard) still lets a real keyboard type through.
+        if (this.captured.captureAll !== false || PAD_KEYS.has(e.key)) this.eat(e);
+        return;
+      }
       const active = document.activeElement;
       if (this.engaged && this.engaged !== active) this.engaged = null;
       const dir = DIRS[e.key];
@@ -183,13 +194,12 @@ window.PioneerTV = window.PioneerTV || {};
           if (active.tagName === 'SELECT' ? !horizontal : horizontal) return; // the control gets it
         }
         this.engaged = null;
-        e.preventDefault();
-        e.stopImmediatePropagation();
+        this.eat(e);
         this.move(dir);
         return;
       }
       if (e.key === 'Escape' && this.engaged) {
-        e.preventDefault(); e.stopImmediatePropagation();
+        this.eat(e);
         this.engaged = null;
         return;
       }
@@ -200,19 +210,19 @@ window.PioneerTV = window.PioneerTV || {};
             this.engaged = active;
             return;
           }
-          e.preventDefault(); e.stopImmediatePropagation();
+          this.eat(e);
           if (this.engaged === active) { this.engaged = null; M.hud && M.hud.toast('Lämnade reglaget', 'info', 1200); }
           else this.engage(active);
           return;
         }
         if (this.isTextField(active)) {
           if (M.bridge && M.bridge.autoKeyboard() && M.keyboard && !M.keyboard.isOpen()) {
-            e.preventDefault(); e.stopImmediatePropagation();
+            this.eat(e);
             M.keyboard.open(active);
           }
           return;
         }
-        if (this.activate(active)) { e.preventDefault(); e.stopImmediatePropagation(); }
+        if (this.activate(active)) { this.eat(e); }
         return;
       }
       if (e.key === 'Escape' && this.isTextField(active)) {
@@ -222,8 +232,25 @@ window.PioneerTV = window.PioneerTV || {};
       }
     },
 
+    // Key releases matter too: a page that acts on keyup would otherwise see
+    // half of every press we consumed.
+    _eaten: new Set(),
+    stop(e) { e.preventDefault(); e.stopImmediatePropagation(); },
+    // Consume a key press and remember it, so its release is consumed too.
+    eat(e) { this.stop(e); this._eaten.add(e.key); },
+    onKeyUp(e) {
+      if (!this.enabled || !e.isTrusted) return;
+      if (this.captured && (this.captured.captureAll !== false || PAD_KEYS.has(e.key))) {
+        this._eaten.delete(e.key);
+        this.stop(e);
+        return;
+      }
+      if (this._eaten.delete(e.key)) this.stop(e);
+    },
+
     init() {
       window.addEventListener('keydown', (e) => this.onKeyDown(e), true);
+      window.addEventListener('keyup', (e) => this.onKeyUp(e), true);
       document.addEventListener('focusin', (e) => {
         const el = e.target;
         if (el === this.current || !(el instanceof Element)) return;

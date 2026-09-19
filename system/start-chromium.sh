@@ -28,6 +28,21 @@ if [ -z "${PIONEER_TV_GPU_FLAGS+x}" ]; then
 else
   GPU_FLAGS=$PIONEER_TV_GPU_FLAGS
 fi
+
+# Video decoding. The Pi's V4L2 decoder wedges every time a stream changes
+# resolution, and SVT Play's player changes it constantly, so playback pauses
+# for a second again and again. Measured on a Pi 4 at 720p: hardware decode
+# stalled in 11 of 15 samples, software decode in none of 60, at about one
+# core of CPU. A Pi 3 has no such headroom and keeps the decoder.
+VIDEO_DECODE=${PIONEER_TV_VIDEO_DECODE:-}
+if [ -z "$VIDEO_DECODE" ]; then
+  if [ "$BOARD" = pi4 ]; then VIDEO_DECODE=software; else VIDEO_DECODE=hardware; fi
+fi
+if [ "$VIDEO_DECODE" = software ]; then
+  DECODE_FLAGS="--disable-accelerated-video-decode"
+else
+  DECODE_FLAGS="--enable-accelerated-video-decode"
+fi
 PIONEER_TV_DIR=${PIONEER_TV_DIR:-/opt/pioneer-tv}
 EXT_ID=dpigdefepjjejbkidlabpjlnleidgjaf
 PROFILE=${PIONEER_TV_PROFILE:-$HOME/.pioneer-tv/chromium}
@@ -46,7 +61,7 @@ done
 
 BIN=${PIONEER_TV_CHROMIUM_BIN:-$(command -v chromium-browser || command -v chromium)}
 DEVTOOLS_PORT=${PIONEER_TV_DEVTOOLS_PORT:-9222}   # 127.0.0.1 only; used to open the launcher
-echo "pioneer-tv: $($BIN --version 2>/dev/null), board $BOARD ${WIDTH}x${HEIGHT}, extension $PIONEER_TV_DIR/extension ($(grep -o '"version": "[^"]*"' "$PIONEER_TV_DIR/extension/manifest.json")), gpu: $GPU_FLAGS, extra: ${EXTRA_FLAGS:-none}"
+echo "pioneer-tv: $($BIN --version 2>/dev/null), board $BOARD ${WIDTH}x${HEIGHT}, extension $PIONEER_TV_DIR/extension ($(grep -o '"version": "[^"]*"' "$PIONEER_TV_DIR/extension/manifest.json")), gpu: $GPU_FLAGS, decode: $VIDEO_DECODE, extra: ${EXTRA_FLAGS:-none}"
 
 # Chromium picks its audio backend at start: wait for PipeWire's Pulse socket
 # so sound goes through it (and on to HDMI) instead of raw ALSA.
@@ -79,7 +94,7 @@ python3 "$PIONEER_TV_DIR/system/open-launcher.py" "$DEVTOOLS_PORT" "$EXT_ID" 120
   --disable-session-crashed-bubble \
   --disable-features=TranslateUI,MediaRouter,DisableLoadExtensionCommandLineSwitch \
   --autoplay-policy=no-user-gesture-required \
-  --enable-accelerated-video-decode \
+  $DECODE_FLAGS \
   $GPU_FLAGS \
   --password-store=basic \
   --check-for-update-interval=31536000 \

@@ -21,6 +21,7 @@ window.PioneerTV = window.PioneerTV || {};
   };
 
   const kb = {
+    captureAll: false,   // printable keys from a real keyboard go to the field
     root: null, target: null, layer: 'letters', shift: false, row: 0, col: 0, buttons: [],
 
     isOpen() { return !!(this.root && this.root.isConnected); },
