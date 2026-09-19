@@ -130,6 +130,16 @@ else
   echo "  Repair with: sudo umount $BOOT && sudo fsck.fat -a $(findmnt -n -o SOURCE "$BOOT" || echo /dev/mmcblk0p1) && sudo mount $BOOT" >&2
   echo "  Skipping config.txt/cmdline.txt (video mode); rerun the installer afterwards." >&2
 fi
+# Wi-Fi power saving on the Pi's radio causes latency spikes and stalls while
+# streaming; keep the radio awake. Applies to every Wi-Fi connection.
+if [ -d /etc/NetworkManager ]; then
+  mkdir -p /etc/NetworkManager/conf.d
+  printf '[connection]\nwifi.powersave = 2\n' > /etc/NetworkManager/conf.d/90-pioneer-tv-wifi.conf
+  for c in $(nmcli -t -f NAME,TYPE connection show 2>/dev/null | awk -F: '$2 ~ /wireless/ {print $1}'); do
+    nmcli connection modify "$c" 802-11-wireless.powersave 2 2>/dev/null || true
+  done
+  iw dev wlan0 set power_save off 2>/dev/null || true
+fi
 # Bluetooth: Xbox controllers need ERTM off to pair.
 echo 'options bluetooth disable_ertm=1' > /etc/modprobe.d/pioneer-tv-bluetooth.conf
 # BlueZ: answer pages from pads quickly, retry a dropped HID link ourselves,

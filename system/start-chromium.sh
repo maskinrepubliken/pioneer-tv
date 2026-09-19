@@ -19,9 +19,9 @@ WIDTH=${PIONEER_TV_WIDTH:-1280}
 HEIGHT=${PIONEER_TV_HEIGHT:-720}
 if [ -z "${PIONEER_TV_GPU_FLAGS+x}" ]; then
   if [ "$BOARD" = pi4 ]; then
-    # Only keep GPU compositing on; forcing rasterisation and zero-copy on V3D
-    # cost CPU during video playback (measured: 10 % dropped frames at 1080p).
-    GPU_FLAGS="--ignore-gpu-blocklist"
+    # Measured on a Pi 4 at 720p: all flag sets play clean; zero-copy had the
+    # lowest CPU. (1080p60 drops frames under every set: decoder ceiling.)
+    GPU_FLAGS="--ignore-gpu-blocklist --enable-zero-copy"
   else
     GPU_FLAGS="--disable-gpu"
   fi

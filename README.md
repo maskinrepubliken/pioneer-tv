@@ -255,6 +255,11 @@ over CEC; Chromium itself stays at 100 %. To check from a shell as `pi`:
 
 ## Performance notes
 
+- Wi-Fi power saving is turned off by the installer (NetworkManager
+  `wifi.powersave = 2`); on the Pi's radio it causes the latency spikes that
+  make players stall and drop to low quality. Ethernet, or a 5 GHz network,
+  is still the real fix for streaming.
+
 - Players cap stream quality to the window size, so the video mode is also the
   quality ceiling: 1080p on a Pi 4, 720p on a Pi 3. Widevine content
   (Cineasterna) is always software decoded.
