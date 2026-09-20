@@ -65,13 +65,11 @@ window.PioneerTV = window.PioneerTV || {};
       const ct = r.headers.get('content-type') || '';
       return ct.includes('json') ? r.json() : r.text();
     },
-    // Is this page a game service (RomM, EmulatorJS)? Then the pad belongs to it.
+    // Is a game actually running right now? Only the running emulator owns the
+    // pad; the rest of a game service is an ordinary page you browse with the
+    // d-pad, so this asks the detector instead of matching the host.
     gameMode() {
-      const services = (this.state.config && this.state.config.services) || [];
-      return services.some((s) => {
-        if (s.mode !== 'game' && s.id !== 'romm') return false;
-        try { const u = new URL(s.url); return u.hostname === location.hostname && (u.port || '') === (location.port || ''); } catch { return false; }
-      });
+      return !!(M.game && M.game.active());
     },
     // Should Enter in a text field pop the on-screen keyboard?
     autoKeyboard() {

@@ -14,6 +14,10 @@ log = logging.getLogger("pioneertv.actions")
 
 # After this long without input, check the TV really is awake before acting.
 IDLE_RECHECK_SECONDS = 10.0
+# A TV reports itself "on" the moment it accepts the command, while the panel
+# stays dark for a few seconds more. Input keeps being swallowed for this long
+# after a wake, or the presses that follow land on a screen nobody can see yet.
+WAKE_SETTLE_SECONDS = 4.0
 
 Action = dict[str, Any]
 MIN_KEY_HOLD = 0.06  # seconds
@@ -35,6 +39,7 @@ class Dispatcher:
         self._begun: set[int] = set()
         self._swallowed: set[int] = set()
         self._last_input = 0.0
+        self._wake_until = 0.0
 
     # ------------------------------------------------------------ public
     def _tv_is_off(self) -> bool:
@@ -53,6 +58,13 @@ class Dispatcher:
         except Exception as exc:
             log.debug("power check before input failed: %s", exc)
 
+    async def _wake_tv(self) -> None:
+        """Wake the TV, then hold the door shut until the picture is really there."""
+        try:
+            await self.cec_command("tv_on")
+        finally:
+            self._wake_until = max(self._wake_until, time.monotonic() + WAKE_SETTLE_SECONDS)
+
     async def press(self, action: Action) -> None:
         aid = id(action)
         now = time.monotonic()
@@ -60,13 +72,18 @@ class Dispatcher:
         await self._refresh_tv_power(idle)
         self._pressed_at[aid] = time.monotonic()
         # With the TV off, the first button press only turns it back on: what
-        # it would otherwise do happens on a screen nobody can see.
-        if self._tv_is_off() and "cec" not in action:
+        # it would otherwise do happens on a screen nobody can see. The presses
+        # that follow while the picture comes up are dropped for the same reason.
+        if "cec" not in action and (self._tv_is_off() or now < self._wake_until):
             self._swallowed.add(aid)
-            log.info("TV is off: waking it instead of %s", action)
-            # Waking verifies and retries, which takes seconds; do not block
-            # the pad's read loop on it.
-            asyncio.create_task(self.cec_command("tv_on"))
+            if self._tv_is_off():
+                log.info("TV is off: waking it instead of %s", action)
+                self._wake_until = now + WAKE_SETTLE_SECONDS
+                # Waking verifies and retries, which takes seconds; do not block
+                # the pad's read loop on it.
+                asyncio.create_task(self._wake_tv())
+            else:
+                log.debug("TV is still waking: dropped %s", action)
             return
         if "long" in action:
             # Defer the short action until release; fire long after the delay.
