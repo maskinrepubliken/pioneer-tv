@@ -129,8 +129,6 @@ class Server:
                 elif t == "navigate":
                     self.current_url = data.get("url")
                     log.info("page: %s", self.current_url)
-                    if "on_page" in self.hooks:
-                        await self.hooks["on_page"](self.current_url)
                 elif t == "hello":
                     log.info("hello from %s %s", data.get("client"), data.get("version"))
                 elif t == "debug":

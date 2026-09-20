@@ -22,6 +22,15 @@ window.PioneerTV.defaultServices = [
     glyph: 'S',
   },
   {
+    id: 'svt1',
+    name: 'SVT1',
+    tagline: 'Direktsänt',
+    url: 'https://www.svtplay.se/kanaler/svt1?start=auto',
+    color: '#b5442a',
+    glyph: '1',
+    fullscreen: true,
+  },
+  {
     id: 'jellyfin',
     name: 'Jellyfin',
     tagline: 'Egna filmer och serier',

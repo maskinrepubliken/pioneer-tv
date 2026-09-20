@@ -8,6 +8,7 @@
   M.nav.init();
   M.cursor.init();
   M.video.init();
+  M.bigscreen.init();
   M.game.init();
 
   const b = M.bridge;

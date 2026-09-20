@@ -33,6 +33,15 @@ html.pioneertv-game .pioneertv-cursor { display: none; }
 .pioneertv-cursor-press svg { transform: translate(1px, 1px) scale(0.94); }
 .pioneertv-hover { }
 
+/* ---- big screen: a promoted player when real fullscreen is refused ---- */
+html.pioneertv-bigscreen, html.pioneertv-bigscreen body { overflow: hidden !important; background: #000 !important; }
+.pioneertv-bigscreen-target {
+  position: fixed !important; inset: 0 !important;
+  width: 100vw !important; height: 100vh !important; max-width: none !important; max-height: none !important;
+  margin: 0 !important; padding: 0 !important; z-index: 2147482000 !important; background: #000 !important;
+}
+.pioneertv-bigscreen-target video { width: 100% !important; height: 100% !important; object-fit: contain !important; }
+
 /* ---- keyboard ---- */
 .pioneertv-keyboard {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 2147483000;

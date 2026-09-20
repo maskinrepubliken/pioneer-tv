@@ -77,27 +77,6 @@ async def amain(cfg: dict) -> None:
     status_lock = asyncio.Lock()
     status_at = 0.0
 
-    def is_game_url(url: str | None) -> bool:
-        """Is this page one of the services flagged as a game (RomM, EmulatorJS, ...)?"""
-        if not url:
-            return False
-        host = (urlparse(url).hostname or "").lower(); port = urlparse(url).port
-        for s in cfg.get("services", []):
-            if s.get("mode") != "game" and s.get("id") != "romm":
-                continue
-            su = urlparse(s.get("url") or "")
-            if (su.hostname or "").lower() == host and su.port == port:
-                return True
-        return False
-
-    async def on_page(url: str | None) -> None:
-        game = is_game_url(url)
-        if game != dispatcher.game_mode:
-            dispatcher.game_mode = game
-            log.info("game mode %s (%s)", "on" if game else "off", url)
-            if game:
-                await toast("Spelläge: handkontrollen går till spelet · Guide/håll Y: meny", "gamepad")
-
     def media_server() -> tuple[str | None, str | None]:
         """The service that lives on the tailnet (Jellyfin, Plex, ...): its URL and name."""
         for s in cfg.get("services", []):
@@ -143,7 +122,7 @@ async def amain(cfg: dict) -> None:
         while True:
             try:
                 ticks += 1
-                if cec.enabled and ticks % 3 == 1:
+                if cec.enabled:
                     was = cec.last_power
                     try:
                         now = await cec.power_status()
@@ -188,7 +167,6 @@ async def amain(cfg: dict) -> None:
         "cec_topology": cec.topology,
         "cec_raw": cec.raw,
         "config_changed": config_changed,
-        "on_page": on_page,
     })
 
     async def on_gamepad_change(connected: bool, name: str) -> None:

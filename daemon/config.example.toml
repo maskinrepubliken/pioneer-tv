@@ -90,6 +90,16 @@ search_url = "https://www.svtplay.se/sok?q={query}"
 color = "#1f7a4d"
 glyph = "S"
 
+# The live channel, opened straight into the stream and taken fullscreen.
+[[services]]
+id = "svt1"
+name = "SVT1"
+tagline = "Direktsänt"
+url = "https://www.svtplay.se/kanaler/svt1?start=auto"
+color = "#b5442a"
+glyph = "1"
+fullscreen = true
+
 [[services]]
 id = "jellyfin"
 name = "Jellyfin"

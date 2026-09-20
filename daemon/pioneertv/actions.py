@@ -12,6 +12,9 @@ from typing import Any, Callable, Coroutine
 
 log = logging.getLogger("pioneertv.actions")
 
+# After this long without input, check the TV really is awake before acting.
+IDLE_RECHECK_SECONDS = 10.0
+
 Action = dict[str, Any]
 MIN_KEY_HOLD = 0.06  # seconds
 
@@ -29,23 +32,32 @@ class Dispatcher:
         self._long_fired: set[int] = set()
         self._long_tasks: dict[int, asyncio.Task] = {}
         self._key_down_at: dict[int, float] = {}
-        # Game mode (a browser emulator is on screen): the pad belongs to the
-        # game, which reads it through the Gamepad API. Only the way out stays
-        # mapped: home, the quick menu (long press) and TV volume.
-        self.game_mode = False
         self._begun: set[int] = set()
         self._swallowed: set[int] = set()
-
-    @staticmethod
-    def _allowed_in_game(action: Action) -> bool:
-        return action.get("system") in ("home", "menu") or "cec" in action
+        self._last_input = 0.0
 
     # ------------------------------------------------------------ public
     def _tv_is_off(self) -> bool:
         return bool(self.cfg["cec"].get("wake_on_input", True)) and self.cec.enabled and self.cec.last_power == "standby"
 
+    async def _refresh_tv_power(self, idle: float) -> None:
+        """Ask the TV whether it is awake before the first press after a pause.
+        A set switched off with its own remote does not always say so, and a
+        press that slips through lands on a screen nobody can see."""
+        if not bool(self.cfg["cec"].get("wake_on_input", True)) or not self.cec.enabled:
+            return
+        if idle < IDLE_RECHECK_SECONDS or self.cec.last_power == "standby":
+            return
+        try:
+            await self.cec.power_status()
+        except Exception as exc:
+            log.debug("power check before input failed: %s", exc)
+
     async def press(self, action: Action) -> None:
         aid = id(action)
+        now = time.monotonic()
+        idle, self._last_input = now - self._last_input, now
+        await self._refresh_tv_power(idle)
         self._pressed_at[aid] = time.monotonic()
         # With the TV off, the first button press only turns it back on: what
         # it would otherwise do happens on a screen nobody can see.
@@ -56,11 +68,9 @@ class Dispatcher:
             # the pad's read loop on it.
             asyncio.create_task(self.cec_command("tv_on"))
             return
-        if "long" in action and (not self.game_mode or self._allowed_in_game(action["long"])):
+        if "long" in action:
             # Defer the short action until release; fire long after the delay.
             self._long_tasks[aid] = asyncio.create_task(self._long_after(action))
-            return
-        if self.game_mode and not self._allowed_in_game(action):
             return
         self._begun.add(aid)
         await self._begin(action)
@@ -74,7 +84,7 @@ class Dispatcher:
             task.cancel()
             if aid in self._long_fired:
                 self._long_fired.discard(aid)
-            elif not self.game_mode or self._allowed_in_game(action):
+            else:
                 await self.fire(action)  # short press
             return
         if aid not in self._begun:

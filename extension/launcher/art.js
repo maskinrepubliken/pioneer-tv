@@ -98,6 +98,35 @@ window.PioneerTV = window.PioneerTV || {};
       <path d="M44 96 L40 104 M104 96 L108 104" stroke="${INK}" stroke-width="3" stroke-linecap="round"/>
     `),
 
+    // A transmitter mast with the signal going out: the live channel.
+    svt1: (c) => wrap('svt1', c, `
+      <linearGradient id="legL-U" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fbf6e6"/><stop offset="1" stop-color="#b9ad90"/></linearGradient>
+      <linearGradient id="legR-U" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#a89a80"/><stop offset="1" stop-color="#6f6350"/></linearGradient>
+      <radialGradient id="beacon-U" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="${light(c, 0.6)}"/><stop offset="1" stop-color="${dark(c, 0.2)}"/></radialGradient>`, `
+      <!-- signal, thinning as it goes out -->
+      <g fill="none" stroke="${c}" stroke-linecap="round">
+        <path d="M63 26 A 22 22 0 0 0 63 54" stroke-width="3" opacity="0.9"/>
+        <path d="M52 20 A 34 34 0 0 0 52 60" stroke-width="2.4" opacity="0.6"/>
+        <path d="M41 14 A 46 46 0 0 0 41 66" stroke-width="1.8" opacity="0.32"/>
+        <path d="M97 26 A 22 22 0 0 1 97 54" stroke-width="3" opacity="0.9"/>
+        <path d="M108 20 A 34 34 0 0 1 108 60" stroke-width="2.4" opacity="0.6"/>
+        <path d="M119 14 A 46 46 0 0 1 119 66" stroke-width="1.8" opacity="0.32"/>
+      </g>
+      <!-- mast: two tapering legs with braces -->
+      <path d="M62 96 L74 30 L78 30 L68 96 Z" fill="url(#legL-U)" stroke="${INK}" stroke-width="1.1"/>
+      <path d="M98 96 L86 30 L82 30 L92 96 Z" fill="url(#legR-U)" stroke="${INK}" stroke-width="1.1"/>
+      <g stroke="${INK}" stroke-width="1.6" stroke-linecap="round" fill="none" opacity="0.85">
+        <path d="M70 84 L90 84 M71 72 L89 72 M73 60 L87 60 M74 48 L86 48 M76 38 L84 38"/>
+        <path d="M70 84 L89 72 M90 84 L71 72 M71 72 L87 60 M89 72 L73 60 M73 60 L86 48 M87 60 L74 48"/>
+      </g>
+      <!-- antenna and beacon -->
+      <path d="M80 30 L80 14" stroke="${INK}" stroke-width="2.6" stroke-linecap="round"/>
+      <circle cx="80" cy="11" r="5" fill="url(#beacon-U)" stroke="${dark(c, 0.35)}" stroke-width="1"/>
+      <circle cx="78.5" cy="9.5" r="1.6" fill="#ffffff" opacity="0.75"/>
+      <!-- feet -->
+      <path d="M60 96 L70 96 M90 96 L100 96" stroke="${INK}" stroke-width="3" stroke-linecap="round"/>
+    `),
+
     // A shelf with cases standing and leaning, seen from the front-left.
     jellyfin: (c) => wrap('jf', c, `
       <linearGradient id="case1-U" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${light(c, 0.4)}"/><stop offset="1" stop-color="${dark(c, 0.2)}"/></linearGradient>

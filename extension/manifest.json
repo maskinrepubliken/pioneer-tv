@@ -36,6 +36,7 @@
         "content/cursor.js",
         "content/game.js",
         "content/video.js",
+        "content/bigscreen.js",
         "content/main.js"
       ],
       "css": [
