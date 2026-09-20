@@ -19,8 +19,9 @@ window.PioneerTV = window.PioneerTV || {};
 
   function wanted() {
     const services = (M.bridge.state.config && M.bridge.state.config.services) || [];
+    const truthy = (v) => v !== undefined && v !== null && v !== false && v !== '' && v !== '0' && v !== 'false' && v !== 'nej';
     return services.some((s) => {
-      if (!s.fullscreen) return false;
+      if (!truthy(s.fullscreen)) return false;
       try {
         const u = new URL(s.url, location.href);
         return u.hostname === location.hostname && location.pathname.startsWith(u.pathname);
