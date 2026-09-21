@@ -22,10 +22,9 @@ UtmpMode=user
 Environment=XDG_SESSION_TYPE=wayland
 Environment=XDG_RUNTIME_DIR=/run/user/1000
 Environment=HOME=/home/pi
-# Weston 14's atomic DRM path misbehaves on both Pi generations: VideoCore IV
-# aborts on the cursor plane, and on a Pi 4 the atomic commit fails with EINVAL
-# on every frame (60 "repaint-flush failed" a second) and Weston falls back
-# each time, which stutters. The legacy modesetting path works on both.
+# Weston 14's atomic DRM path fails on the Pi 4: the atomic commit returns
+# EINVAL on every frame (60 "repaint-flush failed" a second) and Weston falls
+# back each time, which stutters. The legacy modesetting path works.
 Environment=WESTON_DISABLE_ATOMIC=1
 ExecStart=/usr/bin/weston --config=/home/pi/.config/weston.ini
 Restart=always

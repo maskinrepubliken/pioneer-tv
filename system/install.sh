@@ -1,9 +1,7 @@
 #!/bin/bash
-# Installs Pioneer TV on Raspberry Pi OS (64-bit, Bookworm or Trixie). Run as
-# root from the repo:
+# Installs Pioneer TV on Raspberry Pi OS (64-bit, Bookworm or Trixie) on a
+# Raspberry Pi 4 with 4 GB. Run as root from the repo:
 #   sudo system/install.sh
-# Works on a Pi 4/5 (1080p, GPU compositing) and a Pi 3 (720p, software
-# drawing); the board is detected from the device tree.
 set -euo pipefail
 
 REPO=$(cd "$(dirname "$0")/.." && pwd)
@@ -15,19 +13,15 @@ BOOT=/boot/firmware
 
 MODEL=$(tr -d '\0' < /proc/device-tree/model 2>/dev/null || echo unknown)
 case "$MODEL" in
-  *"Pi 5"*|*"Pi 4"*|*"Compute Module 4"*|*"Pi 500"*|*"Pi 400"*) BOARD=pi4; MODE=1920x1080@60 ;;
-  *) BOARD=pi3; MODE=1280x720@60 ;;
+  *"Pi 4"*|*"Pi 400"*|*"Compute Module 4"*) ;;
+  *) echo "warning: Pioneer TV is built for a Raspberry Pi 4 (4 GB); this is '$MODEL'. Continuing anyway." >&2 ;;
 esac
-# A chosen mode sticks: PIONEER_TV_MODE=1280x720@60 sudo system/install.sh
-# writes /etc/pioneer-tv/mode, which later installs and updates honour.
+# 720p: players cap stream quality to the window, and 1080p in a browser drops
+# frames on this board under every flag set we measured.
+MODE=1280x720@60
 mkdir -p /etc/pioneer-tv
-if [ -n "${PIONEER_TV_MODE:-}" ]; then
-  echo "$PIONEER_TV_MODE" > /etc/pioneer-tv/mode
-elif [ -f /etc/pioneer-tv/mode ]; then
-  PIONEER_TV_MODE=$(cat /etc/pioneer-tv/mode)
-fi
-MODE=${PIONEER_TV_MODE:-$MODE}
-echo "== board: $MODEL ($BOARD, $MODE)"
+rm -f /etc/pioneer-tv/mode   # an older installer let the mode be chosen
+echo "== board: $MODEL ($MODE)"
 
 echo "== preflight"
 FREE_MB=$(df -Pm / | awk 'NR==2 {print $4}')
@@ -51,7 +45,9 @@ fi
 if [ "${PIONEER_TV_SKIP_APT:-0}" != "1" ]; then
 echo "== packages"
 export DEBIAN_FRONTEND=noninteractive
-apt-get update
+# A box on weak Wi-Fi may not reach the mirrors right now; the packages it
+# already has are what matters, so a failed refresh is a warning.
+apt-get update || echo "warning: apt-get update failed, installing from the package lists we have" >&2
 # shellcheck disable=SC2086
 apt-get install -y --no-install-recommends $REQUIRED
 # Raspberry Pi OS ships its own Chromium build (with Widevine support) as
@@ -86,6 +82,7 @@ sed -i \
   -e 's|8081/search?searchTerm={query}|8081/search?search={query}|' \
   -e 's|^name = "RomM"$|name = "Spel"|' \
   -e 's|^tagline = "Retrospel"$|tagline = "RomM"|' \
+  -e 's|^hz = 30$|hz = 60              # pointer steps per second; the extension applies them per frame|' \
   /etc/pioneer-tv/config.toml
 # New default services are appended once; edit or remove them on the Tjänster page.
 if ! grep -q '^id = "romm"' /etc/pioneer-tv/config.toml; then
@@ -94,8 +91,7 @@ fi
 [ -f /etc/pioneer-tv/chromium.env ] || cp "$REPO/system/chromium.env" /etc/pioneer-tv/chromium.env
 sed "s/@MODE@/$MODE/" "$REPO/system/weston.ini" > "$HOME_DIR/.config/weston.ini"
 cat > /etc/pioneer-tv/board.env <<EOF
-# Written by install.sh from the device tree; start-chromium.sh reads it.
-PIONEER_TV_BOARD=$BOARD
+# Written by install.sh; start-chromium.sh reads the window size from it.
 PIONEER_TV_WIDTH=${MODE%%x*}
 PIONEER_TV_HEIGHT=$(echo "$MODE" | sed 's/^[0-9]*x//; s/@.*//')
 EOF
@@ -193,7 +189,7 @@ systemctl try-restart pioneer-tv-daemon.service pioneer-tv-weston.service || tru
 
 cat <<MSG
 
-Pioneer TV installed to $TARGET ($BOARD, $MODE).
+Pioneer TV installed to $TARGET ($MODE).
   config:   /etc/pioneer-tv/config.toml
   chromium: /etc/pioneer-tv/chromium.env
 Pair a gamepad with bluetoothctl (scan on / pair / trust / connect), then reboot.

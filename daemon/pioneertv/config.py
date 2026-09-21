@@ -78,8 +78,8 @@ DEFAULTS: dict[str, Any] = {
         },
     },
     # mode "virtual": the extension draws and drives the pointer (no Wayland pointer, see README).
-    # mode "uinput": a real virtual mouse device; crashes Weston on the Pi 3.
-    "mouse": {"mode": "virtual", "deadzone": 0.15, "max_speed": 1100.0, "curve": 2.0, "hz": 30},
+    # mode "uinput": a real virtual mouse device, for a compositor that can show a cursor.
+    "mouse": {"mode": "virtual", "deadzone": 0.15, "max_speed": 1100.0, "curve": 2.0, "hz": 60},
     "ui": {"auto_keyboard": True},
     "chromium": {"log_file": "/home/pi/.pioneer-tv/chromium.log"},
     "remote": {"token": ""},

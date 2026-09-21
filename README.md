@@ -1,6 +1,6 @@
 # Pioneer TV
 
-Maskinrepubliken's Raspberry Pi TV box for a 32" TV: Cineasterna, SVT Play, Jellyfin and RomM as
+Maskinrepubliken's Raspberry Pi 4 TV box for a 32" TV: Cineasterna, SVT Play, Jellyfin and RomM as
 web pages in a kiosk Chromium on Weston, driven by a Bluetooth gamepad, with
 HDMI-CEC for the TV's volume and power.
 
@@ -171,7 +171,7 @@ The TV remote works too: keys the TV forwards over CEC are mapped in `[cec.remot
 
 ## Installing on the Pi
 
-Raspberry Pi OS Lite, 64-bit, Bookworm, user `pi`, wired Ethernet.
+A Raspberry Pi 4 with 4 GB, Raspberry Pi OS Lite, 64-bit, Bookworm or Trixie, user `pi`, wired Ethernet.
 
 ```
 git clone -b main https://github.com/maskinrepubliken/pioneer-tv.git
@@ -184,7 +184,7 @@ The box follows the branch it was installed from; `main` is the one to use.
 
 The installer pulls in Weston, Chromium, Widevine, v4l-utils, BlueZ, aiohttp and
 evdev, copies the repo to `/opt/pioneer-tv`, installs the systemd units,
-sets the video mode for the board (1080p on a Pi 4/5, 720p on a Pi 3), enables
+sets the video mode (1280x720), enables
 zram and sets the CPU governor to performance at
 boot, and sets the boot target to graphical. Rerunning it is safe. Pair the first gamepad from the shell (later ones from the settings page):
 
@@ -245,30 +245,30 @@ itself, sees ordinary key presses. Buttons that mean something to the shell
 (home, menu, keyboard) go over the WebSocket as events. CEC is only ever
 touched by the daemon.
 
-## Boards
+## Board
 
-The installer reads the model from the device tree and writes
-`/etc/pioneer-tv/board.env`. A Pi 4 or 5 runs at 1920x1080 with Chromium
-compositing and rasterising on the GPU; a Pi 3 runs at 1280x720 with
-`--disable-gpu`, because its VideoCore IV cannot give Chromium the GLES 3 context
-it wants. To cap a Pi 4 at 720p, run the installer once as
-`PIONEER_TV_MODE=1280x720@60 sudo system/install.sh`; the choice is written to
-`/etc/pioneer-tv/mode` and kept by later updates (delete the file to go back to
-the board default). GPU flags can be overridden with `PIONEER_TV_GPU_FLAGS` in
-`chromium.env`. A Pi 3 was too slow for
-Cineasterna's software-decoded Widevine video; a Pi 4 with 4 GB is comfortable.
+Pioneer TV runs on a Raspberry Pi 4 with 4 GB; the installer warns on anything
+else and carries on. The window is 1280x720: players cap stream quality to the
+window size, and 1080p in a browser drops frames on this board under every
+flag set we measured. A TV without a 720p mode (many only offer 1080p and
+1360x768) gets Weston's scaling, which is cheap. The size is written to
+`/etc/pioneer-tv/board.env`. Chromium composites and rasterises on the GPU;
+the flags can be overridden with `PIONEER_TV_GPU_FLAGS` in `chromium.env`.
+A Pi 3 was tried first and was too slow for Cineasterna's software-decoded
+Widevine video; it is no longer supported.
 
 ## Known board quirk: no hardware cursor
 
-Weston 14 on the Pi 3's VideoCore IV aborts (an assertion in
-backend-drm/state-propose.c) the first time any client shows a mouse cursor,
-and none of Weston's switches avoid it. So the box has no pointer device at
-all: the daemon streams right-stick motion to the extension, which draws its
+Weston 14 aborted (an assertion in backend-drm/state-propose.c) the first time
+any client showed a mouse cursor, and none of Weston's switches avoided it. So
+the box has no pointer device at all: the daemon streams right-stick motion to the extension, which draws its
 own pointer (`cursor.js`), delivers hover and clicks to what is under it, and
 scrolls when pushed against the top or bottom edge. A clicks at the pointer
 for a few seconds after it last moved, and is the normal "select" otherwise.
-`cursor.css` also hides any system cursor in case a real mouse is plugged in;
-that would still crash Weston on this board, so do not.
+`cursor.css` also hides any system cursor in case a real mouse is plugged in.
+The stick is sampled at 60 Hz by the daemon; the extension sums the steps and
+applies them once per animation frame, and runs the hit test behind hover at
+most every 80 ms, so a busy page does not queue up pointer motion.
 
 ## Sound
 
@@ -286,6 +286,19 @@ over CEC; Chromium itself stays at 100 %. To check from a shell as `pi`:
   `wifi.powersave = 2`); on the Pi's radio it causes the latency spikes that
   make players stall and drop to low quality. Ethernet, or a 5 GHz network,
   is still the real fix for streaming.
+
+- Streams are kept on H.264. Chromium says yes to every codec it can decode
+  in software, so SVT Play served AV1, which the Pi 4 has no hardware for:
+  four `dav1d` threads for a 540p stream, one frame in eight dropped, and a
+  pointer that lagged behind the stick. `extension/content/codecs.js` runs in
+  the page's own world before any of its scripts and answers the codec
+  queries (`MediaSource.isTypeSupported`, `canPlayType`,
+  `mediaCapabilities.decodingInfo`) with H.264 only. The same stream then
+  decodes at well under a core with no drops, and Jellyfin transcodes
+  anything else on the server, which is what we want. Video decode itself is
+  software (`--disable-accelerated-video-decode`): the V4L2 decoder wedges on
+  every resolution change, and an adaptive player on weak Wi-Fi changes
+  resolution constantly.
 
 - Players cap stream quality to the window size, so the video mode is also the
   quality ceiling: 1080p on a Pi 4, 720p on a Pi 3. Widevine content

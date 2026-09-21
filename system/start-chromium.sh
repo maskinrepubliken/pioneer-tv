@@ -3,41 +3,31 @@
 # Started by Weston's autolaunch (see weston.ini). Edit /etc/pioneer-tv/chromium.env
 # to add flags or change the profile location.
 #
-# GPU: a Pi 4/5 (VideoCore VI/VII) composites and rasterises on the GPU. The
-# Pi 3's VideoCore IV only offers OpenGL ES 2.0 while Chromium wants ES 3.0, so
-# there Chromium runs with --disable-gpu; forcing the GPU on a Pi 3 gives a grey
-# screen that never paints. The board comes from /etc/pioneer-tv/board.env.
+# Built for a Raspberry Pi 4 (4 GB): Chromium composites and rasterises on the
+# VideoCore VI, and the window is 1280x720 (players cap stream quality to the
+# window, and 1080p in a browser drops frames on this board). The size comes
+# from /etc/pioneer-tv/board.env, written by the installer.
 set -u
 
-# Board facts from the installer, then site overrides, so both take effect below.
+# Installer facts first, then site overrides, so both take effect below.
 [ -f /etc/pioneer-tv/board.env ] && . /etc/pioneer-tv/board.env
 [ -f /etc/pioneer-tv/chromium.env ] && . /etc/pioneer-tv/chromium.env
 # The kiosk user's own override, for experiments without root.
 [ -f "$HOME/.pioneer-tv/chromium.env" ] && . "$HOME/.pioneer-tv/chromium.env"
-BOARD=${PIONEER_TV_BOARD:-pi3}
 WIDTH=${PIONEER_TV_WIDTH:-1280}
 HEIGHT=${PIONEER_TV_HEIGHT:-720}
-if [ -z "${PIONEER_TV_GPU_FLAGS+x}" ]; then
-  if [ "$BOARD" = pi4 ]; then
-    # Measured on a Pi 4 at 720p: all flag sets play clean; zero-copy had the
-    # lowest CPU. (1080p60 drops frames under every set: decoder ceiling.)
-    GPU_FLAGS="--ignore-gpu-blocklist --enable-zero-copy"
-  else
-    GPU_FLAGS="--disable-gpu"
-  fi
-else
-  GPU_FLAGS=$PIONEER_TV_GPU_FLAGS
-fi
+# Measured at 720p: every GPU flag set plays clean; zero-copy had the lowest
+# CPU. An empty PIONEER_TV_GPU_FLAGS lets Chromium decide on its own.
+GPU_FLAGS=${PIONEER_TV_GPU_FLAGS-"--ignore-gpu-blocklist --enable-zero-copy"}
 
-# Video decoding. The Pi's V4L2 decoder wedges every time a stream changes
-# resolution, and SVT Play's player changes it constantly, so playback pauses
-# for a second again and again. Measured on a Pi 4 at 720p: hardware decode
-# stalled in 11 of 15 samples, software decode in none of 60, at about one
-# core of CPU. A Pi 3 has no such headroom and keeps the decoder.
-VIDEO_DECODE=${PIONEER_TV_VIDEO_DECODE:-}
-if [ -z "$VIDEO_DECODE" ]; then
-  if [ "$BOARD" = pi4 ]; then VIDEO_DECODE=software; else VIDEO_DECODE=hardware; fi
-fi
+# Video decoding. The Pi's V4L2 decoder wedges when a stream changes
+# resolution, and adaptive players change it constantly on a weak network, so
+# playback pauses again and again. Measured on SVT Play at 720p: hardware
+# decode stalled in most samples and dropped one frame in ten; software H.264
+# stalled in none, at well under a core. The extension's codec gate
+# (content/codecs.js) is what keeps streams on H.264: AV1 or VP9 in software
+# would eat four cores.
+VIDEO_DECODE=${PIONEER_TV_VIDEO_DECODE:-software}
 if [ "$VIDEO_DECODE" = software ]; then
   DECODE_FLAGS="--disable-accelerated-video-decode"
 else
@@ -61,7 +51,7 @@ done
 
 BIN=${PIONEER_TV_CHROMIUM_BIN:-$(command -v chromium-browser || command -v chromium)}
 DEVTOOLS_PORT=${PIONEER_TV_DEVTOOLS_PORT:-9222}   # 127.0.0.1 only; used to open the launcher
-echo "pioneer-tv: $($BIN --version 2>/dev/null), board $BOARD ${WIDTH}x${HEIGHT}, extension $PIONEER_TV_DIR/extension ($(grep -o '"version": "[^"]*"' "$PIONEER_TV_DIR/extension/manifest.json")), gpu: $GPU_FLAGS, decode: $VIDEO_DECODE, extra: ${EXTRA_FLAGS:-none}"
+echo "pioneer-tv: $($BIN --version 2>/dev/null), ${WIDTH}x${HEIGHT}, extension $PIONEER_TV_DIR/extension ($(grep -o '"version": "[^"]*"' "$PIONEER_TV_DIR/extension/manifest.json")), gpu: $GPU_FLAGS, decode: $VIDEO_DECODE, extra: ${EXTRA_FLAGS:-none}"
 
 # Chromium picks its audio backend at start: wait for PipeWire's Pulse socket
 # so sound goes through it (and on to HDMI) instead of raw ALSA.
