@@ -8,17 +8,34 @@
 // d-pad can drive them.
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
-  const HEARTBEAT_MS = 4000;
+  const DETECT_MS = 1000;           // how often we look
+  const HEARTBEAT_MS = 4000;        // how often the daemon hears from us
   let inGame = false;
   let lastSent = null;
+  let lastBeat = 0;
   let timer = null;
 
+  function visible(el) {
+    const r = el.getBoundingClientRect();
+    if (r.width < 2 || r.height < 2) return false;
+    const st = getComputedStyle(el);
+    return st.visibility !== 'hidden' && st.display !== 'none' && parseFloat(st.opacity) > 0;
+  }
+
+  // Only a running emulator owns the pad. EmulatorJS paints into its canvas,
+  // and that canvas does not exist before the core starts: the player route
+  // first shows RomM's own save-file screen and then a loading screen, both
+  // ordinary pages you drive with the d-pad. So the canvas decides, never the
+  // URL, and a "start game" overlay means it has not started yet.
   function detect() {
-    if (/\/ejs(\/|$)/.test(location.pathname)) return true;                  // RomM player route
-    if (document.querySelector('#game .ejs_game, .ejs_canvas, canvas.ejs_canvas, #ejs-canvas')) return true;
-    const canvas = document.querySelector('canvas');
-    if (canvas && document.fullscreenElement) {
-      const r = canvas.getBoundingClientRect();
+    const canvas = document.querySelector('canvas.ejs_canvas, .ejs_parent canvas, .ejs_game canvas, #game canvas');
+    if (canvas && visible(canvas) && canvas.clientWidth > 200 && canvas.clientHeight > 150) {
+      const start = document.querySelector('.ejs_start_button, [class*="ejs_start"]');
+      return !(start && visible(start));
+    }
+    const other = document.querySelector('canvas');
+    if (other && document.fullscreenElement && visible(other)) {
+      const r = other.getBoundingClientRect();
       if (r.width * r.height > window.innerWidth * window.innerHeight * 0.5) return true;
     }
     return false;
@@ -32,6 +49,7 @@ window.PioneerTV = window.PioneerTV || {};
     const on = inGame && !overlayOpen();
     if (!force && on === lastSent && on === false) return; // nothing to keep alive
     lastSent = on;
+    lastBeat = Date.now();
     M.bridge.daemon({ type: 'gamemode', on });
   }
 
@@ -42,7 +60,7 @@ window.PioneerTV = window.PioneerTV || {};
       document.documentElement.classList.toggle('pioneertv-game', inGame);
       if (M.nav) M.nav.enabled = !inGame;   // a real keyboard goes to the game too
       send(true);
-    } else if (inGame) {
+    } else if (inGame && Date.now() - lastBeat >= HEARTBEAT_MS) {
       send(true);                             // heartbeat
     }
   }
@@ -52,7 +70,7 @@ window.PioneerTV = window.PioneerTV || {};
     init() {
       const b = M.bridge;
       if (!b || !b.available) return;
-      timer = setInterval(tick, HEARTBEAT_MS);
+      timer = setInterval(tick, DETECT_MS);
       tick();
       // Overlays pause game mode; resume when they close.
       ['keyboard:open', 'keyboard:close', 'menu:open', 'menu:close', 'logs:open', 'logs:close'].forEach((ev) => b.on(ev, () => send(true)));
