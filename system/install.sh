@@ -83,6 +83,7 @@ sed -i \
   -e 's|^name = "RomM"$|name = "Spel"|' \
   -e 's|^tagline = "Retrospel"$|tagline = "RomM"|' \
   -e 's|^hz = 30$|hz = 60              # pointer steps per second; the extension applies them per frame|' \
+  -e 's|^mode = "virtual"     # the extension draws and drives the pointer; "uinput" crashes Weston on the Pi 3$|mode = "virtual"     # the extension draws and drives the pointer; "uinput" is a real mouse device (see README)|' \
   /etc/pioneer-tv/config.toml
 # New default services are appended once; edit or remove them on the Tjänster page.
 if ! grep -q '^id = "romm"' /etc/pioneer-tv/config.toml; then

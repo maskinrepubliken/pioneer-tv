@@ -132,7 +132,7 @@ window.PioneerTV = window.PioneerTV || {};
     },
     active() { return Date.now() - state.lastMove < ACTIVE_MS; },
     click() { button('left', true); setTimeout(() => button('left', false), 60); },
-    position() { flush(); return { x: state.x, y: state.y }; },
+    position() { flush(); ensure(); return { x: state.x, y: state.y }; },   // starts centred, like the first move
     elementUnder() { flush(); return under(); },
   };
 })(window.PioneerTV);
