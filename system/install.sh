@@ -50,10 +50,12 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update || echo "warning: apt-get update failed, installing from the package lists we have" >&2
 # shellcheck disable=SC2086
 apt-get install -y --no-install-recommends $REQUIRED
-# Raspberry Pi OS ships its own Chromium build (with Widevine support) as
-# chromium-browser; plain Debian calls it chromium.
-apt-get install -y --no-install-recommends chromium-browser \
-  || apt-get install -y --no-install-recommends chromium
+# Raspberry Pi OS ships its own Chromium build (with Widevine and the V4L2
+# decoder patches). On Trixie the package is chromium and chromium-browser is
+# an empty transitional package, so ask for chromium first: asking for the
+# dummy would report "already the newest version" and never upgrade.
+apt-get install -y --no-install-recommends chromium \
+  || apt-get install -y --no-install-recommends chromium-browser
 # Nice to have; not present on every image.
 # bluez-firmware carries the onboard chip's patch file; the kernel (hci_bcm)
 # attaches the chip itself on Bookworm, no hciuart service needed.
