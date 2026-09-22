@@ -118,14 +118,9 @@ if touch "$BOOT/.pioneer-tv-write-test" 2>/dev/null; then
   rm -f "$BOOT/.pioneer-tv-write-test"
   grep -q '^dtoverlay=vc4-kms-v3d' "$BOOT/config.txt" || echo 'dtoverlay=vc4-kms-v3d' >> "$BOOT/config.txt"
   grep -q '^disable_overscan=1' "$BOOT/config.txt" || echo 'disable_overscan=1' >> "$BOOT/config.txt"
-  # The firmware may drop the CPU from 1.8 to 1.5 GHz above its 60 C soft limit,
-  # and a Pi 4 streaming video idles near 60 C. 70 C is the firmware's maximum;
-  # the hard limit at 80-85 C still protects the chip. Takes effect at boot.
-  if grep -q '^temp_soft_limit=' "$BOOT/config.txt"; then
-    sed -i 's/^temp_soft_limit=.*/temp_soft_limit=70/' "$BOOT/config.txt"
-  else
-    echo 'temp_soft_limit=70' >> "$BOOT/config.txt"
-  fi
+  # temp_soft_limit is a Pi 3B+ knob; the Pi 4 has no soft limit (it scales
+  # voltage and frequency instead), so an earlier install's line is removed.
+  sed -i '/^temp_soft_limit=/d' "$BOOT/config.txt"
   if grep -q 'video=HDMI-A-1' "$BOOT/cmdline.txt"; then
     sed -i "s/video=HDMI-A-1:[^ ]*/video=HDMI-A-1:${MODE}D/" "$BOOT/cmdline.txt"
   else
