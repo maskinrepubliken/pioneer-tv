@@ -298,7 +298,11 @@ over CEC; Chromium itself stays at 100 %. To check from a shell as `pi`:
   anything else on the server, which is what we want. Video decode itself is
   software (`--disable-accelerated-video-decode`): the V4L2 decoder wedges on
   every resolution change, and an adaptive player on weak Wi-Fi changes
-  resolution constantly.
+  resolution constantly. Re-measured on Chromium 153 rpt1, which fixed the
+  decoder's VideoCore hang: hardware decode still stalled twice in four
+  minutes, dropped 11% of frames against 4% for software, and saved no CPU.
+  `PIONEER_TV_VIDEO_DECODE=hardware` in `chromium.env` retries it on a newer
+  build.
 
 - Players cap stream quality to the window size, so the video mode is also the
   quality ceiling: 1080p on a Pi 4, 720p on a Pi 3. Widevine content

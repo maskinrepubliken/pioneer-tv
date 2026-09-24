@@ -22,11 +22,16 @@ GPU_FLAGS=${PIONEER_TV_GPU_FLAGS-"--ignore-gpu-blocklist --enable-zero-copy"}
 
 # Video decoding. The Pi's V4L2 decoder wedges when a stream changes
 # resolution, and adaptive players change it constantly on a weak network, so
-# playback pauses again and again. Measured on SVT Play at 720p: hardware
-# decode stalled in most samples and dropped one frame in ten; software H.264
-# stalled in none, at well under a core. The extension's codec gate
-# (content/codecs.js) is what keeps streams on H.264: AV1 or VP9 in software
-# would eat four cores.
+# playback pauses again and again. Measured on SVT Play at 720p with Chromium
+# 152: hardware decode stalled in most samples and dropped one frame in ten;
+# software H.264 stalled in none, at well under a core. Re-measured on
+# Chromium 153 rpt1 (Sep 2026, which fixed the V4L2 teardown hang, see
+# raspberrypi/trixie-feedback#101): the decoder no longer hangs the VideoCore,
+# but in four minutes it still stalled twice, dropped 11% of frames against
+# 4% for software, and saved no CPU (both peaked at 50%). Software stays; set
+# PIONEER_TV_VIDEO_DECODE=hardware in chromium.env to try again on a newer
+# build. The extension's codec gate (content/codecs.js) is what keeps streams
+# on H.264: AV1 or VP9 in software would eat four cores.
 VIDEO_DECODE=${PIONEER_TV_VIDEO_DECODE:-software}
 if [ "$VIDEO_DECODE" = software ]; then
   DECODE_FLAGS="--disable-accelerated-video-decode"
