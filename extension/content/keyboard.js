@@ -28,6 +28,14 @@ window.PioneerTV = window.PioneerTV || {};
 
     open(target) {
       if (!target) return;
+      // A field outside the fullscreen element (the site's search, say, while
+      // its player fills the TV) cannot be seen while typing: leave fullscreen
+      // first, then open over the page.
+      const fs = document.fullscreenElement;
+      if (fs && !fs.contains(target)) {
+        document.exitFullscreen().catch(() => {}).finally(() => this.open(target));
+        return;
+      }
       if (this.isOpen()) this.close();
       this.target = target;
       this.layer = 'letters';
@@ -52,7 +60,7 @@ window.PioneerTV = window.PioneerTV || {};
     },
 
     close() {
-      if (this.root) this.root.remove();
+      if (this.root) M.bridge.unmount(this.root);
       this.root = null;
       if (M.nav.captured === this) M.nav.captured = null;
       if (this._onOutside) {
@@ -131,7 +139,7 @@ window.PioneerTV = window.PioneerTV || {};
       hint.className = 'pioneertv-keyhint';
       hint.textContent = 'A skriv · X eller håll A: OK · B stäng · Y tangentbord';
       root.appendChild(hint);
-      document.documentElement.appendChild(root);
+      M.bridge.mount(root, { modal: true });
       this.root = root;
     },
 
@@ -227,7 +235,7 @@ window.PioneerTV = window.PioneerTV || {};
     press(def) {
       const k = def.k;
       if (k === 'shift') { this.shift = !this.shift; this.refreshLabels(); return; }
-      if (k.startsWith('layer:')) { this.layer = k.slice(6); const r = this.row, c = this.col; this.root.remove(); this.build(); this.row = r; this.col = c; this.highlight(); return; }
+      if (k.startsWith('layer:')) { this.layer = k.slice(6); const r = this.row, c = this.col; M.bridge.unmount(this.root); this.build(); this.row = r; this.col = c; this.highlight(); return; }
       if (k === 'backspace') return this.backspace();
       if (k === 'space') return this.insert(' ');
       if (k === 'left' || k === 'right') return this.moveCaret(k === 'left' ? -1 : 1);

@@ -10,7 +10,7 @@ window.PioneerTV = window.PioneerTV || {};
         this.toastEl.className = 'pioneertv-toast pioneertv-card';
         this.toastEl.setAttribute('data-pioneertv-overlay', '');
         M.bridge.sealOverlay(this.toastEl);
-        document.documentElement.appendChild(this.toastEl);
+        M.bridge.mount(this.toastEl);
       }
       this.toastEl.innerHTML = '';
       if (icon) { const i = document.createElement('span'); i.className = 'pioneertv-toast-icon'; i.appendChild(M.icons.svg(M.icons.names.includes(icon) ? icon : 'info')); this.toastEl.appendChild(i); }
@@ -64,7 +64,7 @@ window.PioneerTV = window.PioneerTV || {};
         hint.textContent = 'A välj · B stäng';
         panel.appendChild(hint);
         root.appendChild(panel);
-        document.documentElement.appendChild(root);
+        M.bridge.mount(root, { modal: true });
         this.root = root;
         this.index = 0;
         this.highlight();
@@ -72,7 +72,7 @@ window.PioneerTV = window.PioneerTV || {};
         M.bridge && M.bridge.emit('menu:open');
       },
       close() {
-        if (this.root) this.root.remove();
+        if (this.root) M.bridge.unmount(this.root);
         this.root = null;
         if (M.nav.captured === this) M.nav.captured = null;
         M.bridge && M.bridge.emit('menu:close');

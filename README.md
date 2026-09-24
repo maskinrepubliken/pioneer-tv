@@ -294,6 +294,26 @@ The stick is sampled at 60 Hz by the daemon; the extension sums the steps and
 applies them once per animation frame, and runs the hit test behind hover at
 most every 80 ms, so a busy page does not queue up pointer motion.
 
+## Overlays and fullscreen
+
+A page in fullscreen shows only its fullscreen element, which the browser puts
+in its top layer; nothing else on the page is drawn. So every overlay (quick
+menu, keyboard, log viewer, toasts, the pointer) is a popover, mounted with
+`M.bridge.mount()`, which joins the top layer above the player; the pointer and
+the toast are re-stacked to stay on top. While a menu, keyboard or log viewer
+is open in fullscreen, Escape is held with the Keyboard Lock API: B sends
+Escape, and without the lock the browser leaves fullscreen instead of the
+overlay closing (held for two seconds, Escape still exits). The lock is let go
+only after the key is up. B with nothing open leaves fullscreen as usual. The
+keyboard leaves fullscreen first when its text field is outside the player, so
+what is typed can be seen. In fullscreen the browser's hit test does not see
+the overlays, so the pointer searches them itself.
+
+SVT1's live player throws its fullscreen element away every so often and
+builds a new one. `bigscreen.js` tells that apart from leaving fullscreen on
+purpose (the old element is gone from the page) and takes the new player
+fullscreen again.
+
 ## Sound
 
 Audio goes to the TV over HDMI through PipeWire, which runs as the kiosk user

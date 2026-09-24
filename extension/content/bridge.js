@@ -33,6 +33,72 @@ window.PioneerTV = window.PioneerTV || {};
       return root;
     },
 
+    // ------------------------------------------------------- top layer
+    // A page in fullscreen shows only its fullscreen element: it sits in the
+    // browser's top layer and everything else, our overlays included, is not
+    // drawn. So overlays are popovers, which join the top layer above it.
+    // Measured on the box (Chromium 153, SVT1 in fullscreen): a plain fixed
+    // overlay is invisible, a manual popover is drawn over the video.
+    //
+    // mount(el, { modal }) shows an overlay there; unmount(el) takes it away.
+    // A modal overlay (menu, keyboard, logs) has the pad: while one is open in
+    // fullscreen, Escape is held with the Keyboard Lock API, because B sends
+    // Escape and the browser would otherwise leave fullscreen on it instead of
+    // letting the overlay close. Held down for two seconds it still exits.
+    _layer: new Set(),
+    _modal: new Set(),
+    mount(el, opts = {}) {
+      const top = typeof el.showPopover === 'function';
+      if (top && !el.hasAttribute('popover')) el.setAttribute('popover', 'manual');
+      if (!el.isConnected) document.documentElement.appendChild(el);
+      this._layer.add(el);
+      if (opts.modal) this._modal.add(el);
+      this._show(el);
+      this._restack();
+      this._lockEscape();
+      return el;
+    },
+    unmount(el) {
+      if (!el) return;
+      this._layer.delete(el);
+      this._modal.delete(el);
+      try { if (el.matches(':popover-open')) el.hidePopover(); } catch {}
+      el.remove();
+      this._lockEscape();
+    },
+    _show(el) {
+      if (typeof el.showPopover !== 'function') return;
+      try { if (el.matches(':popover-open')) el.hidePopover(); el.showPopover(); } catch {}
+    },
+    // The top layer stacks in the order things were shown. Keep the toast and
+    // then the pointer last, so both stay above a menu or keyboard.
+    _restack() {
+      for (const cls of ['pioneertv-toast', 'pioneertv-cursor']) {
+        for (const el of this._layer) if (el.isConnected && el.classList.contains(cls)) this._show(el);
+      }
+    },
+    // The lock is released late on purpose: B's own press is what closes the
+    // overlay, and a lock dropped while that Escape is still down lets the
+    // browser act on the rest of it and leave fullscreen after all (seen on
+    // the box). So it goes a moment after the last overlay has closed.
+    _lockEscape() {
+      const kb = navigator.keyboard;
+      if (!kb || typeof kb.lock !== 'function') return;
+      const want = !!document.fullscreenElement && [...this._modal].some((el) => el.isConnected);
+      clearTimeout(this._unlockTimer);
+      if (want) {
+        if (this._escLocked) return;
+        this._escLocked = true;
+        kb.lock(['Escape']).catch(() => { this._escLocked = false; });
+      } else if (this._escLocked) {
+        this._unlockTimer = setTimeout(() => {
+          if ([...this._modal].some((el) => el.isConnected)) return;
+          this._escLocked = false;
+          try { kb.unlock(); } catch {}
+        }, 700);
+      }
+    },
+
     on(name, fn) { (listeners[name] = listeners[name] || []).push(fn); },
     emit(name, data) { (listeners[name] || []).forEach((fn) => { try { fn(data); } catch (e) { console.error(e); } }); },
 
@@ -79,6 +145,12 @@ window.PioneerTV = window.PioneerTV || {};
     },
 
     init() {
+      document.addEventListener('fullscreenchange', () => {
+        for (const el of this._layer) if (el.isConnected) this._show(el);
+        this._restack();
+        if (!document.fullscreenElement) { clearTimeout(this._unlockTimer); this._escLocked = false; }   // leaving fullscreen drops a lock by itself
+        this._lockEscape();
+      });
       if (!hasExt) { this.emit('state', this.state); return; }
       chrome.runtime.onMessage.addListener((msg) => {
         if (msg.type === 'state') this._applyState(msg);

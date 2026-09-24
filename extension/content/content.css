@@ -12,6 +12,18 @@
 @font-face { font-family: "IBM Plex Sans"; font-weight: 400 600; font-style: normal; src: url("../fonts/ibmplexsans.woff2") format("woff2"); }
 @font-face { font-family: "IBM Plex Mono"; font-weight: 400; font-style: normal; src: url("../fonts/ibmplexmono-400.woff2") format("woff2"); }
 
+/* ---- overlays live in the browser's top layer as popovers (bridge.mount),
+   so they are drawn over a fullscreen player too. A popover comes with the
+   browser's own box: a border, padding, Canvas colours, centred at
+   fit-content. This takes all of it back, at zero specificity so each
+   overlay's own rules below still decide. ---- */
+:where([data-pioneertv-overlay][popover]) {
+  position: fixed; inset: auto; margin: 0; padding: 0; border: 0;
+  width: auto; height: auto; max-width: none; max-height: none;
+  overflow: visible; background: transparent; color: inherit;
+}
+:where([data-pioneertv-overlay][popover])::backdrop { display: none; }
+
 /* ---- focus ring on other sites: an ink ring inside a solid paper ring, so it
    reads on dark and light pages alike ---- */
 .pioneertv-focus {
@@ -30,7 +42,7 @@
 
 /* ---- software pointer (see cursor.js) ---- */
 .pioneertv-cursor {
-  position: fixed; left: 0; top: 0; z-index: 2147483647; pointer-events: none;
+  position: fixed; left: 0; top: 0; right: auto; bottom: auto; z-index: 2147483647; pointer-events: none; overflow: visible;
   width: 24px; height: 36px; visibility: hidden;
 }
 .pioneertv-cursor-show { visibility: visible; }
@@ -49,7 +61,7 @@ html.pioneertv-bigscreen, html.pioneertv-bigscreen body { overflow: hidden !impo
 
 /* ---- keyboard ---- */
 .pioneertv-keyboard {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 2147483000;
+  position: fixed; left: 0; right: 0; bottom: 0; top: auto; z-index: 2147483000;
   padding: 18px 22px 12px;
   background: var(--pioneertv-paper);
   border-top: 1px solid var(--pioneertv-line-strong);
@@ -77,7 +89,7 @@ html.pioneertv-keyboard-open { scroll-padding-bottom: 360px; }
 
 /* ---- toast ---- */
 .pioneertv-toast {
-  position: fixed; top: 24px; right: 24px; z-index: 2147483001;
+  position: fixed; top: 24px; right: 24px; left: auto; bottom: auto; z-index: 2147483001;
   display: flex; align-items: center; gap: 12px;
   padding: 14px 24px 14px 18px;
   font-size: 24px; line-height: 1.25;

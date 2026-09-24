@@ -21,8 +21,9 @@ window.PioneerTV = window.PioneerTV || {};
     el.className = 'pioneertv-cursor';
     el.setAttribute('data-pioneertv-overlay', '');
     el.innerHTML = ARROW;
-    (document.documentElement || document.body).appendChild(el);
     state.el = el;
+    if (M.bridge && M.bridge.mount) M.bridge.mount(el);        // top layer: drawn over fullscreen video too
+    else (document.documentElement || document.body).appendChild(el);
     if (!state.initialised) { state.x = Math.round(window.innerWidth / 2); state.y = Math.round(window.innerHeight / 2); state.initialised = true; }
     return el;
   }
@@ -35,7 +36,32 @@ window.PioneerTV = window.PioneerTV || {};
     state.hideTimer = setTimeout(() => el.classList.remove('pioneertv-cursor-show'), ACTIVE_MS);
   }
 
+  // What the pointer is over. In fullscreen the browser's hit test does not
+  // see our overlays (they are popovers in the top layer, next to the
+  // fullscreen element; measured on the box: elementFromPoint returned the
+  // video under the open menu), so there the open overlays are searched
+  // first, the most recently shown on top, its deepest element under the point.
+  function overlayAt(x, y) {
+    const inside = (r) => r.width > 0 && r.height > 0 && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+    const layers = [...document.querySelectorAll('[data-pioneertv-overlay]')]
+      .filter((e) => e !== state.el && !e.classList.contains('pioneertv-toast') && (!e.matches || e.matches(':popover-open')));
+    for (let i = layers.length - 1; i >= 0; i--) {
+      const root = layers[i];
+      if (!inside(root.getBoundingClientRect())) continue;
+      let hit = root;
+      for (const el of root.querySelectorAll('*')) {
+        if (inside(el.getBoundingClientRect()) && getComputedStyle(el).pointerEvents !== 'none') hit = el;
+      }
+      return hit;
+    }
+    return null;
+  }
+
   function under() {
+    if (document.fullscreenElement) {
+      const o = overlayAt(state.x, state.y);
+      if (o) return o;
+    }
     const el = state.el;
     if (el) el.style.visibility = 'hidden';
     const t = document.elementFromPoint(state.x, state.y);

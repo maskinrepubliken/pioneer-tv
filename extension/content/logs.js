@@ -56,7 +56,7 @@ window.PioneerTV = window.PioneerTV || {};
       hint.innerHTML = `${M.icons.html('arrowLeft')} ${M.icons.html('arrowRight')} enhet · ${M.icons.html('arrowUp')} ${M.icons.html('arrowDown')} bläddra · A uppdatera · B stäng`;
       sheet.appendChild(hint);
       root.appendChild(sheet);
-      document.documentElement.appendChild(root);
+      M.bridge.mount(root, { modal: true });
       this.root = root;
       this.pre = pre;
       M.nav.captured = this;
@@ -66,7 +66,7 @@ window.PioneerTV = window.PioneerTV || {};
 
     close() {
       clearTimeout(this.timer);
-      if (this.root) this.root.remove();
+      if (this.root) M.bridge.unmount(this.root);
       this.root = null;
       if (M.nav.captured === this) M.nav.captured = null;
       M.bridge && M.bridge.emit('logs:close');

@@ -93,14 +93,32 @@ window.PioneerTV = window.PioneerTV || {};
     },
   };
 
+  // Fullscreen ends two ways. Someone leaves it (B, or the player's own
+  // button): do not fight that. Or the site throws its player away and builds
+  // a new one, which takes fullscreen with it: SVT1's live player does this
+  // every minute or so (measured on the box: the fullscreen element was
+  // removed from the page after 64 s with nothing pressed). Then the channel
+  // should simply stay big, so the new player is taken fullscreen again.
+  let fsElement = null;
+  let listening = false;
   function start() {
     started = Date.now();
+    done = false;
+    waiting = false;
     const timer = setInterval(() => { tick(); if (done) clearInterval(timer); }, POLL_MS);
     tick();
+    if (listening) return;
+    listening = true;
     document.addEventListener('fullscreenchange', () => {
-      if (!document.fullscreenElement) {           // left fullscreen: do not fight it
-        done = true;
-        document.documentElement.classList.remove('pioneertv-bigscreen');
+      if (document.fullscreenElement) { fsElement = document.fullscreenElement; return; }
+      const lost = fsElement && !fsElement.isConnected;
+      fsElement = null;
+      document.documentElement.classList.remove('pioneertv-bigscreen');
+      if (lost) {
+        M.bridge.daemon({ type: 'debug', text: 'bigscreen: the player replaced itself, taking fullscreen again' });
+        start();
+      } else {
+        done = true;                                 // left on purpose: stay out
       }
     });
   }
