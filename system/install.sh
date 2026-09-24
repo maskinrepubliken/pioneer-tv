@@ -23,20 +23,29 @@ mkdir -p /etc/pioneer-tv
 rm -f /etc/pioneer-tv/mode   # an older installer let the mode be chosen
 echo "== board: $MODEL ($MODE)"
 
+REQUIRED="weston seatd v4l-utils bluez python3 python3-evdev python3-aiohttp rsync git curl pipewire pipewire-pulse wireplumber pipewire-alsa fonts-noto-core"
+missing_required() { for p in $REQUIRED; do dpkg -s "$p" >/dev/null 2>&1 || return 0; done; return 1; }
+
 echo "== preflight"
+# Downloaded package files are only a cache; an SD card has no room to spare.
+apt-get clean 2>/dev/null || true
 FREE_MB=$(df -Pm / | awk 'NR==2 {print $4}')
 ROOT_DEV=$(findmnt -n -o SOURCE / || true)
 if [ "$FREE_MB" -lt 1500 ] && [ "${PIONEER_TV_SKIP_APT:-0}" != "1" ]; then
-  echo "Only ${FREE_MB} MB free on / (${ROOT_DEV}); the packages need about 1.5 GB." >&2
-  echo "If the root filesystem was never expanded, run:" >&2
-  echo "  sudo raspi-config nonint do_expand_rootfs && sudo reboot" >&2
-  echo "Otherwise free space with: sudo apt-get clean; sudo journalctl --vacuum-size=50M" >&2
-  echo "Set PIONEER_TV_IGNORE_SPACE=1 to try anyway." >&2
-  [ "${PIONEER_TV_IGNORE_SPACE:-0}" = "1" ] || exit 1
+  if ! missing_required; then
+    # Everything is installed already: this run only upgrades (Chromium,
+    # mostly), which needs a fraction of a fresh install's 1.5 GB.
+    echo "warning: only ${FREE_MB} MB free on / (${ROOT_DEV}); upgrading the installed packages anyway." >&2
+  else
+    echo "Only ${FREE_MB} MB free on / (${ROOT_DEV}); the packages need about 1.5 GB." >&2
+    echo "If the root filesystem was never expanded, run:" >&2
+    echo "  sudo raspi-config nonint do_expand_rootfs && sudo reboot" >&2
+    echo "Otherwise free space with: sudo apt-get clean; sudo journalctl --vacuum-size=50M" >&2
+    echo "Set PIONEER_TV_IGNORE_SPACE=1 to try anyway." >&2
+    [ "${PIONEER_TV_IGNORE_SPACE:-0}" = "1" ] || exit 1
+  fi
 fi
 
-REQUIRED="weston seatd v4l-utils bluez python3 python3-evdev python3-aiohttp rsync git curl pipewire pipewire-pulse wireplumber pipewire-alsa fonts-noto-core"
-missing_required() { for p in $REQUIRED; do dpkg -s "$p" >/dev/null 2>&1 || return 0; done; return 1; }
 # Skipping apt is for quick reinstalls; a required package that is not there yet gets installed anyway.
 if [ "${PIONEER_TV_SKIP_APT:-0}" = "1" ] && missing_required; then
   echo "== packages: required packages missing, installing despite PIONEER_TV_SKIP_APT"
