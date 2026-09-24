@@ -1,0 +1,205 @@
+{
+  "v": 3,
+  "layout": "files",
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-09-17T08:49:38Z"
+  },
+  "title": "Maskinrepubliken",
+  "namespace": "Maskinrepubliken",
+  "libraries": [
+    {
+      "name": "react",
+      "version": "18"
+    },
+    {
+      "name": "react-dom",
+      "version": "18"
+    }
+  ],
+  "sections": {},
+  "groups": [
+    "Logotyp",
+    "Sigill",
+    "Ytor",
+    "Motiv"
+  ],
+  "assetGroups": {
+    "Logotyp": {
+      "name": "Logotyp",
+      "tile": "l",
+      "order": [
+        "ordbild-tva-rader-black.svg",
+        "ordbild-tva-rader-papper.svg",
+        "ordbild-tva-rader-ockra.svg",
+        "ordbild-en-rad-black.svg",
+        "ordbild-en-rad-papper.svg"
+      ],
+      "files": {
+        "ordbild-tva-rader-black.svg": {
+          "name": "ordbild-tva-rader-black.svg",
+          "blob": "fd46a286674eb27c3cf7538bd80b51b5",
+          "size": 8854,
+          "type": "image/svg+xml"
+        },
+        "ordbild-tva-rader-papper.svg": {
+          "name": "ordbild-tva-rader-papper.svg",
+          "blob": "ecbf039221ac7b34edd0d22dff3b0224",
+          "size": 8854,
+          "type": "image/svg+xml"
+        },
+        "ordbild-tva-rader-ockra.svg": {
+          "name": "ordbild-tva-rader-ockra.svg",
+          "blob": "6c890f6c5f2efb4d441c24ea05de689c",
+          "size": 8854,
+          "type": "image/svg+xml"
+        },
+        "ordbild-en-rad-black.svg": {
+          "name": "ordbild-en-rad-black.svg",
+          "blob": "ce9c776b30f8733c861d14e1535c9ea4",
+          "size": 8117,
+          "type": "image/svg+xml"
+        },
+        "ordbild-en-rad-papper.svg": {
+          "name": "ordbild-en-rad-papper.svg",
+          "blob": "e5a511471d45cbd08c7f3743992b0ae0",
+          "size": 8117,
+          "type": "image/svg+xml"
+        }
+      }
+    },
+    "Sigill": {
+      "name": "Sigill",
+      "tile": "m",
+      "order": [
+        "sigill-black.svg",
+        "sigill-papper.svg"
+      ],
+      "files": {
+        "sigill-black.svg": {
+          "name": "sigill-black.svg",
+          "blob": "797edec2161036ddc12f437ff6461c9e",
+          "size": 1527,
+          "type": "image/svg+xml"
+        },
+        "sigill-papper.svg": {
+          "name": "sigill-papper.svg",
+          "blob": "aaf0e93b982e1325493cd306e9408528",
+          "size": 1547,
+          "type": "image/svg+xml"
+        }
+      }
+    },
+    "Ytor": {
+      "name": "Ytor",
+      "tile": "l",
+      "order": [
+        "perforering-tat.svg",
+        "perforering-gles.svg",
+        "ljusglanta.svg"
+      ],
+      "files": {
+        "perforering-tat.svg": {
+          "name": "perforering-tat.svg",
+          "blob": "ca185d5f3a513670467126c7d6722099",
+          "size": 1832,
+          "type": "image/svg+xml"
+        },
+        "perforering-gles.svg": {
+          "name": "perforering-gles.svg",
+          "blob": "5d5357b4d2cd89a79b14ef11ac8b1fb5",
+          "size": 1421,
+          "type": "image/svg+xml"
+        },
+        "ljusglanta.svg": {
+          "name": "ljusglanta.svg",
+          "blob": "f6a7a1f71c789b0bd08bb1677d3b7491",
+          "size": 1468,
+          "type": "image/svg+xml"
+        }
+      }
+    },
+    "Motiv": {
+      "name": "Motiv",
+      "tile": "m",
+      "order": [
+        "arsringar-sigill.svg",
+        "arsringar-matare.svg",
+        "stammar-diagram.svg",
+        "stammar-bard.svg",
+        "skogsbryn.svg",
+        "rotter-systemkarta.svg",
+        "rotter-systemkarta-ljus.svg",
+        "rotter-sidfot.svg",
+        "krona.svg"
+      ],
+      "files": {
+        "arsringar-sigill.svg": {
+          "name": "arsringar-sigill.svg",
+          "blob": "e055f551d846579376050cc2702c3bc4",
+          "size": 850,
+          "type": "image/svg+xml"
+        },
+        "arsringar-matare.svg": {
+          "name": "arsringar-matare.svg",
+          "blob": "a5a5324c757162fa5163af27c0624397",
+          "size": 863,
+          "type": "image/svg+xml"
+        },
+        "stammar-diagram.svg": {
+          "name": "stammar-diagram.svg",
+          "blob": "91d0f5b36d48a221ac7671cc42aee12a",
+          "size": 2247,
+          "type": "image/svg+xml"
+        },
+        "stammar-bard.svg": {
+          "name": "stammar-bard.svg",
+          "blob": "16de8c8ee8a5bb4c1ce53e2ecbbea4ac",
+          "size": 1097,
+          "type": "image/svg+xml"
+        },
+        "skogsbryn.svg": {
+          "name": "skogsbryn.svg",
+          "blob": "f39121294d10262ec653c35af19cd87e",
+          "size": 3328,
+          "type": "image/svg+xml"
+        },
+        "rotter-systemkarta.svg": {
+          "name": "rotter-systemkarta.svg",
+          "blob": "07b25e019407a421078c04e7192c0047",
+          "size": 2365,
+          "type": "image/svg+xml"
+        },
+        "rotter-systemkarta-ljus.svg": {
+          "name": "rotter-systemkarta-ljus.svg",
+          "blob": "8c74fa31fc04efadd2d7c5d16b9ae0f8",
+          "size": 2450,
+          "type": "image/svg+xml"
+        },
+        "rotter-sidfot.svg": {
+          "name": "rotter-sidfot.svg",
+          "blob": "3d9cd02d93e49c036fdbae63575813f8",
+          "size": 1142,
+          "type": "image/svg+xml"
+        },
+        "krona.svg": {
+          "name": "krona.svg",
+          "blob": "a8acd9c354f41b6a1c3023308418d655",
+          "size": 1242,
+          "type": "image/svg+xml"
+        }
+      }
+    }
+  },
+  "blobs": {},
+  "docs": {
+    "readme": "project/README.md",
+    "sections": []
+  },
+  "lastChange": {
+    "by": "Lyret",
+    "at": "2026-09-17T10:05:00Z",
+    "via": "Cowork",
+    "note": "Tio komponenter för webben: ordbild, perforering, ringmätare, knapp, bricka, sektionsrubrik, kort, nav, hero och sidfot."
+  }
+}

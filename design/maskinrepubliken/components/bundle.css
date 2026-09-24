@@ -1,0 +1,213 @@
+/* Maskinrepubliken — komponentstilar.
+   Kräver tokens.css. Storlekarna nedan speglar typskalan i tokens.json;
+   ändras skalan, ändra här också. Inga skuggor, inga toningar, ingen
+   opacitet: varje ton är en egen token, så allt håller på ett e-ink-glas. */
+
+.mr-ordbild { display: block; }
+.mr-ordbild img { display: block; width: 100%; height: auto; }
+
+/* --- Knapp ------------------------------------------------------------ */
+
+.mr-knapp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1;
+  text-decoration: none;
+  padding: 15px 26px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  background: var(--ochre);
+  color: var(--on-ochre);
+  cursor: pointer;
+}
+.mr-knapp--stor { font-size: 17px; padding: 18px 32px; }
+.mr-knapp--sekundar {
+  background: var(--paper);
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+.mr-knapp--sekundar:hover { background: var(--paper-hover); }
+.mr-knapp--pa-mork {
+  background: transparent;
+  color: var(--on-dark);
+  border-color: var(--on-dark);
+}
+.mr-knapp:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.mr-knapp--pa-mork:focus-visible { outline-color: var(--focus-on-dark); }
+.mr-knapp:disabled,
+.mr-knapp[aria-disabled='true'] {
+  background: var(--paper-sunken);
+  color: var(--ink-faint);
+  border-color: var(--line);
+  cursor: not-allowed;
+}
+
+/* --- Bricka ----------------------------------------------------------- */
+
+.mr-bricka {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 9px 18px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill);
+  color: var(--ink);
+}
+.mr-bricka--pa-mork { color: var(--on-dark); border-color: var(--on-dark); }
+.mr-bricka--fylld { background: var(--ochre); color: var(--on-ochre); border-color: var(--ochre); }
+
+/* --- Sektionsrubrik --------------------------------------------------- */
+
+.mr-rubrik { display: flex; flex-direction: column; gap: var(--space-3); }
+.mr-rubrik__avdelning {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--surface-rust);
+}
+.mr-rubrik__rad { display: flex; align-items: baseline; gap: var(--space-5); flex-wrap: wrap; }
+.mr-rubrik__titel {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 46px;
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.mr-rubrik__svans {
+  font-family: var(--font-prose);
+  font-style: italic;
+  font-size: 30px;
+  line-height: 1.1;
+  color: var(--ink);
+}
+.mr-rubrik--pa-mork .mr-rubrik__titel,
+.mr-rubrik--pa-mork .mr-rubrik__svans { color: var(--on-dark); }
+.mr-rubrik--pa-mork .mr-rubrik__avdelning { color: var(--ochre); }
+
+/* --- Kort ------------------------------------------------------------- */
+
+.mr-kort {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: var(--space-6);
+  overflow: hidden;
+  color: var(--ink);
+}
+.mr-kort--med-yta { padding-bottom: 0; }
+.mr-kort__rubrik {
+  font-family: var(--font-prose);
+  font-style: italic;
+  font-size: 26px;
+  line-height: 1.2;
+}
+.mr-kort__text {
+  font-family: var(--font-prose);
+  font-size: 16px;
+  line-height: 1.55;
+  max-width: 34ch;
+}
+.mr-kort__yta { margin: var(--space-2) calc(-1 * var(--space-6)) 0 calc(-1 * var(--space-6)); }
+.mr-kort__yta svg { display: block; width: 100%; height: auto; }
+a.mr-kort { text-decoration: none; }
+a.mr-kort:hover { background: var(--paper-hover); }
+a.mr-kort:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* --- Perforering och ringmätare --------------------------------------- */
+
+.mr-perforering { display: block; }
+.mr-perforering svg { display: block; width: 100%; height: auto; }
+.mr-ringmatare { display: block; }
+.mr-ringmatare svg { display: block; width: 100%; height: auto; }
+
+/* --- Navigering ------------------------------------------------------- */
+
+.mr-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-7);
+  flex-wrap: wrap;
+  padding: var(--space-5) var(--space-10);
+  background: var(--paper);
+  color: var(--ink);
+}
+.mr-nav--pa-mork { background: var(--surface-ink); color: var(--on-dark); }
+.mr-nav__lankar { display: flex; align-items: center; gap: var(--space-7); flex-wrap: wrap; }
+.mr-nav__lank {
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.4;
+  color: inherit;
+  text-decoration: none;
+  padding: 12px 0;
+  border-bottom: 2px solid transparent;
+}
+.mr-nav__lank:hover,
+.mr-nav__lank[aria-current='page'] { border-bottom-color: currentColor; }
+.mr-nav__lank:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.mr-nav--pa-mork .mr-nav__lank:focus-visible { outline-color: var(--focus-on-dark); }
+
+/* --- Hero ------------------------------------------------------------- */
+
+.mr-hero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-9);
+  padding: var(--space-9) var(--space-10);
+  background: var(--surface-ink);
+  color: var(--on-dark);
+}
+.mr-hero__kropp { display: flex; flex-direction: column; gap: var(--space-6); max-width: 54ch; }
+.mr-hero__rubrik {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 92px;
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+.mr-hero__ingress { font-family: var(--font-prose); font-size: 21px; line-height: 1.45; }
+.mr-hero__rad { display: flex; align-items: center; gap: var(--space-6); flex-wrap: wrap; }
+.mr-hero__loft { font-family: var(--font-prose); font-style: italic; font-size: 19px; color: var(--ochre); }
+.mr-hero__brickor { display: flex; gap: var(--space-3); flex-wrap: wrap; padding-top: var(--space-5); border-top: 1px solid var(--on-dark); }
+@media (max-width: 720px) {
+  .mr-hero { padding: var(--space-8) var(--space-5); }
+  .mr-hero__rubrik { font-size: 50px; line-height: 1.04; }
+}
+
+/* --- Sidfot ----------------------------------------------------------- */
+
+.mr-sidfot { background: var(--surface-ink); color: var(--on-dark); }
+.mr-sidfot__kropp {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-9);
+  flex-wrap: wrap;
+  padding: var(--space-9) var(--space-10) var(--space-8) var(--space-10);
+}
+.mr-sidfot__marke { display: flex; flex-direction: column; gap: var(--space-4); width: 320px; max-width: 100%; }
+.mr-sidfot__tagline { font-family: var(--font-prose); font-style: italic; font-size: 21px; color: var(--ochre); }
+.mr-sidfot__spalter { display: flex; gap: var(--space-10); flex-wrap: wrap; font-family: var(--font-mono); font-size: 13px; line-height: 1.5; }
+.mr-sidfot__spalt { display: flex; flex-direction: column; gap: var(--space-2); }
+.mr-sidfot__etikett { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ochre); }
+.mr-sidfot__lank { color: inherit; text-decoration: underline; }

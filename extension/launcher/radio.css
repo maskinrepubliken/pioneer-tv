@@ -1,0 +1,68 @@
+/* Pioneer TV radio player, on Maskinrepubliken's design system. Same 1280x720
+   canvas as the launcher (1rem = 1/80 of the width). The station sits in an
+   ink block like the system's hero: Rubik capitals, what is on in Fraunces,
+   times in mono, a sparse perforation along the bottom. */
+
+html { font-size: 1.45vw; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  font-family: var(--pioneertv-font-ui);
+  color: var(--pioneertv-ink);
+  background-color: var(--pioneertv-paper);
+  overflow: hidden;
+}
+.page { height: 100%; display: flex; flex-direction: column; gap: 3vh; padding: 5vh 5vw 2vh; }
+
+.panel {
+  flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;
+  background: var(--pioneertv-surface-ink); color: var(--pioneertv-on-dark);
+  border-radius: var(--pioneertv-radius-panel);
+}
+.panel-body { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 1.2rem; padding: 2.2rem 3rem 1rem; }
+.eyebrow {
+  font-family: var(--pioneertv-font-display); font-weight: 700; font-size: 1.1rem; line-height: 1;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--pioneertv-ochre);
+}
+.station {
+  margin: 0; font-family: var(--pioneertv-font-display); font-weight: 900; font-size: 6.5rem; line-height: 0.95;
+  letter-spacing: -0.01em; text-transform: uppercase;
+}
+.label {
+  display: block; font-family: var(--pioneertv-font-mono); font-size: 0.8rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--pioneertv-ochre); margin-bottom: 0.3rem;
+}
+.now { max-width: 54ch; }
+.programme { margin: 0; font-family: var(--pioneertv-font-prose); font-style: italic; font-size: 2.1rem; line-height: 1.15; }
+.times { margin: 0.4rem 0 0; font-family: var(--pioneertv-font-mono); font-size: 1rem; color: var(--pioneertv-on-dark); }
+.next[hidden] { display: none; }
+.next-title { margin: 0; font-family: var(--pioneertv-font-prose); font-size: 1.25rem; }
+#next-time { font-family: var(--pioneertv-font-mono); font-size: 1rem; margin-right: 0.5rem; }
+/* The perforation is decoration: cropped to a band, never behind the text. */
+.perf { display: block; width: 100%; height: 5.5rem; object-fit: cover; object-position: center; }
+
+.controls { display: flex; align-items: center; gap: 1rem; }
+/* Buttons: the system's capsules. Primary ochre, secondary paper with a
+   line-strong edge; focus is a solid ink ring with air around it. */
+.knapp {
+  font: 600 1.15rem/1 var(--pioneertv-font-ui); padding: 1rem 1.8rem; margin: 0; cursor: pointer;
+  color: var(--pioneertv-ink); background: var(--pioneertv-paper);
+  border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-pill);
+}
+.knapp:hover { background: var(--pioneertv-paper-hover); }
+.knapp.primar { background: var(--pioneertv-ochre); border-color: var(--pioneertv-ochre); color: var(--pioneertv-on-ochre); }
+.knapp.pioneertv-focus {
+  outline: 0.2rem solid var(--pioneertv-focus) !important; outline-offset: 0.25rem !important;
+  box-shadow: none !important; border-radius: var(--pioneertv-radius-pill) !important;
+}
+.state { font-family: var(--pioneertv-font-mono); font-size: 0.95rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--pioneertv-ink-muted); }
+.state.fel { color: var(--pioneertv-alarm); }
+
+.legend {
+  display: flex; align-items: center; gap: 1.8rem; height: 2.6rem;
+  border-top: 1px solid var(--pioneertv-line); font-size: 0.95rem; color: var(--pioneertv-ink-muted);
+}
+.legend span { display: inline-flex; align-items: center; gap: 0.45rem; }
+.legend .pioneertv-kbd { font-size: 0.75rem; }
+.legend .credit { margin-left: auto; }
+.legend .credit img { display: block; width: 8.5rem; min-width: 120px; height: auto; }

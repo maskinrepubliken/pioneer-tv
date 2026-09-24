@@ -92,6 +92,33 @@ if ! grep -q '^id = "romm"' /etc/pioneer-tv/config.toml; then
   sed -n '/^\[\[services\]\]$/,$p' "$REPO/daemon/config.example.toml" | awk 'BEGIN{RS=""; ORS="\n\n"} /id = "romm"/' >> /etc/pioneer-tv/config.toml
 fi
 [ -f /etc/pioneer-tv/chromium.env ] || cp "$REPO/system/chromium.env" /etc/pioneer-tv/chromium.env
+# The launcher's second row (live TV and radio) arrives once: in config.toml
+# and in the settings page's overlay, which overrides it once services have
+# been edited there. A box that already has a live row is left alone; the old
+# lone SVT1 tile moves into the row.
+python3 - "$REPO/daemon/config.example.toml" /etc/pioneer-tv/config.toml /etc/pioneer-tv/settings.json <<'PYEOF'
+import json, re, sys, tomllib
+example, config, overlay = sys.argv[1:4]
+live = [s for s in tomllib.load(open(example, "rb"))["services"] if s.get("row") == "live"]
+ids = {s["id"] for s in live}
+text = open(config).read()
+if not re.search(r'^row = "live"', text, re.M):
+    blocks = re.split(r"(?m)^(?=\[\[services\]\])", text)
+    kept = [b for b in blocks if not re.search(r'^id = "(%s)"' % "|".join(map(re.escape, ids)), b, re.M)]
+    tail = open(example).read()
+    tail = tail[tail.index("# The second row"):]
+    open(config, "w").write("".join(kept).rstrip("\n") + "\n\n" + tail)
+    print("  config.toml: added the live row")
+try:
+    ov = json.load(open(overlay))
+except (OSError, ValueError):
+    ov = None
+if ov and isinstance(ov.get("services"), list) and not any(s.get("row") == "live" for s in ov["services"]):
+    ov["services"] = [s for s in ov["services"] if s.get("id") not in ids] + [{k: str(v) for k, v in s.items()} for s in live]
+    open(overlay, "w").write(json.dumps(ov, ensure_ascii=False, indent=2))
+    print("  settings.json: added the live row")
+PYEOF
+
 sed "s/@MODE@/$MODE/" "$REPO/system/weston.ini" > "$HOME_DIR/.config/weston.ini"
 cat > /etc/pioneer-tv/board.env <<EOF
 # Written by install.sh; start-chromium.sh reads the window size from it.

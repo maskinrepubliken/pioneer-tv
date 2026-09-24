@@ -10,13 +10,13 @@ window.PioneerTV = window.PioneerTV || {};
       ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'å'],
       ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'ö', 'ä'],
       [{ k: 'shift', icon: 'shift', w: 1.5 }, 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', { k: 'backspace', icon: 'backspace', w: 1.5 }],
-      [{ k: 'layer:symbols', label: '?123', w: 2 }, { k: 'space', label: 'MELLANSLAG', w: 6 }, { k: 'left', icon: 'arrowLeft', w: 1 }, { k: 'right', icon: 'arrowRight', w: 1 }, { k: 'done', label: 'SÖK', w: 2, accent: true }],
+      [{ k: 'layer:symbols', label: '?123', w: 2 }, { k: 'space', label: 'MELLANSLAG', w: 6 }, { k: 'left', icon: 'arrowLeft', w: 1 }, { k: 'right', icon: 'arrowRight', w: 1 }, { k: 'done', label: 'OK', w: 2, accent: true }],
     ],
     symbols: [
       ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '='],
       ['@', '#', '&', '_', '-', '+', '(', ')', '/', "'", '"'],
       [{ k: 'shift', icon: 'shift', w: 1.5 }, '!', '?', ':', ';', '*', '%', '$', '€', '~', { k: 'backspace', icon: 'backspace', w: 1.5 }],
-      [{ k: 'layer:letters', label: 'ABC', w: 2 }, { k: 'space', label: 'MELLANSLAG', w: 6 }, { k: 'left', icon: 'arrowLeft', w: 1 }, { k: 'right', icon: 'arrowRight', w: 1 }, { k: 'done', label: 'SÖK', w: 2, accent: true }],
+      [{ k: 'layer:letters', label: 'ABC', w: 2 }, { k: 'space', label: 'MELLANSLAG', w: 6 }, { k: 'left', icon: 'arrowLeft', w: 1 }, { k: 'right', icon: 'arrowRight', w: 1 }, { k: 'done', label: 'OK', w: 2, accent: true }],
     ],
   };
 
@@ -36,11 +36,18 @@ window.PioneerTV = window.PioneerTV || {};
       this.row = 1; this.col = 0;
       this.highlight();
       M.nav.captured = this;
-      // A types on release; holding A jumps to the Sök key instead.
-      this._onKeyUp = (e) => this.onKeyUp(e);
-      window.addEventListener('keyup', this._onKeyUp, true);
+      // A types on release; holding A jumps to the OK key instead. The nav
+      // hands this layer its key releases (onKeyUp below).
       document.documentElement.classList.add('pioneertv-keyboard-open');
-      try { this.target.scrollIntoView({ block: 'start' }); } catch {}
+      // The d-pad focus stays where it was; only a field out of sight is
+      // brought into view, so what is typed can be seen.
+      try {
+        const r = this.target.getBoundingClientRect();
+        if (r.bottom < 0 || r.top > window.innerHeight) this.target.scrollIntoView({ block: 'nearest' });
+      } catch {}
+      // A pointer click outside the keyboard closes it (see onOutsidePress).
+      this._onOutside = (e) => this.onOutsidePress(e);
+      for (const t of ['pointerdown', 'mousedown', 'mouseup', 'click']) window.addEventListener(t, this._onOutside, true);
       M.bridge && M.bridge.emit('keyboard:open');
     },
 
@@ -48,7 +55,13 @@ window.PioneerTV = window.PioneerTV || {};
       if (this.root) this.root.remove();
       this.root = null;
       if (M.nav.captured === this) M.nav.captured = null;
-      if (this._onKeyUp) { window.removeEventListener('keyup', this._onKeyUp, true); this._onKeyUp = null; }
+      if (this._onOutside) {
+        const fn = this._onOutside;
+        this._onOutside = null;
+        // Keep swallowing the rest of the press that closed us (its mouseup
+        // and click), then stop listening.
+        setTimeout(() => { for (const t of ['pointerdown', 'mousedown', 'mouseup', 'click']) window.removeEventListener(t, fn, true); }, 400);
+      }
       clearTimeout(this._holdTimer); this._holdTimer = null; this._holdFired = false;
       document.documentElement.classList.remove('pioneertv-keyboard-open');
       M.bridge && M.bridge.emit('keyboard:close');
@@ -58,8 +71,10 @@ window.PioneerTV = window.PioneerTV || {};
       if (this.isOpen()) return this.close();
       const active = this.deepActive();
       if (M.nav.isTextField(active)) return this.open(active);
+      // Type into the page's first text field without moving the d-pad focus
+      // there: the ring stays where the person left it.
       const first = this.findTextField();
-      if (first) { M.nav.focus(first); this.open(first); }
+      if (first) this.open(first);
       else M.hud && M.hud.toast('Inget textfält på sidan', 'keyboard');
     },
 
@@ -114,7 +129,7 @@ window.PioneerTV = window.PioneerTV || {};
       }
       const hint = document.createElement('div');
       hint.className = 'pioneertv-keyhint';
-      hint.textContent = 'A skriv · håll A: sök · B stäng · Y tangentbord';
+      hint.textContent = 'A skriv · X eller håll A: OK · B stäng · Y tangentbord';
       root.appendChild(hint);
       document.documentElement.appendChild(root);
       this.root = root;
@@ -157,6 +172,13 @@ window.PioneerTV = window.PioneerTV || {};
     },
 
     onKeyDown(e) {
+      // X on the gamepad arrives as Space: it presses OK. A real keyboard's
+      // Space still types one (with one plugged in, the pad's X does too).
+      if (e.key === ' ' && !(M.bridge && M.bridge.state.physicalKeyboard)) {
+        e.preventDefault(); e.stopImmediatePropagation();
+        if (!e.repeat) { M.nav._eaten.add(' '); this.done(); }   // its release is swallowed by the nav
+        return;
+      }
       const handled = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Escape'];
       if (!handled.includes(e.key)) return; // real keyboard keys type into the field directly
       e.preventDefault(); e.stopImmediatePropagation();
@@ -177,6 +199,17 @@ window.PioneerTV = window.PioneerTV || {};
       }
     },
 
+    // A press of the pointer outside the keyboard closes it, and the press
+    // itself is swallowed so it does not also click whatever is underneath.
+    // The field being typed into is not "outside": clicking it moves nothing.
+    onOutsidePress(e) {
+      const t = e.target;
+      if (this.root && t instanceof Node && this.root.contains(t)) return;
+      if (this.target && t instanceof Node && (t === this.target || this.target.contains(t))) return;
+      e.preventDefault(); e.stopImmediatePropagation();
+      if (this.isOpen() && (e.type === 'pointerdown' || e.type === 'mousedown')) this.close();
+    },
+
     onKeyUp(e) {
       if (e.key !== 'Enter' || !e.isTrusted) return;
       const held = !!this._holdTimer;
@@ -185,7 +218,7 @@ window.PioneerTV = window.PioneerTV || {};
       if (held) this.press(this.buttons[this.row][this.col].def); // a short tap: type
     },
 
-    // Move the highlight to a key by its id, e.g. 'done' (Sök).
+    // Move the highlight to a key by its id, e.g. 'done' (OK).
     jumpTo(key) {
       this.buttons.forEach((row, ri) => row.forEach(({ def }, ci) => { if (def.k === key) { this.row = ri; this.col = ci; } }));
       this.highlight();

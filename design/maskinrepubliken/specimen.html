@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Maskinrepubliken – specimen</title>
+  <link rel="icon" href="data:,">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;1,9..144,400&family=IBM+Plex+Mono:wght@400&family=IBM+Plex+Sans:wght@400;600&family=Rubik:wght@700;900&display=swap">
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="components/bundle.css">
+  <style>
+    /* Specimen layout only: everything visible below is the system's own tokens and classes. */
+    body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font-prose); font-size: 17px; line-height: 1.55; }
+    .wrap { padding: var(--space-8) var(--space-10); display: flex; flex-direction: column; gap: var(--space-9); }
+    .bar { display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap; }
+    .bar .etikett { font-family: var(--font-mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); margin-right: var(--space-2); }
+    .bar button[aria-pressed="true"] { background: var(--ochre); color: var(--on-ochre); border-color: var(--ochre); }
+    .grid { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+    .swatch { border: 1px solid var(--line); border-radius: var(--radius-s); overflow: hidden; background: var(--paper-raised); }
+    .swatch i { display: block; height: 64px; border-bottom: 1px solid var(--line); }
+    .swatch div { padding: var(--space-2) var(--space-3); font-family: var(--font-mono); font-size: 13px; line-height: 1.5; }
+    .swatch small { display: block; color: var(--ink-muted); }
+    .typ { display: grid; grid-template-columns: 170px 1fr; gap: var(--space-2) var(--space-6); align-items: baseline; }
+    .typ .namn { font-family: var(--font-mono); font-size: 13px; color: var(--ink-muted); }
+    .rad { display: flex; gap: var(--space-4); flex-wrap: wrap; align-items: center; }
+    .ytor { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+    .ytor figure { margin: 0; border: 1px solid var(--line); border-radius: var(--radius-l); overflow: hidden; background: var(--paper-raised); }
+    .ytor img { display: block; width: 100%; height: 150px; object-fit: contain; background: var(--paper-sunken); }
+    .ytor figcaption { padding: var(--space-2) var(--space-3); font-family: var(--font-mono); font-size: 13px; color: var(--ink-muted); }
+    .mork { background: var(--surface-ink); color: var(--on-dark); border-radius: var(--radius-panel); padding: var(--space-6); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="bar" role="group" aria-label="Tema">
+      <span class="etikett">Tema</span>
+      <button class="mr-knapp mr-knapp--sekundar" data-theme-btn="paper">Papper</button>
+      <button class="mr-knapp mr-knapp--sekundar" data-theme-btn="ink">Bläck</button>
+      <button class="mr-knapp mr-knapp--sekundar" data-theme-btn="eink">E-ink</button>
+    </div>
+
+    <section class="mr-hero" style="border-radius: var(--radius-panel)">
+      <img src="assets/Logotyp/ordbild-tva-rader-papper.svg" alt="Maskinrepubliken" style="width:320px">
+      <div class="mr-hero__kropp">
+        <h1 class="mr-hero__rubrik">NY TEKNIK FÖR DET ALLMÄNNA</h1>
+        <p class="mr-hero__ingress">Så ser Maskinrepubliken ut på en skärm. Allt på den här sidan är systemets egna tokens och klasser, lästa från repot.</p>
+        <div class="mr-hero__rad">
+          <a class="mr-knapp mr-knapp--stor" href="#farg">Se färgerna</a>
+          <span class="mr-hero__loft">Tre teman, fem färger</span>
+        </div>
+      </div>
+      <div class="mr-hero__brickor"><span class="mr-bricka mr-bricka--pa-mork">Rubik</span><span class="mr-bricka mr-bricka--pa-mork">Fraunces</span><span class="mr-bricka mr-bricka--pa-mork">IBM Plex</span></div>
+    </section>
+
+    <section id="farg">
+      <div class="mr-rubrik"><span class="mr-rubrik__avdelning">Färg</span><div class="mr-rubrik__rad"><h2 class="mr-rubrik__titel">FEM FÄRGER</h2><span class="mr-rubrik__svans">och deras toner</span></div></div>
+      <div class="grid" id="swatches" style="margin-top: var(--space-6)"></div>
+    </section>
+
+    <section>
+      <div class="mr-rubrik"><span class="mr-rubrik__avdelning">Typografi</span><div class="mr-rubrik__rad"><h2 class="mr-rubrik__titel">TRE RÖSTER</h2><span class="mr-rubrik__svans">fyra typsnitt</span></div></div>
+      <div class="typ" id="type" style="margin-top: var(--space-6)"></div>
+    </section>
+
+    <section>
+      <div class="mr-rubrik"><span class="mr-rubrik__avdelning">Komponenter</span><div class="mr-rubrik__rad"><h2 class="mr-rubrik__titel">KNAPPAR OCH KORT</h2></div></div>
+      <div class="rad" style="margin-top: var(--space-6)">
+        <button class="mr-knapp">Boka ett samtal</button>
+        <button class="mr-knapp mr-knapp--sekundar">Sekundär</button>
+        <button class="mr-knapp" disabled>Inaktiv</button>
+        <span class="mr-bricka">Bricka</span>
+        <span class="mr-bricka mr-bricka--fylld">Fylld</span>
+      </div>
+      <div class="grid" style="margin-top: var(--space-6); grid-template-columns: repeat(auto-fill, minmax(300px, 1fr))">
+        <a class="mr-kort" href="#"><span class="mr-kort__rubrik">Inventering</span><span class="mr-kort__text">Ett kort man kan klicka på. Hover byter yta, fokus ger en heldragen ring.</span></a>
+        <div class="mr-kort"><span class="mr-kort__rubrik">Utan länk</span><span class="mr-kort__text">Löptext högst 34 tecken bred, i brödtext liten.</span></div>
+        <div class="mork"><span class="mr-bricka mr-bricka--pa-mork">På mörk yta</span><p style="margin: var(--space-4) 0"><button class="mr-knapp mr-knapp--pa-mork">Knapp på mörk</button></p></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="mr-rubrik"><span class="mr-rubrik__avdelning">Ytor och motiv</span><div class="mr-rubrik__rad"><h2 class="mr-rubrik__titel">PERFORERING</h2></div></div>
+      <div class="ytor" id="assets" style="margin-top: var(--space-6)"></div>
+    </section>
+  </div>
+
+  <script>
+    (function () {
+      const root = document.documentElement;
+      function setTheme(id) {
+        root.dataset.theme = id;
+        document.querySelectorAll('[data-theme-btn]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.themeBtn === id)));
+        const u = new URL(location.href); u.searchParams.set('theme', id); history.replaceState(null, '', u);
+      }
+      document.querySelectorAll('[data-theme-btn]').forEach((b) => b.addEventListener('click', () => setTheme(b.dataset.themeBtn)));
+      setTheme(new URLSearchParams(location.search).get('theme') || 'paper');
+
+      const el = (tag, attrs, ...kids) => { const e = document.createElement(tag); Object.assign(e, attrs || {}); e.append(...kids); return e; };
+
+      fetch('tokens.json').then((r) => r.json()).then((t) => {
+        const sw = document.getElementById('swatches');
+        for (const tok of t.color.tokens) {
+          const chip = el('i'); chip.style.background = `var(--${tok.name})`;
+          sw.append(el('div', { className: 'swatch', title: tok.usage }, chip, el('div', {}, tok.name, el('small', { textContent: tok.usage.split('.')[0] }))));
+        }
+        const ty = document.getElementById('type');
+        for (const g of t.type.groups) for (const s of g.styles) {
+          const sample = el('div', { textContent: s.sample });
+          Object.assign(sample.style, { fontFamily: `var(--font-${g.family})`, fontSize: s.fontSize, lineHeight: String(s.lineHeight), fontWeight: String(s.fontWeight), fontStyle: s.fontStyle || 'normal', letterSpacing: s.letterSpacing || 'normal' });
+          if (g.name === 'Affisch' || s.name === 'etikett') sample.style.textTransform = 'uppercase';
+          ty.append(el('span', { className: 'namn', textContent: `${s.name} ${s.fontSize}` }), sample);
+        }
+      });
+
+      fetch('design-system.json').then((r) => r.json()).then((idx) => {
+        const box = document.getElementById('assets');
+        for (const g of idx.groups) for (const name of idx.assetGroups[g].order) {
+          box.append(el('figure', {}, el('img', { src: `assets/${g}/${name}`, alt: '' }), el('figcaption', { textContent: `${g} / ${name}` })));
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

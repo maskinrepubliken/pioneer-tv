@@ -1,115 +1,162 @@
-/* Pioneer TV launcher: paper, ink and serif.
-   Designed on a 1280x720 canvas. 1rem = 1/80 of the width (16px at 1280),
-   so a laptop window and the TV look the same. Tokens live in paper.css. */
+/* Pioneer TV launcher, on Maskinrepubliken's design system.
+   Designed on a 1280x720 canvas. 1rem = 1/80 of the width (16px at 1280,
+   a little more on the TV's 1.45vw), so a laptop window and the TV look the
+   same. Tokens in tokens.css, primitives in paper.css.
+
+   The system allows no motion except a response to input, so the tiles do
+   not glide in or float: focus is an instant change of ring and marker. */
 
 html { font-size: 1.45vw; }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
 body {
-  font-family: var(--pioneertv-serif);
+  font-family: var(--pioneertv-font-ui);
   color: var(--pioneertv-ink);
   background-color: var(--pioneertv-paper);
   overflow: hidden;
 }
 
-.page { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; padding: 2.4vh 5vw 2vh; transition: transform 220ms cubic-bezier(0.2, 0.7, 0.2, 1); }
+.page { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; padding: 2.4vh 5vw 2vh; }
 
-/* ---- masthead ---- */
-.masthead { display: flex; align-items: center; justify-content: space-between; height: 2.2rem; }
-.dateline { font-size: 1.15rem; font-variant: small-caps; letter-spacing: 0.06em; color: var(--pioneertv-ink-2); }
-.masthead-right { display: flex; align-items: center; gap: 0.9rem; }
-.pill { display: inline-flex; font-size: 1.1rem; color: var(--pioneertv-line); }
-.pill.on { color: var(--pioneertv-ink-2); }
-.pill.warn { color: var(--pioneertv-red); }
-.clock { font-size: 1.25rem; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; margin-left: 0.5rem; color: var(--pioneertv-ink-2); }
+/* ---- masthead: only the status pills, at the right ---- */
+.masthead { display: flex; align-items: center; justify-content: flex-end; height: 2.2rem; }
+.masthead-right { display: flex; align-items: center; gap: 1.1rem; }
+/* A status is never colour alone: each pill carries a hole, filled when the
+   thing is up, empty when it is not; a warning fills it in alarm. */
+.pill { position: relative; display: inline-flex; align-items: center; gap: 0.35rem; font-size: 1.1rem; color: var(--pioneertv-ink-faint); }
+.pill::after {
+  content: ""; width: 0.5rem; height: 0.5rem; border-radius: 50%;
+  border: 0.12rem solid var(--pioneertv-line-strong); background: transparent;
+}
+.pill.on { color: var(--pioneertv-ink); }
+.pill.on::after { background: var(--pioneertv-surface-forest); border-color: var(--pioneertv-surface-forest); }
+.pill.warn { color: var(--pioneertv-alarm); }
+.pill.warn::after { background: var(--pioneertv-alarm); border-color: var(--pioneertv-alarm); }
 
-.rule { height: 0; margin-top: 0.5rem; border-top: 1px solid var(--pioneertv-line); }
 
 /* ---- content ---- */
 .content { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 3vh; }
 
 .tiles { display: grid; grid-template-columns: repeat(var(--tiles, 3), 1fr); gap: 1.3rem; }
 .tiles[style*="--tiles: 4"] .tile .name, .tiles[style*="--tiles:4"] .tile .name { font-size: 1.7rem; }
-.tiles[style*="--tiles: 4"] .tile .tagline, .tiles[style*="--tiles:4"] .tile .tagline { font-size: 1.05rem; }
+.tiles[style*="--tiles: 4"] .tile .tagline, .tiles[style*="--tiles:4"] .tile .tagline { font-size: 1rem; }
+.tiles[style*="--tiles: 5"] .tile, .tiles[style*="--tiles:5"] .tile { padding-left: 1.2rem; padding-right: 1.2rem; }
+/* Sized so CINEASTERNA, the longest name, fits one line in a fifth of the width. */
+.tiles[style*="--tiles: 5"] .tile .name, .tiles[style*="--tiles:5"] .tile .name { font-size: 1.15rem; }
+.tiles[style*="--tiles: 5"] .tile .tagline, .tiles[style*="--tiles:5"] .tile .tagline { font-size: 0.95rem; }
 .tile {
   position: relative; display: flex; flex-direction: column; justify-content: flex-end;
-  height: 46vh; padding: 1.2rem 1.5rem 1.2rem;
+  height: 36vh; padding: 1.3rem 1.5rem 1.2rem;
   color: var(--pioneertv-ink); text-decoration: none; overflow: hidden;
-  transition: transform 180ms ease-out, box-shadow 180ms ease-out, border-color 180ms ease-out;
-  animation: tile-in 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
-  animation-delay: calc(var(--i, 0) * 110ms + 80ms);
 }
-@keyframes tile-in { from { opacity: 0; transform: translate3d(0, 1.2rem, 0); } to { opacity: 1; transform: none; } }
 .tile .art { flex: 1; display: flex; align-items: center; justify-content: center; padding: 0.6rem 0.4rem 0; min-height: 0; }
-.tile .art .art-svg, .tile .art .logo {
-  max-height: 100%; max-width: 100%; width: auto; height: 100%;
-}
-/* Only the focused illustration floats: three animating every frame kept two
-   Chromium processes at 40 % CPU while the box sat on the launcher. */
-.tile.pioneertv-focus .art .art-svg, .tile.pioneertv-focus .art .logo {
-  animation: float 5s ease-in-out infinite alternate; will-change: transform;
-}
-@keyframes float { from { transform: translate3d(0, 0.15rem, 0); } to { transform: translate3d(0, -0.25rem, 0); } }
-.tile .text { padding-top: 0.5rem; }
-.tile .band {
-  position: absolute; top: 0; left: 0; right: 0; height: 0.35rem;
-  background: var(--tile-color, var(--pioneertv-ink)); opacity: 0.85;
-}
+.tile .art .art-svg, .tile .art .logo { max-height: 100%; max-width: 100%; width: auto; height: 100%; }
 .tile .logo { object-fit: contain; }
-.tile .name { font-size: 2rem; font-weight: 600; line-height: 1.1; }
-.tile .tagline { font-size: 1.15rem; font-style: italic; color: var(--pioneertv-ink-2); margin-top: 0.2rem; }
-.tile .index { position: absolute; bottom: 1rem; right: 1.2rem; font-size: 0.95rem; font-variant-numeric: tabular-nums; color: var(--pioneertv-ink-3); }
-/* Focus on the launcher: the focused card grows and gets a thick mustard
-   ring; everything else steps back. */
-.content:has(.pioneertv-focus) .tile:not(.pioneertv-focus),
-.content:has(.pioneertv-focus) .search:not(:focus-within),
-.content:has(.pioneertv-focus) .target:not(.pioneertv-focus) { opacity: 0.55; filter: saturate(0.6); }
-.tile, .search, .target { transition: opacity 180ms ease-out, filter 180ms ease-out, transform 180ms ease-out, box-shadow 180ms ease-out, border-color 180ms ease-out; }
-.tile.pioneertv-focus, .tile:hover { border-color: var(--pioneertv-ink); box-shadow: 0 0 0 0.55rem var(--pioneertv-accent), 0 1.4rem 3rem rgba(43, 36, 25, 0.28) !important; transform: translateY(-0.5rem) scale(1.05); z-index: 2; }
-.tile.pioneertv-focus .name { text-decoration: underline; text-decoration-color: var(--pioneertv-accent); text-decoration-thickness: 0.2rem; text-underline-offset: 0.2em; }
+.tile .text { padding-top: 0.5rem; text-align: center; }
+/* The band is the ochre marker: empty on a resting tile, lit on the focused one. */
+.tile .band { position: absolute; top: 0; left: 0; right: 0; height: 0.45rem; background: transparent; }
+/* Card title in Rubik, the wordmark's face: the system's poster voice, so
+   always capitals and Black. The tagline is interface text, IBM Plex Sans. */
+.tile .name {
+  font-family: var(--pioneertv-font-display); font-weight: 900; font-size: 1.9rem; line-height: 1.02;
+  letter-spacing: -0.01em; text-transform: uppercase;
+}
+.tile .tagline { font-family: var(--pioneertv-font-ui); font-size: 1.05rem; line-height: 1.35; color: var(--pioneertv-ink-muted); margin-top: 0.4rem; }
+.tile .index {
+  position: absolute; top: 1.1rem; right: 1.3rem;
+  font-family: var(--pioneertv-font-mono); font-size: 0.9rem; font-variant-numeric: tabular-nums; color: var(--pioneertv-ink-faint);
+}
 
-/* ---- search row ---- */
+/* Focus: a solid ink ring with air around it, the ochre marker, and the
+   surface switching to paper-hover. The system's ring is 2 px on a laptop;
+   seen across a room it is drawn at the same proportion of the screen. */
+.tile:hover { background: var(--pioneertv-paper-hover); }
+.tile.pioneertv-focus {
+  background: var(--pioneertv-paper-hover); border-color: var(--pioneertv-ink);
+  outline: 0.25rem solid var(--pioneertv-focus) !important; outline-offset: 0.3rem !important; z-index: 2;
+}
+.tile.pioneertv-focus .band { background: var(--pioneertv-ochre); }
+
+/* ---- second row: live TV and radio. Light cards like the first row, the
+   channel's name in Rubik capitals, centred; along the bottom the channel's
+   own row of holes, its punch card (see punchCard()), each hole in one of the
+   palette's colours: a quiet mark on paper rather than a block. ---- */
+.tiles-live { gap: 0.65rem; margin-top: -1vh; }
+.tiles-live[hidden] { display: none; }
+.tile-live {
+  height: 14vh; padding: 0.7rem 0.45rem 0.6rem; justify-content: space-between; align-items: center; text-align: center;
+  border-radius: var(--pioneertv-radius-l);
+}
+.tile-live .name {
+  flex: 1; width: 100%; padding: 0 6%; display: flex; align-items: center; justify-content: center;
+  font-family: var(--pioneertv-font-display); font-weight: 900; font-size: 1.25rem; line-height: 1;
+  letter-spacing: -0.01em; text-transform: uppercase; hyphens: manual;
+}
+.tile-live .perf { display: block; width: 76%; height: auto; flex: none; }
+.tiles-live .tile-live.pioneertv-focus {
+  outline-width: 0.2rem !important; outline-offset: 0.22rem !important;
+  border-radius: var(--pioneertv-radius-l) !important;
+}
+.tile-live .band { height: 0.3rem; }
+
+/* ---- search row. The system sets fields in paper-sunken, but here that is a
+   shade from the paper-hover of a selected tile, so the resting field would
+   read as selected. It rests on raised paper like the tiles instead, with the
+   line-strong edge, and fills with paper-hover only when it has the focus. ---- */
 .row { display: grid; grid-template-columns: 1fr; gap: 1.5rem; align-items: stretch; }
-.search { display: flex; align-items: center; gap: 0.8rem; padding-left: 1rem; margin: 0; }
-.search-icon { font-size: 1.6rem; color: var(--pioneertv-ink-2); display: inline-flex; }
+.search {
+  display: flex; align-items: center; gap: 0.8rem; padding-left: 1.2rem; margin: 0;
+  background: var(--pioneertv-paper-raised); border-radius: var(--pioneertv-radius-m);
+}
+.search-icon { font-size: 1.5rem; color: var(--pioneertv-ink-muted); display: inline-flex; }
 .search input {
   flex: 1; height: 3.8rem; background: transparent; border: 0; outline: 0;
-  color: var(--pioneertv-ink); font: 1.6rem var(--pioneertv-serif);
+  color: var(--pioneertv-ink); font: 1.5rem var(--pioneertv-font-prose);
 }
-.search input::placeholder { color: var(--pioneertv-ink-3); font-style: italic; }
+/* The field speaks in Fraunces: the prompt in its italic, like a caption. */
+.search input::placeholder { color: var(--pioneertv-ink-faint); font-style: italic; }
 .search input::-webkit-search-cancel-button, .search input::-webkit-search-decoration { -webkit-appearance: none; appearance: none; display: none; }
 .search input.pioneertv-focus { outline: none !important; box-shadow: none !important; }
-.search.pioneertv-card:focus-within { border-color: var(--pioneertv-ink); box-shadow: 0 0 0 0.55rem var(--pioneertv-accent), 0 1rem 2.4rem rgba(43, 36, 25, 0.22) !important; transform: scale(1.01); }
+.search.pioneertv-card:focus-within {
+  background: var(--pioneertv-paper-hover); border-color: var(--pioneertv-ink);
+  outline: 0.25rem solid var(--pioneertv-focus); outline-offset: 0.3rem;
+}
 .search.pioneertv-card:focus-within .search-icon { color: var(--pioneertv-ink); }
 
-/* ---- search targets ---- */
+/* ---- search targets: secondary buttons; the focused one lights in ochre ---- */
 .search-targets { padding-top: 0.6rem; }
-.targets-title { margin: 0 0 0.8rem; font-size: 1.3rem; color: var(--pioneertv-ink-2); }
+.targets-title { margin: 0 0 0.8rem; font-family: var(--pioneertv-font-prose); font-size: 1.3rem; color: var(--pioneertv-ink-muted); }
 .targets-title em { color: var(--pioneertv-ink); }
-.targets { display: flex; gap: 1rem; }
+.targets { display: flex; gap: 1rem; flex-wrap: wrap; }
 .target {
-  display: inline-flex; align-items: center; gap: 0.7rem;
-  padding: 0.55rem 1.4rem 0.45rem 1rem; color: var(--pioneertv-ink); border-radius: 999px;
-  font: 600 1.25rem var(--pioneertv-serif); cursor: pointer;
+  display: inline-flex; align-items: center; gap: 0.6rem;
+  padding: 0.8rem 1.5rem; border-radius: var(--pioneertv-radius-pill);
+  font: 600 1.15rem/1 var(--pioneertv-font-ui); color: var(--pioneertv-ink); cursor: pointer;
+  background: var(--pioneertv-paper); border: 1px solid var(--pioneertv-line-strong);
 }
-.target::before { content: ""; width: 0.7rem; height: 0.7rem; border-radius: 50%; background: var(--target-color, var(--pioneertv-ink)); }
-.target.pioneertv-focus, .target:hover { border-color: var(--pioneertv-ink); box-shadow: 0 0 0 0.45rem var(--pioneertv-accent), var(--pioneertv-lift-strong) !important; transform: scale(1.06); }
+.target:hover { background: var(--pioneertv-paper-hover); }
+.target.pioneertv-focus {
+  background: var(--pioneertv-ochre); color: var(--pioneertv-on-ochre); border-color: var(--pioneertv-ochre);
+  outline: 0.2rem solid var(--pioneertv-focus) !important; outline-offset: 0.25rem !important;
+}
 
 /* ---- legend ---- */
 .legend {
-  display: flex; align-items: center; gap: 2rem; height: 2.6rem; margin-top: 1vh;
+  display: flex; align-items: center; gap: 1.8rem; height: 2.6rem; margin-top: 1vh;
   border-top: 1px solid var(--pioneertv-line);
-  font-size: 1rem; font-variant: small-caps; letter-spacing: 0.05em; color: var(--pioneertv-ink-3);
+  font-size: 0.95rem; color: var(--pioneertv-ink-muted);
 }
 .legend span { display: inline-flex; align-items: center; gap: 0.45rem; }
-.legend i { display: inline-flex; font-size: 0.8rem; font-style: normal; color: var(--pioneertv-ink-2); }
-.legend .pioneertv-kbd { font-size: 0.9rem; }
-.legend .credit { margin-left: auto; color: var(--pioneertv-line); }
+.legend i { display: inline-flex; font-size: 0.8rem; font-style: normal; color: var(--pioneertv-ink-muted); }
+.legend .pioneertv-kbd { font-size: 0.75rem; }
+/* The one-line ordbild, never narrower than 120 px. */
+.legend .credit { margin-left: auto; display: inline-flex; }
+.legend .credit img { display: block; width: 8.5rem; min-width: 120px; height: auto; }
 
-@media (prefers-reduced-motion: reduce) {
-  .tile, .search, .target, .tile .art .art-svg, .tile .art .logo { animation: none !important; transition: none !important; }
-}
-
-/* focus ring is drawn by the cards themselves here */
+/* focus ring is drawn by the cards themselves here, not by the ring
+   content.css puts on focused elements of other sites */
 .pioneertv-focus { outline: none !important; }
+.tile.pioneertv-focus, .target.pioneertv-focus { box-shadow: none !important; }
+.tile.pioneertv-focus { border-radius: var(--pioneertv-radius-card) !important; }
+.target.pioneertv-focus { border-radius: var(--pioneertv-radius-pill) !important; }
 .search input.pioneertv-focus { box-shadow: none !important; }

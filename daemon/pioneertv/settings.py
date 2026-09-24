@@ -52,7 +52,7 @@ SCHEMA: list[dict] = [
     },
 ]
 
-SERVICE_FIELDS = ["id", "name", "tagline", "url", "search_url", "color", "glyph", "logo", "mode", "fullscreen"]
+SERVICE_FIELDS = ["id", "name", "tagline", "url", "search_url", "color", "glyph", "logo", "mode", "fullscreen", "row", "kind"]
 
 
 def overlay_path(cfg: dict) -> Path:

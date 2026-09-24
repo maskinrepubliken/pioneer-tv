@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Radio – Pioneer TV</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="../fonts/fonts.css">
+  <link rel="stylesheet" href="../content/tokens.css">
+  <link rel="stylesheet" href="../content/cursor.css">
+  <link rel="stylesheet" href="../content/paper.css">
+  <link rel="stylesheet" href="../content/content.css">
+  <link rel="stylesheet" href="radio.css">
+</head>
+<body>
+  <div class="page">
+    <section class="panel" aria-live="polite">
+      <div class="panel-body">
+        <span class="eyebrow">Sveriges Radio · direkt</span>
+        <h1 class="station" id="station">Radio</h1>
+        <div class="now">
+          <span class="label">Just nu</span>
+          <p class="programme" id="now-title">…</p>
+          <p class="times" id="now-times"></p>
+        </div>
+        <div class="next" id="next" hidden>
+          <span class="label">Sedan</span>
+          <p class="next-title"><span id="next-time"></span> <span id="next-title"></span></p>
+        </div>
+      </div>
+      <img class="perf" src="perforering-gles.svg" alt="">
+    </section>
+
+    <div class="controls">
+      <button class="knapp primar" id="play" type="button" data-pioneertv-initial>Pausa</button>
+      <button class="knapp" id="home" type="button">Till startsidan</button>
+      <span class="state" id="state">Laddar…</span>
+    </div>
+
+    <footer class="legend">
+      <span><kbd class="pioneertv-kbd">A</kbd> välj</span>
+      <span><kbd class="pioneertv-kbd">X</kbd> spela · pausa</span>
+      <span><kbd class="pioneertv-kbd">B</kbd> startsidan</span>
+      <span class="credit"><img src="ordbild-en-rad-black.svg" alt="Maskinrepubliken"></span>
+    </footer>
+  </div>
+
+  <audio id="audio" preload="none"></audio>
+
+  <script src="../content/icons.js"></script>
+  <script src="../content/bridge.js"></script>
+  <script src="../content/spatial-nav.js"></script>
+  <script src="../content/keyboard.js"></script>
+  <script src="../content/hud.js"></script>
+  <script src="../content/logs.js"></script>
+  <script src="../content/cursor.js"></script>
+  <script src="../content/video.js"></script>
+  <script src="../content/bigscreen.js"></script>
+  <script src="../content/game.js"></script>
+  <script src="../content/main.js"></script>
+  <script src="radio.js"></script>
+</body>
+</html>

@@ -1,34 +1,39 @@
-/* Pioneer TV overlays on any page. Namespaced with pioneertv- and drawn
-   above the page. Colours and primitives come from paper.css. */
+/* Pioneer TV overlays on any page, on Maskinrepubliken's design system.
+   Namespaced with pioneertv- and drawn above the page. Tokens come from
+   tokens.css, primitives from paper.css. No shadows, no gradients and no
+   see-through tones: every surface is a solid token, so the overlays read the
+   same over a black video as over a white page. */
 
 /* Fonts for the overlays on third-party pages (the launcher and the settings
    page load fonts.css directly). */
-@font-face { font-family: "EB Garamond"; font-weight: 400; font-style: normal; src: url("../fonts/ebgaramond-400.woff2") format("woff2"); }
-@font-face { font-family: "EB Garamond"; font-weight: 600; font-style: normal; src: url("../fonts/ebgaramond-600.woff2") format("woff2"); }
-@font-face { font-family: "EB Garamond"; font-weight: 400; font-style: italic; src: url("../fonts/ebgaramond-400i.woff2") format("woff2"); }
+@font-face { font-family: "Rubik"; font-weight: 700 900; font-style: normal; src: url("../fonts/rubik.woff2") format("woff2"); }
+@font-face { font-family: "Fraunces"; font-weight: 400; font-style: normal; src: url("../fonts/fraunces-400.woff2") format("woff2"); }
+@font-face { font-family: "Fraunces"; font-weight: 400; font-style: italic; src: url("../fonts/fraunces-400i.woff2") format("woff2"); }
+@font-face { font-family: "IBM Plex Sans"; font-weight: 400 600; font-style: normal; src: url("../fonts/ibmplexsans.woff2") format("woff2"); }
+@font-face { font-family: "IBM Plex Mono"; font-weight: 400; font-style: normal; src: url("../fonts/ibmplexmono-400.woff2") format("woff2"); }
 
-/* ---- focus ring: paper halo with an ink line, readable on dark and light sites ---- */
+/* ---- focus ring on other sites: an ink ring inside a solid paper ring, so it
+   reads on dark and light pages alike ---- */
 .pioneertv-focus {
-  outline: 3px solid #2b2419 !important;
+  outline: 3px solid var(--pioneertv-focus) !important;
   outline-offset: 3px !important;
-  box-shadow: 0 0 0 6px rgba(244, 237, 218, 0.9) !important;
+  box-shadow: 0 0 0 6px var(--pioneertv-paper) !important;
   border-radius: 8px !important;
   transition: none !important;
   z-index: 1;
 }
 
 .pioneertv-keyboard, .pioneertv-toast, .pioneertv-menu, .pioneertv-logs {
-  font-family: "EB Garamond", Georgia, serif;
-  color: #2b2419;
+  font-family: var(--pioneertv-font-ui);
+  color: var(--pioneertv-ink);
 }
 
 /* ---- software pointer (see cursor.js) ---- */
 .pioneertv-cursor {
   position: fixed; left: 0; top: 0; z-index: 2147483647; pointer-events: none;
-  width: 24px; height: 36px; opacity: 0; transition: opacity 200ms;
-  filter: drop-shadow(0 2px 3px rgba(43, 36, 25, 0.35));
+  width: 24px; height: 36px; visibility: hidden;
 }
-.pioneertv-cursor-show { opacity: 1; }
+.pioneertv-cursor-show { visibility: visible; }
 html.pioneertv-game .pioneertv-cursor { display: none; }
 .pioneertv-cursor-press svg { transform: translate(1px, 1px) scale(0.94); }
 .pioneertv-hover { }
@@ -45,113 +50,107 @@ html.pioneertv-bigscreen, html.pioneertv-bigscreen body { overflow: hidden !impo
 /* ---- keyboard ---- */
 .pioneertv-keyboard {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 2147483000;
-  padding: 16px 20px 10px;
-  background: #f4edda;
-  border-top: 1px solid #c9bd9c;
-  box-shadow: 0 -12px 40px rgba(43, 36, 25, 0.18);
-  transform: translateY(0);
-  animation: pioneertv-sheet-in 220ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  padding: 18px 22px 12px;
+  background: var(--pioneertv-paper);
+  border-top: 1px solid var(--pioneertv-line-strong);
 }
-@keyframes pioneertv-sheet-in { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
 html.pioneertv-keyboard-open { scroll-padding-bottom: 360px; }
 .pioneertv-keyrow { display: flex; gap: 10px; margin-bottom: 10px; }
 .pioneertv-key {
   height: 62px; padding: 0; margin: 0;
-  font: 600 26px "EB Garamond", Georgia, serif; line-height: 1; color: #2b2419;
-  background: #f4edda; border: 1px solid #c9bd9c; border-radius: 10px;
-  box-shadow: 0 1px 0 #d9cdaa;
+  font: 600 24px/1 var(--pioneertv-font-ui); color: var(--pioneertv-ink);
+  background: var(--pioneertv-paper-raised); border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-s);
   cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
-  transition: background 120ms, transform 120ms, box-shadow 120ms;
 }
 .pioneertv-key .pioneertv-icon { font-size: 26px; }
-.pioneertv-key:hover { background: #ebe2c8; }
-.pioneertv-key-accent { background: #e4c56a; border-color: #d0ad4c; }
-.pioneertv-key-active { background: #2b2419 !important; border-color: #2b2419 !important; color: #f4edda !important; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(43, 36, 25, 0.25); }
+.pioneertv-key:hover { background: var(--pioneertv-paper-hover); }
+.pioneertv-key-accent { background: var(--pioneertv-ochre); border-color: var(--pioneertv-ochre); color: var(--pioneertv-on-ochre); }
+/* The key under the d-pad: ink, like a pressed key, with the focus ring. */
+.pioneertv-key-active {
+  background: var(--pioneertv-surface-ink) !important; border-color: var(--pioneertv-surface-ink) !important; color: var(--pioneertv-on-dark) !important;
+  outline: 3px solid var(--pioneertv-focus); outline-offset: 3px;
+}
 .pioneertv-keyhint {
-  font: 18px "EB Garamond", Georgia, serif; font-variant: small-caps; letter-spacing: 0.06em;
-  color: #a89a80; text-align: right;
+  font: 14px/1.4 var(--pioneertv-font-mono); letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--pioneertv-ink-faint); text-align: right;
 }
 
 /* ---- toast ---- */
 .pioneertv-toast {
   position: fixed; top: 24px; right: 24px; z-index: 2147483001;
   display: flex; align-items: center; gap: 12px;
-  padding: 14px 24px 12px 18px;
-  font-size: 26px; line-height: 1.2;
-  background: #f4edda; border: 1px solid #c9bd9c; border-radius: 14px;
-  box-shadow: 0 2px 0 #d9cdaa, 0 16px 36px rgba(43, 36, 25, 0.14);
-  opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(-8px);
-  transition: opacity 180ms, transform 180ms, visibility 180ms;
+  padding: 14px 24px 14px 18px;
+  font-size: 24px; line-height: 1.25;
+  background: var(--pioneertv-paper-raised); border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-m);
+  visibility: hidden; pointer-events: none;
 }
-.pioneertv-toast-show { opacity: 1; visibility: visible; transform: none; }
-.pioneertv-toast-icon { display: inline-flex; font-size: 26px; color: #6f6350; }
+.pioneertv-toast-show { visibility: visible; }
+.pioneertv-toast-icon { display: inline-flex; font-size: 26px; color: var(--pioneertv-ink-muted); }
 
-/* ---- log viewer ---- */
+/* ---- log viewer: a full sheet of paper, no dimmed page behind ---- */
 .pioneertv-logs {
   position: fixed; inset: 0; z-index: 2147483002;
-  background: rgba(43, 36, 25, 0.45);
+  background: var(--pioneertv-paper-sunken);
   display: flex; align-items: center; justify-content: center;
 }
 .pioneertv-logs-sheet {
   width: min(92vw, 1100px); height: 84vh; padding: 22px 26px 16px;
-  background: #f4edda; border: 1px solid #c9bd9c; border-radius: 18px;
-  box-shadow: 0 24px 60px rgba(43, 36, 25, 0.35);
+  background: var(--pioneertv-paper-raised); border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-panel);
   display: flex; flex-direction: column; gap: 12px;
-  animation: pioneertv-sheet-in 220ms cubic-bezier(0.2, 0.7, 0.2, 1);
 }
-.pioneertv-logs-head { display: flex; align-items: baseline; gap: 22px; border-bottom: 1px solid #c9bd9c; padding-bottom: 10px; }
-.pioneertv-logs-title { font-size: 32px; font-weight: 600; }
-.pioneertv-logs-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.pioneertv-logs-head { display: flex; align-items: baseline; gap: 22px; border-bottom: 1px solid var(--pioneertv-line); padding-bottom: 10px; }
+.pioneertv-logs-title { font: italic 400 30px/1.2 var(--pioneertv-font-prose); }
+.pioneertv-logs-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
 .pioneertv-logs-tab {
-  padding: 4px 12px 3px; border-radius: 999px;
-  font: 19px "EB Garamond", Georgia, serif; font-variant: small-caps; letter-spacing: 0.05em; color: #6f6350; cursor: pointer;
+  padding: 6px 14px; border-radius: var(--pioneertv-radius-pill); border: 1px solid transparent;
+  font: 16px/1.2 var(--pioneertv-font-ui); color: var(--pioneertv-ink-muted); cursor: pointer;
 }
-.pioneertv-logs-tab-active { background: #2b2419; color: #f4edda; }
+.pioneertv-logs-tab-active { background: var(--pioneertv-surface-ink); color: var(--pioneertv-on-dark); }
 .pioneertv-logs-body {
-  flex: 1; margin: 0; overflow: auto; padding: 12px 14px;
-  background: #ebe2c8; border: 1px solid #d9cdaa; border-radius: 10px;
-  font: 15px/1.5 "SF Mono", Menlo, Consolas, monospace; color: #2b2419; white-space: pre-wrap; word-break: break-word;
+  flex: 1; margin: 0; overflow: auto; padding: 14px 16px;
+  background: var(--pioneertv-paper-sunken); border: 1px solid var(--pioneertv-line); border-radius: var(--pioneertv-radius-m);
+  font: 15px/1.55 var(--pioneertv-font-mono); color: var(--pioneertv-ink); white-space: pre-wrap; word-break: break-word;
 }
 .pioneertv-logs .pioneertv-keyhint .pioneertv-icon { font-size: 13px; }
 
-/* ---- quick menu ---- */
+/* ---- quick menu: a solid panel at the right; the page stays as it is ---- */
 .pioneertv-menu {
   position: fixed; inset: 0; z-index: 2147483002;
-  background: rgba(43, 36, 25, 0.35);
+  background: transparent;
   display: flex; align-items: stretch; justify-content: flex-end;
 }
 .pioneertv-menu-panel {
   width: 460px; height: 100%; padding: 26px 30px 18px;
-  background: #f4edda;
-  border-left: 1px solid #c9bd9c;
-  box-shadow: -16px 0 48px rgba(43, 36, 25, 0.25);
-  display: flex; flex-direction: column; gap: 2px;
-  animation: pioneertv-panel-in 220ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  background: var(--pioneertv-paper);
+  border-left: 1px solid var(--pioneertv-line-strong);
+  display: flex; flex-direction: column; gap: 4px;
 }
-@keyframes pioneertv-panel-in { from { transform: translateX(40px); opacity: 0; } to { transform: none; opacity: 1; } }
 .pioneertv-menu-title {
-  font: 600 32px "EB Garamond", Georgia, serif; margin-bottom: 6px;
-  padding-bottom: 8px; border-bottom: 1px solid #c9bd9c;
+  font: italic 400 30px/1.2 var(--pioneertv-font-prose); margin-bottom: 6px;
+  padding-bottom: 10px; border-bottom: 1px solid var(--pioneertv-line);
 }
 .pioneertv-menu-status {
-  display: flex; flex-direction: column; gap: 4px; margin: 4px 0 8px; padding-bottom: 8px;
-  border-bottom: 1px solid #c9bd9c; font-size: 19px; color: #6f6350;
+  display: flex; flex-direction: column; gap: 6px; margin: 4px 0 10px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--pioneertv-line); font: 15px/1.5 var(--pioneertv-font-mono); color: var(--pioneertv-ink-muted);
 }
 .pioneertv-menu-statusrow { display: flex; align-items: center; gap: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pioneertv-menu-statusrow .pioneertv-menu-icon { width: 24px; font-size: 20px; display: inline-flex; color: #6f6350; }
-.pioneertv-menu-dot { width: 8px; height: 8px; border-radius: 50%; background: #a89a80; flex: none; }
-.pioneertv-menu-dot.ok { background: #5d6f3f; } .pioneertv-menu-dot.warn { background: #d4a92c; } .pioneertv-menu-dot.bad { background: #b5442a; }
+.pioneertv-menu-statusrow .pioneertv-menu-icon { width: 24px; font-size: 20px; display: inline-flex; color: var(--pioneertv-ink-muted); }
+/* Status holes: filled when up, empty when unknown, and never colour alone:
+   each row also says it in words. */
+.pioneertv-menu-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; border: 2px solid var(--pioneertv-line-strong); background: transparent; }
+.pioneertv-menu-dot.ok { background: var(--pioneertv-surface-forest); border-color: var(--pioneertv-surface-forest); }
+.pioneertv-menu-dot.warn { background: var(--pioneertv-ochre); border-color: var(--pioneertv-surface-rust); }
+.pioneertv-menu-dot.bad { background: var(--pioneertv-alarm); border-color: var(--pioneertv-alarm); }
 .pioneertv-menu-item {
   display: flex; align-items: center; gap: 14px;
-  padding: 7px 16px 5px; font-size: 27px; cursor: pointer; border-radius: 12px;
-  transition: background 120ms;
+  padding: 10px 18px; font: 24px/1.3 var(--pioneertv-font-ui); cursor: pointer; border-radius: var(--pioneertv-radius-pill);
 }
-.pioneertv-menu-icon { width: 34px; text-align: center; font-size: 26px; display: inline-flex; justify-content: center; color: #6f6350; }
-.pioneertv-menu-active { background: #2b2419; color: #f4edda; }
-.pioneertv-menu-active .pioneertv-menu-icon { color: #f4edda; }
-.pioneertv-menu-disabled { opacity: 0.35; }
+.pioneertv-menu-item:hover { background: var(--pioneertv-paper-hover); }
+.pioneertv-menu-icon { width: 34px; text-align: center; font-size: 26px; display: inline-flex; justify-content: center; color: var(--pioneertv-ink-muted); }
+.pioneertv-menu-active { background: var(--pioneertv-surface-ink); color: var(--pioneertv-on-dark); }
+.pioneertv-menu-active:hover { background: var(--pioneertv-surface-ink); }
+.pioneertv-menu-active .pioneertv-menu-icon { color: var(--pioneertv-on-dark); }
+/* Inactive: sunken surface, faint text, a solid tone rather than opacity. */
+.pioneertv-menu-disabled { color: var(--pioneertv-ink-faint); }
+.pioneertv-menu-disabled .pioneertv-menu-icon { color: var(--pioneertv-ink-faint); }
 .pioneertv-menu-panel .pioneertv-keyhint { margin-top: auto; }
-
-@media (prefers-reduced-motion: reduce) {
-  .pioneertv-keyboard, .pioneertv-logs-sheet, .pioneertv-menu-panel, .pioneertv-toast { animation: none !important; transition: none !important; }
-}

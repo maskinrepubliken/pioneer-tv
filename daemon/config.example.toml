@@ -90,16 +90,6 @@ search_url = "https://www.svtplay.se/sok?q={query}"
 color = "#1f7a4d"
 glyph = "S"
 
-# The live channel, opened straight into the stream and taken fullscreen.
-[[services]]
-id = "svt1"
-name = "SVT1"
-tagline = "Direktsänt"
-url = "https://www.svtplay.se/kanaler/svt1?start=auto"
-color = "#b5442a"
-glyph = "1"
-fullscreen = true
-
 [[services]]
 id = "jellyfin"
 name = "Jellyfin"
@@ -133,3 +123,70 @@ url = "http://100.123.142.8:8081/"
 search_url = "http://100.123.142.8:8081/search?search={query}"
 color = "#3b6ea5"
 glyph = "R"
+
+# The second row: live TV and radio, no illustrations. row = "live" puts a
+# service there and kind (tv or radio) labels it. The SVT channels open
+# straight into the stream and take the whole TV (fullscreen = "1"). The
+# radio tiles open the launcher's own player (radio.html), which streams
+# from Sveriges Radio; channel is SR's id. P4 is regional: 206 is P4
+# Sjuhärad, and https://api.sr.se/api/v2/channels lists the others.
+
+[[services]]
+id = "svt1"
+name = "SVT1"
+url = "https://www.svtplay.se/kanaler/svt1?start=auto"
+row = "live"
+kind = "tv"
+fullscreen = "1"
+
+[[services]]
+id = "svt2"
+name = "SVT2"
+url = "https://www.svtplay.se/kanaler/svt2?start=auto"
+row = "live"
+kind = "tv"
+fullscreen = "1"
+
+[[services]]
+id = "svtbarn"
+name = "SVT Barn"
+url = "https://www.svtplay.se/kanaler/svtbarn?start=auto"
+row = "live"
+kind = "tv"
+fullscreen = "1"
+
+[[services]]
+id = "kunskapskanalen"
+name = "Kunskaps\u00adkanalen"
+url = "https://www.svtplay.se/kanaler/kunskapskanalen?start=auto"
+row = "live"
+kind = "tv"
+fullscreen = "1"
+
+[[services]]
+id = "p1"
+name = "P1"
+url = "radio.html?channel=132&name=P1"
+row = "live"
+kind = "radio"
+
+[[services]]
+id = "p2"
+name = "P2"
+url = "radio.html?channel=163&name=P2"
+row = "live"
+kind = "radio"
+
+[[services]]
+id = "p3"
+name = "P3"
+url = "radio.html?channel=164&name=P3"
+row = "live"
+kind = "radio"
+
+[[services]]
+id = "p4"
+name = "P4"
+url = "radio.html?channel=206&name=P4"
+row = "live"
+kind = "radio"

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "pioneer-tv-preview",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["dev/preview.py", "5178"],
+      "port": 5178
+    }
+  ]
+}

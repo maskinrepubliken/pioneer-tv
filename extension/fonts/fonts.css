@@ -1,4 +1,8 @@
-/* Bundled open fonts (SIL Open Font License 1.1).
-@font-face { font-family: "EB Garamond"; font-weight: 400; font-style: normal; font-display: swap; src: url("ebgaramond-400.woff2") format("woff2"); }
-@font-face { font-family: "EB Garamond"; font-weight: 600; font-style: normal; font-display: swap; src: url("ebgaramond-600.woff2") format("woff2"); }
-@font-face { font-family: "EB Garamond"; font-weight: 400; font-style: italic; font-display: swap; src: url("ebgaramond-400i.woff2") format("woff2"); }
+/* Maskinrepubliken's typefaces, bundled so the box never waits on Google
+   Fonts. Latin subset (covers å, ä, ö). All under the SIL Open Font License
+   1.1, see OFL.txt. Rubik and IBM Plex Sans are variable in weight. */
+@font-face { font-family: "Rubik"; font-weight: 700 900; font-style: normal; font-display: swap; src: url("rubik.woff2") format("woff2"); }
+@font-face { font-family: "Fraunces"; font-weight: 400; font-style: normal; font-display: swap; src: url("fraunces-400.woff2") format("woff2"); }
+@font-face { font-family: "Fraunces"; font-weight: 400; font-style: italic; font-display: swap; src: url("fraunces-400i.woff2") format("woff2"); }
+@font-face { font-family: "IBM Plex Sans"; font-weight: 400 600; font-style: normal; font-display: swap; src: url("ibmplexsans.woff2") format("woff2"); }
+@font-face { font-family: "IBM Plex Mono"; font-weight: 400; font-style: normal; font-display: swap; src: url("ibmplexmono-400.woff2") format("woff2"); }

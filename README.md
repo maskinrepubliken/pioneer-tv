@@ -15,19 +15,43 @@ build for Cineasterna. Pioneer TV is everything around that:
 
 ## Design
 
-Paper, ink and serif. The whole system is defined in
-`extension/content/paper.css`: cream paper, warm ink, a mustard accent, cards
-with a thin warm line, rounded corners and a soft lift, small caps for labels.
-Type is EB Garamond throughout, bundled under the SIL Open Font License in
-`extension/fonts/`. Icons are simple line icons in `extension/content/icons.js`,
-and the service illustrations are ink line art with a soft tint in
-`extension/launcher/art.js`, keyed by service id (a service with a `logo` URL
-shows that instead), drawn as soft 3D objects. Tiles rise in once on load and
-the illustrations float; the focused card grows and gets a mustard ring while
-the others step back. Only transform and opacity animate, and it all stops
-under prefers-reduced-motion.
+The UI follows Maskinrepubliken's design system, vendored in
+`design/maskinrepubliken/` (its brand book is `README.md` there, in Swedish).
+Paper is the ground, ink is what you read with, ochre is the one signal; there
+are no shadows, gradients or see-through tones, and nothing moves except in
+answer to a button. Four voices, bundled in `extension/fonts/` under the SIL
+Open Font License: IBM Plex Sans for everything you press or fill in, Fraunces
+for what you read and for card titles, IBM Plex Mono for every number and
+machine word, and Rubik Black for a page heading.
+
+`dev/tokens-css.py` turns the system's `tokens.json` into
+`extension/content/tokens.css`, where every token is prefixed `--pioneertv-`
+because the same styles run inside every website the box opens.
+`extension/content/paper.css` holds the shared primitives (cards, labels, key
+caps). Focus is a solid ink ring with air around it, drawn thicker than the
+system's 2 px so it reads across a room, plus an ochre marker on the focused
+launcher tile. A status is never colour alone: each one carries a filled or
+empty hole and a word.
+
+The service illustrations in `extension/launcher/art.js` predate the system
+and are not yet redrawn to it.
 
 ## Designing the launcher (no Pi needed)
+
+The quickest way is the preview server, which serves every screen straight
+from the repo, uncached:
+
+```
+python3 dev/preview.py        # http://localhost:5178/
+```
+
+Its index links the launcher in TV mode (also with the keyboard, the quick
+menu or a toast open), the settings page with its mock data, and a specimen
+of the Maskinrepubliken design system in its three themes. The design system
+is vendored in `design/maskinrepubliken/`; after pulling a new `tokens.json`,
+run `python3 dev/tokens-css.py` to regenerate `tokens.css`.
+
+Without the server, the pages also open as plain files:
 
 Everything in `extension/` runs as plain files, so open
 

@@ -6,6 +6,7 @@
   <title>Pioneer TV</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="../fonts/fonts.css">
+  <link rel="stylesheet" href="../content/tokens.css">
   <link rel="stylesheet" href="../content/cursor.css">
   <link rel="stylesheet" href="../content/paper.css">
   <link rel="stylesheet" href="../content/content.css">
@@ -14,21 +15,17 @@
 <body>
   <div class="page">
     <header class="masthead">
-      <div class="masthead-left">
-        <span class="dateline" id="dateline">…</span>
-      </div>
       <div class="masthead-right">
         <span class="pill" id="pill-wifi" title="Nätverk"></span>
         <span class="pill" id="pill-tailscale" title="Tailscale"></span>
         <span class="pill" id="pill-gamepad" title="Handkontroll"></span>
         <span class="pill" id="pill-daemon" title="Daemon"></span>
-        <span class="clock" id="clock">--:--</span>
       </div>
     </header>
-    <div class="rule"></div>
 
     <main class="content">
       <section class="tiles" id="tiles" aria-label="Tjänster"></section>
+      <section class="tiles tiles-live" id="live" aria-label="Direkt: tv och radio"></section>
 
       <section class="row">
         <form class="search pioneertv-card" id="search-form" role="search">
@@ -49,7 +46,7 @@
       <span><kbd class="pioneertv-kbd">B</kbd> stäng · håll: tillbaka</span>
       <span><kbd class="pioneertv-kbd">Y</kbd> tangentbord · håll: meny</span>
       <span><kbd class="pioneertv-kbd">GUIDE</kbd> hem</span>
-      <span class="credit">Maskinrepubliken</span>
+      <span class="credit"><img src="ordbild-en-rad-black.svg" alt="Maskinrepubliken"></span>
     </footer>
   </div>
 

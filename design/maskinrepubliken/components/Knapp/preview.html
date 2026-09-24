@@ -1,0 +1,35 @@
+<!-- @dsCard group="Bas" height=180 -->
+<!doctype html>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@700;900&family=Fraunces:ital,opsz,wght@0,9..144,400;1,9..144,400&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400&display=swap">
+<style>
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--paper); color: var(--ink); font-family: var(--font-ui); }
+  .demo { padding: 24px; display: flex; flex-direction: column; gap: 18px; }
+  .rad { display: flex; flex-direction: row; gap: 16px; align-items: center; flex-wrap: wrap; }
+  .etikett { font-family: var(--font-mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); }
+  .mork { background: var(--surface-ink); padding: 20px; border-radius: var(--radius-l); }
+</style>
+<div id="root"></div>
+<script>
+(function () {
+  var M = window.Maskinrepubliken;
+  var h = React.createElement;
+
+  var app = h('div', { className: 'demo' }, [
+    h('div', { key: 'a', className: 'rad' }, [
+      h(M.Knapp, { key: '1', storlek: 'stor', href: '#' }, 'Boka ett samtal'),
+      h(M.Knapp, { key: '2' }, 'Skicka'),
+      h(M.Knapp, { key: '3', variant: 'sekundar' }, 'Avbryt'),
+      h(M.Knapp, { key: '4', inaktiv: true }, 'Inaktiv')
+    ]),
+    h('div', { key: 'b', className: 'mork' },
+      h('div', { className: 'rad' }, [
+        h(M.Knapp, { key: '1', href: '#' }, 'Boka ett samtal'),
+        h(M.Knapp, { key: '2', variant: 'pa-mork', href: '#' }, 'Läs mer')
+      ]))
+  ]);
+  ReactDOM.createRoot(document.getElementById('root')).render(app);
+})();
+</script>

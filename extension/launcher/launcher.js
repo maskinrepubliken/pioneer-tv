@@ -5,18 +5,38 @@
 
   const $ = (id) => document.getElementById(id);
   const tilesEl = $('tiles');
+  const liveEl = $('live');
   const searchInput = $('search');
   const targetsSection = $('search-targets');
   const targetsEl = $('targets');
-  const clock = $('clock');
 
   let services = M.defaultServices;
   let servicesKey = JSON.stringify(services);
 
+  // Services with row "live" (live TV and radio) sit in a second row of their
+  // own, without illustrations; everything else is a big tile in the first.
+  const isLive = (s) => s.row === 'live';
+
   function render() {
     tilesEl.innerHTML = '';
-    tilesEl.style.setProperty('--tiles', String(Math.max(1, Math.min(services.length, 5))));
-    for (const s of services) {
+    liveEl.innerHTML = '';
+    const main = services.filter((s) => !isLive(s));
+    const live = services.filter(isLive);
+    tilesEl.style.setProperty('--tiles', String(Math.max(1, Math.min(main.length, 5))));
+    liveEl.style.setProperty('--tiles', String(Math.max(1, live.length)));
+    liveEl.hidden = !live.length;
+    for (const s of live) {
+      const a = document.createElement('a');
+      a.className = `tile tile-live tile-live--${s.kind === 'radio' ? 'radio' : 'tv'} pioneertv-card`;
+      a.href = resolve(s.url);
+      a.dataset.service = s.id;
+      const band = document.createElement('span'); band.className = 'band'; a.appendChild(band);
+      const name = document.createElement('span'); name.className = 'name'; name.textContent = s.name; a.appendChild(name);
+      a.appendChild(punchCard(s.id));
+      a.addEventListener('click', (e) => { e.preventDefault(); open(s.url); });
+      liveEl.appendChild(a);
+    }
+    for (const s of main) {
       const a = document.createElement('a');
       a.className = 'tile pioneertv-card';
       a.href = s.url;
@@ -30,18 +50,111 @@
       a.appendChild(art);
       const text = document.createElement('div'); text.className = 'text';
       const name = document.createElement('div'); name.className = 'name'; name.textContent = s.name; text.appendChild(name);
-      const tag = document.createElement('div'); tag.className = 'tagline'; tag.textContent = s.tagline || ''; text.appendChild(tag);
       a.appendChild(text);
       const index = document.createElement('span'); index.className = 'index'; index.textContent = `0${tilesEl.children.length + 1}`; a.appendChild(index);
       a.addEventListener('click', (e) => { e.preventDefault(); open(s.url); });
       tilesEl.appendChild(a);
     }
+    fitLiveNames();
+    fitMainNames();
+  }
+
+  // Channel names share one size, but a long one (Kunskapskanalen) would not
+  // fit an eighth of the screen at it: that name alone is set smaller until
+  // its widest line fits, instead of shrinking every channel.
+  // Each channel's own punch card: one row of the system's perforation along
+  // the bottom of its tile, in the rutnät's proportions (hole radius just under
+  // a quarter of the pitch, round holes only). The holes come in runs of one to
+  // four with gaps of up to three, like punched data, and the pattern is drawn
+  // from the channel's id, so a channel always has the same card. Each hole
+  // takes one of the palette's colours, also drawn from the id.
+  const PERF_COLS = 11, PERF_ROWS = 2, PITCH = 75, PITCH_Y = 150, HOLE = 18.5;
+  const HOLE_COLOURS = ['--pioneertv-surface-forest', '--pioneertv-surface-rust', '--pioneertv-ochre', '--pioneertv-surface-ink'];
+  function punchCard(id) {
+    let seed = 0;
+    for (const ch of String(id)) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
+    const rand = () => { seed = (seed * 1103515245 + 12345) >>> 0; return seed / 4294967296; };
+    const holes = [];
+    for (let row = 0; row < PERF_ROWS; row++) {
+      let col = Math.floor(rand() * 2);
+      while (col < PERF_COLS) {
+        const run = 2 + Math.floor(rand() * 3);                 // runs of two to four
+        for (let i = 0; i < run && col < PERF_COLS; i++, col++) holes.push([col, row]);
+        col += 1 + Math.floor(rand() * 2);                      // gaps of one or two
+      }
+    }
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('class', 'perf');
+    svg.setAttribute('viewBox', `0 0 ${PERF_COLS * PITCH} ${(PERF_ROWS - 1) * PITCH_Y + PITCH}`);
+    svg.setAttribute('aria-hidden', 'true');
+    for (const [c, r] of holes) {
+      const dot = document.createElementNS(ns, 'circle');
+      dot.setAttribute('cx', String(c * PITCH + PITCH / 2));
+      dot.setAttribute('cy', String(r * PITCH_Y + PITCH / 2));
+      dot.setAttribute('r', String(HOLE));
+      dot.style.fill = `var(${HOLE_COLOURS[Math.floor(rand() * HOLE_COLOURS.length)]})`;
+      svg.appendChild(dot);
+    }
+    return svg;
+  }
+
+  function fitLiveNames() {
+    const run = () => {
+      // Close to one size for every channel. The widest name (KUNSKAPS-)
+      // sets the base, the size at which it fits inside its name box's side
+      // padding; the others may be a little larger than that, up to
+      // LIVE_STEP times the base, but never larger than their own tile allows.
+      const LIVE_STEP = 1.15;
+      const names = [...liveEl.querySelectorAll('.name')];
+      names.forEach((n) => { n.style.fontSize = ''; });
+      const fits = names.map((n) => {
+        const cs = getComputedStyle(n);
+        const room = n.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+        const range = document.createRange();
+        range.selectNodeContents(n);
+        const w = range.getBoundingClientRect().width;
+        return { n, base: parseFloat(cs.fontSize), fit: w > 0 ? Math.min(1, room / w) * 0.98 : 1 };
+      });
+      const base = Math.min(...fits.map((f) => f.fit));
+      for (const f of fits) {
+        const scale = Math.min(f.fit, base * LIVE_STEP);
+        if (scale < 1) f.n.style.fontSize = `${f.base * scale}px`;
+      }
+    };
+    run();
+    if (document.fonts) document.fonts.ready.then(run);
+  }
+  window.addEventListener('resize', fitLiveNames);
+
+  // The first row's titles share one size: the largest at which the widest
+  // (CINEASTERNA) fits its tile with the tile's own padding as air, so every
+  // title can sit centred.
+  function fitMainNames() {
+    const run = () => {
+      const names = [...tilesEl.querySelectorAll('.name')];
+      names.forEach((n) => { n.style.fontSize = ''; });
+      let scale = 1;
+      for (const n of names) {
+        const range = document.createRange();
+        range.selectNodeContents(n);
+        const w = range.getBoundingClientRect().width;
+        if (w > n.clientWidth) scale = Math.min(scale, (n.clientWidth - 1) / w);
+      }
+      if (scale < 1) names.forEach((n) => { n.style.fontSize = `${parseFloat(getComputedStyle(n).fontSize) * scale}px`; });
+    };
+    run();
+    if (document.fonts) document.fonts.ready.then(run);
+  }
+  window.addEventListener('resize', fitMainNames);
+
+  // A relative url is a page of the launcher itself (the radio player).
+  function resolve(url) {
+    try { return new URL(url, location.href).href; } catch { return url; }
   }
 
   function open(url) {
-    document.body.style.transition = 'opacity 180ms';
-    document.body.style.opacity = '0';
-    setTimeout(() => b.navigate(url), 160);
+    b.navigate(resolve(url));
   }
 
   function showTargets(query) {
@@ -69,14 +182,6 @@
   searchInput.addEventListener('input', () => { if (!searchInput.value.trim()) targetsSection.hidden = true; });
 
 
-  function tick() {
-    const d = new Date();
-    clock.textContent = d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
-    const date = d.toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-    $('dateline').textContent = date.charAt(0).toUpperCase() + date.slice(1);
-  }
-  tick();
-  setInterval(tick, 15000);
 
   // Pixel icons for the static bits of the page.
   const icons = M.icons;
@@ -97,9 +202,10 @@
         servicesKey = key;
         services = s.config.services;
         const focused = document.activeElement;
-        const idx = focused && focused.classList.contains('tile') ? [...tilesEl.children].indexOf(focused) : -1;
+        const id = focused && focused.classList.contains('tile') ? focused.dataset.service : null;
         render();
-        if (idx >= 0) M.nav.focus(tilesEl.children[Math.min(idx, tilesEl.children.length - 1)], { scroll: false });
+        const again = id && document.querySelector(`.tile[data-service="${CSS.escape(id)}"]`);
+        if (again) M.nav.focus(again, { scroll: false });
       }
     }
   });

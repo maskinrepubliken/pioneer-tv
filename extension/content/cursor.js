@@ -9,7 +9,7 @@
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const ARROW = '<svg viewBox="0 0 24 36" width="24" height="36" aria-hidden="true">'
-    + '<path d="M3 2.5 L3 27 L9.5 21.5 L14 31 L18 29.2 L13.6 19.8 L21 19.2 Z" fill="#f4edda" stroke="#2b2419" stroke-width="1.6" stroke-linejoin="round"/>'
+    + '<path d="M3 2.5 L3 27 L9.5 21.5 L14 31 L18 29.2 L13.6 19.8 L21 19.2 Z" fill="#f4efe4" stroke="#1c1613" stroke-width="1.6" stroke-linejoin="round"/>'
     + '</svg>';
   const ACTIVE_MS = 5000;   // A clicks at the pointer this long after it last moved
   const EDGE = 28;          // px from the edge where the page scrolls

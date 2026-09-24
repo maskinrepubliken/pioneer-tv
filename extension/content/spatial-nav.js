@@ -168,18 +168,22 @@ window.PioneerTV = window.PioneerTV || {};
         // under the pointer instead: a key, a menu row, a tab.
         const under = M.cursor.elementUnder();
         const inOverlay = !!(under && under.closest && under.closest('[data-pioneertv-overlay]'));
-        if (this.captured ? inOverlay : !this.isTextField(document.activeElement)) {
+        const outsideKeyboard = this.captured && this.captured === M.keyboard && !inOverlay;   // closes it
+        if (this.captured ? (inOverlay || outsideKeyboard) : !this.isTextField(document.activeElement)) {
           this.eat(e);
           M.cursor.click();
           return;
         }
       }
       if (this.captured) {
-        this.captured.onKeyDown(e);
+        // The layer may close itself on this very key (Escape, OK): keep hold
+        // of it so the rest of the press is judged by the layer that had it.
+        const layer = this.captured;
+        layer.onKeyDown(e);
         // A layer only acts on the keys it knows; swallow the rest as well so
         // the page underneath stays untouched. captureAll === false (the
         // on-screen keyboard) still lets a real keyboard type through.
-        if (this.captured.captureAll !== false || PAD_KEYS.has(e.key)) this.eat(e);
+        if (layer.captureAll !== false || PAD_KEYS.has(e.key)) this.eat(e);
         return;
       }
       const active = document.activeElement;
@@ -241,8 +245,12 @@ window.PioneerTV = window.PioneerTV || {};
     onKeyUp(e) {
       if (!this.enabled || !e.isTrusted) return;
       if (this.captured && (this.captured.captureAll !== false || PAD_KEYS.has(e.key))) {
+        // The layer sees the release first (the keyboard types on it), then
+        // it is swallowed so the page underneath never gets half a press.
+        const layer = this.captured;
         this._eaten.delete(e.key);
         this.stop(e);
+        if (layer.onKeyUp) layer.onKeyUp(e);
         return;
       }
       if (this._eaten.delete(e.key)) this.stop(e);

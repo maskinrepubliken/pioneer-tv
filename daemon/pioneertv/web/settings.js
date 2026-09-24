@@ -227,7 +227,7 @@
       const s = await api('GET', '/api/settings');
       const services = s.services.map((x) => ({ ...x }));
       const fields = s.service_fields;
-      const labels = { id: 'Id', name: 'Namn', tagline: 'Undertext', url: 'Startsida', search_url: 'Sök-URL ({query})', color: 'Färg (#hex)', glyph: 'Bokstav', logo: 'Logotyp-URL', mode: 'Läge (tomt eller "game": kontrollen går direkt till spelet)', fullscreen: 'Helskärm (1 = fyll TV:n direkt)' };
+      const labels = { id: 'Id', name: 'Namn', tagline: 'Undertext', url: 'Startsida', search_url: 'Sök-URL ({query})', color: 'Färg (#hex)', glyph: 'Bokstav', logo: 'Logotyp-URL', mode: 'Läge (tomt eller "game": kontrollen går direkt till spelet)', fullscreen: 'Helskärm (1 = fyll TV:n direkt)', row: 'Rad ("live" = andra raden, direkt-tv och radio)', kind: 'Slag (tv eller radio)' };
       const wrap = h('div');
       const draw = () => {
         wrap.replaceChildren(...services.map((svc, i) => h('div', { class: 'service pioneertv-card', style: `--service-color:${svc.color || '#444'}` },

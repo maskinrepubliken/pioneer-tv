@@ -1,55 +1,39 @@
-/* Pioneer TV paper design system: tokens and primitives shared by the
-   launcher, the overlays on other sites and the settings page.
-   Cream paper, warm ink, a serif for everything you read, soft edges. */
-:root {
-  --pioneertv-paper: #f4edda;
-  --pioneertv-paper-2: #ebe2c8;
-  --pioneertv-paper-3: #ddd1ad;
-  --pioneertv-shadow: #d9cdaa;
-  --pioneertv-line: #c9bd9c;
-  --pioneertv-ink: #2b2419;
-  --pioneertv-ink-2: #6f6350;
-  --pioneertv-ink-3: #a89a80;
-  --pioneertv-accent: #e4c56a;
-  --pioneertv-red: #b5442a;
-  --pioneertv-moss: #5d6f3f;
-  --pioneertv-serif: "EB Garamond", "Libertinus Serif", Georgia, "Times New Roman", serif;
-  --pioneertv-mono: "SF Mono", Menlo, Consolas, "Courier New", monospace;
-  --pioneertv-radius: 14px;
-  --pioneertv-radius-sm: 8px;
-  --pioneertv-lift: 0 1px 0 var(--pioneertv-shadow), 0 10px 24px rgba(43, 36, 25, 0.08);
-  --pioneertv-lift-strong: 0 2px 0 var(--pioneertv-shadow), 0 16px 36px rgba(43, 36, 25, 0.14);
-}
+/* Pioneer TV primitives, on Maskinrepubliken's design system: the launcher,
+   the overlays on other sites and the settings page share them. Tokens come
+   from tokens.css (generated from design/maskinrepubliken/tokens.json), all
+   prefixed --pioneertv- so they never touch a website's own variables.
 
-/* A paper card: warm paper, a thin line, a soft lift. */
+   The system's rules, as they land here: paper is the ground, ink is what you
+   read with, ochre is the one signal. No shadows, no gradients, no opacity for
+   tone: depth is paper-raised against paper-sunken, separated by a line.
+   Anything you can press has a line-strong edge. Buttons are capsules. */
+
+/* A card: raised paper, a line, round corners. */
 .pioneertv-card, .pioneertv-card-strong, .pioneertv-card-focus, .pioneertv-card-ink, .pioneertv-card-accent, .pioneertv-card-red, .pioneertv-card-flat {
-  background: var(--pioneertv-paper);
-  border: 1px solid var(--pioneertv-line);
-  border-radius: var(--pioneertv-radius);
-  box-shadow: var(--pioneertv-lift);
-  transition: box-shadow 160ms ease-out, border-color 160ms ease-out, transform 160ms ease-out;
+  background: var(--pioneertv-paper-raised);
+  border: 1px solid var(--pioneertv-line-strong);
+  border-radius: var(--pioneertv-radius-card);
+  color: var(--pioneertv-ink);
 }
-.pioneertv-card-strong { border-color: var(--pioneertv-ink-3); }
-.pioneertv-card-focus { border-color: var(--pioneertv-ink); box-shadow: var(--pioneertv-lift-strong), 0 0 0 1px var(--pioneertv-ink); }
-.pioneertv-card-ink { background: var(--pioneertv-ink); border-color: var(--pioneertv-ink); color: var(--pioneertv-paper); }
-.pioneertv-card-accent { background: var(--pioneertv-accent); border-color: #d0ad4c; }
-.pioneertv-card-red { border-color: var(--pioneertv-red); }
-.pioneertv-card-flat { box-shadow: none; }
+.pioneertv-card-flat { border-color: var(--pioneertv-line); }
+.pioneertv-card-focus { border-color: var(--pioneertv-ink); }
+.pioneertv-card-ink { background: var(--pioneertv-surface-ink); border-color: var(--pioneertv-surface-ink); color: var(--pioneertv-on-dark); }
+.pioneertv-card-accent { background: var(--pioneertv-ochre); border-color: var(--pioneertv-ochre); color: var(--pioneertv-on-ochre); }
+.pioneertv-card-red { border-color: var(--pioneertv-alarm); }
 
 .pioneertv-icon { display: inline-block; vertical-align: -0.15em; width: 1em; height: 1em; }
 
-/* Small-caps label: section titles, key legends, tabs. */
+/* Label: the system's etikett, mono capitals in ink-faint. */
 .pioneertv-label {
-  font-family: var(--pioneertv-serif); font-variant: small-caps; letter-spacing: 0.08em;
-  text-transform: lowercase; color: var(--pioneertv-ink-2);
+  font-family: var(--pioneertv-font-mono); font-size: 0.8em; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--pioneertv-ink-faint);
 }
 
-/* Key cap: A, B, Start … */
+/* Key cap: A, B, Start … set in mono like every other machine word. */
 .pioneertv-kbd {
-  display: inline-block; min-width: 1.6em; padding: 0.05em 0.45em 0; text-align: center;
-  font-family: var(--pioneertv-serif); font-variant: small-caps; font-weight: 600; font-size: 0.85em; line-height: 1.4;
-  text-transform: lowercase; letter-spacing: 0.04em;
-  color: var(--pioneertv-ink); background: var(--pioneertv-paper-2);
-  border: 1px solid var(--pioneertv-line); border-radius: 6px;
-  box-shadow: 0 1px 0 var(--pioneertv-shadow);
+  display: inline-block; min-width: 1.7em; padding: 0.15em 0.5em; text-align: center;
+  font-family: var(--pioneertv-font-mono); font-size: 0.8em; line-height: 1.3;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--pioneertv-ink); background: var(--pioneertv-paper-sunken);
+  border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-pill);
 }

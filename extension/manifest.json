@@ -51,6 +51,7 @@
         "content/main.js"
       ],
       "css": [
+        "content/tokens.css",
         "content/paper.css",
         "content/content.css"
       ],
