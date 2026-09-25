@@ -4,6 +4,12 @@ Maskinrepubliken's Raspberry Pi 4 TV box for a 32" TV: Cineasterna, SVT Play, Je
 web pages in a kiosk Chromium on Weston, driven by a Bluetooth gamepad, with
 HDMI-CEC for the TV's volume and power.
 
+## Part of the pioneer series
+
+This is a pioneer project from Maskinrepubliken. Pioneer projects are small programs that run on a Raspberry Pi, each built for one specific place and purpose. They are open source, so you can read, change and run the code yourself. The code is kept small and plainly structured, which makes it easy to adapt, with or without AI tools. Treat it as a starting point for your own setup, not a finished product.
+
+## What it does
+
 The box does not play video itself. Chromium does, with Raspberry Pi's Widevine
 build for Cineasterna. Pioneer TV is everything around that:
 
@@ -12,6 +18,79 @@ build for Cineasterna. Pioneer TV is everything around that:
 | `extension/` | Chromium extension: the launcher page, d-pad spatial navigation on any site, an on-screen keyboard for search, a quick menu and toasts. |
 | `daemon/` | Python daemon: gamepad → virtual keyboard and mouse (uinput), HDMI-CEC volume and power, TV remote passthrough, system status, a settings page with JSON API, WebSocket bridge to the extension. |
 | `system/` | Weston kiosk config, Chromium start script, systemd units, udev rule and the install script. |
+
+## Hardware
+
+Pioneer TV runs on a Raspberry Pi 4 with 4 GB; the installer warns on anything
+else and carries on. The window is 1280x720: players cap stream quality to the
+window size, and 1080p in a browser drops frames on this board under every
+flag set we measured. A TV without a 720p mode (many only offer 1080p and
+1360x768) gets Weston's scaling, which is cheap. The size is written to
+`/etc/pioneer-tv/board.env`. Chromium composites and rasterises on the GPU;
+the flags can be overridden with `PIONEER_TV_GPU_FLAGS` in `chromium.env`.
+A Pi 3 was tried first and was too slow for Cineasterna's software-decoded
+Widevine video; it is no longer supported.
+
+## Getting started
+
+A Raspberry Pi 4 with 4 GB, Raspberry Pi OS Lite, 64-bit, Bookworm or Trixie, user `pi`, wired Ethernet.
+
+```
+git clone -b main https://github.com/maskinrepubliken/pioneer-tv.git
+cd pioneer-tv
+sudo system/install.sh
+sudo reboot
+```
+
+The box follows the branch it was installed from; `main` is the one to use.
+
+The installer pulls in Weston, Chromium, Widevine, v4l-utils, BlueZ, aiohttp and
+evdev, copies the repo to `/opt/pioneer-tv`, installs the systemd units,
+sets the video mode (1280x720), enables
+zram and sets the CPU governor to performance at
+boot, and sets the boot target to graphical. Rerunning it is safe. Pair the first gamepad from the shell (later ones from the settings page):
+
+```
+bluetoothctl
+  scan on
+  pair <MAC>
+  trust <MAC>
+  connect <MAC>
+```
+
+A pad that does not reconnect after the box reboots is normal for Bluetooth:
+the pad pages the host for a while, gives up before Bluetooth is back, and
+sleeps. The daemon therefore dials paired, trusted pads every few seconds for
+the first minutes after start and once a minute after that, and BlueZ is set to
+answer pages fast, to retry a dropped link, and not to re-run service discovery
+on every incoming connection (the Stratus XL drops the link when it does). Waking the pad with any button
+still helps if it went to sleep. A pad that was never trusted needs
+`bluetoothctl trust <MAC>`; pairing from the settings page does this for you.
+
+If `bluetoothctl` says "No default controller available", the kernel did not
+bring up the onboard chip. On Bookworm the kernel attaches it itself (the old
+`hciuart` service is not used and fails by design). Check `dmesg | grep -i bcm`:
+no output means the chip did not enumerate, which a real power cycle usually
+fixes after an unclean shutdown; a firmware error means
+`sudo apt install --reinstall bluez-firmware firmware-brcm80211`. Make sure
+`dtoverlay=disable-bt` is not in config.txt, and `rfkill unblock bluetooth`.
+
+Tailscale is optional: `curl -fsSL https://tailscale.com/install.sh | sh && sudo tailscale up`.
+
+Log in to Cineasterna and Jellyfin once with the on-screen keyboard; the Chromium
+profile in `~/.pioneer-tv/chromium` remembers the sessions.
+
+### Useful commands
+
+```
+journalctl -fu pioneer-tv-daemon        # gamepad, CEC and bridge log
+journalctl -fu pioneer-tv-weston        # Weston output
+tail -f ~/.pioneer-tv/chromium.log      # Chromium output (extension load errors land here)
+sudo python3 -m pioneertv -v            # run the daemon in the foreground (from /opt/pioneer-tv/daemon)
+curl -s localhost:8765/api/status     # what the settings page sees
+cec-ctl -d /dev/cec0 --to 0 --standby # TV off, straight from the shell
+vcgencmd get_throttled                # 0x0 means the TV's USB port is enough
+```
 
 ## Design
 
@@ -193,67 +272,6 @@ branch you want to follow.
 All of it is in `/etc/pioneer-tv/config.toml` (see `daemon/config.example.toml`).
 The TV remote works too: keys the TV forwards over CEC are mapped in `[cec.remote]`.
 
-## Installing on the Pi
-
-A Raspberry Pi 4 with 4 GB, Raspberry Pi OS Lite, 64-bit, Bookworm or Trixie, user `pi`, wired Ethernet.
-
-```
-git clone -b main https://github.com/maskinrepubliken/pioneer-tv.git
-cd pioneer-tv
-sudo system/install.sh
-sudo reboot
-```
-
-The box follows the branch it was installed from; `main` is the one to use.
-
-The installer pulls in Weston, Chromium, Widevine, v4l-utils, BlueZ, aiohttp and
-evdev, copies the repo to `/opt/pioneer-tv`, installs the systemd units,
-sets the video mode (1280x720), enables
-zram and sets the CPU governor to performance at
-boot, and sets the boot target to graphical. Rerunning it is safe. Pair the first gamepad from the shell (later ones from the settings page):
-
-```
-bluetoothctl
-  scan on
-  pair <MAC>
-  trust <MAC>
-  connect <MAC>
-```
-
-A pad that does not reconnect after the box reboots is normal for Bluetooth:
-the pad pages the host for a while, gives up before Bluetooth is back, and
-sleeps. The daemon therefore dials paired, trusted pads every few seconds for
-the first minutes after start and once a minute after that, and BlueZ is set to
-answer pages fast, to retry a dropped link, and not to re-run service discovery
-on every incoming connection (the Stratus XL drops the link when it does). Waking the pad with any button
-still helps if it went to sleep. A pad that was never trusted needs
-`bluetoothctl trust <MAC>`; pairing from the settings page does this for you.
-
-If `bluetoothctl` says "No default controller available", the kernel did not
-bring up the onboard chip. On Bookworm the kernel attaches it itself (the old
-`hciuart` service is not used and fails by design). Check `dmesg | grep -i bcm`:
-no output means the chip did not enumerate, which a real power cycle usually
-fixes after an unclean shutdown; a firmware error means
-`sudo apt install --reinstall bluez-firmware firmware-brcm80211`. Make sure
-`dtoverlay=disable-bt` is not in config.txt, and `rfkill unblock bluetooth`.
-
-Tailscale is optional: `curl -fsSL https://tailscale.com/install.sh | sh && sudo tailscale up`.
-
-Log in to Cineasterna and Jellyfin once with the on-screen keyboard; the Chromium
-profile in `~/.pioneer-tv/chromium` remembers the sessions.
-
-### Useful commands
-
-```
-journalctl -fu pioneer-tv-daemon        # gamepad, CEC and bridge log
-journalctl -fu pioneer-tv-weston        # Weston output
-tail -f ~/.pioneer-tv/chromium.log      # Chromium output (extension load errors land here)
-sudo python3 -m pioneertv -v            # run the daemon in the foreground (from /opt/pioneer-tv/daemon)
-curl -s localhost:8765/api/status     # what the settings page sees
-cec-ctl -d /dev/cec0 --to 0 --standby # TV off, straight from the shell
-vcgencmd get_throttled                # 0x0 means the TV's USB port is enough
-```
-
 ## How it fits together
 
 ```
@@ -268,18 +286,6 @@ Navigation keys go through a virtual keyboard so every page, and Chromium
 itself, sees ordinary key presses. Buttons that mean something to the shell
 (home, menu, keyboard) go over the WebSocket as events. CEC is only ever
 touched by the daemon.
-
-## Board
-
-Pioneer TV runs on a Raspberry Pi 4 with 4 GB; the installer warns on anything
-else and carries on. The window is 1280x720: players cap stream quality to the
-window size, and 1080p in a browser drops frames on this board under every
-flag set we measured. A TV without a 720p mode (many only offer 1080p and
-1360x768) gets Weston's scaling, which is cheap. The size is written to
-`/etc/pioneer-tv/board.env`. Chromium composites and rasterises on the GPU;
-the flags can be overridden with `PIONEER_TV_GPU_FLAGS` in `chromium.env`.
-A Pi 3 was tried first and was too slow for Cineasterna's software-decoded
-Widevine video; it is no longer supported.
 
 ## Known board quirk: no hardware cursor
 
@@ -365,3 +371,7 @@ over CEC; Chromium itself stays at 100 %. To check from a shell as `pi`:
 
 - Jellyfin Web's search route is `/web/#/search.html?query=` on 10.9 and 10.10.
 - SVT Play's is `/sok?q=`.
+
+## License
+
+MIT, see [LICENSE](LICENSE). Copyright (c) 2026 Viktor Lyresten / Maskinrepubliken.
