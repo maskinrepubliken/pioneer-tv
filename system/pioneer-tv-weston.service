@@ -28,7 +28,11 @@ Environment=HOME=/home/pi
 Environment=WESTON_DISABLE_ATOMIC=1
 ExecStart=/usr/bin/weston --config=/home/pi/.config/weston.ini
 Restart=always
+# Back off when it keeps failing (2 s, growing to a minute), so a crash loop
+# does not run 77,000 times overnight; a single crash still restarts at once.
 RestartSec=2
+RestartSteps=6
+RestartMaxDelaySec=60
 
 [Install]
 WantedBy=graphical.target

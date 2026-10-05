@@ -73,6 +73,29 @@ for p in bluez-firmware firmware-brcm80211 libwidevinecdm0 zram-tools fonts-noto
 done
 fi
 
+# Self-repair. An SD card that loses power mid-write can leave installed files
+# damaged, and nothing reinstalls a package apt believes is current: in
+# October the box's Chromium binary and resources.pak no longer matched their
+# checksums after a power cut, and Chromium segfaulted at every start. So the
+# packages the screen depends on are checked against dpkg's checksums on every
+# install and update, and any that fail are reinstalled.
+echo "== verify"
+VERIFY="chromium chromium-common libwidevinecdm0 weston libweston-14-0 libgbm1 mesa-libgallium libegl-mesa0 libegl1 libgles2 libdrm2 libwayland-client0 libwayland-server0 python3-aiohttp python3-evdev pipewire wireplumber"
+BROKEN=""
+for p in $VERIFY; do
+  dpkg -s "$p" >/dev/null 2>&1 || continue
+  # Lines for conffiles (" c ") are local edits, not damage.
+  if dpkg --verify "$p" 2>/dev/null | grep -qv ' c /'; then BROKEN="$BROKEN $p"; fi
+done
+if [ -n "$BROKEN" ]; then
+  echo "  damaged files in:$BROKEN; reinstalling"
+  apt-get update -qq || true
+  # shellcheck disable=SC2086
+  apt-get install -y --reinstall --no-install-recommends $BROKEN || echo "warning: reinstall failed for:$BROKEN" >&2
+else
+  echo "  all checked packages intact"
+fi
+
 echo "== files"
 mkdir -p "$TARGET" /etc/pioneer-tv "$HOME_DIR/.config"
 rsync -a --delete "$REPO/extension/" "$TARGET/extension/"

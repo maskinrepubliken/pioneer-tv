@@ -49,6 +49,14 @@ mkdir -p "$PROFILE" "$CACHE" "$(dirname "$LOG")"
 # Weston does not pass our output to the journal; keep the last run's log.
 exec > "$LOG" 2>&1
 
+# Chromium leaves a 4 MB metrics file in the profile per run and a crash dump
+# per crash. In a crash loop that filled the 6.8 GB card in under two hours
+# (418 files, 1.7 GB of BrowserMetrics, 83 MB of dumps), after which nothing
+# could start. Keep only the newest few of each.
+prune() { [ -d "$1" ] && ls -1t "$1" 2>/dev/null | tail -n +$(( $2 + 1 )) | while read -r f; do rm -f "$1/$f"; done; }
+prune "$PROFILE/BrowserMetrics" 3
+prune "$HOME/.config/chromium/Crash Reports/pending" 10
+
 # Clear "restore session" prompts left by hard power cuts.
 for f in "$PROFILE/Default/Preferences"; do
   [ -f "$f" ] && sed -i 's/"exit_type":"Crashed"/"exit_type":"Normal"/; s/"exited_cleanly":false/"exited_cleanly":true/' "$f"
