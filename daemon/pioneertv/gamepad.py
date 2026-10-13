@@ -65,6 +65,15 @@ QUIRKS = [
         "BTN_TR": {"cec": "volume_up", "repeat": True},                 # R2
         "KEY_HOMEPAGE": {"system": "home"},   # pause: only reports after a long hold
     }}),
+    # 8BitDo Ultimate 2C on its 2.4 GHz dongle (2dc8:310a, xpad). xpad reports
+    # the left face button (X) as BTN_NORTH and the top one (Y) as BTN_WEST,
+    # the reverse of where they sit; swapped back so X is OK/space and Y opens
+    # the keyboard (hold: the quick menu), as on every other pad. Verified on
+    # the box button by button; everything else matches the defaults.
+    ("Ultimate 2C", {"buttons": {
+        "BTN_NORTH": {"key": "KEY_SPACE"},                                  # X
+        "BTN_WEST": {"system": "keyboard", "long": {"system": "menu"}},     # Y
+    }}),
 ]
 
 
@@ -270,6 +279,26 @@ def is_keyboard(dev: evdev.InputDevice) -> bool:
     return e.KEY_A in keys and e.KEY_Z in keys and e.KEY_ENTER in keys and e.BTN_SOUTH not in keys
 
 
+def usb_base(dev: evdev.InputDevice) -> str:
+    """The physical device an input node belongs to: its phys without the
+    interface ("usb-0000:01:00.0-1.2/input1" -> "usb-0000:01:00.0-1.2")."""
+    return (dev.phys or "").split("/input")[0]
+
+
+def same_hardware(dev: evdev.InputDevice, pads: list[evdev.InputDevice]) -> bool:
+    """Whether dev is another interface of a gamepad. The 8BitDo Ultimate 2C's
+    2.4 GHz dongle shows up as a gamepad plus a "Keyboard" and a "Mouse" with
+    full key tables; that keyboard is the pad's own, not one someone typed on,
+    and counting it switched the on-screen keyboard off and turned X into Space."""
+    base = usb_base(dev)
+    for pad in pads:
+        if base and base == usb_base(pad):
+            return True
+        if (dev.info.vendor, dev.info.product) == (pad.info.vendor, pad.info.product) and dev.info.vendor:
+            return True
+    return False
+
+
 class GamepadManager:
     def __init__(self, cfg: dict, dispatcher: Dispatcher, mouse: MouseDriver,
                  on_change: Callable[[bool, str], Coroutine],
@@ -317,6 +346,7 @@ class GamepadManager:
     async def scan(self) -> None:
         present = set()
         keyboards = set()
+        candidates = []          # keyboards, judged once every gamepad of this scan is known
         for path in evdev.list_devices():
             if path in self.active:
                 present.add(path)
@@ -334,7 +364,13 @@ class GamepadManager:
                 await self.on_change(True, dev.name)
                 continue
             if is_keyboard(dev):
-                keyboards.add(path)
+                candidates.append(dev)
+                continue
+            dev.close()
+        pads = [pad.dev for pad in self.instances.values()]
+        for dev in candidates:
+            if not same_hardware(dev, pads):
+                keyboards.add(dev.path)
             dev.close()
         for path in list(self.active):
             if path not in present or self.active[path].done():
