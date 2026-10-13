@@ -98,7 +98,12 @@ window.PioneerTV = window.PioneerTV || {};
         if (t.state === 'running') row(t.server_online === false ? 'warn' : 'ok', 'link', `Tailscale${t.server_online != null ? (t.server_online ? ` · ${srv} online` : ` · ${srv} offline`) : ''}`);
         else row(t.installed ? 'warn' : 'bad', 'link', t.installed ? `Tailscale ${t.state}` : 'Tailscale saknas');
         const pads = s.gamepads || [];
-        row(pads.length ? 'ok' : 'warn', 'gamepad', pads.length ? pads.map((p) => p.name + (p.battery != null ? ` ${p.battery}%` : '')).join(', ') : 'Ingen handkontroll');
+        // One pad: its name (and battery). Several: just how many, since two
+        // of the same model would only repeat one long name.
+        const padText = pads.length > 1 ? `${pads.length} handkontroller`
+          : pads.length ? pads[0].name + (pads[0].battery != null ? ` ${pads[0].battery}%` : '')
+          : 'Ingen handkontroll';
+        row(pads.length ? 'ok' : 'warn', 'gamepad', padText);
         row(sys.throttled_now ? 'bad' : sys.throttled_ever ? 'warn' : 'ok', 'temp', `${sys.temp_c != null ? sys.temp_c + ' °C' : '–'}${sys.throttled_now ? ' · underspänning' : ''}`);
         return box;
       },
