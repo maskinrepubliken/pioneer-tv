@@ -33,7 +33,7 @@
       const band = document.createElement('span'); band.className = 'band'; a.appendChild(band);
       const name = document.createElement('span'); name.className = 'name'; name.textContent = s.name; a.appendChild(name);
       a.appendChild(punchCard(s.id));
-      a.addEventListener('click', (e) => { e.preventDefault(); open(s.url); });
+      a.addEventListener('click', (e) => { e.preventDefault(); open(s.url, a); });
       liveEl.appendChild(a);
     }
     for (const s of main) {
@@ -52,7 +52,7 @@
       const name = document.createElement('div'); name.className = 'name'; name.textContent = s.name; text.appendChild(name);
       a.appendChild(text);
       const index = document.createElement('span'); index.className = 'index'; index.textContent = `0${tilesEl.children.length + 1}`; a.appendChild(index);
-      a.addEventListener('click', (e) => { e.preventDefault(); open(s.url); });
+      a.addEventListener('click', (e) => { e.preventDefault(); open(s.url, a); });
       tilesEl.appendChild(a);
     }
     fitLiveNames();
@@ -153,9 +153,73 @@
     try { return new URL(url, location.href).href; } catch { return url; }
   }
 
-  function open(url) {
+  // Opening a service can take a while on a weak network, and until the new
+  // page commits the launcher stays on screen. So the pressed tile answers at
+  // once: a row of holes is punched into it, one at a time, like a card going
+  // through the reader, and starts over until the page changes. Each hole goes
+  // from empty to ochre in one step (the system has no fades). Further presses
+  // wait; if nothing has happened after OPEN_GIVE_UP the tile is reset.
+  const OPEN_HOLES = 7, OPEN_STEP_MS = 160, OPEN_GIVE_UP = 25000;
+  let opening = null;
+
+  function openingRow() {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('class', 'opening');
+    svg.setAttribute('viewBox', `0 0 ${OPEN_HOLES * PITCH} ${PITCH}`);
+    svg.setAttribute('aria-hidden', 'true');
+    for (let i = 0; i < OPEN_HOLES; i++) {
+      const dot = document.createElementNS(ns, 'circle');
+      dot.setAttribute('cx', String(i * PITCH + PITCH / 2));
+      dot.setAttribute('cy', String(PITCH / 2));
+      dot.setAttribute('r', String(HOLE));
+      svg.appendChild(dot);
+    }
+    return svg;
+  }
+
+  function stopOpening() {
+    if (!opening) return;
+    clearInterval(opening.timer);
+    clearTimeout(opening.giveUp);
+    opening.tile.classList.remove('is-opening');
+    opening.tile.removeAttribute('aria-busy');
+    opening.row.remove();
+    opening = null;
+  }
+
+  function startOpening(tile) {
+    const row = openingRow();
+    const holes = [...row.querySelectorAll('circle')];
+    // The row goes where the tile has room: under the illustration on a big
+    // tile, in place of the channel's own holes on a live tile.
+    const slot = tile.querySelector('.text') || tile;
+    if (slot === tile) tile.insertBefore(row, tile.querySelector('.perf'));
+    else slot.insertBefore(row, slot.firstChild);
+    tile.classList.add('is-opening');
+    tile.setAttribute('aria-busy', 'true');
+    let step = 0;
+    const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const draw = () => {
+      const lit = still ? OPEN_HOLES : step % (OPEN_HOLES + 2);   // two beats with all punched, then again
+      holes.forEach((h, i) => h.classList.toggle('punched', i < lit));
+      step += 1;
+    };
+    draw();
+    opening = {
+      tile, row,
+      timer: still ? 0 : setInterval(draw, OPEN_STEP_MS),
+      giveUp: setTimeout(stopOpening, OPEN_GIVE_UP),
+    };
+  }
+
+  function open(url, tile) {
+    if (opening) return;                         // already on its way
+    if (tile) startOpening(tile);
     b.navigate(resolve(url));
   }
+  // Coming back to a launcher kept in the back/forward cache: no tile is opening.
+  window.addEventListener('pageshow', (e) => { if (e.persisted) stopOpening(); });
 
   function showTargets(query) {
     $('targets-query').textContent = query;

@@ -99,6 +99,16 @@ body {
 }
 .tile-live .band { height: 0.3rem; }
 
+/* ---- opening: the pressed tile punches a row of holes until the page
+   changes (see startOpening()). Empty holes are a line-strong ring, punched
+   ones solid ochre; each switches in one step. ---- */
+.tile .opening { display: block; width: 46%; height: auto; margin: 0 auto 0.55rem; overflow: visible; }
+.tile-live .opening { width: 62%; margin: 0; flex: none; }
+.tile .opening circle { fill: transparent; stroke: var(--pioneertv-line-strong); stroke-width: 7; }
+.tile .opening circle.punched { fill: var(--pioneertv-ochre); stroke: var(--pioneertv-ochre); }
+.tile-live.is-opening .perf { display: none; }
+.tile.is-opening .band { background: var(--pioneertv-ochre); }
+
 /* ---- search row. The system sets fields in paper-sunken, but here that is a
    shade from the paper-hover of a selected tile, so the resting field would
    read as selected. It rests on raised paper like the tiles instead, with the
