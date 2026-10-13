@@ -20,7 +20,8 @@
       "run_at": "document_start",
       "world": "MAIN",
       "js": [
-        "content/codecs.js"
+        "content/codecs.js",
+        "content/no-leave-prompt.js"
       ]
     },
     {

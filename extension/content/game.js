@@ -46,6 +46,10 @@ window.PioneerTV = window.PioneerTV || {};
   }
 
   function send(force) {
+    // The browser keeps handing the real pad to the page even while the daemon
+    // drives our overlay with it; this attribute is what ejs-players.js (in the
+    // page's world) looks at to stop the emulator listening meanwhile.
+    document.documentElement.toggleAttribute('data-pioneertv-overlay', !!overlayOpen());
     const on = inGame && !overlayOpen();
     if (!force && on === lastSent && on === false) return; // nothing to keep alive
     lastSent = on;

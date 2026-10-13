@@ -8,7 +8,8 @@
 // nothing. Here the pad that presses a button first becomes player 1, the
 // next pad to press becomes player 2, and so on; pads that never pressed fill
 // the slots after them. It also works around an EmulatorJS bug that left the
-// remaining pad dead when another one disconnected (fixIndices below).
+// remaining pad dead when another one disconnected (fixIndices below), and
+// keeps the game paused and deaf to the pad while our quick menu is open.
 (() => {
   const order = [];                                  // "id_index" in first-press order
   const key = (g) => g.id + '_' + g.index;
@@ -41,12 +42,40 @@
         this.timeout = setTimeout(this.loop.bind(this), 10);
       };
     }
+    // While our quick menu or keyboard is open the daemon drives it with the
+    // pad, but the browser still hands the same pad to the page: without this
+    // the game would play along under the menu. Polling stops; when it resumes
+    // the handler compares against the state from before, so a button held
+    // across the menu is just still held.
+    if (typeof handler.updateGamepadState === 'function') {
+      const poll = handler.updateGamepadState;
+      handler.updateGamepadState = function () {
+        if (overlayOpen()) return;
+        return poll.apply(this, arguments);
+      };
+    }
     handler.__pioneerIndexFix = true;
+  }
+
+  const overlayOpen = () => document.documentElement.hasAttribute('data-pioneertv-overlay');
+
+  // The game pauses while an overlay is open, and plays on when it closes if
+  // it was us that paused it.
+  let pausedByUs = false;
+  function pauseForOverlay(E) {
+    if (!E.started || typeof E.pause !== 'function' || typeof E.play !== 'function') return;
+    if (overlayOpen()) {
+      if (!E.paused) { try { E.pause(); pausedByUs = true; } catch {} }
+    } else if (pausedByUs) {
+      pausedByUs = false;
+      if (E.paused) { try { E.play(); } catch {} }
+    }
   }
 
   function tick() {
     const E = window.EJS_emulator;
     if (E && E.gamepad) fixIndices(E.gamepad);
+    if (E) pauseForOverlay(E);
     if (E && Array.isArray(E.gamepadSelection) && navigator.getGamepads) {
       const pads = [...navigator.getGamepads()].filter(Boolean);
       const live = new Set(pads.map(key));
