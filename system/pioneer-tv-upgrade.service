@@ -1,0 +1,10 @@
+[Unit]
+Description=Pioneer TV nightly package upgrade (Chromium, Widevine)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/pioneer-tv/system/upgrade.sh
+Nice=10
+IOSchedulingClass=idle

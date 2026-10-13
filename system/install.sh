@@ -23,6 +23,10 @@ mkdir -p /etc/pioneer-tv
 rm -f /etc/pioneer-tv/mode   # an older installer let the mode be chosen
 echo "== board: $MODEL ($MODE)"
 
+# Packages are installed when missing, never upgraded here: an install runs
+# on every update that touches this script, and pulling a new Chromium (about
+# 170 MB) over the box's Wi-Fi made a one-line change take most of an hour.
+# Upgrades happen at night instead (pioneer-tv-upgrade.timer, upgrade.sh).
 REQUIRED="weston seatd v4l-utils bluez python3 python3-evdev python3-aiohttp rsync git curl pipewire pipewire-pulse wireplumber pipewire-alsa fonts-noto-core"
 missing_required() { for p in $REQUIRED; do dpkg -s "$p" >/dev/null 2>&1 || return 0; done; return 1; }
 
@@ -58,18 +62,18 @@ export DEBIAN_FRONTEND=noninteractive
 # already has are what matters, so a failed refresh is a warning.
 apt-get update || echo "warning: apt-get update failed, installing from the package lists we have" >&2
 # shellcheck disable=SC2086
-apt-get install -y --no-install-recommends $REQUIRED
+apt-get install -y --no-upgrade --no-install-recommends $REQUIRED
 # Raspberry Pi OS ships its own Chromium build (with Widevine and the V4L2
 # decoder patches). On Trixie the package is chromium and chromium-browser is
 # an empty transitional package, so ask for chromium first: asking for the
 # dummy would report "already the newest version" and never upgrade.
-apt-get install -y --no-install-recommends chromium \
-  || apt-get install -y --no-install-recommends chromium-browser
+apt-get install -y --no-upgrade --no-install-recommends chromium \
+  || apt-get install -y --no-upgrade --no-install-recommends chromium-browser
 # Nice to have; not present on every image.
 # bluez-firmware carries the onboard chip's patch file; the kernel (hci_bcm)
 # attaches the chip itself on Bookworm, no hciuart service needed.
 for p in bluez-firmware firmware-brcm80211 libwidevinecdm0 zram-tools fonts-noto-color-emoji; do
-  apt-get install -y --no-install-recommends "$p" || echo "warning: $p not available, continuing"
+  apt-get install -y --no-upgrade --no-install-recommends "$p" || echo "warning: $p not available, continuing"
 done
 fi
 
@@ -101,7 +105,7 @@ mkdir -p "$TARGET" /etc/pioneer-tv "$HOME_DIR/.config"
 rsync -a --delete "$REPO/extension/" "$TARGET/extension/"
 rsync -a --delete "$REPO/daemon/" "$TARGET/daemon/"
 rsync -a "$REPO/system/" "$TARGET/system/"
-chmod +x "$TARGET/system/start-chromium.sh" "$TARGET/system/update.sh" "$TARGET/system/chromium-debug.sh" "$TARGET/system/open-launcher.py"
+chmod +x "$TARGET/system/start-chromium.sh" "$TARGET/system/update.sh" "$TARGET/system/upgrade.sh" "$TARGET/system/chromium-debug.sh" "$TARGET/system/open-launcher.py"
 mkdir -p /var/lib/pioneer-tv
 [ -f /etc/pioneer-tv/config.toml ] || cp "$REPO/daemon/config.example.toml" /etc/pioneer-tv/config.toml
 # Config migrations: rewrite lines that still carry an old default verbatim.
@@ -165,7 +169,8 @@ cp "$REPO/system/wireplumber-pioneer-tv.conf" "$HOME_DIR/.config/wireplumber/wir
 # Chromium policies: no translate bubble, password prompts, notifications, sign-in.
 mkdir -p /etc/chromium/policies/managed
 cp "$REPO/system/chromium-policies.json" /etc/chromium/policies/managed/pioneer-tv.json
-cp "$REPO/system/pioneer-tv-daemon.service" "$REPO/system/pioneer-tv-weston.service" "$REPO/system/pioneer-tv-governor.service" /etc/systemd/system/
+cp "$REPO/system/pioneer-tv-daemon.service" "$REPO/system/pioneer-tv-weston.service" "$REPO/system/pioneer-tv-governor.service" \
+   "$REPO/system/pioneer-tv-upgrade.service" "$REPO/system/pioneer-tv-upgrade.timer" /etc/systemd/system/
 
 echo "$REPO" > /etc/pioneer-tv/repo
 
@@ -243,6 +248,7 @@ systemctl disable hciuart 2>/dev/null || true   # legacy; fails on Bookworm's ke
 rfkill unblock bluetooth 2>/dev/null || true
 systemctl enable zramswap 2>/dev/null || true
 systemctl enable pioneer-tv-daemon.service pioneer-tv-weston.service
+systemctl enable --now pioneer-tv-upgrade.timer
 # The user's service manager (and with it PipeWire) must be up before the display starts.
 loginctl enable-linger "$USER_NAME" || true
 if systemctl --user --machine="$USER_NAME@.host" is-active pipewire >/dev/null 2>&1 || systemctl --user --machine="$USER_NAME@.host" list-units >/dev/null 2>&1; then
