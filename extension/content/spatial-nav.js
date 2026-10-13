@@ -158,6 +158,9 @@ window.PioneerTV = window.PioneerTV || {};
 
     onKeyDown(e) {
       if (!this.enabled || !e.isTrusted) return; // synthetic events come from our own keyboard
+      // Navigating with the d-pad or the left stick (both arrive as arrow keys)
+      // hides the pointer straight away, in the page and in the overlays alike.
+      if (DIRS[e.key] && M.cursor && M.cursor.hide) M.cursor.hide();
       // A game page gets every key untouched (the daemon sends none anyway; a
       // real keyboard may be plugged in for the emulator's own shortcuts).
       if (!this.captured && M.bridge && M.bridge.gameMode()) return;

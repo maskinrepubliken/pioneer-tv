@@ -157,6 +157,14 @@ window.PioneerTV = window.PioneerTV || {};
       window.addEventListener('mousemove', (e) => { if (e.isTrusted) { state.x = e.clientX; state.y = e.clientY; state.lastMove = Date.now(); draw(); } }, { capture: true, passive: true });
     },
     active() { return Date.now() - state.lastMove < ACTIVE_MS; },
+    // The d-pad or the left stick took over: the arrow goes away at once, and
+    // A selects the focused element again rather than clicking at the pointer.
+    hide() {
+      if (!state.lastMove && !(state.el && state.el.classList.contains('pioneertv-cursor-show'))) return;
+      state.lastMove = 0;
+      clearTimeout(state.hideTimer);
+      if (state.el) state.el.classList.remove('pioneertv-cursor-show');
+    },
     click() { button('left', true); setTimeout(() => button('left', false), 60); },
     position() { flush(); ensure(); return { x: state.x, y: state.y }; },   // starts centred, like the first move
     elementUnder() { flush(); return under(); },
