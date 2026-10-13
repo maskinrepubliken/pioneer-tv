@@ -7,13 +7,46 @@
 // the pad in your hands can end up as player 2 in a one-player game: it does
 // nothing. Here the pad that presses a button first becomes player 1, the
 // next pad to press becomes player 2, and so on; pads that never pressed fill
-// the slots after them.
+// the slots after them. It also works around an EmulatorJS bug that left the
+// remaining pad dead when another one disconnected (fixIndices below).
 (() => {
   const order = [];                                  // "id_index" in first-press order
   const key = (g) => g.id + '_' + g.index;
 
+  // EmulatorJS bug: its handler keeps the pads in a compacted, sorted list,
+  // but marks every event with the browser's gamepad index and then looks the
+  // pad up by that number as a list position. Once a pad with a lower index
+  // has gone (switched off, asleep), the positions no longer match: every
+  // press throws "Cannot read properties of undefined (reading 'id')" and the
+  // pad still in your hands does nothing. Measured on the box with two virtual
+  // pads. So events are rewritten to carry the list position before they are
+  // dispatched; "disconnected" keeps the browser index, which is what its own
+  // handler searches by.
+  function fixIndices(handler) {
+    if (!handler || handler.__pioneerIndexFix || typeof handler.dispatchEvent !== 'function') return;
+    const dispatch = handler.dispatchEvent.bind(handler);
+    handler.dispatchEvent = (name, data) => {
+      if (name !== 'disconnected' && data && typeof data.gamepadIndex === 'number' && Array.isArray(handler.gamepads)) {
+        const pos = handler.gamepads.findIndex((g) => g && g.index === data.gamepadIndex);
+        if (pos >= 0 && pos !== data.gamepadIndex) data = Object.assign({}, data, { gamepadIndex: pos });
+      }
+      return dispatch(name, data);
+    };
+    // Its polling loop has no error handling either: one exception and it
+    // never schedules itself again, so every pad is dead until the page is
+    // reloaded. Keep it going whatever a single round throws.
+    if (typeof handler.loop === 'function' && typeof handler.updateGamepadState === 'function') {
+      handler.loop = function () {
+        try { this.updateGamepadState(); } catch (err) { console.warn('[pioneer-tv] gamepad poll:', err); }
+        this.timeout = setTimeout(this.loop.bind(this), 10);
+      };
+    }
+    handler.__pioneerIndexFix = true;
+  }
+
   function tick() {
     const E = window.EJS_emulator;
+    if (E && E.gamepad) fixIndices(E.gamepad);
     if (E && Array.isArray(E.gamepadSelection) && navigator.getGamepads) {
       const pads = [...navigator.getGamepads()].filter(Boolean);
       const live = new Set(pads.map(key));
