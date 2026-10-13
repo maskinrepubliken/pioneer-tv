@@ -62,7 +62,7 @@ DEFAULTS: dict[str, Any] = {
             "BTN_TR2": {"cec": "volume_up", "repeat": True},
             "BTN_SELECT": {"system": "status", "long": {"cec": "tv_toggle"}},
             "BTN_START": {"system": "menu"},
-            "BTN_MODE": {"system": "home"},
+            "BTN_MODE": {"system": "menu", "long": {"system": "home"}},
             "BTN_THUMBL": {"mouse_button": "BTN_RIGHT"},
             "BTN_THUMBR": {"mouse_button": "BTN_LEFT"},
         },

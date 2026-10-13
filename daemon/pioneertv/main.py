@@ -68,7 +68,7 @@ async def amain(cfg: dict) -> None:
         elif msg.get("type") == "gamemode":
             on = bool(msg.get("on"))
             if await pads_mgr.set_passthrough(on) and on:
-                await toast("Spelläge: handkontrollen går till spelet · Hem: startsidan · håll + (Start): meny", "gamepad")
+                await toast("Spelläge: handkontrollen går till spelet · Hem: meny · håll Hem: startsidan", "gamepad")
         else:
             log.debug("unknown command %s", msg)
 

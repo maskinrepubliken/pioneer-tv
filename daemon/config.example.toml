@@ -50,7 +50,7 @@ BTN_TL2    = { cec = "volume_down", repeat = true }
 BTN_TR2    = { cec = "volume_up",   repeat = true }
 BTN_SELECT = { system = "status", long = { cec = "tv_toggle" } }
 BTN_START  = { system = "menu" }
-BTN_MODE   = { system = "home" }
+BTN_MODE   = { system = "menu", long = { system = "home" } }      # hold Home: the start page
 BTN_THUMBL = { mouse_button = "BTN_RIGHT" }
 BTN_THUMBR = { mouse_button = "BTN_LEFT" }
 
@@ -102,8 +102,8 @@ glyph = "J"
 
 # Example of a browser emulator (RomM with EmulatorJS). mode = "game" hands the
 # pad straight to the page: no arrows, Enter or Escape are synthesised, so the
-# game's own Gamepad API input is the only input. Guide goes home, holding Y
-# opens the quick menu, the triggers still do TV volume.
+# game's own Gamepad API input is the only input. Guide opens the quick menu
+# (hold: home), so does holding Start; the triggers still do TV volume.
 # [[services]]
 # id = "romm"
 # name = "Spel"

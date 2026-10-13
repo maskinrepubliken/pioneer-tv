@@ -36,7 +36,7 @@ what was learned on the way.
 | Right stick | Mouse pointer; click on the stick to left-click |
 | Start | Quick menu (also: hold Y) |
 | Select | Status toast; hold to toggle TV power |
-| Guide / PS / Xbox | Home. Also wakes the TV and switches input when the pad connects |
+| Guide / Home / PS / Xbox | Quick menu (press again to close it). Hold: home. Also wakes the TV and switches input when the pad connects |
 
 All of it is in `/etc/pioneer-tv/config.toml` (see `daemon/config.example.toml`).
 The TV remote works too: keys the TV forwards over CEC are mapped in `[cec.remote]`.
@@ -163,9 +163,9 @@ pad buttons into arrows, Enter and Escape, so the emulator reads the pad itself 
 Gamepad API and its own button mapping applies. The extension leaves the page's keys alone too, and a
 toast announces the mode.
 
-A few buttons still belong to the box: Guide goes home, holding Y or Start opens the quick menu, holding
-Select toggles the TV and the triggers set the TV volume. While an overlay is open the pad drives it as
-usual. Game mode ends when the page goes away or stops sending heartbeats.
+A few buttons still belong to the box: Guide opens the quick menu and holding it goes home, holding
+Start opens the quick menu too, holding Select toggles the TV and the triggers set the TV volume. While
+an overlay is open the pad drives it as usual. Game mode ends when the page goes away or stops sending heartbeats.
 
 ## Updating the box
 
