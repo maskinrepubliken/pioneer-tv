@@ -29,6 +29,15 @@ async def run(*cmd: str, timeout: float = 8.0, stdin: str | None = None) -> tupl
     except asyncio.TimeoutError:
         proc.kill()
         return 124, "timeout"
+    except asyncio.CancelledError:
+        # A cancelled caller (the daemon shutting down, say) must not leave the
+        # command running: asyncio waits for every child before it exits, and
+        # a bluetoothctl connect to a pad that is off held a restart for 40 s.
+        try:
+            proc.kill()
+        except ProcessLookupError:
+            pass
+        raise
     return proc.returncode or 0, out.decode(errors="replace")
 
 

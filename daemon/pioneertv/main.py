@@ -216,7 +216,12 @@ async def amain(cfg: dict) -> None:
     log.info("shutting down")
     for t in tasks:
         t.cancel()
+    # Name whatever is slow to stop, so a long shutdown says why.
+    _, pending = await asyncio.wait(tasks, timeout=5)
+    if pending:
+        log.warning("still stopping after 5 s: %s", ", ".join(t.get_name() for t in pending))
     await asyncio.gather(*tasks, return_exceptions=True)
+    log.info("all tasks stopped")
     vinput.close()
 
 

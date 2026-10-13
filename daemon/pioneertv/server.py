@@ -272,7 +272,11 @@ class Server:
 
     # ------------------------------------------------------------ run
     async def run(self) -> None:
-        runner = web.AppRunner(self.app, access_log=None)
+        # The extension keeps a WebSocket open for as long as Chromium runs, and
+        # aiohttp's cleanup waits up to a minute for open connections: every
+        # daemon restart took 40 s. Close our sockets ourselves and give the
+        # rest a few seconds.
+        runner = web.AppRunner(self.app, access_log=None, shutdown_timeout=3.0)
         await runner.setup()
         site = web.TCPSite(runner, self.host, self.port)
         await site.start()
@@ -280,4 +284,9 @@ class Server:
         try:
             await asyncio.Future()
         finally:
+            for ws in list(self.clients):
+                try:
+                    await asyncio.wait_for(ws.close(code=1001, message=b"daemon restarting"), 1)
+                except Exception:
+                    pass
             await runner.cleanup()
