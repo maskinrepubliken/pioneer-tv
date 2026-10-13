@@ -27,6 +27,16 @@
       "matches": [
         "<all_urls>"
       ],
+      "run_at": "document_idle",
+      "world": "MAIN",
+      "js": [
+        "content/ejs-players.js"
+      ]
+    },
+    {
+      "matches": [
+        "<all_urls>"
+      ],
       "css": [
         "content/cursor.css"
       ],

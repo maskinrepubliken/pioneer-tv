@@ -22,7 +22,13 @@
     else if (M.logs.isOpen()) M.logs.close();
     else if (M.keyboard.isOpen()) M.keyboard.close();
   });
-  b.on('volume', (e) => M.hud.toast(e.direction === 'up' ? 'Volym +' : e.direction === 'down' ? 'Volym −' : 'Ljud av', e.direction === 'mute' ? 'mute' : 'volume'));
+  // Our own volume note is off by default: the TV draws its own volume bar.
+  // Settings → TV → "Visa en notis vid volymändring" turns it back on.
+  b.on('volume', (e) => {
+    const ui = (b.state.config && b.state.config.ui) || {};
+    if (!ui.volume_toast) return;
+    M.hud.toast(e.direction === 'up' ? 'Volym +' : e.direction === 'down' ? 'Volym −' : 'Ljud av', e.direction === 'mute' ? 'mute' : 'volume');
+  });
   b.on('gamepad', (e) => M.hud.toast(e.connected ? `Handkontroll ansluten` : 'Handkontroll frånkopplad', 'gamepad'));
   b.on('tv', (e) => {
     if (e.power === 'standby') {

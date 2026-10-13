@@ -36,6 +36,7 @@ SCHEMA: list[dict] = [
             {"path": "cec.home_on_standby", "type": "bool", "label": "Gå till startsidan när TV:n stängs av"},
             {"path": "cec.monitor", "type": "bool", "label": "Lyssna på TV:ns fjärrkontroll och standby"},
             {"path": "cec.osd_name", "type": "text", "label": "Namn som TV:n visar", "maxlength": 14},
+            {"path": "ui.volume_toast", "type": "bool", "label": "Visa en notis vid volymändring (TV:n visar oftast volymen själv)"},
         ],
     },
     {

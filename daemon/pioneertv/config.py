@@ -80,7 +80,8 @@ DEFAULTS: dict[str, Any] = {
     # mode "virtual": the extension draws and drives the pointer (no Wayland pointer, see README).
     # mode "uinput": a real virtual mouse device, for a compositor that can show a cursor.
     "mouse": {"mode": "virtual", "deadzone": 0.15, "max_speed": 1100.0, "curve": 2.0, "hz": 60},
-    "ui": {"auto_keyboard": True},
+    # volume_toast: our own "Volym +/−" note; off, since the TV shows its own volume.
+    "ui": {"auto_keyboard": True, "volume_toast": False},
     "chromium": {"log_file": "/home/pi/.pioneer-tv/chromium.log"},
     "remote": {"token": ""},
     "bluetooth": {"auto_connect": True, "reconnect_interval": 300},
