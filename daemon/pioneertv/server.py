@@ -180,7 +180,12 @@ class Server:
 
     async def api_wifi_add(self, request: web.Request) -> web.Response:
         data = await self._json(request)
-        ok, msg = await sysinfo.wifi_add(str(data.get("ssid", "")).strip(), data.get("password") or None, bool(data.get("hidden")))
+        try:
+            priority = max(-100, min(100, int(data.get("priority", 10))))   # higher wins when several are in range
+        except (TypeError, ValueError):
+            priority = 10
+        ok, msg = await sysinfo.wifi_add(str(data.get("ssid", "")).strip(), data.get("password") or None,
+                                         bool(data.get("hidden")), priority)
         return web.json_response({"ok": ok, "message": msg}, status=200 if ok else 400)
 
     async def api_wifi_forget(self, request: web.Request) -> web.Response:

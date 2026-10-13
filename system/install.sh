@@ -112,8 +112,8 @@ sed -i \
   -e 's|^auto_connect = false$|auto_connect = true|' \
   -e 's|^reconnect_interval = 60 .*|reconnect_interval = 300     # seconds|' \
   -e 's|^tagline = "Serier, nyheter och dokumentärer"$|tagline = "Public service"|' \
-  -e 's|100\.123\.142\.8:8080/|100.123.142.8:8081/|g' \
-  -e 's|8081/search?searchTerm={query}|8081/search?search={query}|' \
+  -e 's|100\.123\.142\.8:808[01]/|100.123.142.8:8090/|g' \
+  -e 's|/search?searchTerm={query}|/search?search={query}|' \
   -e 's|^name = "RomM"$|name = "Spel"|' \
   -e 's|^tagline = "Retrospel"$|tagline = "RomM"|' \
   -e 's|^hz = 30$|hz = 60              # pointer steps per second; the extension applies them per frame|' \

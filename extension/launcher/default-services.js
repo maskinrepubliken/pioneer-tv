@@ -37,8 +37,8 @@ window.PioneerTV.defaultServices = [
     "id": "romm",
     "name": "Spel",
     "tagline": "RomM",
-    "url": "http://100.123.142.8:8081/",
-    "search_url": "http://100.123.142.8:8081/search?search={query}",
+    "url": "http://100.123.142.8:8090/",
+    "search_url": "http://100.123.142.8:8090/search?search={query}",
     "color": "#3b6ea5",
     "glyph": "R"
   },
