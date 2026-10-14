@@ -44,6 +44,7 @@ window.PioneerTV = window.PioneerTV || {};
     return {
       id: r.id,
       name: r.name || r.fs_name_no_ext || r.fs_name,
+      sortKey: r.name_sort_key || '',   // RomM's order: lower case, no leading "The", numbers padded
       platform: r.platform_slug,
       cover: r.path_cover_small ? '/romm' + r.path_cover_small : null,
       year: released ? new Date(released).getFullYear() : null,
@@ -87,26 +88,30 @@ window.PioneerTV = window.PioneerTV || {};
     method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: '{}', keepalive: !!keepalive,
   });
 
+  // Consoles and collections change rarely: fetched once per page, so going
+  // back to the start view does not wait for them again.
+  const once = (fn) => { let p = null; return () => (p = p || fn().catch((e) => { p = null; throw e; })); };
+
   M.romm = {
     RommError,
     base: BASE,
-    async platforms() {
+    platforms: once(async () => {
       const items = await json('api/platforms');
       return items.filter((p) => p.rom_count > 0)
         .map((p) => ({ id: p.id, slug: p.slug, name: p.display_name || p.name, count: p.rom_count }))
         .sort((a, b) => a.name.localeCompare(b.name, 'sv'));
-    },
+    }),
     async recent(limit = 20) {
       const d = await json(`api/roms?last_played=true&order_by=last_played&order_dir=desc&limit=${limit}&with_char_index=false&${LIST}`);
       return d.items.map(toGame);
     },
     games(opts) { return list(listQuery(opts)); },
     search(term, opts) { return list(listQuery(opts) + `&search_term=${encodeURIComponent(term)}`); },
-    async collections() {
+    collections: once(async () => {
       const [own, virtual] = await Promise.all([json('api/collections'), json('api/collections/virtual?type=all')]);
       const shape = (kind) => (c) => ({ kind, id: c.id, name: c.name, count: c.rom_count ?? (c.rom_ids || []).length });
       return [...own.map(shape('own')), ...virtual.map(shape('virtual'))];
-    },
+    }),
     async game(id) { return toGame(await json(`api/roms/${id}`)); },
     markPlayed(id) { return props(id, 'update_last_played'); },
     removeRecent(id, opts = {}) { return props(id, 'remove_last_played', opts.keepalive); },

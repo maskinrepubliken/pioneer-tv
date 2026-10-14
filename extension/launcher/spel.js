@@ -93,11 +93,17 @@
   function restoreFocus(route, fallback) {
     const key = lastFocus[route];
     const target = (key && view.querySelector(`[data-key="${CSS.escape(key)}"]`)) || fallback;
-    if (target) requestAnimationFrame(() => M.nav.focus(target));
+    if (target) M.nav.focus(target);
   }
-  view.addEventListener('focusin', (e) => {
-    const k = e.target.closest && e.target.closest('[data-key]');
+  // The navigation announces every focus move (focusin does not fire while
+  // the window itself lacks focus, as in a preview pane). onFocus is the
+  // current view's own handler, if it has one.
+  let onFocus = null;
+  b.on('nav:focus', (target) => {
+    if (!target || !view.contains(target)) return;
+    const k = target.closest('[data-key]');
     if (k) lastFocus[location.hash || '#/'] = k.dataset.key;
+    if (onFocus) onFocus(target);
   });
 
   // ------------------------------------------------------------ messages
@@ -111,7 +117,7 @@
       btn.type = 'button';
       btn.addEventListener('click', retry);
       box.appendChild(btn);
-      requestAnimationFrame(() => M.nav.focus(btn));
+      M.nav.focus(btn);
     }
     view.appendChild(box);
   }
@@ -129,6 +135,7 @@
     setLegend([['A', 'spela · öppna'], ['X', 'ta bort ur senast spelade'], ['B', 'startsidan']]);
     const [recent, platforms, collections] = await Promise.all([M.romm.recent(), M.romm.platforms(), M.romm.collections()]);
     view.innerHTML = '';
+    onFocus = null;
     undo = null;                 // its card belonged to the view we just replaced
     const head = el('header', 'spel-head');
     head.appendChild(el('h1', 'spel-title', 'Spel'));
@@ -190,6 +197,171 @@
 
   window.addEventListener('pagehide', () => { for (const id of [...pending.keys()]) send(id, true); });
 
+  // ------------------------------------------------------------ grid
+  // A console's or a collection's games: covers five across, an info panel
+  // that follows the focus, letter jumps on L1/R1 and a search field. Only
+  // the rows around the focus are in the DOM (a console can have nearly a
+  // thousand games): the spatial navigation moves into the row just outside
+  // the view by geometry, and focusin then shifts the window around it.
+  const COLS = 5;
+  const WINDOW_ROWS = 3;           // rows kept either side of the focused row
+
+  // The letter a game files under, taken from RomM's sort key so the jumps
+  // follow the order the grid is in ("The Blues Brothers" is a B). å, ä and ö
+  // are letters of their own; anything else (digits, punctuation) is '#'.
+  function letterKey(game) {
+    const c = (game.sortKey || game.name || '').trim().charAt(0).toLocaleLowerCase('sv-SE');
+    if ('åäö'.includes(c) && c) return c;
+    const base = c.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return /^[a-z]$/.test(base) ? base : '#';
+  }
+  const fold = (s) => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('sv-SE');
+
+  const PLAYERS = (p) => (p ? `${p} spelare` : null);
+
+  async function grid(opts, token) {
+    setLegend([['A', 'spela'], ['L1', ''], ['R1', 'hoppa en bokstav'], ['Y', 'sök'], ['B', 'tillbaka']]);
+    const [{ games }, title] = await Promise.all([M.romm.games(opts), gridTitle(opts)]);
+    if (!M.spel.isCurrent(token)) return;
+    const route = location.hash;
+    let shown = games;
+    let windowStart = -1;
+    const nodes = new Map();       // game index in `shown` -> card
+
+    view.innerHTML = '';
+    const head = el('header', 'spel-head');
+    head.appendChild(el('h1', 'spel-title', title));
+    const search = el('input', 'spel-search');
+    search.type = 'search';
+    search.placeholder = 'Sök bland spelen…';
+    search.autocomplete = 'off';
+    head.appendChild(search);
+    const count = el('span', 'spel-count');
+    head.appendChild(count);
+    view.appendChild(head);
+
+    const body = el('div', 'spel-grid-body');
+    const scroller = el('div', 'spel-grid-scroll');
+    const gridEl = el('div', 'spel-grid');
+    scroller.appendChild(gridEl);
+    body.appendChild(scroller);
+    const info = el('aside', 'spel-info');
+    body.appendChild(info);
+    view.appendChild(body);
+
+    function showInfo(game) {
+      info.innerHTML = '';
+      if (!game) return;
+      info.appendChild(el('h2', 'spel-info-title', game.name));
+      const meta = [platformName(game.platform), game.year, game.publisher, PLAYERS(game.players)].filter(Boolean).join(' · ');
+      info.appendChild(el('p', 'spel-info-meta', meta));
+      if (game.summary) info.appendChild(el('p', 'spel-info-summary', game.summary));
+      info.appendChild(el('p', 'spel-info-meta', game.lastPlayed ? `Senast: ${when(game.lastPlayed)}` : 'Aldrig spelat'));
+    }
+
+    function renderWindow(centerIndex) {
+      const rows = Math.ceil(shown.length / COLS);
+      gridEl.style.setProperty('--rows', String(Math.max(rows, 1)));
+      const row = Math.floor(centerIndex / COLS);
+      const first = Math.max(0, row - WINDOW_ROWS) * COLS;
+      const last = Math.min(shown.length, (row + WINDOW_ROWS + 1) * COLS);
+      if (first === windowStart && nodes.size === last - first) return;
+      windowStart = first;
+      for (const [i, node] of nodes) {
+        if (i < first || i >= last) { node.remove(); nodes.delete(i); }
+      }
+      for (let i = first; i < last; i++) {
+        if (nodes.has(i)) continue;
+        const c = card(shown[i], { size: 'grid' });
+        c.dataset.index = String(i);
+        c.style.gridRow = String(Math.floor(i / COLS) + 1);
+        c.style.gridColumn = String((i % COLS) + 1);
+        gridEl.appendChild(c);
+        nodes.set(i, c);
+      }
+    }
+
+    function focusIndex(i) {
+      if (!shown.length) return;
+      i = Math.max(0, Math.min(shown.length - 1, i));
+      renderWindow(i);
+      M.nav.focus(nodes.get(i));
+    }
+
+    function setShown(list) {
+      shown = list;
+      for (const node of nodes.values()) node.remove();
+      nodes.clear();
+      windowStart = -1;
+      count.textContent = list.length === games.length ? `${games.length} spel` : `${list.length} av ${games.length} spel`;
+      renderWindow(0);
+      if (!list.length) showInfo(null);
+    }
+
+    onFocus = (target) => {
+      const c = target.closest('.spel-card');
+      if (!c || !gridEl.contains(c)) return;
+      const i = Number(c.dataset.index);
+      renderWindow(i);
+      showInfo(shown[i]);
+    };
+
+    search.addEventListener('input', () => {
+      const q = fold(search.value.trim());
+      setShown(q ? games.filter((g) => fold(g.name).includes(q)) : games);
+    });
+
+    // L1/R1 arrive as Shift+Tab/Tab: jump to the previous/next letter.
+    gridEl.addEventListener('keydown', (e) => {
+      if (e.key !== 'Tab' || M.nav.captured) return;
+      e.preventDefault();
+      const c = document.activeElement.closest('.spel-card');
+      if (!c) return;
+      let i = Number(c.dataset.index);
+      const key = letterKey(shown[i]);
+      if (e.shiftKey) {
+        // To the start of this letter; from there, to the start of the one before.
+        let start = i;
+        while (start > 0 && letterKey(shown[start - 1]) === key) start--;
+        if (start === i && i > 0) {
+          const prev = letterKey(shown[i - 1]);
+          start = i - 1;
+          while (start > 0 && letterKey(shown[start - 1]) === prev) start--;
+        }
+        i = start;
+      } else {
+        while (i < shown.length - 1 && letterKey(shown[i]) === key) i++;
+      }
+      focusIndex(i);
+      M.hud.toast(letterKey(shown[i]).toUpperCase(), '', 700);
+    });
+
+    // B in the search field: clear the filter first, then go back.
+    search.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape' || M.nav.captured || !search.value) return;
+      e.preventDefault();
+      e.stopPropagation();
+      search.value = '';
+      setShown(games);
+      focusIndex(0);
+    });
+
+    setShown(games);
+    const saved = lastFocus[route];
+    const savedIndex = saved ? shown.findIndex((g) => `game:${g.id}` === saved) : -1;
+    if (shown.length) focusIndex(Math.max(savedIndex, 0));
+    else M.nav.focus(search);
+  }
+
+  async function gridTitle(opts) {
+    if (opts.platformId) {
+      const p = (await M.romm.platforms()).find((x) => x.id === opts.platformId);
+      return p ? (PLATFORM_SHORT[p.slug] || p.name) : 'Spel';
+    }
+    const c = (await M.romm.collections()).find((x) => x.kind === opts.collection.kind && String(x.id) === String(opts.collection.id));
+    return c ? c.name : 'Samling';
+  }
+
   // ------------------------------------------------------------ router
   let routeToken = 0;
   async function route() {
@@ -197,8 +369,8 @@
     const hash = location.hash || '#/';
     const parts = hash.slice(2).split('/').map(decodeURIComponent);
     try {
-      if (parts[0] === 'platform' && M.spel.grid) await M.spel.grid({ platformId: Number(parts[1]) }, token);
-      else if (parts[0] === 'collection' && M.spel.grid) await M.spel.grid({ collection: { kind: parts[1], id: parts[2] } }, token);
+      if (parts[0] === 'platform') await grid({ platformId: Number(parts[1]) }, token);
+      else if (parts[0] === 'collection') await grid({ collection: { kind: parts[1], id: parts[2] } }, token);
       else await start();
     } catch (err) {
       if (token === routeToken) renderError(err);
@@ -210,7 +382,8 @@
   window.addEventListener('keydown', (e) => {
     if (M.nav.captured) return;                     // the menu or keyboard has the pad
     const active = document.activeElement;
-    if (M.nav.isTextField(active)) return;
+    // A text field keeps its keys, except B in an empty search field: back.
+    if (M.nav.isTextField(active) && !(e.key === 'Escape' && active.classList.contains('spel-search') && !active.value)) return;
     if (e.key === ' ') {
       e.preventDefault();
       if (e.repeat) return;
@@ -223,7 +396,7 @@
     }
   });
 
-  M.spel = { card, el, cover, when, platformName, setLegend, restoreFocus, message, isCurrent: (t) => t === routeToken };
+  M.spel = { card, letterKey, isCurrent: (t) => t === routeToken };
   message('Laddar…');
   route();
 })(window.PioneerTV);
