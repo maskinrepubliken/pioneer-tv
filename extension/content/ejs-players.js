@@ -8,7 +8,8 @@
 // nothing. Here the pad that presses a button first becomes player 1, the
 // next pad to press becomes player 2, and so on; pads that never pressed fill
 // the slots after them. It also works around an EmulatorJS bug that left the
-// remaining pad dead when another one disconnected (fixIndices below), and
+// remaining pad dead when another one disconnected (fixIndices below), gives
+// players 2 to 4 the gamepad buttons EmulatorJS leaves them without, and
 // keeps the game paused and deaf to the pad while our quick menu is open.
 (() => {
   const order = [];                                  // "id_index" in first-press order
@@ -57,6 +58,25 @@
     handler.__pioneerIndexFix = true;
   }
 
+  // EmulatorJS only maps a gamepad for player 1: players 2 to 4 start with no
+  // gamepad buttons at all, so a second pad reached the game and did nothing
+  // (its defaultControllers[1..3] are empty). They get player 1's gamepad
+  // buttons (value2); the keyboard keys (value) stay player 1's alone. A
+  // button someone has mapped for a player is left as it is.
+  function mapOtherPlayers(E) {
+    const c = E.controls;
+    if (!c || !c[0]) return;
+    for (const p of [1, 2, 3]) {
+      if (!c[p]) c[p] = {};
+      for (const k of Object.keys(c[0])) {
+        const pad = c[0][k] && c[0][k].value2;
+        if (!pad) continue;
+        if (!c[p][k]) c[p][k] = {};
+        if (!c[p][k].value2) c[p][k].value2 = pad;
+      }
+    }
+  }
+
   const overlayOpen = () => document.documentElement.hasAttribute('data-pioneertv-overlay');
 
   // The game pauses while an overlay is open, and plays on when it closes if
@@ -76,6 +96,7 @@
     const E = window.EJS_emulator;
     if (E && E.gamepad) fixIndices(E.gamepad);
     if (E) pauseForOverlay(E);
+    if (E) mapOtherPlayers(E);
     if (E && Array.isArray(E.gamepadSelection) && navigator.getGamepads) {
       const pads = [...navigator.getGamepads()].filter(Boolean);
       const live = new Set(pads.map(key));

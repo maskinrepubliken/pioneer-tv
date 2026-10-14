@@ -352,7 +352,10 @@ window.PioneerTV = window.PioneerTV || {};
   // which one was just used (active_pad: on a change of pad, and on the first
   // input after a rest). A browser pad that pressed within the same moment is
   // that pad.
-  const padNames = new Map();          // "id_index" -> the box's name for it
+  // Kept for as long as the browser runs: the browser's indices hold until a
+  // pad reconnects, and the next game should not have to learn them again.
+  const STORE = 'pioneertv-padnames';
+  const padNames = new Map((() => { try { return JSON.parse(sessionStorage.getItem(STORE) || '[]'); } catch { return []; } })());
   const lastPress = new Map();         // "id_index" -> when it last pressed
   let pendingPad = null;               // an active_pad no browser pad matched yet
   const MATCH_MS = 400;
@@ -361,6 +364,9 @@ window.PioneerTV = window.PioneerTV || {};
     const near = [...lastPress].filter(([, t]) => Math.abs(t - at) <= MATCH_MS);
     if (near.length !== 1) return false;
     padNames.set(near[0][0], pad.name);
+    // The other pad cannot be this one any more.
+    for (const [k, v] of padNames) if (v === pad.name && k !== near[0][0]) padNames.delete(k);
+    try { sessionStorage.setItem(STORE, JSON.stringify([...padNames])); } catch {}
     return true;
   }
   const seen = new Map();              // "id_index" -> was anything pressed
@@ -390,7 +396,7 @@ window.PioneerTV = window.PioneerTV || {};
     const box = ((M.bridge.state.status || {}).gamepads) || [];
     const browser = navigator.getGamepads ? [...navigator.getGamepads()].filter(Boolean) : [];
     if (box.length === 1 && browser.length === 1) return box[0].name;
-    return g.id.replace(/\s*\(.*$/, '');
+    return 'Handkontroll';
   }
 
   // Who is which player: EmulatorJS's slots as ejs-players.js ordered them.

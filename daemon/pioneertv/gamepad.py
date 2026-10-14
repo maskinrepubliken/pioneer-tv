@@ -185,15 +185,14 @@ class Gamepad:
 
     def mark_active(self) -> None:
         """This pad is the one in use: the extension takes its colours. Sent
-        when the pad changes, and again on the first input after a second's
-        rest: the player matches that moment against the browser's gamepads
-        to tell which of two identical pads is which (spela.js)."""
+        when the pad changes, and otherwise at most four times a second: the
+        player matches each one against the browser gamepad that pressed at
+        that moment to tell which of two identical pads is which (spela.js)."""
         key = self.serial or self.dev.path
         now = time.monotonic()
-        quiet = now - self.shared.get("active_at", 0.0) > 1.0
-        self.shared["active_at"] = now
-        if self.shared.get("active") == key and not quiet:
+        if self.shared.get("active") == key and now - self.shared.get("active_at", 0.0) < 0.25:
             return
+        self.shared["active_at"] = now
         self.shared["active"] = key
         notify = self.shared.get("notify_active")
         if notify:
