@@ -1,8 +1,9 @@
 // Pioneer TV Spel: browse the RomM library with the pad.
 //
 // One page, three views switched by the hash so B goes back without a
-// reload: #/ (recently played, consoles, collections), #/platform/<id> and
-// #/collection/<own|virtual>/<id> (a console's or collection's games). A game
+// reload: #/ (recently played, consoles, collections), #/platform/<id>,
+// #/collection/<own|virtual>/<id> (a console's or collection's games) and
+// #/search/<words> (what the start page's search found). A game
 // opens spela.html, our own player. All data comes from romm.js.
 (function (M) {
   const b = M.bridge;
@@ -206,12 +207,12 @@
   window.addEventListener('pagehide', () => { for (const id of [...pending.keys()]) send(id, true); });
 
   // ------------------------------------------------------------ grid
-  // A console's or a collection's games: covers four across, an info panel
+  // A console's, a collection's or a search's games: covers three across, an info panel
   // that follows the focus, letter jumps on L1/R1 and a search field. Only
   // the rows around the focus are in the DOM (a console can have nearly a
   // thousand games): the spatial navigation moves into the row just outside
   // the view by geometry, and focusin then shifts the window around it.
-  const COLS = 4;
+  const COLS = 3;
   const WINDOW_ROWS = 3;           // rows kept either side of the focused row
 
   // The letter a game files under, taken from RomM's sort key so the jumps
@@ -363,6 +364,7 @@
   }
 
   async function gridTitle(opts) {
+    if (opts.search) return `”${opts.search}”`;
     if (opts.platformId) {
       const p = (await M.romm.platforms()).find((x) => x.id === opts.platformId);
       return p ? (PLATFORM_SHORT[p.slug] || p.name) : 'Spel';
@@ -384,6 +386,7 @@
     try {
       if (parts[0] === 'platform') await grid({ platformId: Number(parts[1]) }, token);
       else if (parts[0] === 'collection') await grid({ collection: { kind: parts[1], id: parts[2] } }, token);
+      else if (parts[0] === 'search' && parts[1]) await grid({ search: parts[1] }, token);   // the start page's search
       else await start(token);
     } catch (err) {
       if (token === routeToken) renderError(err);

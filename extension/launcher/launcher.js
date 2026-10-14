@@ -7,8 +7,6 @@
   const tilesEl = $('tiles');
   const liveEl = $('live');
   const searchInput = $('search');
-  const targetsSection = $('search-targets');
-  const targetsEl = $('targets');
 
   let services = M.defaultServices;
   let servicesKey = JSON.stringify(services);
@@ -221,21 +219,21 @@
   // Coming back to a launcher kept in the back/forward cache: no tile is opening.
   window.addEventListener('pageshow', (e) => { if (e.persisted) stopOpening(); });
 
+  // Where to search: the services with a search_url, in the quick menu's
+  // panel, and a way back to the keyboard to change the words.
   function showTargets(query) {
-    $('targets-query').textContent = query;
-    targetsEl.innerHTML = '';
-    for (const s of services) {
-      if (!s.search_url) continue;
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'target pioneertv-card';
-      btn.style.setProperty('--target-color', s.color || '#444');
-      btn.textContent = s.name;
-      btn.addEventListener('click', () => open(s.search_url.replace('{query}', encodeURIComponent(query))));
-      targetsEl.appendChild(btn);
-    }
-    targetsSection.hidden = false;
-    M.nav.focus(targetsEl.firstElementChild);
+    const note = document.createElement('div');
+    note.className = 'pioneertv-menu-note';
+    note.append('efter ');
+    const em = document.createElement('em');
+    em.textContent = `”${query}”`;
+    note.append(em, ' på');
+    const items = services.filter((s) => s.search_url).map((s, i) => ({
+      label: s.name, icon: 'search', primary: i === 0, opens: true,
+      run: () => b.navigate(resolve(s.search_url.replace('{query}', encodeURIComponent(query)))),
+    }));
+    items.push({ label: 'Ändra sökningen', icon: 'keyboard', run: () => M.keyboard.open(searchInput) });
+    M.hud.menu.open({ title: 'Sök', note, items });
   }
 
   $('search-form').addEventListener('submit', (e) => {
@@ -243,7 +241,6 @@
     const q = searchInput.value.trim();
     if (q) showTargets(q);
   });
-  searchInput.addEventListener('input', () => { if (!searchInput.value.trim()) targetsSection.hidden = true; });
 
 
 
@@ -264,7 +261,6 @@
   $('search-btn').appendChild(icons.svg('search'));
   $('search-btn').addEventListener('click', () => {
     searchInput.value = '';
-    targetsSection.hidden = true;
     M.keyboard.open(searchInput);
   });
   $('menu-btn').appendChild(icons.svg('menu'));

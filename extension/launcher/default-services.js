@@ -38,6 +38,7 @@ window.PioneerTV.defaultServices = [
     "name": "Spel",
     "tagline": "RomM",
     "url": "spel.html?tv=1",
+    "search_url": "spel.html?tv=1#/search/{query}",
     "color": "#3b6ea5",
     "glyph": "S"
   },

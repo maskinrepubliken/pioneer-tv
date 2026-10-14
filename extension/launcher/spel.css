@@ -54,13 +54,17 @@ body {
    paper with its title in Fraunces. */
 .cover {
   display: flex; align-items: center; justify-content: center; overflow: hidden;
-  background: var(--pioneertv-paper-sunken); border-radius: var(--pioneertv-radius-s);
+  border-radius: var(--pioneertv-radius-s);
 }
-.cover img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.cover img { border-radius: var(--pioneertv-radius-s); }
+.cover-paper { background: var(--pioneertv-paper-sunken); }
+/* The image at its own shape, as large as its box allows, so the rounded
+   corners sit on the box art itself. */
+.cover img { max-width: 100%; max-height: 100%; width: auto; height: auto; display: block; }
 .cover-paper { padding: 0.6rem; text-align: center; font-family: var(--pioneertv-font-prose); font-size: 1rem; line-height: 1.2; color: var(--pioneertv-ink-muted); }
 
-.spel-card--recent { width: 11rem; padding: 0.4rem 0.4rem 0.5rem; }
-.spel-card--recent .cover { height: 8.6rem; border-radius: calc(var(--pioneertv-radius-l) - 0.4rem); }
+.spel-card--recent { width: 12.4rem; padding: 0.4rem 0.4rem 0.5rem; }
+.spel-card--recent .cover { height: 9.8rem; border-radius: calc(var(--pioneertv-radius-l) - 0.4rem); }
 .spel-card--recent .title, .spel-card--recent .meta { padding: 0 0.25rem; }
 .spel-card .title {
   margin-top: 0.45rem; font-family: var(--pioneertv-font-prose); font-size: 1rem; line-height: 1.2;
@@ -68,7 +72,7 @@ body {
 }
 .spel-card .meta { margin-top: 0.2rem; font-family: var(--pioneertv-font-mono); font-size: 0.75rem; color: var(--pioneertv-ink-faint); }
 
-.spel-card--group { min-width: 9.5rem; padding: 0.9rem 1.2rem 0.8rem; justify-content: flex-end; }
+.spel-card--group { min-width: 9.5rem; padding: 0.65rem 1.2rem 0.6rem; justify-content: flex-end; }
 .spel-card--group .name {
   font-family: var(--pioneertv-font-display); font-weight: 900; font-size: 1.5rem; line-height: 1;
   letter-spacing: -0.01em; text-transform: uppercase; white-space: nowrap;
@@ -125,17 +129,16 @@ html:not(.pioneertv-pointer) .spel-search:focus {
   padding: 0.6rem; margin: -0.6rem;     /* room for the focus ring */
 }
 .spel-grid-scroll::-webkit-scrollbar { display: none; }
-/* Four across, the cover filling its card up to the title: the box art is
+/* Three across, the cover filling its card up to the title: the box art is
    the point of the page. Rows have a fixed height (the grid keeps only the
    rows around the focus in the DOM; see spel.js). */
 .spel-grid {
-  display: grid; gap: 1.1rem 1rem;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  grid-template-rows: repeat(var(--rows, 1), 13.4rem);
+  display: grid; gap: 1.2rem 1.1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(var(--rows, 1), 16.2rem);
 }
 .spel-card--grid { padding: 0.4rem 0.4rem 0.55rem; }
 .spel-card--grid .cover { flex: 1; min-height: 0; border-radius: calc(var(--pioneertv-radius-l) - 0.4rem); }
-.spel-card--grid .cover img { object-fit: contain; }
 .spel-card--grid .title { flex: none; margin-top: 0.5rem; padding: 0 0.25rem; font-size: 1rem; -webkit-line-clamp: 1; }
 
 .spel-info { width: 16.5rem; flex: none; padding-left: 1.6rem; border-left: 1px solid var(--pioneertv-line); overflow: hidden; }

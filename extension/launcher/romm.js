@@ -65,7 +65,9 @@ window.PioneerTV = window.PioneerTV || {};
       name: r.name || r.fs_name_no_ext || r.fs_name,
       sortKey: r.name_sort_key || '',   // RomM's order: lower case, no leading "The", numbers padded
       platform: r.platform_slug,
-      cover: r.path_cover_small ? '/romm' + r.path_cover_small : null,
+      // RomM's big cover (512 px wide): the cards show box art at about 250
+      // px, where the small one (204 px) went soft. Lazy-loaded by the cards.
+      cover: (r.path_cover_large || r.path_cover_small) ? '/romm' + (r.path_cover_large || r.path_cover_small) : null,
       year: released ? new Date(released).getFullYear() : null,
       players: meta.player_count || null,
       summary: r.summary || '',
@@ -125,7 +127,7 @@ window.PioneerTV = window.PioneerTV || {};
       const d = await json(`api/roms?last_played=true&order_by=last_played&order_dir=desc&limit=${limit}&with_char_index=false&${LIST}`);
       return d.items.map(toGame);
     },
-    games(opts) { return list(listQuery(opts)); },
+    games(opts) { return opts && opts.search ? this.search(opts.search) : list(listQuery(opts)); },
     search(term, opts) { return list(listQuery(opts) + `&search_term=${encodeURIComponent(term)}`); },
     collections: once(async () => {
       const [own, virtual] = await Promise.all([json('api/collections'), json('api/collections/virtual?type=all')]);

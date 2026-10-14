@@ -127,23 +127,6 @@ body {
 .search-field { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; margin: 0; }
 .search-field input { width: 1px; height: 1px; border: 0; padding: 0; }
 
-/* ---- search targets: secondary buttons; the focused one lights in ochre ---- */
-.search-targets { padding-top: 0.6rem; }
-.targets-title { margin: 0 0 0.8rem; font-family: var(--pioneertv-font-prose); font-size: 1.3rem; color: var(--pioneertv-ink-muted); }
-.targets-title em { color: var(--pioneertv-ink); }
-.targets { display: flex; gap: 1rem; flex-wrap: wrap; }
-.target {
-  display: inline-flex; align-items: center; gap: 0.6rem;
-  padding: 0.8rem 1.5rem; border-radius: var(--pioneertv-radius-pill);
-  font: 600 1.15rem/1 var(--pioneertv-font-ui); color: var(--pioneertv-ink); cursor: pointer;
-  background: var(--pioneertv-paper); border: 1px solid var(--pioneertv-line-strong);
-}
-.target:hover, .target.pioneertv-hover { background: var(--pioneertv-paper-hover); }
-.target.pioneertv-focus {
-  background: var(--pioneertv-ochre); color: var(--pioneertv-on-ochre); border-color: var(--pioneertv-ochre);
-  outline: 0.2rem solid var(--pioneertv-focus) !important; outline-offset: 0.25rem !important;
-}
-
 /* ---- legend ---- */
 .legend {
   display: flex; align-items: center; gap: 1.8rem; height: 2.6rem; margin-top: 1vh;
@@ -160,6 +143,5 @@ body {
 /* focus ring is drawn by the cards themselves here, not by the ring
    content.css puts on focused elements of other sites */
 .pioneertv-focus { outline: none !important; }
-.tile.pioneertv-focus, .target.pioneertv-focus { box-shadow: none !important; }
+.tile.pioneertv-focus { box-shadow: none !important; }
 .tile.pioneertv-focus { border-radius: var(--pioneertv-radius-card) !important; }
-.target.pioneertv-focus { border-radius: var(--pioneertv-radius-pill) !important; }

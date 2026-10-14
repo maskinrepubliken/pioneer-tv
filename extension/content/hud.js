@@ -24,11 +24,15 @@ window.PioneerTV = window.PioneerTV || {};
       root: null, index: 0, items: [],
       isOpen() { return !!(this.root && this.root.isConnected); },
       toggle() { this.isOpen() ? this.close() : this.open(); },
-      open() {
+      // With no argument, the quick menu. A page can show its own choices in
+      // the same panel: open({ title, note, items }), items as below (the
+      // start page's search targets); there is no status at the foot then.
+      open(custom) {
         if (M.keyboard && M.keyboard.isOpen()) M.keyboard.close();
+        if (this.isOpen()) this.close();
         const b = M.bridge;
         const tv = b && b.state.daemonConnected;
-        this.items = [
+        this.items = custom ? custom.items : [
           // Most used first. The logs and the system update live on the
           // settings page (System), not here. The detail is the button that
           // does the same without the menu.
@@ -50,7 +54,7 @@ window.PioneerTV = window.PioneerTV || {};
         panel.className = 'pioneertv-menu-panel';
         const title = document.createElement('div');
         title.className = 'pioneertv-menu-title';
-        title.textContent = 'Meny';
+        title.textContent = custom ? custom.title : 'Meny';
         const list = document.createElement('div');
         list.className = 'pioneertv-menu-items';
         this.items.forEach((it, i) => {
@@ -63,7 +67,10 @@ window.PioneerTV = window.PioneerTV || {};
           it.el = el;
           list.appendChild(el);
         });
-        panel.append(title, list, this.statusBlock(b.state.status, tv));
+        panel.append(title);
+        if (custom && custom.note) panel.appendChild(custom.note);
+        panel.append(list);
+        if (!custom) panel.appendChild(this.statusBlock(b.state.status, tv));
         root.appendChild(panel);
         M.bridge.mount(root, { modal: true });
         this.root = root;
@@ -73,6 +80,7 @@ window.PioneerTV = window.PioneerTV || {};
         M.bridge && M.bridge.emit('menu:open');
       },
       close() {
+        if (this.punching) this.punching();
         if (this.root) M.bridge.unmount(this.root);
         this.root = null;
         if (M.nav.captured === this) M.nav.captured = null;
@@ -111,9 +119,45 @@ window.PioneerTV = window.PioneerTV || {};
       highlight() { this.items.forEach((it, i) => it.el.classList.toggle('pioneertv-menu-active', i === this.index)); },
       activate() {
         const it = this.items[this.index];
-        if (!it || it.disabled) return;
+        if (!it || it.disabled || this.punching) return;
+        // A choice that leaves our pages (opens: true) keeps the panel and
+        // punches the start page's row of holes on its row until the next
+        // page takes over, as the start page's tiles do.
+        if (it.opens) { this.punch(it.el); it.run(); return; }
         if (!it.keep) this.close();
         it.run();
+      },
+      punch(el) {
+        const ns = 'http://www.w3.org/2000/svg', N = 7, PITCH = 20;
+        const svg = document.createElementNS(ns, 'svg');
+        svg.setAttribute('class', 'pioneertv-menu-opening');
+        svg.setAttribute('viewBox', `0 0 ${N * PITCH} ${PITCH}`);
+        svg.setAttribute('aria-hidden', 'true');
+        const holes = [];
+        for (let i = 0; i < N; i++) {
+          const c = document.createElementNS(ns, 'circle');
+          c.setAttribute('cx', String(i * PITCH + PITCH / 2));
+          c.setAttribute('cy', String(PITCH / 2));
+          c.setAttribute('r', '6');
+          svg.appendChild(c);
+          holes.push(c);
+        }
+        const detail = el.querySelector('.pioneertv-menu-detail');
+        if (detail) detail.hidden = true;
+        el.appendChild(svg);
+        el.setAttribute('aria-busy', 'true');
+        let step = 0;
+        const draw = () => { const lit = step++ % (N + 2); holes.forEach((h, i) => h.classList.toggle('punched', i < lit)); };
+        draw();
+        const timer = setInterval(draw, 160);
+        const stop = () => {
+          clearInterval(timer); clearTimeout(giveUp);
+          svg.remove(); el.removeAttribute('aria-busy');
+          if (detail) detail.hidden = false;
+          this.punching = null;
+        };
+        const giveUp = setTimeout(stop, 25000);
+        this.punching = stop;
       },
       onKeyDown(e) {
         const handled = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Escape'];
@@ -129,6 +173,10 @@ window.PioneerTV = window.PioneerTV || {};
       },
     },
   };
+
+  // Back on a page kept in the back/forward cache: a panel left open while
+  // its choice was opening another page closes.
+  window.addEventListener('pageshow', (e) => { if (e.persisted && hud.menu.isOpen()) hud.menu.close(); });
 
   M.hud = hud;
 })(window.PioneerTV);

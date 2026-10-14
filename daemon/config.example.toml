@@ -109,6 +109,7 @@ id = "spel"
 name = "Spel"
 tagline = "RomM"
 url = "http://127.0.0.1:8765/ext/launcher/spel.html?tv=1"
+search_url = "http://127.0.0.1:8765/ext/launcher/spel.html?tv=1#/search/{query}"
 color = "#3b6ea5"
 glyph = "S"
 
