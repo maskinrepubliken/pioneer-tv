@@ -131,9 +131,10 @@
   }
 
   // ------------------------------------------------------------ start view
-  async function start() {
+  async function start(token) {
     setLegend([['A', 'spela · öppna'], ['X', 'ta bort ur senast spelade'], ['B', 'startsidan']]);
     const [recent, platforms, collections] = await Promise.all([M.romm.recent(), M.romm.platforms(), M.romm.collections()]);
+    if (!M.spel.isCurrent(token)) return;          // the hash moved on while we waited
     view.innerHTML = '';
     onFocus = null;
     undo = null;                 // its card belonged to the view we just replaced
@@ -223,6 +224,7 @@
     setLegend([['A', 'spela'], ['L1', ''], ['R1', 'hoppa en bokstav'], ['Y', 'sök'], ['B', 'tillbaka']]);
     const [{ games }, title] = await Promise.all([M.romm.games(opts), gridTitle(opts)]);
     if (!M.spel.isCurrent(token)) return;
+    undo = null;                 // a removal on the start view can no longer be undone from here
     const route = location.hash;
     let shown = games;
     let windowStart = -1;
@@ -371,7 +373,7 @@
     try {
       if (parts[0] === 'platform') await grid({ platformId: Number(parts[1]) }, token);
       else if (parts[0] === 'collection') await grid({ collection: { kind: parts[1], id: parts[2] } }, token);
-      else await start();
+      else await start(token);
     } catch (err) {
       if (token === routeToken) renderError(err);
     }

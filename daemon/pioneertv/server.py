@@ -79,8 +79,11 @@ class Server:
             origin = request.headers.get("Origin")
             if origin and not origin.startswith("chrome-extension://"):
                 # Behind `tailscale serve` the scheme differs and the host may be forwarded.
-                own_hosts = {request.host, request.headers.get("X-Forwarded-Host", "")}
-                if urlparse(origin).netloc not in own_hosts:
+                # "null" (a sandboxed frame, a file) is never one of ours.
+                own_hosts = {request.host}
+                if request.headers.get("X-Forwarded-Host"):
+                    own_hosts.add(request.headers["X-Forwarded-Host"])
+                if origin == "null" or urlparse(origin).netloc not in own_hosts:
                     return web.json_response({"error": "cross-origin request refused"}, status=403)
         token = (self.cfg.get("remote") or {}).get("token") or ""
         peer = request.remote or ""
@@ -153,6 +156,12 @@ class Server:
 
     # ------------------------------------------------------------ RomM
     async def romm_proxy(self, request: web.Request) -> web.StreamResponse:
+        # Only the Spel pages, which the daemon serves itself, may use RomM's
+        # key: any read or write another site's page sends is refused.
+        if request.method not in romm.METHODS:
+            return web.json_response({"error": "method_not_allowed"}, status=405)
+        if request.headers.get("Sec-Fetch-Site", "") not in romm.OWN_FETCH_SITES:
+            return web.json_response({"error": "cross-site request refused"}, status=403)
         cfg = self.cfg.get("romm") or {}
         target = romm.target_url(cfg.get("url", ""), request.match_info["path"], request.query_string)
         if target is None:
@@ -160,13 +169,17 @@ class Server:
         if not cfg.get("api_key"):
             return web.json_response({"error": "no_key"}, status=503)
         if self.romm_session is None:
-            self.romm_session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=None, sock_connect=5))
-        body = await request.read()  # states and saves are small; ROMs only come back
+            # Bodies pass through as RomM sent them (compressed or not), so the
+            # length and encoding headers stay true.
+            self.romm_session = aiohttp.ClientSession(auto_decompress=False,
+                                                      timeout=aiohttp.ClientTimeout(total=None, sock_connect=5))
         headers = romm.request_headers(request.headers, cfg["api_key"])
-        headers.pop("Content-Length", None)  # aiohttp sets it from the body
+        # Uploads are streamed: an N64 state is about 16 MB, past aiohttp's
+        # 1 MiB limit for a body read whole.
+        body = request.content if request.body_exists else None
         try:
             async with self.romm_session.request(request.method, target, headers=headers,
-                                                 data=body or None, allow_redirects=False) as upstream:
+                                                 data=body, allow_redirects=False) as upstream:
                 resp = web.StreamResponse(status=upstream.status)
                 for name, value in upstream.headers.items():
                     if name.lower() in romm.RESPONSE_HEADERS:

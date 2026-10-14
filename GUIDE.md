@@ -178,6 +178,8 @@ läge, Starta om, TV-volym (left and right step the TV's volume over CEC, A
 mutes) and Avsluta och spara. Saving sends a state and the game's own save
 file to RomM; the next start resumes from the newest state. If saving fails
 on the way out, the panel says so and offers Försök igen or Avsluta ändå.
+Holding B with the panel open (a step back) also saves and quits; holding
+Guide goes home at once, without saving.
 
 Pages the daemon serves under `/ext/` carry their own copies of the shell
 scripts, so the manifest keeps the extension's content scripts off them, and

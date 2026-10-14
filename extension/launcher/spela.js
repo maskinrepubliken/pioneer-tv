@@ -27,8 +27,16 @@ window.PioneerTV = window.PioneerTV || {};
   const loading = $('loading');
   function say(text) { loading.hidden = false; loading.textContent = text; }
 
+  // Once the game runs, an extra history entry sits on top of this page, so
+  // a "back" from the box (holding B with the pause panel open) lands here
+  // instead of leaving: it means save and quit (see the popstate handler).
+  let guarded = false;
+  let leaving = false;
+  function guard() { history.pushState({ spela: true }, ''); guarded = true; }
+
   function back() {
-    if (history.length > 1) history.back();
+    leaving = true;
+    if (history.length > (guarded ? 2 : 1)) history.go(guarded ? -2 : -1);
     else location.href = M.launcherUrl;
   }
 
@@ -124,6 +132,7 @@ window.PioneerTV = window.PioneerTV || {};
         loading.hidden = true;
         const emu = window.EJS_emulator;
         M.player.emulator = emu;
+        guard();
         M.romm.markPlayed(romId).catch((e) => console.error('update_last_played', e));
         if (fresh) return;
         try {
@@ -307,6 +316,14 @@ window.PioneerTV = window.PioneerTV || {};
   }
 
   M.pageMenu = panel;
+
+  window.addEventListener('popstate', () => {
+    if (!guarded || leaving) return;
+    guarded = false;
+    guard();                                  // stay: what happens next is the panel's call
+    if (panel.failed || panel.busy) return;   // a failed save waits for the person's choice
+    (panel.isOpen() ? Promise.resolve() : panel.open()).then(() => panel.save(true));
+  });
 
   // B with the message up goes back; in the game, B belongs to the game.
   window.addEventListener('keydown', (e) => {

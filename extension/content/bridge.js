@@ -184,19 +184,21 @@ window.PioneerTV = window.PioneerTV || {};
         try { msg = JSON.parse(m.data); } catch { return; }
         if (msg.type === 'config') { state.config = msg; this._applyState(state); }
         else if (msg.type === 'status') { state.status = msg; this._applyState(state); }
-        else if (msg.type === 'event') {
-          // What the extension's background does for its tabs.
-          if (msg.name === 'home') this.home();
-          else if (msg.name === 'back') history.back();
-          else if (msg.name === 'reload') location.reload();
-          else this.emit(msg.name, msg);
-        }
+        // home, back and reload are the extension background's to carry out
+        // for the tab; doing them here as well would do them twice.
+        else if (msg.type === 'event' && !['home', 'back', 'reload'].includes(msg.name)) this.emit(msg.name, msg);
       };
       ws.onerror = () => {};
       ws.onclose = () => {
-        if (!this.state.daemonConnected) { ws = null; return; }       // never had a daemon: preview
-        this._applyState({ daemonConnected: false, config: state.config, status: state.status });
-        setTimeout(() => this._connectDaemon(), 2000);
+        // A daemon that was there comes back after a restart: keep trying. One
+        // that never answered may be restarting too, or this is a preview
+        // server without /ws: try for a while, then stop.
+        if (this.state.daemonConnected) {
+          this._applyState({ daemonConnected: false, config: state.config, status: state.status });
+          this._wsTries = 0;
+        }
+        ws = null;
+        if ((this._wsTries = (this._wsTries || 0) + 1) <= 15 || state.config) setTimeout(() => this._connectDaemon(), 2000);
       };
     },
 

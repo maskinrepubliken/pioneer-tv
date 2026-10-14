@@ -14,8 +14,13 @@ from urllib.parse import unquote
 ALLOWED_PREFIXES = ("api/", "assets/")
 REQUEST_HEADERS = ("Content-Type", "Content-Length", "Accept", "Range", "If-None-Match", "If-Modified-Since")
 RESPONSE_HEADERS = frozenset({
-    "content-type", "content-length", "content-range", "accept-ranges", "etag", "last-modified", "cache-control",
+    "content-type", "content-length", "content-encoding", "content-range", "accept-ranges", "etag", "last-modified",
+    "cache-control",
 })
+METHODS = frozenset({"GET", "HEAD", "POST", "PUT", "DELETE"})
+# Sec-Fetch-Site values that mean "our own page" (or no page at all: typed in,
+# or a client that is not a browser and sends no such header).
+OWN_FETCH_SITES = frozenset({"same-origin", "none", ""})
 
 
 def target_url(base: str, path: str, query: str = "") -> str | None:

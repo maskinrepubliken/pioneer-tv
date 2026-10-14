@@ -1,5 +1,6 @@
 """The daemon's /romm/ route against a fake RomM. Needs aiohttp:
 `python -m unittest tests.test_server_romm` from daemon/."""
+import gzip
 import json
 import unittest
 
@@ -10,9 +11,16 @@ from pioneertv import config
 from pioneertv.server import Server
 
 
+GZ_BODY = json.dumps({"items": list(range(2000))}).encode()
+
+
 async def echo(request: web.Request) -> web.Response:
     if request.path == "/api/denied":
         return web.json_response({"detail": "nope"}, status=401)
+    if request.path == "/api/gzipped":
+        packed = gzip.compress(GZ_BODY)
+        return web.Response(body=packed, headers={"Content-Encoding": "gzip", "Content-Type": "application/json",
+                                                  "Content-Length": str(len(packed))})
     body = await request.read()
     return web.json_response({
         "method": request.method, "path": request.path, "query": request.query_string,
@@ -26,7 +34,7 @@ async def nothing(_msg: dict) -> None:
 
 class RommProxy(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        upstream = web.Application()
+        upstream = web.Application(client_max_size=64 * 1024 * 1024)   # RomM takes large states
         upstream.router.add_route("*", "/{tail:.*}", echo)
         self.upstream = TestServer(upstream)
         await self.upstream.start_server()
@@ -62,6 +70,33 @@ class RommProxy(unittest.IsolatedAsyncioTestCase):
     async def test_upstream_status_passed_through(self):
         resp = await self.client.get("/romm/api/denied")
         self.assertEqual(resp.status, 401)
+
+    async def test_large_body_forwarded(self):
+        # An N64 state is about 16 MB; aiohttp's default limit is 1 MiB.
+        resp = await self.client.post("/romm/api/states?rom_id=3", data=b"x" * (3 * 1024 * 1024))
+        self.assertEqual(resp.status, 200)
+        self.assertEqual((await resp.json())["body_len"], 3 * 1024 * 1024)
+
+    async def test_gzip_passed_through_intact(self):
+        resp = await self.client.get("/romm/api/gzipped")
+        self.assertEqual(await resp.json(), json.loads(GZ_BODY))
+
+    async def test_null_origin_refused(self):
+        resp = await self.client.post("/romm/api/roms/delete", data=b"{}", headers={"Origin": "null"})
+        self.assertEqual(resp.status, 403)
+
+    async def test_cross_site_fetch_refused(self):
+        for method in ("GET", "POST"):
+            resp = await self.client.request(method, "/romm/api/roms", headers={"Sec-Fetch-Site": "cross-site"})
+            self.assertEqual(resp.status, 403, method)
+
+    async def test_same_origin_fetch_allowed(self):
+        resp = await self.client.get("/romm/api/roms", headers={"Sec-Fetch-Site": "same-origin"})
+        self.assertEqual(resp.status, 200)
+
+    async def test_other_methods_refused(self):
+        resp = await self.client.request("OPTIONS", "/romm/api/roms")
+        self.assertEqual(resp.status, 405)
 
 
 if __name__ == "__main__":
