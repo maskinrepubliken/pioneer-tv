@@ -1,0 +1,11 @@
+[Unit]
+Description=Pioneer TV: RetroArch and the native N64 core (built once, in the background)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/pioneer-tv/system/build-n64-core.sh
+Nice=10
+IOSchedulingClass=idle
+TimeoutStartSec=3h

@@ -12,6 +12,7 @@ from . import __version__, bluetooth, config, settings, sysinfo, updater
 from .actions import Dispatcher
 from .cec import Cec
 from .gamepad import GamepadManager, MouseDriver
+from .native import Native
 from .server import Server
 from .virtual_input import VirtualInput
 
@@ -204,6 +205,11 @@ async def amain(cfg: dict) -> None:
 
     pads_mgr = GamepadManager(cfg, dispatcher, mouse, on_gamepad_change, on_keyboard_change, on_active_pad)
 
+    # Consoles that play in RetroArch rather than the browser (native.py).
+    native = Native(cfg, emit, pads_mgr.shared, dispatcher)
+    server.hooks.update({"native_play": native.play, "native_quit": native.quit, "native_status": native.status})
+    await native.reap_strays()
+
     await cec.setup()
     # A USB adapter may come up powered off; paired pads only reconnect to a powered adapter.
     await sysinfo.run("bluetoothctl", "power", "on", timeout=10)
@@ -222,6 +228,10 @@ async def amain(cfg: dict) -> None:
         loop.add_signal_handler(sig, stop.set)
     await stop.wait()
     log.info("shutting down")
+    try:
+        await asyncio.wait_for(native.close(), 10)
+    except Exception as exc:
+        log.warning("closing the native game: %s", exc)
     for t in tasks:
         t.cancel()
     # Name whatever is slow to stop, so a long shutdown says why.

@@ -40,6 +40,9 @@ class Dispatcher:
         self._swallowed: set[int] = set()
         self._last_input = 0.0
         self._wake_until = 0.0
+        # While a game runs outside the browser (native.py), its handler gets
+        # the box's own buttons (menu, home) first; True means it took them.
+        self.system_hook: Callable[[str], Coroutine] | None = None
 
     # ------------------------------------------------------------ public
     def _tv_is_off(self) -> bool:
@@ -166,6 +169,8 @@ class Dispatcher:
         if "cec" in action:
             await self.cec_command(action["cec"])
         elif "system" in action:
+            if self.system_hook and await self.system_hook(action["system"]):
+                return
             await self.emit({"type": "event", "name": action["system"]})
 
     async def cec_command(self, command: str) -> None:

@@ -181,6 +181,23 @@ on the way out, the panel says so and offers Försök igen or Avsluta ändå.
 Holding B with the panel open (a step back) also saves and quits; holding
 Guide goes home at once, without saving.
 
+### N64 in RetroArch
+
+EmulatorJS can only interpret the N64's processor in WebAssembly: Super Mario
+64 runs at about 23 frames a second on a Pi 4, whichever core or options.
+So N64 games can be played in RetroArch instead, with mupen64plus_next built
+for the Pi (GLES3 and its ARM64 recompiler). After an install,
+`pioneer-tv-cores.service` installs RetroArch and builds the core in the
+background (`system/build-n64-core.sh`, once per pinned commit; it takes a
+while). It is off until switched on: Inställningar → RomM → *Spela N64 i
+RetroArch*. Then the player hands N64 games to the daemon (`native.py`),
+which fetches the file from RomM into `/var/lib/pioneer-tv/native/games`
+(1.5 GB at most, the games played longest ago go first), and starts
+RetroArch as the kiosk user on the TV's Weston, over Chromium. The pads go
+to RetroArch; Guide opens RetroArch's own menu and holding it quits. The
+game's state is saved on the way out and resumed next time, on the box
+(`/var/lib/pioneer-tv/native/states`), not in RomM.
+
 Pages the daemon serves under `/ext/` carry their own copies of the shell
 scripts, so the manifest keeps the extension's content scripts off them, and
 their bridge talks to the daemon over `/ws` directly.

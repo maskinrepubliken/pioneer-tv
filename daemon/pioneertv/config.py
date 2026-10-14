@@ -86,6 +86,19 @@ DEFAULTS: dict[str, Any] = {
     "remote": {"token": ""},
     # RomM for the Spel pages: base URL and a client API token (see /romm/ in server.py).
     "romm": {"url": "", "api_key": ""},
+    # Consoles played in RetroArch on the TV's Weston instead of the browser
+    # (native.py): a core per RomM platform slug, used only when it exists.
+    "native": {
+        "enabled": False,       # off until it has been tried on the TV
+        "retroarch": "/usr/bin/retroarch",
+        "user": "pi",
+        "wayland_display": "wayland-1",
+        "dir": "/var/lib/pioneer-tv/native",
+        "cache_mb": 1500,
+        "port": 55355,
+        "audio_driver": "pipewire",
+        "cores": {"n64": "/var/lib/pioneer-tv/cores/mupen64plus_next_libretro.so"},
+    },
     # Pads by the serial number of their USB device (a 2.4 GHz dongle):
     # {"<serial>": {"name": ..., "pointer": "#rrggbb", "accent": "#rrggbb",
     # "highlight": "#rrggbb"}}: pointer fill, focus ring, and what is ochre.

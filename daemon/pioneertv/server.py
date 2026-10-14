@@ -64,6 +64,9 @@ class Server:
             ("GET", "/api/update", self.api_update_check),
             ("POST", "/api/update", self.api_update_start),
             ("GET", "/api/update/status", self.api_update_status),
+            ("GET", "/api/native", self.api_native_status),
+            ("POST", "/api/native/play", self.api_native_play),
+            ("POST", "/api/native/quit", self.api_native_quit),
         ]
         for method, path, handler in api:
             self.app.router.add_route(method, path, handler)
@@ -345,6 +348,29 @@ class Server:
 
     async def api_update_status(self, request: web.Request) -> web.Response:
         return web.json_response(await updater.status())
+
+    # Games in RetroArch (native.py): which consoles, start one, quit it.
+    async def api_native_status(self, request: web.Request) -> web.Response:
+        hook = self.hooks.get("native_status")
+        return web.json_response(hook() if hook else {"platforms": [], "running": False, "game": None})
+
+    async def api_native_play(self, request: web.Request) -> web.Response:
+        data = await self._json(request)
+        try:
+            rom = int(data.get("rom"))
+        except (TypeError, ValueError):
+            return web.json_response({"ok": False, "message": "rom saknas"}, status=400)
+        hook = self.hooks.get("native_play")
+        if not hook:
+            return web.json_response({"ok": False, "message": "inte tillgängligt"}, status=503)
+        ok, msg = await hook(rom)
+        return web.json_response({"ok": ok, "message": msg}, status=200 if ok else 409)
+
+    async def api_native_quit(self, request: web.Request) -> web.Response:
+        hook = self.hooks.get("native_quit")
+        if hook:
+            await hook()
+        return web.json_response({"ok": True})
 
     # ------------------------------------------------------------ run
     async def run(self) -> None:

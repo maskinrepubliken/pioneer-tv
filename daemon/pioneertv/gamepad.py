@@ -209,7 +209,7 @@ class Gamepad:
             _trace(self.dev.name, "key", name, value, describe(action))
         if action is None or value == 2:  # 2 = autorepeat
             return
-        if self.shared.get("passthrough"):
+        if self.shared.get("passthrough") or self.shared.get("native"):
             if code not in SHELL_BUTTONS:
                 return
             if code == e.BTN_START:
@@ -226,7 +226,7 @@ class Gamepad:
         v = self.normalize(code, value) if code in self.absinfo else float(value)
         if abs(v) > 0.6:
             self.mark_active()
-        if self.shared.get("passthrough"):
+        if self.shared.get("passthrough") or self.shared.get("native"):
             return
         spec = self.axes.get(code)
         # Pointer axes would flood the trace; hats, triggers and unmapped axes matter.

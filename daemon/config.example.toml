@@ -113,6 +113,11 @@ search_url = "http://127.0.0.1:8765/ext/launcher/spel.html?tv=1#/search/{query}"
 color = "#3b6ea5"
 glyph = "S"
 
+# N64 games in RetroArch instead of the browser (see GUIDE.md, Games). The
+# core is built by pioneer-tv-cores.service; this switches it on.
+# [native]
+# enabled = true
+
 [romm]
 # Base URL of RomM and a client API token (RomM: Settings → Client API Tokens)
 # with read scopes plus roms.user.write and assets.write.

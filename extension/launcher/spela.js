@@ -85,6 +85,39 @@ window.PioneerTV = window.PioneerTV || {};
   }
   $('message-back').addEventListener('click', back);
 
+  // ------------------------------------------------------------ native
+  // RetroArch runs in its own window over this page: the daemon fetches the
+  // game, starts it, and says how it goes (native events). When it quits,
+  // this page is on screen again and goes back to the game's list.
+  async function nativePlatforms() {
+    try {
+      const r = await fetch('/api/native');
+      return r.ok ? ((await r.json()).platforms || []) : [];
+    } catch { return []; }
+  }
+
+  async function playNative(game) {
+    const mb = (n) => (n / 1048576).toFixed(1);
+    let started = false;
+    M.bridge.on('native', (e) => {
+      if (e.state === 'loading') say(`Laddar ${mb(e.got)}${e.total ? ` av ${mb(e.total)}` : ''} MB`);
+      else if (e.state === 'running') { started = true; say('Startar…'); }
+      else if (e.state === 'error') fail(e.message || 'Spelet kunde inte startas');
+      else if (e.state === 'exited') {
+        if (started) back();
+        else fail('Spelet kunde inte startas');
+      }
+    });
+    say('Laddar…');
+    let r;
+    try {
+      r = await fetch('/api/native/play', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rom: game.id }) });
+    } catch { return fail('Boxen svarar inte'); }
+    const body = await r.json().catch(() => ({}));
+    if (!r.ok) return fail(body.message === 'no_key' ? 'Lägg in en API-nyckel för RomM under Inställningar → RomM' : (body.message || 'Spelet kunde inte startas'));
+    M.romm.markPlayed(romId).catch((e) => console.error('update_last_played', e));
+  }
+
   // The ROM, read with a running count so a large N64 game shows progress.
   async function download(url) {
     const resp = await fetch(url);
@@ -144,6 +177,9 @@ window.PioneerTV = window.PioneerTV || {};
     document.title = `${game.name} – Pioneer TV`;
     // RomM lists a game before its scan has found the file; it cannot serve it yet.
     if (game.fileCount === 0) return fail('RomM har inte hittat spelets fil än. Skanna biblioteket i RomM och försök igen.');
+    // A console the box plays in RetroArch (the N64: the browser cannot run
+    // it at speed) goes to the daemon instead; see daemon/pioneertv/native.py.
+    if ((await nativePlatforms()).includes(game.platform)) return playNative(game);
     const url = romFileUrl(game);
     if (!url) return fail('Den här konsolen går inte att spela här än');
     const core = CORES[game.platform];

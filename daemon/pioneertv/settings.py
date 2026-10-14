@@ -57,6 +57,7 @@ SCHEMA: list[dict] = [
         "fields": [
             {"path": "romm.url", "type": "text", "label": "Adress till RomM"},
             {"path": "romm.api_key", "type": "text", "label": "API-nyckel", "secret": True},
+            {"path": "native.enabled", "type": "bool", "label": "Spela N64 i RetroArch i stället för webbläsaren (snabbare)"},
         ],
     },
 ]
