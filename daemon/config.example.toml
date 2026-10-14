@@ -115,7 +115,7 @@ glyph = "S"
 [romm]
 # Base URL of RomM and a client API token (RomM: Settings → Client API Tokens)
 # with read scopes plus roms.user.write and assets.write.
-url = "http://100.123.142.8:8090"
+url = "https://spel.lyresten.se"
 api_key = ""
 
 # The second row: live TV and radio, no illustrations. row = "live" puts a
