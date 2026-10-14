@@ -134,43 +134,39 @@ html.pioneertv-pointer .pioneertv-key.pioneertv-key-accent.pioneertv-key-active 
 .pioneertv-logs .pioneertv-keyhint .pioneertv-icon { font-size: 13px; }
 
 /* ---- quick menu: a paper card at the right, over the page as it is. Drawn
-   like the player's pause panel (launcher/spela.css): a mono label, the
-   place in Rubik capitals, the choices as pill buttons with the focus ring,
-   and the box's status at the foot. In px, since the pages under it set their
-   own rem; at the TV's 1280x720 these are the pause panel's sizes, a little tighter
-   to fit eight choices and four status rows. ---- */
+   like the player's pause panel (launcher/spela.css): the title in Rubik
+   capitals, the choices as pill buttons with the focus ring, and the box's
+   status at the foot. In px, since the pages under it set their own rem; at
+   the TV's 1280x720 these are the pause panel's sizes. ---- */
 .pioneertv-menu {
   position: fixed; inset: 0; z-index: 2147483002;
   background: transparent;
   display: flex; align-items: stretch; justify-content: flex-end;
 }
 .pioneertv-menu-panel {
-  width: 445px; margin: 22px 38px; padding: 26px 30px 18px;
+  width: 445px; margin: 29px 38px; padding: 30px 30px 22px;
   background: var(--pioneertv-paper); color: var(--pioneertv-ink);
   /* the pause panel stands out against a dark game; on a paper page the
      edge does that */
   border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-panel);
   display: flex; flex-direction: column; gap: 13px; overflow: hidden;
 }
-.pioneertv-menu-label {
-  margin: 0; font: 400 15px/1.3 var(--pioneertv-font-mono); letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--pioneertv-ink-faint);
-}
 .pioneertv-menu-title {
   margin: 0 0 6px; font: 900 30px/1.05 var(--pioneertv-font-display);
   letter-spacing: -0.01em; text-transform: uppercase; overflow-wrap: anywhere;
 }
-.pioneertv-menu-items { display: flex; flex-direction: column; gap: 8px; }
+.pioneertv-menu-items { display: flex; flex-direction: column; gap: 11px; }
 .pioneertv-menu-item {
-  display: flex; justify-content: space-between; align-items: baseline; gap: 18px;
-  padding: 11px 26px; font: 600 21px/1 var(--pioneertv-font-ui); cursor: pointer;
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 26px 14px 20px; font: 600 21px/1 var(--pioneertv-font-ui); cursor: pointer;
   color: var(--pioneertv-ink); background: var(--pioneertv-paper);
   border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-pill);
 }
 .pioneertv-menu-item:hover { background: var(--pioneertv-paper-hover); }
-.pioneertv-menu-detail { font: 400 15px/1 var(--pioneertv-font-mono); color: var(--pioneertv-ink-faint); white-space: nowrap; }
+.pioneertv-menu-icon { width: 24px; font-size: 22px; display: inline-flex; justify-content: center; flex: none; color: var(--pioneertv-ink-muted); }
+.pioneertv-menu-detail { margin-left: auto; font: 400 15px/1 var(--pioneertv-font-mono); color: var(--pioneertv-ink-faint); white-space: nowrap; }
 html:not(.pioneertv-pointer) .pioneertv-menu-active { outline: 4px solid var(--pioneertv-focus); outline-offset: 5px; }
-.pioneertv-menu-disabled { color: var(--pioneertv-ink-faint); border-color: var(--pioneertv-line); }
+.pioneertv-menu-disabled, .pioneertv-menu-disabled .pioneertv-menu-icon { color: var(--pioneertv-ink-faint); border-color: var(--pioneertv-line); }
 .pioneertv-menu-status {
   margin-top: auto; padding-top: 13px; border-top: 1px solid var(--pioneertv-line);
   display: flex; flex-direction: column; gap: 2px;
