@@ -56,7 +56,7 @@ input.
      (`bridge.cec('volume_down'|'volume_up')`, as the quick menu does), A
      toggles mute. CEC can only step, never read or set a level, so the row
      shows no position; the TV draws its own volume bar. Hint "även L2/R2".
-   - Avsluta och spara
+   - Spara och avsluta
    - Footer: which pad is player 1 and 2.
 
 Covers without art get a paper card with the title in Fraunces.
@@ -113,7 +113,7 @@ and `assets.write`. It never reaches the browser.
 - On start: mark the game as played (updates `last_played`). Unless
   `fresh=1`, load the newest state for this ROM if there is one, else the
   newest save file.
-- Spara läge / Avsluta och spara: upload a state with a screenshot to
+- Spara läge / Spara och avsluta: upload a state with a screenshot to
   `/api/states`, and the in-game save file (SRAM) to `/api/saves` if the core
   has one. On quit, success returns to where the game was started from.
   Failure shows "Sparningen misslyckades" with "Försök igen" and "Avsluta

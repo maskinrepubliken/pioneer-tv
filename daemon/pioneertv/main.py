@@ -168,9 +168,17 @@ async def amain(cfg: dict) -> None:
         "config_changed": config_changed,
     })
 
-    async def on_gamepad_change(connected: bool, name: str, label: str | None = None) -> None:
+    async def on_gamepad_change(connected: bool, name: str, label: str | None = None, at_start: bool = False) -> None:
         bluetooth.note_seen(name)
         await emit({"type": "event", "name": "gamepad", "connected": connected, "device": name, "label": label})
+        # A pad that was already on when the daemon started (a restart or an
+        # update) is not someone reaching for it: it must not wake the TV.
+        if connected and not at_start and cfg["cec"]["tv_on_gamepad_connect"]:
+            try:
+                if not (await cec.power_status()).startswith("on"):
+                    await cec.tv_on()
+            except Exception as exc:
+                log.debug("tv on after gamepad connect failed: %s", exc)
 
     async def on_active_pad(pad: dict) -> None:
         # Into the cached status as well, so a status sent from the cache does
@@ -178,12 +186,6 @@ async def amain(cfg: dict) -> None:
         if last_status:
             last_status["active_pad"] = pad
         await emit({"type": "event", "name": "active_pad", "pad": pad})
-        if connected and cfg["cec"]["tv_on_gamepad_connect"]:
-            try:
-                if not (await cec.power_status()).startswith("on"):
-                    await cec.tv_on()
-            except Exception as exc:
-                log.debug("tv on after gamepad connect failed: %s", exc)
 
     async def on_keyboard_change(present: bool) -> None:
         await emit({"type": "event", "name": "keyboard_present", "present": present})

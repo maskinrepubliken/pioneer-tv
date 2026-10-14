@@ -42,6 +42,14 @@
     set('--pioneertv-focus', pad && pad.accent);
     set('--pioneertv-ochre', pad && pad.highlight);
     set('--pioneertv-focus-on-dark', pad && pad.highlight);
+    // Text on the highlight: ink on a light one, paper on a dark one.
+    set('--pioneertv-on-ochre', pad && pad.highlight && dark(pad.highlight) ? 'var(--pioneertv-on-dark)' : null);
+  }
+  function dark(hex) {
+    const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex || '');
+    if (!m) return false;
+    const [r, g, b] = m.slice(1).map((h) => parseInt(h, 16) / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.18;
   }
   b.on('active_pad', (e) => applyPad(e.pad));
   b.on('state', (s) => { if (s.status && 'active_pad' in s.status) applyPad(s.status.active_pad); });

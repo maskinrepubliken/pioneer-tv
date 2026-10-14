@@ -175,8 +175,8 @@ pages still has a `romm` service pointing at RomM's own web UI in its
 
 In a game, Guide opens the pause panel: Fortsätt spela, Spara läge, Ladda
 läge, Starta om, TV-volym (left and right step the TV's volume over CEC, A
-mutes) and Avsluta och spara. Saving sends a state and the game's own save
-file to RomM; the next start resumes from the newest state. If saving fails
+mutes) and Spara och avsluta (press it again while it saves to quit
+without saving). Saving sends a state and the game's own save file to RomM; the next start resumes from the newest state. If saving fails
 on the way out, the panel says so and offers Försök igen or Avsluta ändå.
 Holding B with the panel open (a step back) also saves and quits; holding
 Guide goes home at once, without saving.

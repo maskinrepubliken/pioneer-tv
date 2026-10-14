@@ -46,6 +46,10 @@
   width: 24px; height: 36px; visibility: hidden;
 }
 .pioneertv-cursor-show { visibility: visible; }
+/* The arrow takes the pad in use's colour (main.js). Set here, not in the
+   SVG's own style attribute: sites with a strict CSP block inline styles,
+   and the arrow then came out black. */
+.pioneertv-cursor path { fill: var(--pioneertv-pointer-fill, #f4efe4); }
 html.pioneertv-game .pioneertv-cursor { display: none; }
 .pioneertv-cursor-press svg { transform: translate(1px, 1px) scale(0.94); }
 .pioneertv-key.pioneertv-hover:not(.pioneertv-key-accent), .pioneertv-menu-item.pioneertv-hover { background: var(--pioneertv-paper-hover); }

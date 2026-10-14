@@ -265,7 +265,7 @@ window.PioneerTV = window.PioneerTV || {};
           run: async () => { gm.loadState(await bytes(state.url)); this.close(); M.hud.toast('Läget är laddat', 'gamepad', 1800); } },
         { label: 'Starta om', run: () => { gm.restart(); this.close(); } },
         { label: 'TV-volym', detail: '◀ ▶ · även L2/R2', volume: true, run: () => M.bridge.cec('mute') },
-        { label: 'Avsluta och spara', run: () => this.save(true) },
+        { label: 'Spara och avsluta', quit: true, run: () => this.save(true) },
       ];
     },
 
@@ -303,16 +303,22 @@ window.PioneerTV = window.PioneerTV || {};
 
     activate() {
       const it = this.items[this.index];
+      // A second press on Spara och avsluta while it saves: quit without
+      // waiting for the save (RomM may be slow or away).
+      if (this.busy && this.quitting && it && it.quit) { back(); return; }
       if (it && !it.disabled && !this.busy) it.run();
     },
 
     async save(quit) {
       this.busy = true;
-      this.status.textContent = quit ? 'Sparar och avslutar…' : 'Sparar…';
+      this.quitting = quit;
+      this.status.textContent = quit ? 'Sparar och avslutar… · tryck igen för att avsluta utan att spara' : 'Sparar…';
       this.status.classList.remove('fel');
       try {
         await saveAll(this.shot);
+        if (leaving) return;                    // quit without saving while it ran
       } catch (e) {
+        if (leaving) return;
         console.error('save', e);
         this.busy = false;
         this.failed = true;

@@ -97,11 +97,10 @@ class Gamepad:
         # and its colours (pointer fill, focus ring, and the highlight that
         # stands in for ochre), e.g. the pink and the green 8BitDo, which
         # otherwise report the very same name.
+        # Read from the config on every use, so a change on the settings page
+        # (or PUT /api/settings) applies without reconnecting the pad.
         self.serial = usb_serial(dev)
-        own = (cfg.get("pads") or {}).get(self.serial) or {} if self.serial else {}
-        self.label = own.get("name") or dev.name
-        self.named = bool(own.get("name"))
-        self.colors = {k: own[k] for k in ("pointer", "accent", "highlight") if own.get(k)}
+        self.root_cfg = cfg
         if self.named:
             log.info("%s (%s) is %s", dev.name, self.serial, self.label)
         button_map = dict(self.cfg["buttons"])
@@ -164,6 +163,22 @@ class Gamepad:
         finally:
             await self.release_everything()
             log.info("stopped %s", self.dev.name)
+
+    def _own(self) -> dict:
+        return ((self.root_cfg.get("pads") or {}).get(self.serial) or {}) if self.serial else {}
+
+    @property
+    def label(self) -> str:
+        return self._own().get("name") or self.dev.name
+
+    @property
+    def named(self) -> bool:
+        return bool(self._own().get("name"))
+
+    @property
+    def colors(self) -> dict:
+        own = self._own()
+        return {k: own[k] for k in ("pointer", "accent", "highlight") if own.get(k)}
 
     def identity(self) -> dict:
         return {"key": self.serial or self.dev.path, "name": self.label, "named": self.named, **self.colors}
@@ -355,7 +370,7 @@ def same_hardware(dev: evdev.InputDevice, pads: list[evdev.InputDevice]) -> bool
 
 class GamepadManager:
     def __init__(self, cfg: dict, dispatcher: Dispatcher, mouse: MouseDriver,
-                 on_change: Callable[[bool, str, str | None], Coroutine],
+                 on_change: Callable[..., Coroutine],
                  on_keyboard: Callable[[bool], Coroutine] | None = None,
                  on_active: Callable[[dict], Coroutine] | None = None) -> None:
         self.cfg = cfg
@@ -369,6 +384,9 @@ class GamepadManager:
         self._passthrough_until = 0.0
         self.keyboards: set[str] = set()
         self.keyboard_present = False
+        # Pads found by the first scan were there before the daemon started
+        # (a restart, an update): not a pad just switched on.
+        self.first_scan = True
 
     def pads(self) -> list[Gamepad]:
         return list(self.instances.values())
@@ -424,12 +442,13 @@ class GamepadManager:
                 self.instances[path] = pad
                 self.active[path] = asyncio.create_task(pad.run())
                 log.info("gamepad connected: %s", pad.label)
-                await self.on_change(True, dev.name, pad.label if pad.named else None)
+                await self.on_change(True, dev.name, pad.label if pad.named else None, self.first_scan)
                 continue
             if is_keyboard(dev):
                 candidates.append(dev)
                 continue
             dev.close()
+        self.first_scan = False
         pads = [pad.dev for pad in self.instances.values()]
         for dev in candidates:
             if not same_hardware(dev, pads):
