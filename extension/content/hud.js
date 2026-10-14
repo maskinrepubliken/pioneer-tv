@@ -30,15 +30,16 @@ window.PioneerTV = window.PioneerTV || {};
         const tv = b && b.state.daemonConnected;
         this.items = [
           // Most used first. The logs and the system update live on the
-          // settings page (System), not here.
-          { label: 'Tillbaka', icon: 'back', run: () => (b.available ? b.send({ type: 'back' }) : history.back()) },
-          { label: 'Hem', icon: 'home', run: () => b.home() },
-          { label: 'Volym +', icon: 'volume', run: () => b.cec('volume_up'), keep: true, disabled: !tv },
-          { label: 'Volym −', icon: 'mute', run: () => b.cec('volume_down'), keep: true, disabled: !tv },
-          { label: 'Tangentbord', icon: 'keyboard', run: () => M.keyboard.toggle() },
-          { label: 'Ladda om sidan', icon: 'reload', run: () => location.reload() },
-          { label: 'Stäng av TV:n', icon: 'power', run: () => b.cec('tv_off'), disabled: !tv },
-          { label: 'Inställningar', icon: 'gear', run: () => b.settings() },
+          // settings page (System), not here. The detail is the button that
+          // does the same without the menu.
+          { label: 'Tillbaka', detail: 'håll B', run: () => (b.available ? b.send({ type: 'back' }) : history.back()) },
+          { label: 'Hem', detail: 'håll Hem', run: () => b.home() },
+          { label: 'Volym +', detail: 'R2', run: () => b.cec('volume_up'), keep: true, disabled: !tv },
+          { label: 'Volym −', detail: 'L2', run: () => b.cec('volume_down'), keep: true, disabled: !tv },
+          { label: 'Tangentbord', detail: 'Y', run: () => M.keyboard.toggle() },
+          { label: 'Ladda om sidan', run: () => location.reload() },
+          { label: 'Stäng av TV:n', detail: 'håll Select', run: () => b.cec('tv_off'), disabled: !tv },
+          { label: 'Inställningar', run: () => b.settings() },
         ];
         const root = document.createElement('div');
         root.className = 'pioneertv-menu';
@@ -46,23 +47,24 @@ window.PioneerTV = window.PioneerTV || {};
         M.bridge.sealOverlay(root);
         const panel = document.createElement('div');
         panel.className = 'pioneertv-menu-panel';
+        const label = document.createElement('div');
+        label.className = 'pioneertv-menu-label';
+        label.textContent = 'Meny';
         const title = document.createElement('div');
         title.className = 'pioneertv-menu-title';
-        title.textContent = 'Meny';
-        panel.appendChild(title);
-        panel.appendChild(this.statusBlock(b.state.status, tv));
+        title.textContent = this.place();
+        const list = document.createElement('div');
+        list.className = 'pioneertv-menu-items';
         this.items.forEach((it, i) => {
           const el = document.createElement('div');
           el.className = 'pioneertv-menu-item' + (it.disabled ? ' pioneertv-menu-disabled' : '');
-          el.innerHTML = `<span class="pioneertv-menu-icon">${M.icons.html(it.icon)}</span><span>${it.label}</span>`;
+          el.textContent = it.label;
+          if (it.detail) { const d = document.createElement('span'); d.className = 'pioneertv-menu-detail'; d.textContent = it.detail; el.appendChild(d); }
           el.addEventListener('click', () => { this.index = i; this.activate(); });
           it.el = el;
-          panel.appendChild(el);
+          list.appendChild(el);
         });
-        const hint = document.createElement('div');
-        hint.className = 'pioneertv-keyhint';
-        hint.textContent = 'A välj · B stäng';
-        panel.appendChild(hint);
+        panel.append(label, title, list, this.statusBlock(b.state.status, tv));
         root.appendChild(panel);
         M.bridge.mount(root, { modal: true });
         this.root = root;
@@ -77,14 +79,20 @@ window.PioneerTV = window.PioneerTV || {};
         if (M.nav.captured === this) M.nav.captured = null;
         M.bridge && M.bridge.emit('menu:close');
       },
-      // Compact status rows at the top of the menu: Wi-Fi, Tailscale, pads, temperature.
+      // Where the menu was opened: the site, or the box's own pages.
+      place() {
+        const ownPage = location.protocol === 'chrome-extension:' || /^(127\.0\.0\.1|localhost)$/.test(location.hostname);
+        if (ownPage || !location.hostname) return 'Pioneer TV';
+        return location.hostname.replace(/^www\./, '');
+      },
+      // Compact status rows at the foot of the menu: Wi-Fi, Tailscale, pads, temperature.
       statusBlock(s, connected) {
         const box = document.createElement('div');
         box.className = 'pioneertv-menu-status';
         const row = (cls, icon, text) => {
           const r = document.createElement('div');
           r.className = 'pioneertv-menu-statusrow';
-          r.innerHTML = `<span class="pioneertv-menu-dot ${cls}"></span><span class="pioneertv-menu-icon">${M.icons.html(icon)}</span><span></span>`;
+          r.innerHTML = `<span class="pioneertv-menu-dot ${cls}"></span><span></span>`;
           r.lastElementChild.textContent = text;
           box.appendChild(r);
         };

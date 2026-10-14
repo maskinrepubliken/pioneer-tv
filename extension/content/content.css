@@ -133,44 +133,54 @@ html.pioneertv-pointer .pioneertv-key.pioneertv-key-accent.pioneertv-key-active 
 }
 .pioneertv-logs .pioneertv-keyhint .pioneertv-icon { font-size: 13px; }
 
-/* ---- quick menu: a solid panel at the right; the page stays as it is ---- */
+/* ---- quick menu: a paper card at the right, over the page as it is. Drawn
+   like the player's pause panel (launcher/spela.css): a mono label, the
+   place in Rubik capitals, the choices as pill buttons with the focus ring,
+   and the box's status at the foot. In px, since the pages under it set their
+   own rem; at the TV's 1280x720 these are the pause panel's sizes, a little tighter
+   to fit eight choices and four status rows. ---- */
 .pioneertv-menu {
   position: fixed; inset: 0; z-index: 2147483002;
   background: transparent;
   display: flex; align-items: stretch; justify-content: flex-end;
 }
 .pioneertv-menu-panel {
-  width: 460px; height: 100%; padding: 26px 30px 18px;
-  background: var(--pioneertv-paper);
-  border-left: 1px solid var(--pioneertv-line-strong);
-  display: flex; flex-direction: column; gap: 4px;
+  width: 445px; margin: 22px 38px; padding: 26px 30px 18px;
+  background: var(--pioneertv-paper); color: var(--pioneertv-ink);
+  /* the pause panel stands out against a dark game; on a paper page the
+     edge does that */
+  border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-panel);
+  display: flex; flex-direction: column; gap: 13px; overflow: hidden;
+}
+.pioneertv-menu-label {
+  margin: 0; font: 400 15px/1.3 var(--pioneertv-font-mono); letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--pioneertv-ink-faint);
 }
 .pioneertv-menu-title {
-  font: italic 400 30px/1.2 var(--pioneertv-font-prose); margin-bottom: 6px;
-  padding-bottom: 10px; border-bottom: 1px solid var(--pioneertv-line);
+  margin: 0 0 6px; font: 900 30px/1.05 var(--pioneertv-font-display);
+  letter-spacing: -0.01em; text-transform: uppercase; overflow-wrap: anywhere;
 }
+.pioneertv-menu-items { display: flex; flex-direction: column; gap: 8px; }
+.pioneertv-menu-item {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 18px;
+  padding: 11px 26px; font: 600 21px/1 var(--pioneertv-font-ui); cursor: pointer;
+  color: var(--pioneertv-ink); background: var(--pioneertv-paper);
+  border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-pill);
+}
+.pioneertv-menu-item:hover { background: var(--pioneertv-paper-hover); }
+.pioneertv-menu-detail { font: 400 15px/1 var(--pioneertv-font-mono); color: var(--pioneertv-ink-faint); white-space: nowrap; }
+html:not(.pioneertv-pointer) .pioneertv-menu-active { outline: 4px solid var(--pioneertv-focus); outline-offset: 5px; }
+.pioneertv-menu-disabled { color: var(--pioneertv-ink-faint); border-color: var(--pioneertv-line); }
 .pioneertv-menu-status {
-  display: flex; flex-direction: column; gap: 6px; margin: 4px 0 10px; padding-bottom: 10px;
-  border-bottom: 1px solid var(--pioneertv-line); font: 15px/1.5 var(--pioneertv-font-mono); color: var(--pioneertv-ink-muted);
+  margin-top: auto; padding-top: 13px; border-top: 1px solid var(--pioneertv-line);
+  display: flex; flex-direction: column; gap: 2px;
+  font: 400 15px/1.35 var(--pioneertv-font-mono); color: var(--pioneertv-ink-muted);
 }
-.pioneertv-menu-statusrow { display: flex; align-items: center; gap: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pioneertv-menu-statusrow .pioneertv-menu-icon { width: 24px; font-size: 20px; display: inline-flex; color: var(--pioneertv-ink-muted); }
+.pioneertv-menu-statusrow { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.pioneertv-menu-statusrow > span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Status holes: filled when up, empty when unknown, and never colour alone:
    each row also says it in words. */
 .pioneertv-menu-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; border: 2px solid var(--pioneertv-line-strong); background: transparent; }
 .pioneertv-menu-dot.ok { background: var(--pioneertv-surface-forest); border-color: var(--pioneertv-surface-forest); }
 .pioneertv-menu-dot.warn { background: var(--pioneertv-ochre); border-color: var(--pioneertv-surface-rust); }
 .pioneertv-menu-dot.bad { background: var(--pioneertv-alarm); border-color: var(--pioneertv-alarm); }
-.pioneertv-menu-item {
-  display: flex; align-items: center; gap: 14px;
-  padding: 10px 18px; font: 24px/1.3 var(--pioneertv-font-ui); cursor: pointer; border-radius: var(--pioneertv-radius-pill);
-}
-.pioneertv-menu-item:hover { background: var(--pioneertv-paper-hover); }
-.pioneertv-menu-icon { width: 34px; text-align: center; font-size: 26px; display: inline-flex; justify-content: center; color: var(--pioneertv-ink-muted); }
-html:not(.pioneertv-pointer) .pioneertv-menu-active { background: var(--pioneertv-surface-ink); color: var(--pioneertv-on-dark); }
-html:not(.pioneertv-pointer) .pioneertv-menu-active:hover { background: var(--pioneertv-surface-ink); }
-html:not(.pioneertv-pointer) .pioneertv-menu-active .pioneertv-menu-icon { color: var(--pioneertv-on-dark); }
-/* Inactive: sunken surface, faint text, a solid tone rather than opacity. */
-.pioneertv-menu-disabled { color: var(--pioneertv-ink-faint); }
-.pioneertv-menu-disabled .pioneertv-menu-icon { color: var(--pioneertv-ink-faint); }
-.pioneertv-menu-panel .pioneertv-keyhint { margin-top: auto; }
