@@ -16,7 +16,9 @@ body {
   overflow: hidden;
 }
 
-.page { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; padding: 2.4vh 5vw 2vh; }
+/* The top padding keeps the status row and the power button (with its
+   focus ring) inside what the TV shows: it crops the edges of the picture. */
+.page { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; padding: 5.5vh 5vw 2vh; }
 
 /* ---- masthead: the status pills at the right, and last the TV's off button ---- */
 .masthead { display: flex; align-items: center; justify-content: flex-end; height: 2.2rem; }

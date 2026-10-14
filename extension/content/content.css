@@ -64,13 +64,15 @@ html.pioneertv-bigscreen, html.pioneertv-bigscreen body { overflow: hidden !impo
 .pioneertv-bigscreen-target video { width: 100% !important; height: 100% !important; object-fit: contain !important; }
 
 /* ---- keyboard ---- */
+/* A card clear of the screen's edges, like the quick menu: the TV crops the
+   edges of the picture, and keys flush with them were cut off. */
 .pioneertv-keyboard {
-  position: fixed; left: 0; right: 0; bottom: 0; top: auto; z-index: 2147483000;
-  padding: 12px 22px 6px;
+  position: fixed; left: 48px; right: 48px; bottom: 26px; top: auto; z-index: 2147483000;
+  padding: 14px 20px 8px;
   background: var(--pioneertv-paper);
-  border-top: 1px solid var(--pioneertv-line-strong);
+  border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-panel);
 }
-html.pioneertv-keyboard-open { scroll-padding-bottom: 290px; }
+html.pioneertv-keyboard-open { scroll-padding-bottom: 320px; }
 /* Top row: what the field holds, and the hint. */
 .pioneertv-keytop { display: flex; align-items: center; gap: 22px; margin-bottom: 10px; }
 .pioneertv-keyfield {
