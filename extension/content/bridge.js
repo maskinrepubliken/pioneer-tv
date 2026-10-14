@@ -7,6 +7,12 @@ window.PioneerTV = window.PioneerTV || {};
   const listeners = {};
   const hasExt = !!(globalThis.chrome && chrome.runtime && chrome.runtime.id);
   const params = new URLSearchParams(location.search);
+  // Pages the daemon serves itself (/ext/..., e.g. the Spel pages, which load
+  // EmulatorJS from RomM and so cannot be extension pages) get no content
+  // scripts: the manifest excludes them, as they carry their own copies. They
+  // talk to the daemon over its WebSocket instead of through the extension.
+  const LAUNCHER_EXT_URL = 'chrome-extension://dpigdefepjjejbkidlabpjlnleidgjaf/launcher/index.html';
+  let ws = null;
 
   const bridge = {
     available: hasExt,
@@ -104,7 +110,10 @@ window.PioneerTV = window.PioneerTV || {};
 
     // Messages to the background worker (and via it, the daemon).
     send(msg) { if (hasExt) chrome.runtime.sendMessage(msg).catch(() => {}); },
-    daemon(payload) { this.send({ type: 'daemon', payload }); },
+    daemon(payload) {
+      if (ws) { if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(payload)); }
+      else this.send({ type: 'daemon', payload });
+    },
     cec(command) { this.daemon({ type: 'cec', command }); },
     navigate(url) {
       if (hasExt) this.send({ type: 'navigate', url });
@@ -112,6 +121,7 @@ window.PioneerTV = window.PioneerTV || {};
     },
     home() {
       if (hasExt) this.send({ type: 'home' });
+      else if (this.state.daemonConnected) location.href = LAUNCHER_EXT_URL;
       else location.href = M.launcherUrl || '../launcher/index.html';
     },
     settings() {
@@ -151,12 +161,43 @@ window.PioneerTV = window.PioneerTV || {};
         if (!document.fullscreenElement) { clearTimeout(this._unlockTimer); this._escLocked = false; }   // leaving fullscreen drops a lock by itself
         this._lockEscape();
       });
-      if (!hasExt) { this.emit('state', this.state); return; }
+      if (!hasExt) {
+        if (location.protocol.startsWith('http') && location.pathname.startsWith('/ext/')) this._connectDaemon();
+        this.emit('state', this.state);
+        return;
+      }
       chrome.runtime.onMessage.addListener((msg) => {
         if (msg.type === 'state') this._applyState(msg);
         else if (msg.type === 'event') this.emit(msg.name, msg);
       });
       chrome.runtime.sendMessage({ type: 'getState' }).then((s) => s && this._applyState(s)).catch(() => {});
+    },
+
+    // Straight to the daemon from a page it serves; a preview server has no
+    // /ws, so there this simply fails and the page works without a daemon.
+    _connectDaemon() {
+      try { ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`); } catch { ws = null; return; }
+      const state = { daemonConnected: true, config: null, status: null };
+      ws.onopen = () => this._applyState(state);
+      ws.onmessage = (m) => {
+        let msg;
+        try { msg = JSON.parse(m.data); } catch { return; }
+        if (msg.type === 'config') { state.config = msg; this._applyState(state); }
+        else if (msg.type === 'status') { state.status = msg; this._applyState(state); }
+        else if (msg.type === 'event') {
+          // What the extension's background does for its tabs.
+          if (msg.name === 'home') this.home();
+          else if (msg.name === 'back') history.back();
+          else if (msg.name === 'reload') location.reload();
+          else this.emit(msg.name, msg);
+        }
+      };
+      ws.onerror = () => {};
+      ws.onclose = () => {
+        if (!this.state.daemonConnected) { ws = null; return; }       // never had a daemon: preview
+        this._applyState({ daemonConnected: false, config: state.config, status: state.status });
+        setTimeout(() => this._connectDaemon(), 2000);
+      };
     },
 
     _applyState(s) {

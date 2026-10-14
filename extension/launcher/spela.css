@@ -1,0 +1,44 @@
+/* Pioneer TV player. The game alone on a dark ground, 4:3, scaled without
+   smoothing; nothing of EmulatorJS's own interface shows. Same 1280x720
+   canvas and tokens as the other launcher pages. */
+
+html { font-size: 1.45vw; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  font-family: var(--pioneertv-font-ui);
+  color: var(--pioneertv-on-dark);
+  background-color: var(--pioneertv-surface-ink);
+  overflow: hidden;
+}
+
+.stage { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+#game { height: 100vh; width: calc(100vh * 4 / 3); max-width: 100vw; max-height: calc(100vw * 3 / 4); }
+#game canvas { image-rendering: pixelated; }
+/* EmulatorJS's own bars, menus and messages: the box has its pause panel. */
+#game .ejs_menu_bar, #game .ejs_context_menu, #game .ejs_virtualGamepad_parent { display: none !important; }
+
+.loading {
+  position: fixed; left: 5vw; bottom: 5vh; margin: 0;
+  font-family: var(--pioneertv-font-mono); font-size: 1rem; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--pioneertv-ochre);
+}
+.loading[hidden] { display: none; }
+
+.spela-message {
+  position: fixed; inset: 0; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 1.4rem;
+  padding: 0 10vw; background: var(--pioneertv-paper); color: var(--pioneertv-ink);
+}
+.spela-message[hidden] { display: none; }
+.spela-message p { margin: 0; max-width: 40rem; font-family: var(--pioneertv-font-prose); font-size: 1.8rem; line-height: 1.3; }
+
+.knapp {
+  font: 600 1.15rem/1 var(--pioneertv-font-ui); padding: 1rem 1.8rem; margin: 0; cursor: pointer; text-align: left;
+  color: var(--pioneertv-ink); background: var(--pioneertv-paper);
+  border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-pill);
+}
+.knapp.primar { background: var(--pioneertv-ochre); border-color: var(--pioneertv-ochre); color: var(--pioneertv-on-ochre); }
+.knapp.pioneertv-focus {
+  outline: 0.2rem solid var(--pioneertv-focus) !important; outline-offset: 0.25rem !important;
+  box-shadow: none !important; border-radius: var(--pioneertv-radius-pill) !important;
+}

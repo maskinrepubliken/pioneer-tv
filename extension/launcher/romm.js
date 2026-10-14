@@ -53,6 +53,7 @@ window.PioneerTV = window.PioneerTV || {};
       lastPlayed: (r.rom_user && r.rom_user.last_played) || null,
       publisher: (meta.publishers && meta.publishers[0]) || (meta.companies && meta.companies[0]) || null,
       multiFile: !!r.has_multiple_files,
+      fileCount: Array.isArray(r.files) ? r.files.length : null,   // only the single-game call lists files
       fileName: r.fs_name,
     };
   }

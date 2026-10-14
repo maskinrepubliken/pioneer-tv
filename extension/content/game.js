@@ -73,7 +73,9 @@ window.PioneerTV = window.PioneerTV || {};
     active() { return inGame; },
     init() {
       const b = M.bridge;
-      if (!b || !b.available) return;
+      // Also without the extension: a page the daemon serves reaches it over
+      // its own WebSocket, and in a preview the messages simply go nowhere.
+      if (!b) return;
       timer = setInterval(tick, DETECT_MS);
       tick();
       // Overlays pause game mode; resume when they close.

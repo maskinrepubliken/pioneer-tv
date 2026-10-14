@@ -22,6 +22,10 @@
       "js": [
         "content/codecs.js",
         "content/no-leave-prompt.js"
+      ],
+      "exclude_matches": [
+        "http://127.0.0.1/ext/*",
+        "http://localhost/ext/*"
       ]
     },
     {
@@ -32,6 +36,10 @@
       "world": "MAIN",
       "js": [
         "content/ejs-players.js"
+      ],
+      "exclude_matches": [
+        "http://127.0.0.1/ext/*",
+        "http://localhost/ext/*"
       ]
     },
     {
@@ -42,7 +50,11 @@
         "content/cursor.css"
       ],
       "run_at": "document_start",
-      "all_frames": true
+      "all_frames": true,
+      "exclude_matches": [
+        "http://127.0.0.1/ext/*",
+        "http://localhost/ext/*"
+      ]
     },
     {
       "matches": [
@@ -66,7 +78,11 @@
         "content/paper.css",
         "content/content.css"
       ],
-      "run_at": "document_idle"
+      "run_at": "document_idle",
+      "exclude_matches": [
+        "http://127.0.0.1/ext/*",
+        "http://localhost/ext/*"
+      ]
     }
   ],
   "commands": {
