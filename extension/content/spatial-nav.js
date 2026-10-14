@@ -85,12 +85,20 @@ window.PioneerTV = window.PioneerTV || {};
 
     gap(a1, a2, b1, b2) { return Math.max(0, Math.max(a1, b1) - Math.min(a2, b2)); },
 
+    // The ring is put away while the pointer is in use (cursor.js), so only one
+    // thing on screen looks selected; the focus itself is kept.
+    ringShown() { return !document.documentElement.classList.contains('pioneertv-pointer'); },
+    ring(show) {
+      const el = this.current;
+      if (el && el.isConnected) el.classList.toggle(FOCUS_CLASS, show);
+    },
+
     focus(el, opts = {}) {
       if (!el) return;
       const prev = this.current;
       if (prev && prev !== el) prev.classList.remove(FOCUS_CLASS);
       this.current = el;
-      el.classList.add(FOCUS_CLASS);
+      el.classList.toggle(FOCUS_CLASS, this.ringShown());
       if (!el.hasAttribute('tabindex') && !el.matches('a[href],button,input,select,textarea,summary,video,audio,[contenteditable="true"]')) {
         el.setAttribute('tabindex', '-1');
       }
@@ -164,19 +172,13 @@ window.PioneerTV = window.PioneerTV || {};
       // A game page gets every key untouched (the daemon sends none anyway; a
       // real keyboard may be plugged in for the emulator's own shortcuts).
       if (!this.captured && M.bridge && M.bridge.gameMode()) return;
-      // A clicks at the pointer when it was just used, also inside our overlays
-      // (the on-screen keyboard, the menu), so the stick can drive them too.
+      // While the pointer is on screen A always clicks what is under it, never
+      // the focused element: in the page, in our overlays (a key, a menu row)
+      // and in a text field alike (a click on one opens the keyboard).
       if (e.key === 'Enter' && M.cursor && M.cursor.active()) {
-        // With an overlay open the text field keeps focus, so decide by what is
-        // under the pointer instead: a key, a menu row, a tab.
-        const under = M.cursor.elementUnder();
-        const inOverlay = !!(under && under.closest && under.closest('[data-pioneertv-overlay]'));
-        const outsideKeyboard = this.captured && this.captured === M.keyboard && !inOverlay;   // closes it
-        if (this.captured ? (inOverlay || outsideKeyboard) : !this.isTextField(document.activeElement)) {
-          this.eat(e);
-          M.cursor.click();
-          return;
-        }
+        this.eat(e);
+        M.cursor.click();
+        return;
       }
       if (this.captured) {
         // The layer may close itself on this very key (Escape, OK): keep hold
@@ -267,7 +269,7 @@ window.PioneerTV = window.PioneerTV || {};
         if (el === this.current || !(el instanceof Element)) return;
         if (this.current) this.current.classList.remove(FOCUS_CLASS);
         this.current = el;
-        el.classList.add(FOCUS_CLASS);
+        el.classList.toggle(FOCUS_CLASS, this.ringShown());
       });
       // Real pointer (right stick) clicks: keep our ring on the clicked thing.
       document.addEventListener('click', (e) => {

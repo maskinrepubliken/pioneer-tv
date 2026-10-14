@@ -4,8 +4,9 @@
 // client cursor reaches the hardware cursor plane, see README). The daemon
 // streams right-stick motion as "pointer" events instead, and this script
 // draws a paper arrow, moves it, and delivers hover, clicks and
-// edge-scrolling to whatever is under it. A (Enter) clicks while the pointer
-// has been used within the last few seconds.
+// edge-scrolling to whatever is under it. While the arrow is on screen A
+// (Enter) always clicks what is under it, and the focus ring is put away so
+// there is only one thing that looks selected.
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const ARROW = '<svg viewBox="0 0 24 36" width="24" height="36" aria-hidden="true">'
@@ -13,7 +14,8 @@ window.PioneerTV = window.PioneerTV || {};
     + '</svg>';
   const ACTIVE_MS = 5000;   // A clicks at the pointer this long after it last moved
   const EDGE = 28;          // px from the edge where the page scrolls
-  const state = { x: 0, y: 0, lastMove: 0, hover: null, el: null, hideTimer: null, pressed: false, initialised: false };
+  const state = { x: 0, y: 0, lastMove: 0, hover: null, marked: null, el: null, hideTimer: null, pressed: false, initialised: false };
+  const CLICKABLE = 'a[href], button, input, select, textarea, summary, [role="button"], [role="menuitem"], [role="tab"], [tabindex]';
 
   function ensure() {
     if (state.el && state.el.isConnected) return state.el;
@@ -28,12 +30,29 @@ window.PioneerTV = window.PioneerTV || {};
     return el;
   }
 
+  // Pointer mode: the arrow is shown. The page's focus ring hides meanwhile
+  // (spatial-nav keeps track of the focus and brings the ring back).
+  function pointerMode(on) {
+    const root = document.documentElement;
+    if (!root || root.classList.contains('pioneertv-pointer') === on) return;
+    root.classList.toggle('pioneertv-pointer', on);
+    if (M.nav && M.nav.ring) M.nav.ring(!on);
+  }
+
+  function hideArrow() {
+    if (state.marked) { state.marked.classList.remove('pioneertv-hover'); state.marked = null; state.hover = null; }
+    clearTimeout(state.hideTimer);
+    if (state.el) state.el.classList.remove('pioneertv-cursor-show');
+    pointerMode(false);
+  }
+
   function draw() {
     const el = ensure();
     el.style.transform = `translate3d(${state.x}px, ${state.y}px, 0)`;
     el.classList.add('pioneertv-cursor-show');
+    pointerMode(true);
     clearTimeout(state.hideTimer);
-    state.hideTimer = setTimeout(() => el.classList.remove('pioneertv-cursor-show'), ACTIVE_MS);
+    state.hideTimer = setTimeout(() => { state.lastMove = 0; hideArrow(); }, ACTIVE_MS);
   }
 
   // What the pointer is over. In fullscreen the browser's hit test does not
@@ -119,9 +138,17 @@ window.PioneerTV = window.PioneerTV || {};
     hoverAt = performance.now();
     const t = under();
     if (t !== state.hover) {
-      if (state.hover) { fire(state.hover, 'mouseout', { relatedTarget: t }); state.hover.classList && state.hover.classList.remove('pioneertv-hover'); }
+      if (state.hover) fire(state.hover, 'mouseout', { relatedTarget: t });
       if (t) { fire(t, 'mouseover', { relatedTarget: state.hover }); fire(t, 'mouseenter'); }
       state.hover = t;
+      // Synthetic events do not set :hover, so the clickable thing under the
+      // arrow gets a class to style instead (our own pages and overlays do).
+      const target = t && t.closest ? t.closest(CLICKABLE) : null;
+      if (target !== state.marked) {
+        if (state.marked) state.marked.classList.remove('pioneertv-hover');
+        if (target) target.classList.add('pioneertv-hover');
+        state.marked = target;
+      }
     }
     if (t) fire(t, 'mousemove');
   }
@@ -156,14 +183,14 @@ window.PioneerTV = window.PioneerTV || {};
       // Also follow a real mouse, should one be attached (not on the Pi 3).
       window.addEventListener('mousemove', (e) => { if (e.isTrusted) { state.x = e.clientX; state.y = e.clientY; state.lastMove = Date.now(); draw(); } }, { capture: true, passive: true });
     },
-    active() { return Date.now() - state.lastMove < ACTIVE_MS; },
+    // True exactly while the arrow is on screen.
+    active() { return !!(state.el && state.el.classList.contains('pioneertv-cursor-show')); },
     // The d-pad or the left stick took over: the arrow goes away at once, and
     // A selects the focused element again rather than clicking at the pointer.
     hide() {
       if (!state.lastMove && !(state.el && state.el.classList.contains('pioneertv-cursor-show'))) return;
       state.lastMove = 0;
-      clearTimeout(state.hideTimer);
-      if (state.el) state.el.classList.remove('pioneertv-cursor-show');
+      hideArrow();
     },
     click() { button('left', true); setTimeout(() => button('left', false), 60); },
     position() { flush(); ensure(); return { x: state.x, y: state.y }; },   // starts centred, like the first move

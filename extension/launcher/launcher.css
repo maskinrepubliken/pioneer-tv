@@ -70,7 +70,7 @@ body {
 /* Focus: a solid ink ring with air around it, the ochre marker, and the
    surface switching to paper-hover. The system's ring is 2 px on a laptop;
    seen across a room it is drawn at the same proportion of the screen. */
-.tile:hover { background: var(--pioneertv-paper-hover); }
+.tile:hover, .tile.pioneertv-hover { background: var(--pioneertv-paper-hover); }
 .tile.pioneertv-focus {
   background: var(--pioneertv-paper-hover); border-color: var(--pioneertv-ink);
   outline: 0.25rem solid var(--pioneertv-focus) !important; outline-offset: 0.3rem !important; z-index: 2;
@@ -127,11 +127,11 @@ body {
 .search input::placeholder { color: var(--pioneertv-ink-faint); font-style: italic; }
 .search input::-webkit-search-cancel-button, .search input::-webkit-search-decoration { -webkit-appearance: none; appearance: none; display: none; }
 .search input.pioneertv-focus { outline: none !important; box-shadow: none !important; }
-.search.pioneertv-card:focus-within {
+html:not(.pioneertv-pointer) .search.pioneertv-card:focus-within {
   background: var(--pioneertv-paper-hover); border-color: var(--pioneertv-ink);
   outline: 0.25rem solid var(--pioneertv-focus); outline-offset: 0.3rem;
 }
-.search.pioneertv-card:focus-within .search-icon { color: var(--pioneertv-ink); }
+html:not(.pioneertv-pointer) .search.pioneertv-card:focus-within .search-icon { color: var(--pioneertv-ink); }
 
 /* ---- search targets: secondary buttons; the focused one lights in ochre ---- */
 .search-targets { padding-top: 0.6rem; }
@@ -144,7 +144,7 @@ body {
   font: 600 1.15rem/1 var(--pioneertv-font-ui); color: var(--pioneertv-ink); cursor: pointer;
   background: var(--pioneertv-paper); border: 1px solid var(--pioneertv-line-strong);
 }
-.target:hover { background: var(--pioneertv-paper-hover); }
+.target:hover, .target.pioneertv-hover { background: var(--pioneertv-paper-hover); }
 .target.pioneertv-focus {
   background: var(--pioneertv-ochre); color: var(--pioneertv-on-ochre); border-color: var(--pioneertv-ochre);
   outline: 0.2rem solid var(--pioneertv-focus) !important; outline-offset: 0.25rem !important;

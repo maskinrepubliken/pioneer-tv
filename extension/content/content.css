@@ -48,7 +48,7 @@
 .pioneertv-cursor-show { visibility: visible; }
 html.pioneertv-game .pioneertv-cursor { display: none; }
 .pioneertv-cursor-press svg { transform: translate(1px, 1px) scale(0.94); }
-.pioneertv-hover { }
+.pioneertv-key.pioneertv-hover:not(.pioneertv-key-accent), .pioneertv-menu-item.pioneertv-hover { background: var(--pioneertv-paper-hover); }
 
 /* ---- big screen: a promoted player when real fullscreen is refused ---- */
 html.pioneertv-bigscreen, html.pioneertv-bigscreen body { overflow: hidden !important; background: #000 !important; }
@@ -81,6 +81,14 @@ html.pioneertv-keyboard-open { scroll-padding-bottom: 360px; }
 .pioneertv-key-active {
   background: var(--pioneertv-surface-ink) !important; border-color: var(--pioneertv-surface-ink) !important; color: var(--pioneertv-on-dark) !important;
   outline: 3px solid var(--pioneertv-focus); outline-offset: 3px;
+}
+/* While the pointer is in use the d-pad's key is not marked: the arrow is. */
+html.pioneertv-pointer .pioneertv-key.pioneertv-key-active:not(.pioneertv-hover) {
+  background: var(--pioneertv-paper-raised) !important; border-color: var(--pioneertv-line-strong) !important; color: var(--pioneertv-ink) !important;
+  outline: none;
+}
+html.pioneertv-pointer .pioneertv-key.pioneertv-key-accent.pioneertv-key-active {
+  background: var(--pioneertv-ochre) !important; border-color: var(--pioneertv-ochre) !important; color: var(--pioneertv-on-ochre) !important;
 }
 .pioneertv-keyhint {
   font: 14px/1.4 var(--pioneertv-font-mono); letter-spacing: 0.1em; text-transform: uppercase;
@@ -159,9 +167,9 @@ html.pioneertv-keyboard-open { scroll-padding-bottom: 360px; }
 }
 .pioneertv-menu-item:hover { background: var(--pioneertv-paper-hover); }
 .pioneertv-menu-icon { width: 34px; text-align: center; font-size: 26px; display: inline-flex; justify-content: center; color: var(--pioneertv-ink-muted); }
-.pioneertv-menu-active { background: var(--pioneertv-surface-ink); color: var(--pioneertv-on-dark); }
-.pioneertv-menu-active:hover { background: var(--pioneertv-surface-ink); }
-.pioneertv-menu-active .pioneertv-menu-icon { color: var(--pioneertv-on-dark); }
+html:not(.pioneertv-pointer) .pioneertv-menu-active { background: var(--pioneertv-surface-ink); color: var(--pioneertv-on-dark); }
+html:not(.pioneertv-pointer) .pioneertv-menu-active:hover { background: var(--pioneertv-surface-ink); }
+html:not(.pioneertv-pointer) .pioneertv-menu-active .pioneertv-menu-icon { color: var(--pioneertv-on-dark); }
 /* Inactive: sunken surface, faint text, a solid tone rather than opacity. */
 .pioneertv-menu-disabled { color: var(--pioneertv-ink-faint); }
 .pioneertv-menu-disabled .pioneertv-menu-icon { color: var(--pioneertv-ink-faint); }
