@@ -110,6 +110,11 @@ class RommProxy(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(resp.status, 200)
         self.assertNotIn("Cross-Origin-Embedder-Policy", resp.headers)
 
+    async def test_pages_revalidated(self):
+        # Without it Chromium kept an old spela.js after an update.
+        resp = await self.client.get("/ext/launcher/spela.js")
+        self.assertEqual(resp.headers.get("Cache-Control"), "no-cache")
+
 
 if __name__ == "__main__":
     unittest.main()

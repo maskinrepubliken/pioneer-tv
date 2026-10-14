@@ -41,7 +41,7 @@ class Server:
         self.app.router.add_static("/static", WEB_DIR, show_index=False)
         if EXT_DIR.is_dir():
             self.app.router.add_static("/ext", EXT_DIR, show_index=False)
-        self.app.on_response_prepare.append(self._isolate_player)
+        self.app.on_response_prepare.append(self._page_headers)
         api = [
             ("GET", "/api/status", self.api_status),
             ("GET", "/api/settings", self.api_settings_get),
@@ -78,7 +78,13 @@ class Server:
     # turned away; "credentialless" keeps any cross-origin extra working too.
     ISOLATED_PAGES = ("/ext/launcher/spela.html",)
 
-    async def _isolate_player(self, request: web.Request, response: web.StreamResponse) -> None:
+    async def _page_headers(self, request: web.Request, response: web.StreamResponse) -> None:
+        # The pages and scripts under /ext/ change with every update, and with
+        # no caching headers Chromium kept serving an old spela.js from its
+        # cache after one (seen on the box). Asking it to revalidate costs a
+        # local round trip that the ETag usually answers with a 304.
+        if request.path.startswith(("/ext/", "/static/")):
+            response.headers["Cache-Control"] = "no-cache"
         if request.path in self.ISOLATED_PAGES:
             response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
             response.headers["Cross-Origin-Embedder-Policy"] = "credentialless"
