@@ -32,10 +32,7 @@
   });
   b.on('gamepad', (e) => M.hud.toast(e.connected ? `Handkontroll ansluten` : 'Handkontroll frånkopplad', 'gamepad'));
   b.on('tv', (e) => {
-    if (e.power === 'standby') {
-      document.querySelectorAll('video').forEach((v) => { try { v.pause(); } catch {} });
-      M.hud.toast('TV i standby, paus', 'power');
-    } else if (e.power === 'on') M.hud.toast('TV på', 'power');
+    if (e.power === 'standby') document.querySelectorAll('video').forEach((v) => { try { v.pause(); } catch {} });
   });
   b.on('status', () => {
     const s = b.state;

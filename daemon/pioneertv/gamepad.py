@@ -78,7 +78,7 @@ QUIRKS = [
 
 
 # Buttons that still reach the shell while a game has the pad (see passthrough).
-SHELL_BUTTONS = {e.BTN_MODE, e.BTN_START, e.BTN_SELECT, e.KEY_HOMEPAGE}
+SHELL_BUTTONS = {e.BTN_MODE, e.BTN_START, e.KEY_HOMEPAGE}
 
 
 class Gamepad:
@@ -89,8 +89,8 @@ class Gamepad:
         self.mouse = mouse
         # Shared with the manager: {"passthrough": bool}. In passthrough the pad
         # is left to the page (Chromium's Gamepad API, e.g. RomM's emulator):
-        # no key translation, no pointer, only Guide, and long presses on
-        # Start (menu) and Select (TV), so there is always a way out.
+        # no key translation, no pointer, only Guide (menu, hold: home) and a
+        # long press on Start (menu), so there is always a way out.
         self.shared = shared if shared is not None else {"passthrough": False}
         button_map = dict(self.cfg["buttons"])
         for needle, quirk in QUIRKS:
@@ -167,8 +167,6 @@ class Gamepad:
                 return
             if code == e.BTN_START:
                 action = self._passthrough_start
-            elif code == e.BTN_SELECT:
-                action = self._passthrough_select
         if value:
             await self.dispatcher.press(action)
         else:
@@ -176,7 +174,6 @@ class Gamepad:
 
     # Stable objects: the dispatcher keys its long-press state on identity.
     _passthrough_start = {"long": {"system": "menu"}}
-    _passthrough_select = {"long": {"cec": "tv_toggle"}}
 
     async def on_abs(self, code: int, value: int) -> None:
         if self.shared.get("passthrough"):

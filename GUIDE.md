@@ -35,7 +35,7 @@ what was learned on the way.
 | L2, R2 | TV volume down, up (CEC, repeats while held) |
 | Right stick | Mouse pointer; click on the stick to left-click |
 | Start | Quick menu (also: hold Y) |
-| Select | Status toast; hold to toggle TV power |
+| Select | Status toast |
 | Guide / Home / PS / Xbox | Quick menu (press again to close it); in a Spel game, the pause panel instead. Hold: home. Also wakes the TV and switches input when the pad connects |
 
 All of it is in `/etc/pioneer-tv/config.toml` (see `daemon/config.example.toml`).
@@ -188,12 +188,11 @@ their bridge talks to the daemon over `/ws` directly.
 A service with `mode = "game"` puts the box in game mode while its pages are
 on screen, and so does any full-screen page with a large canvas. In game mode the daemon stops turning
 pad buttons into arrows, Enter and Escape, so the emulator reads the pad itself through the browser's
-Gamepad API and its own button mapping applies. The extension leaves the page's keys alone too, and a
-toast announces the mode.
+Gamepad API and its own button mapping applies. The extension leaves the page's keys alone too.
 
 A few buttons still belong to the box: Guide opens the quick menu and holding it goes home, holding
-Start opens the quick menu too, holding Select toggles the TV and the triggers set the TV volume. While
-an overlay is open the pad drives it as usual. Game mode ends when the page goes away or stops sending heartbeats.
+Start opens the quick menu too and the triggers set the TV volume. While an overlay is open the pad
+drives it as usual. Game mode ends when the page goes away or stops sending heartbeats.
 
 ## Updating the box
 
