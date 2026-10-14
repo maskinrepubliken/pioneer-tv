@@ -1,6 +1,6 @@
 # Spel: a Pioneer TV frontend for RomM
 
-Date: 2026-10-14 · Status: draft for review
+Date: 2026-10-14 · Status: approved
 
 ## Goal
 
@@ -52,9 +52,10 @@ input.
    - Spara läge
    - Ladda läge, with the time of the newest state
    - Starta om
-   - Spelets volym: slider 0–100 %, one value for all games, kept in
-     `chrome.storage.local` (localStorage in the preview), with the hint
-     "TV: L2/R2"
+   - TV-volym: one row; left/right step the TV volume down/up over CEC
+     (`bridge.cec('volume_down'|'volume_up')`, as the quick menu does), A
+     toggles mute. CEC can only step, never read or set a level, so the row
+     shows no position; the TV draws its own volume bar. Hint "även L2/R2".
    - Avsluta och spara
    - Footer: which pad is player 1 and 2.
 
