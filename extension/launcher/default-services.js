@@ -34,13 +34,12 @@ window.PioneerTV.defaultServices = [
     "glyph": "J"
   },
   {
-    "id": "romm",
+    "id": "spel",
     "name": "Spel",
     "tagline": "RomM",
-    "url": "http://100.123.142.8:8090/",
-    "search_url": "http://100.123.142.8:8090/search?search={query}",
+    "url": "spel.html?tv=1",
     "color": "#3b6ea5",
-    "glyph": "R"
+    "glyph": "S"
   },
   {
     "id": "svt1",

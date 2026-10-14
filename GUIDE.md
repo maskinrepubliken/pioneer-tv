@@ -157,7 +157,23 @@ remote does not always announce it.
 
 ## Games
 
-A service with `mode = "game"` (the id `romm` counts as one) puts the box in game mode while its pages are
+The Spel tile opens our own pages on top of [RomM](https://github.com/rommapp/romm):
+`extension/launcher/spel.html` to browse (recently played, consoles, collections,
+each console's games with covers) and `spela.html` to play, in RomM's EmulatorJS
+but without RomM's interface around it. On the start page X removes a game
+from Senast spelade; X again within five seconds puts it back.
+
+The pages never talk to RomM directly. They call `/romm/...` on their own
+origin, and the daemon forwards that to RomM with the API key added; only
+RomM's `/api/` and `/assets/` are reachable that way. That is why the tile
+opens the pages from the daemon (`http://127.0.0.1:8765/ext/launcher/spel.html`)
+rather than from the extension. Set RomM's address and a client API token
+(RomM: Settings → Client API Tokens, read scopes plus `roms.user.write` and
+`assets.write`) under Inställningar → RomM. A box set up before the Spel
+pages still has a `romm` service pointing at RomM's own web UI in its
+`settings.json`; change its address on the settings page to switch.
+
+A service with `mode = "game"` puts the box in game mode while its pages are
 on screen, and so does any full-screen page with a large canvas. In game mode the daemon stops turning
 pad buttons into arrows, Enter and Escape, so the emulator reads the pad itself through the browser's
 Gamepad API and its own button mapping applies. The extension leaves the page's keys alone too, and a
@@ -208,6 +224,11 @@ menu or a toast open), the settings page with its mock data, and a specimen
 of the Maskinrepubliken design system in its three themes. The design system
 is vendored in `design/maskinrepubliken/`; after pulling a new `tokens.json`,
 run `python3 dev/tokens-css.py` to regenerate `tokens.css`.
+
+The Spel pages (http://localhost:5178/spel) run against a real RomM: the
+preview forwards `/romm/` like the daemon does, with the address and key
+from `ROMM_URL` and `ROMM_API_KEY`, or from `~/.config/pioneer-tv/romm.env`
+holding those two lines. Keep the key in that file, not in the repo.
 
 Without the server, everything in `extension/` also works as plain files. Open
 

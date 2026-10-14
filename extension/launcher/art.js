@@ -206,6 +206,7 @@ window.PioneerTV = window.PioneerTV || {};
     `),
   };
   ART.plex = ART.jellyfin;
+  ART.spel = ART.romm;           // our own Spel pages on top of RomM
 
   P.art = {
     html(id, color) {
