@@ -15,7 +15,10 @@ window.PioneerTV = window.PioneerTV || {};
   const fresh = params.get('fresh') === '1';
   M.launcherUrl = new URL('spel.html?tv=1', location.href).href;
 
-  const CORES = { nes: 'fceumm', snes: 'snes9x', n64: 'mupen64plus_next', genesis: 'genesis_plus_gx' };
+  const CORES = { nes: 'fceumm', snes: 'snes9x', n64: 'mupen64plus_next', genesis: 'genesis_plus_gx', dos: 'dosbox_pure' };
+  // Cores built only with threads: they need the page cross-origin isolated,
+  // which the daemon does for this page (server.py, ISOLATED_PAGES).
+  const THREADED = new Set(['dosbox_pure']);
 
   // The game's file, or null when this page cannot play it: no core for the
   // console, or a game made of several files.
@@ -110,6 +113,7 @@ window.PioneerTV = window.PioneerTV || {};
     const url = romFileUrl(game);
     if (!url) return fail('Den här konsolen går inte att spela här än');
     const core = CORES[game.platform];
+    if (THREADED.has(core) && !window.crossOriginIsolated) return fail('Den här konsolen behöver en nyare version av boxen');
     M.player = { emulator: null, core, game };
 
     let blob;
@@ -119,6 +123,7 @@ window.PioneerTV = window.PioneerTV || {};
     Object.assign(window, {
       EJS_player: '#game',
       EJS_core: core,
+      EJS_threads: THREADED.has(core),
       EJS_gameUrl: URL.createObjectURL(blob),
       EJS_gameName: game.fileName.replace(/\.[^.]+$/, ''),
       EJS_pathtodata: M.romm.base + 'assets/emulatorjs/data/',

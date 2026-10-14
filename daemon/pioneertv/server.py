@@ -41,6 +41,7 @@ class Server:
         self.app.router.add_static("/static", WEB_DIR, show_index=False)
         if EXT_DIR.is_dir():
             self.app.router.add_static("/ext", EXT_DIR, show_index=False)
+        self.app.on_response_prepare.append(self._isolate_player)
         api = [
             ("GET", "/api/status", self.api_status),
             ("GET", "/api/settings", self.api_settings_get),
@@ -68,6 +69,19 @@ class Server:
             self.app.router.add_route(method, path, handler)
         self.app.router.add_route("*", "/romm/{path:.*}", self.romm_proxy)
         self.app.on_cleanup.append(self._close_romm_session)
+
+    # ------------------------------------------------------------ player page
+    # The player page is cross-origin isolated: some EmulatorJS cores (DOSBox
+    # Pure, for DOS) run in threads, and the browser only gives a page the
+    # SharedArrayBuffer they need with these two headers. Everything the page
+    # loads comes from this origin (/ext/ and /romm/), so nothing it uses is
+    # turned away; "credentialless" keeps any cross-origin extra working too.
+    ISOLATED_PAGES = ("/ext/launcher/spela.html",)
+
+    async def _isolate_player(self, request: web.Request, response: web.StreamResponse) -> None:
+        if request.path in self.ISOLATED_PAGES:
+            response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+            response.headers["Cross-Origin-Embedder-Policy"] = "credentialless"
 
     # ------------------------------------------------------------ auth
     @web.middleware

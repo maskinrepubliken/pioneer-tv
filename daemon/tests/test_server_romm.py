@@ -98,6 +98,18 @@ class RommProxy(unittest.IsolatedAsyncioTestCase):
         resp = await self.client.request("OPTIONS", "/romm/api/roms")
         self.assertEqual(resp.status, 405)
 
+    async def test_player_page_cross_origin_isolated(self):
+        # DOSBox Pure runs in threads, which need SharedArrayBuffer.
+        resp = await self.client.get("/ext/launcher/spela.html")
+        self.assertEqual(resp.status, 200)
+        self.assertEqual(resp.headers.get("Cross-Origin-Opener-Policy"), "same-origin")
+        self.assertEqual(resp.headers.get("Cross-Origin-Embedder-Policy"), "credentialless")
+
+    async def test_other_pages_not_isolated(self):
+        resp = await self.client.get("/ext/launcher/spel.html")
+        self.assertEqual(resp.status, 200)
+        self.assertNotIn("Cross-Origin-Embedder-Policy", resp.headers)
+
 
 if __name__ == "__main__":
     unittest.main()

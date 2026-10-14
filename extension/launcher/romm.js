@@ -20,7 +20,26 @@ window.PioneerTV = window.PioneerTV || {};
     }
   }
 
+  // A read that fails on the way (no answer, or RomM's own 5xx) is tried
+  // again: the first calls after a quiet spell sometimes get a 500 from RomM
+  // while the next one is fine (seen on the box, on the start view's virtual
+  // collections). Writes are sent once.
+  const RETRY_MS = [700, 2000];
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
   async function request(path, opts = {}) {
+    const read = !opts.method || opts.method === 'GET';
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await requestOnce(path, opts);
+      } catch (err) {
+        if (!read || attempt >= RETRY_MS.length || err.code !== 'down') throw err;
+        await sleep(RETRY_MS[attempt]);
+      }
+    }
+  }
+
+  async function requestOnce(path, opts) {
     let resp;
     try {
       resp = await fetch(BASE + path, opts);
