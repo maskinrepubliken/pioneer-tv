@@ -84,6 +84,8 @@ DEFAULTS: dict[str, Any] = {
     "ui": {"auto_keyboard": True, "volume_toast": False},
     "chromium": {"log_file": "/home/pi/.pioneer-tv/chromium.log"},
     "remote": {"token": ""},
+    # RomM for the Spel pages: base URL and a client API token (see /romm/ in server.py).
+    "romm": {"url": "", "api_key": ""},
     "bluetooth": {"auto_connect": True, "reconnect_interval": 300},
     "services": [],
 }

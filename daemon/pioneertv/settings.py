@@ -51,6 +51,13 @@ SCHEMA: list[dict] = [
             {"path": "remote.token", "type": "text", "label": "Åtkomstnyckel (tom = bara lokalt / Tailscale serve)", "secret": True},
         ],
     },
+    {
+        "id": "romm", "title": "RomM",
+        "fields": [
+            {"path": "romm.url", "type": "text", "label": "Adress till RomM"},
+            {"path": "romm.api_key", "type": "text", "label": "API-nyckel", "secret": True},
+        ],
+    },
 ]
 
 SERVICE_FIELDS = ["id", "name", "tagline", "url", "search_url", "color", "glyph", "logo", "mode", "fullscreen", "row", "kind"]
