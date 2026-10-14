@@ -122,12 +122,12 @@ and `assets.write`. It never reaches the browser.
 
 ## Recently played
 
-Read: `GET /api/roms` ordered by `last_played` desc, only games that have
-one, first 20. Remove: clear `last_played` through
-`PUT /api/roms/<id>/props`. The exact payload that clears it is to be
-confirmed against the API as the first implementation step; if RomM cannot
-clear it, we hide removed ids in a list kept by the daemon instead (same
-behaviour on screen).
+Read: `GET /api/roms?last_played=true&order_by=last_played&order_dir=desc&limit=20`
+(verified). Start: `PUT /api/roms/<id>/props?update_last_played=true`.
+Remove: `PUT /api/roms/<id>/props?remove_last_played=true` with body `{}`.
+The card leaves the row at once, but the request is sent only when the 5 s
+undo toast runs out (or the page is left), so undo puts the game back where
+it was without touching RomM.
 
 ## Errors
 
