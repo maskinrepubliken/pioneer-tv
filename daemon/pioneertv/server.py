@@ -3,6 +3,7 @@
   /ws            bridge to the Chromium extension
   /              settings page (also reachable over Tailscale via `tailscale serve`)
   /api/...       JSON API used by the settings page
+  /romm/...      RomM's API and assets with the API key added, for the Spel pages
 """
 from __future__ import annotations
 
@@ -13,9 +14,10 @@ from pathlib import Path
 from typing import Any, Callable, Coroutine
 from urllib.parse import urlparse
 
+import aiohttp
 from aiohttp import WSMsgType, web
 
-from . import settings, sysinfo, updater
+from . import romm, settings, sysinfo, updater
 
 log = logging.getLogger("pioneertv.server")
 WEB_DIR = Path(__file__).resolve().parent / "web"
@@ -32,6 +34,7 @@ class Server:
         self.hooks = hooks  # status(), system_action(name), cec(name), config_changed()
         self.clients: set[web.WebSocketResponse] = set()
         self.current_url: str | None = None
+        self.romm_session: aiohttp.ClientSession | None = None
         self.app = web.Application(middlewares=[self.auth_middleware])
         self.app.router.add_get("/ws", self.ws_handler)
         self.app.router.add_get("/", self.index)
@@ -63,6 +66,8 @@ class Server:
         ]
         for method, path, handler in api:
             self.app.router.add_route(method, path, handler)
+        self.app.router.add_route("*", "/romm/{path:.*}", self.romm_proxy)
+        self.app.on_cleanup.append(self._close_romm_session)
 
     # ------------------------------------------------------------ auth
     @web.middleware
@@ -145,6 +150,39 @@ class Server:
             return
         data = json.dumps(msg)
         await asyncio.gather(*(c.send_str(data) for c in list(self.clients)), return_exceptions=True)
+
+    # ------------------------------------------------------------ RomM
+    async def romm_proxy(self, request: web.Request) -> web.StreamResponse:
+        cfg = self.cfg.get("romm") or {}
+        target = romm.target_url(cfg.get("url", ""), request.match_info["path"], request.query_string)
+        if target is None:
+            return web.json_response({"error": "not_found"}, status=404)
+        if not cfg.get("api_key"):
+            return web.json_response({"error": "no_key"}, status=503)
+        if self.romm_session is None:
+            self.romm_session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=None, sock_connect=5))
+        body = await request.read()  # states and saves are small; ROMs only come back
+        headers = romm.request_headers(request.headers, cfg["api_key"])
+        headers.pop("Content-Length", None)  # aiohttp sets it from the body
+        try:
+            async with self.romm_session.request(request.method, target, headers=headers,
+                                                 data=body or None, allow_redirects=False) as upstream:
+                resp = web.StreamResponse(status=upstream.status)
+                for name, value in upstream.headers.items():
+                    if name.lower() in romm.RESPONSE_HEADERS:
+                        resp.headers[name] = value
+                await resp.prepare(request)
+                async for chunk in upstream.content.iter_chunked(65536):
+                    await resp.write(chunk)
+                await resp.write_eof()
+                return resp
+        except aiohttp.ClientError as exc:
+            log.warning("romm: %s %s failed: %s", request.method, target, exc)
+            return web.json_response({"error": "unreachable"}, status=502)
+
+    async def _close_romm_session(self, _app: web.Application) -> None:
+        if self.romm_session is not None:
+            await self.romm_session.close()
 
     # ------------------------------------------------------------ API
     async def _json(self, request: web.Request) -> dict:
