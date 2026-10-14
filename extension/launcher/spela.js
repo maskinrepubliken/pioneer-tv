@@ -27,6 +27,32 @@ window.PioneerTV = window.PioneerTV || {};
     return M.romm.romUrl(game);
   }
 
+  // RetroArch settings over EmulatorJS's own, appended to the retroarch.cfg
+  // its GameManager writes (the last line for a key wins). EmulatorJS keeps
+  // 64 ms of sound queued: on the Pi a frame the browser is late with (the
+  // first seconds, while the core is still being optimised, run at about 42
+  // frames a second; measured on the box) empties that and the sound
+  // crackles. 128 ms rides the dips out, a delay nobody notices on a TV.
+  const RETROARCH = { audio_latency: 128 };
+  function tuneRetroArch() {
+    let GM;
+    const patch = (cls) => {
+      if (!cls || !cls.prototype || cls.prototype.__pioneerTuned || typeof cls.prototype.getRetroArchCfg !== 'function') return;
+      const base = cls.prototype.getRetroArchCfg;
+      cls.prototype.getRetroArchCfg = function () {
+        return base.call(this) + Object.entries(RETROARCH).map(([k, v]) => `${k} = ${v}\n`).join('');
+      };
+      cls.prototype.__pioneerTuned = true;
+    };
+    // EmulatorJS's scripts set window.EJS_GameManager as they load; catch it
+    // before the emulator constructs one.
+    Object.defineProperty(window, 'EJS_GameManager', {
+      configurable: true,
+      get: () => GM,
+      set: (v) => { GM = v; patch(v); },
+    });
+  }
+
   const loading = $('loading');
   function say(text) { loading.hidden = false; loading.textContent = text; }
 
@@ -149,6 +175,7 @@ window.PioneerTV = window.PioneerTV || {};
         }
       },
     });
+    tuneRetroArch();
     const script = document.createElement('script');
     script.src = M.romm.base + 'assets/emulatorjs/data/loader.js';
     script.onerror = () => fail('RomM svarar inte');

@@ -258,7 +258,7 @@
 
   // Turning the TV off from the start page: the one action that is not a
   // service. Up from the tiles reaches it.
-  $('tv-off-icon').appendChild(icons.svg('power'));
+  $('tv-off').appendChild(icons.svg('power'));
   $('tv-off').addEventListener('click', () => b.cec('tv_off'));
 
   b.on('state', (s) => {

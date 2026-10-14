@@ -193,7 +193,7 @@ kind = "radio"
 # Also settable through PUT /api/settings {"pads": {...}}.
 # [pads."8F12522651"]
 # name = "Rosa handkontroll"
-# pointer = "#f6d0c8"
-# accent = "#c86f62"
-# highlight = "#f2b8ad"
-# (the green one: pointer = "#d3e2cf", accent = "#587352", highlight = "#a9c7a2")
+# pointer = "#EFDFD4"
+# accent = "#E09F96"
+# highlight = "#E09F96"
+# (the green one: pointer = "#C3D9CE", accent = "#42584A", highlight = "#C3D9CE")

@@ -18,19 +18,19 @@ body {
 
 .page { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; padding: 2.4vh 5vw 2vh; }
 
-/* ---- masthead: the TV's off button at the left, the status pills at the right ---- */
-.masthead { display: flex; align-items: center; justify-content: space-between; height: 2.2rem; }
+/* ---- masthead: the status pills at the right, and last the TV's off button ---- */
+.masthead { display: flex; align-items: center; justify-content: flex-end; height: 2.2rem; }
+/* Just the power symbol, the size of the pills beside it. */
 .tv-off {
-  display: inline-flex; align-items: center; gap: 0.45rem; margin: 0; padding: 0.35rem 0.9rem;
-  font: 600 0.95rem/1 var(--pioneertv-font-ui); color: var(--pioneertv-ink-muted); cursor: pointer;
-  background: transparent; border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-pill);
+  display: inline-flex; align-items: center; justify-content: center; margin: 0; padding: 0;
+  width: 2rem; height: 2rem; font-size: 1.1rem; color: var(--pioneertv-ink-muted); cursor: pointer;
+  background: transparent; border: 1px solid var(--pioneertv-line-strong); border-radius: 50%;
 }
-.tv-off span { display: inline-flex; font-size: 1rem; }
 .tv-off:hover, .tv-off.pioneertv-hover { background: var(--pioneertv-paper-hover); color: var(--pioneertv-ink); }
 .tv-off.pioneertv-focus {
   background: var(--pioneertv-ochre); color: var(--pioneertv-on-ochre); border-color: var(--pioneertv-ochre);
   outline: 0.2rem solid var(--pioneertv-focus) !important; outline-offset: 0.25rem !important;
-  box-shadow: none !important; border-radius: var(--pioneertv-radius-pill) !important;
+  box-shadow: none !important; border-radius: 50% !important;
 }
 .masthead-right { display: flex; align-items: center; gap: 1.1rem; }
 /* A status is never colour alone: each pill carries a hole, filled when the
