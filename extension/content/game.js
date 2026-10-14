@@ -42,7 +42,8 @@ window.PioneerTV = window.PioneerTV || {};
   }
 
   function overlayOpen() {
-    return (M.keyboard && M.keyboard.isOpen()) || (M.hud && M.hud.menu.isOpen()) || (M.logs && M.logs.isOpen());
+    return (M.keyboard && M.keyboard.isOpen()) || (M.hud && M.hud.menu.isOpen()) || (M.logs && M.logs.isOpen())
+      || (M.pageMenu && M.pageMenu.isOpen());
   }
 
   function send(force) {

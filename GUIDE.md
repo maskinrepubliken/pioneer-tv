@@ -36,7 +36,7 @@ what was learned on the way.
 | Right stick | Mouse pointer; click on the stick to left-click |
 | Start | Quick menu (also: hold Y) |
 | Select | Status toast; hold to toggle TV power |
-| Guide / Home / PS / Xbox | Quick menu (press again to close it). Hold: home. Also wakes the TV and switches input when the pad connects |
+| Guide / Home / PS / Xbox | Quick menu (press again to close it); in a Spel game, the pause panel instead. Hold: home. Also wakes the TV and switches input when the pad connects |
 
 All of it is in `/etc/pioneer-tv/config.toml` (see `daemon/config.example.toml`).
 The TV remote works too: keys the TV forwards over CEC are mapped in `[cec.remote]`.
@@ -172,6 +172,16 @@ rather than from the extension. Set RomM's address and a client API token
 `assets.write`) under Inställningar → RomM. A box set up before the Spel
 pages still has a `romm` service pointing at RomM's own web UI in its
 `settings.json`; change its address on the settings page to switch.
+
+In a game, Guide opens the pause panel: Fortsätt spela, Spara läge, Ladda
+läge, Starta om, TV-volym (left and right step the TV's volume over CEC, A
+mutes) and Avsluta och spara. Saving sends a state and the game's own save
+file to RomM; the next start resumes from the newest state. If saving fails
+on the way out, the panel says so and offers Försök igen or Avsluta ändå.
+
+Pages the daemon serves under `/ext/` carry their own copies of the shell
+scripts, so the manifest keeps the extension's content scripts off them, and
+their bridge talks to the daemon over `/ws` directly.
 
 A service with `mode = "game"` puts the box in game mode while its pages are
 on screen, and so does any full-screen page with a large canvas. In game mode the daemon stops turning

@@ -15,7 +15,8 @@
   // Y: the keyboard, except that with the quick menu open it closes the menu
   // (the menu is what Y's long press opened, so Y is the way out of it too).
   b.on('keyboard', () => (M.hud.menu.isOpen() ? M.hud.menu.close() : M.keyboard.toggle()));
-  b.on('menu', () => M.hud.menu.toggle());
+  // A page with its own menu (the game player's pause panel) takes Guide.
+  b.on('menu', () => (M.pageMenu ? M.pageMenu.toggle() : M.hud.menu.toggle()));
   b.on('logs', () => M.logs.toggle());
   b.on('escape', () => {
     if (M.hud.menu.isOpen()) M.hud.menu.close();

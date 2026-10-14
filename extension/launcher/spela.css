@@ -42,3 +42,28 @@ body {
   outline: 0.2rem solid var(--pioneertv-focus) !important; outline-offset: 0.25rem !important;
   box-shadow: none !important; border-radius: var(--pioneertv-radius-pill) !important;
 }
+
+/* ---- pause panel: paper on the right, over the paused game ---- */
+.paus {
+  position: fixed; top: 4vh; right: 3vw; bottom: 4vh; width: 24rem; margin: 0; inset-inline-start: auto;
+  display: flex; flex-direction: column; gap: 0.7rem; padding: 1.6rem 1.6rem 1.2rem;
+  background: var(--pioneertv-paper); color: var(--pioneertv-ink);
+  border: 0; border-radius: var(--pioneertv-radius-panel);
+}
+.paus-label {
+  margin: 0; font-family: var(--pioneertv-font-mono); font-size: 0.8rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--pioneertv-ink-faint);
+}
+.paus-title {
+  margin: 0 0 0.3rem; font-family: var(--pioneertv-font-display); font-weight: 900; font-size: 1.6rem; line-height: 1.05;
+  letter-spacing: -0.01em; text-transform: uppercase;
+}
+.paus-status { margin: 0; min-height: 1.2rem; font-family: var(--pioneertv-font-mono); font-size: 0.85rem; color: var(--pioneertv-ink-muted); }
+.paus-status.fel { color: var(--pioneertv-alarm); }
+.paus-items { display: flex; flex-direction: column; gap: 0.6rem; }
+.paus-item { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding: 0.8rem 1.4rem; }
+.paus-detail { font-family: var(--pioneertv-font-mono); font-size: 0.8rem; font-weight: 400; color: var(--pioneertv-ink-faint); }
+.paus-item.primar .paus-detail { color: var(--pioneertv-on-ochre); }
+.paus-disabled { color: var(--pioneertv-ink-faint); border-color: var(--pioneertv-line); }
+.paus-pads { margin-top: auto; padding-top: 0.8rem; border-top: 1px solid var(--pioneertv-line); }
+.paus-pads p { margin: 0.15rem 0; font-family: var(--pioneertv-font-mono); font-size: 0.8rem; color: var(--pioneertv-ink-muted); }
