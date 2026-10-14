@@ -165,7 +165,10 @@ window.PioneerTV = window.PioneerTV || {};
     },
 
     onKeyDown(e) {
-      if (!this.enabled || !e.isTrusted) return; // synthetic events come from our own keyboard
+      if (!e.isTrusted) return;            // synthetic events come from our own keyboard
+      // In a game the page gets the keys (enabled is off), but an overlay
+      // opened over it (Home: the quick menu) still needs the d-pad.
+      if (!this.enabled && !this.captured) return;
       // Navigating with the d-pad or the left stick (both arrive as arrow keys)
       // hides the pointer straight away, in the page and in the overlays alike.
       if (DIRS[e.key] && M.cursor && M.cursor.hide) M.cursor.hide();
@@ -248,7 +251,7 @@ window.PioneerTV = window.PioneerTV || {};
     // Consume a key press and remember it, so its release is consumed too.
     eat(e) { this.stop(e); this._eaten.add(e.key); },
     onKeyUp(e) {
-      if (!this.enabled || !e.isTrusted) return;
+      if (!e.isTrusted || (!this.enabled && !this.captured)) return;
       if (this.captured && (this.captured.captureAll !== false || PAD_KEYS.has(e.key))) {
         // The layer sees the release first (the keyboard types on it), then
         // it is swallowed so the page underneath never gets half a press.
