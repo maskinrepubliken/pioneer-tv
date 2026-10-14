@@ -27,8 +27,8 @@ window.PioneerTV = window.PioneerTV || {};
     return M.romm.romUrl(game);
   }
 
-  // RetroArch settings over EmulatorJS's own, appended to the retroarch.cfg
-  // its GameManager writes (the last line for a key wins). EmulatorJS keeps
+  // RetroArch settings over EmulatorJS's own, in the retroarch.cfg its
+  // GameManager writes. EmulatorJS keeps
   // 64 ms of sound queued: on the Pi a frame the browser is late with (the
   // first seconds, while the core is still being optimised, run at about 42
   // frames a second; measured on the box) empties that and the sound
@@ -40,7 +40,15 @@ window.PioneerTV = window.PioneerTV || {};
       if (!cls || !cls.prototype || cls.prototype.__pioneerTuned || typeof cls.prototype.getRetroArchCfg !== 'function') return;
       const base = cls.prototype.getRetroArchCfg;
       cls.prototype.getRetroArchCfg = function () {
-        return base.call(this) + Object.entries(RETROARCH).map(([k, v]) => `${k} = ${v}\n`).join('');
+        // Replace EmulatorJS's own line for a key rather than add a second
+        // one: with both in the file RetroArch kept 64 (seen on the box).
+        let cfg = base.call(this);
+        for (const [k, v] of Object.entries(RETROARCH)) {
+          const line = `${k} = ${v}`;
+          const re = new RegExp(`^${k}\\s*=.*$`, 'm');
+          cfg = re.test(cfg) ? cfg.replace(re, line) : `${cfg}${line}\n`;
+        }
+        return cfg;
       };
       cls.prototype.__pioneerTuned = true;
     };
