@@ -188,10 +188,12 @@ kind = "radio"
 # Pads by the serial number of their USB device: each 2.4 GHz dongle has its
 # own, so two identical pads can be told apart (lsusb -v, or
 # /sys/bus/usb/devices/*/serial). A name for the menu and the notices, and
-# the colours the pointer (fill) and the focus ring take while it is in use.
+# the colours the pointer (fill), the focus ring (accent) and everything
+# ochre (highlight) take while it is in use.
 # Also settable through PUT /api/settings {"pads": {...}}.
 # [pads."8F12522651"]
 # name = "Rosa handkontroll"
-# pointer = "#f2c4bb"
-# accent = "#b4544b"
-# (the green one: pointer = "#cddccb", accent = "#587352")
+# pointer = "#f6d0c8"
+# accent = "#c86f62"
+# highlight = "#f2b8ad"
+# (the green one: pointer = "#d3e2cf", accent = "#587352", highlight = "#a9c7a2")

@@ -201,8 +201,8 @@ def update(cfg: dict, payload: dict) -> dict:
         for serial, p in payload["pads"].items():
             if not isinstance(p, dict) or not str(serial).strip():
                 continue
-            clean = {k: str(p[k]).strip() for k in ("name", "pointer", "accent") if p.get(k)}
-            for k in ("pointer", "accent"):
+            clean = {k: str(p[k]).strip() for k in ("name", "pointer", "accent", "highlight") if p.get(k)}
+            for k in ("pointer", "accent", "highlight"):
                 if k in clean and not _HEX.match(clean[k]):
                     raise ValueError(f"{k} for {serial} is not a #rrggbb colour")
             pads[str(serial).strip()] = clean

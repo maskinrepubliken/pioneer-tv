@@ -87,7 +87,8 @@ DEFAULTS: dict[str, Any] = {
     # RomM for the Spel pages: base URL and a client API token (see /romm/ in server.py).
     "romm": {"url": "", "api_key": ""},
     # Pads by the serial number of their USB device (a 2.4 GHz dongle):
-    # {"<serial>": {"name": ..., "pointer": "#rrggbb", "accent": "#rrggbb"}}.
+    # {"<serial>": {"name": ..., "pointer": "#rrggbb", "accent": "#rrggbb",
+    # "highlight": "#rrggbb"}}: pointer fill, focus ring, and what is ochre.
     "pads": {},
     "bluetooth": {"auto_connect": True, "reconnect_interval": 300},
     "services": [],

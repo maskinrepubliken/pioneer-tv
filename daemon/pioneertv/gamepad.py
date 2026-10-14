@@ -94,13 +94,14 @@ class Gamepad:
         # long press on Start (menu), so there is always a way out.
         self.shared = shared if shared is not None else {"passthrough": False}
         # Who this pad is: [pads."<USB serial>"] in the config gives it a name
-        # and its colours (pointer fill, focus ring), e.g. the pink and the
-        # green 8BitDo, which otherwise report the very same name.
+        # and its colours (pointer fill, focus ring, and the highlight that
+        # stands in for ochre), e.g. the pink and the green 8BitDo, which
+        # otherwise report the very same name.
         self.serial = usb_serial(dev)
         own = (cfg.get("pads") or {}).get(self.serial) or {} if self.serial else {}
         self.label = own.get("name") or dev.name
         self.named = bool(own.get("name"))
-        self.colors = {k: own[k] for k in ("pointer", "accent") if own.get(k)}
+        self.colors = {k: own[k] for k in ("pointer", "accent", "highlight") if own.get(k)}
         if self.named:
             log.info("%s (%s) is %s", dev.name, self.serial, self.label)
         button_map = dict(self.cfg["buttons"])
@@ -168,9 +169,15 @@ class Gamepad:
         return {"key": self.serial or self.dev.path, "name": self.label, "named": self.named, **self.colors}
 
     def mark_active(self) -> None:
-        """This pad is the one in use: the extension takes its colours."""
+        """This pad is the one in use: the extension takes its colours. Sent
+        when the pad changes, and again on the first input after a second's
+        rest: the player matches that moment against the browser's gamepads
+        to tell which of two identical pads is which (spela.js)."""
         key = self.serial or self.dev.path
-        if self.shared.get("active") == key:
+        now = time.monotonic()
+        quiet = now - self.shared.get("active_at", 0.0) > 1.0
+        self.shared["active_at"] = now
+        if self.shared.get("active") == key and not quiet:
             return
         self.shared["active"] = key
         notify = self.shared.get("notify_active")

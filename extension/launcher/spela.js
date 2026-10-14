@@ -306,6 +306,52 @@ window.PioneerTV = window.PioneerTV || {};
     },
   };
 
+  // Which browser gamepad is which of the box's pads. The browser sees two
+  // identical 8BitDo; the daemon knows them apart by their dongles and says
+  // which one was just used (active_pad: on a change of pad, and on the first
+  // input after a rest). A browser pad that pressed within the same moment is
+  // that pad.
+  const padNames = new Map();          // "id_index" -> the box's name for it
+  const lastPress = new Map();         // "id_index" -> when it last pressed
+  let pendingPad = null;               // an active_pad no browser pad matched yet
+  const MATCH_MS = 400;
+  const padKey = (g) => `${g.id}_${g.index}`;
+  function bind(pad, at) {
+    const near = [...lastPress].filter(([, t]) => Math.abs(t - at) <= MATCH_MS);
+    if (near.length !== 1) return false;
+    padNames.set(near[0][0], pad.name);
+    return true;
+  }
+  const seen = new Map();              // "id_index" -> was anything pressed
+  setInterval(() => {
+    const now = performance.now();
+    for (const g of navigator.getGamepads ? navigator.getGamepads() : []) {
+      if (!g) continue;
+      const k = padKey(g);
+      const down = g.buttons.some((x) => x.pressed) || g.axes.some((v) => Math.abs(v) > 0.6);
+      if (down && !seen.get(k)) {
+        lastPress.set(k, now);
+        if (pendingPad && now - pendingPad.at <= MATCH_MS && bind(pendingPad.pad, now)) pendingPad = null;
+      }
+      seen.set(k, down);
+    }
+  }, 50);
+  M.bridge.on('active_pad', (e) => {
+    if (!e.pad || !e.pad.named) return;
+    const now = performance.now();
+    if (!bind(e.pad, now)) pendingPad = { pad: e.pad, at: now };
+  });
+
+  function padName(g) {
+    const name = padNames.get(padKey(g));
+    if (name) return name;
+    // One pad on each side: no need to match.
+    const box = ((M.bridge.state.status || {}).gamepads) || [];
+    const browser = navigator.getGamepads ? [...navigator.getGamepads()].filter(Boolean) : [];
+    if (box.length === 1 && browser.length === 1) return box[0].name;
+    return g.id.replace(/\s*\(.*$/, '');
+  }
+
   // Who is which player: EmulatorJS's slots as ejs-players.js ordered them.
   function padLines() {
     const sel = (window.EJS_emulator && window.EJS_emulator.gamepadSelection) || [];
@@ -314,7 +360,7 @@ window.PioneerTV = window.PioneerTV || {};
     for (let i = 0; i < 2; i++) {
       const pad = pads.find((g) => `${g.id}_${g.index}` === sel[i]) || (!sel.some(Boolean) ? pads[i] : null);
       const p = document.createElement('p');
-      p.textContent = `Spelare ${i + 1} · ${pad ? pad.id.replace(/\s*\(.*$/, '') : '—'}`;
+      p.textContent = `Spelare ${i + 1} · ${pad ? padName(pad) : '—'}`;
       lines.push(p);
     }
     return lines;

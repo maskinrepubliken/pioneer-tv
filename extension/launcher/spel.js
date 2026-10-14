@@ -122,6 +122,13 @@
     view.appendChild(box);
   }
 
+  // While a view loads: "Laddar…" in the middle, in italics, as the player
+  // says it while a game loads.
+  function loadingView() {
+    view.innerHTML = '';
+    view.appendChild(el('p', 'spel-loading', 'Laddar…'));
+  }
+
   function renderError(err) {
     const code = err && err.code;
     if (code === 'no_key') return message('Lägg in en API-nyckel för RomM under Inställningar → RomM', null, route);
@@ -199,12 +206,12 @@
   window.addEventListener('pagehide', () => { for (const id of [...pending.keys()]) send(id, true); });
 
   // ------------------------------------------------------------ grid
-  // A console's or a collection's games: covers five across, an info panel
+  // A console's or a collection's games: covers four across, an info panel
   // that follows the focus, letter jumps on L1/R1 and a search field. Only
   // the rows around the focus are in the DOM (a console can have nearly a
   // thousand games): the spatial navigation moves into the row just outside
   // the view by geometry, and focusin then shifts the window around it.
-  const COLS = 5;
+  const COLS = 4;
   const WINDOW_ROWS = 3;           // rows kept either side of the focused row
 
   // The letter a game files under, taken from RomM's sort key so the jumps
@@ -370,12 +377,19 @@
     const token = ++routeToken;
     const hash = location.hash || '#/';
     const parts = hash.slice(2).split('/').map(decodeURIComponent);
+    // A view that takes a moment (a console of nearly a thousand games) says
+    // so instead of leaving the last one on screen.
+    let settled = false;
+    const slow = setTimeout(() => { if (!settled && token === routeToken) loadingView(); }, 300);
     try {
       if (parts[0] === 'platform') await grid({ platformId: Number(parts[1]) }, token);
       else if (parts[0] === 'collection') await grid({ collection: { kind: parts[1], id: parts[2] } }, token);
       else await start(token);
     } catch (err) {
       if (token === routeToken) renderError(err);
+    } finally {
+      settled = true;
+      clearTimeout(slow);
     }
   }
   window.addEventListener('hashchange', route);
@@ -399,6 +413,6 @@
   });
 
   M.spel = { card, letterKey, isCurrent: (t) => t === routeToken };
-  message('Laddar…');
+  loadingView();
   route();
 })(window.PioneerTV);

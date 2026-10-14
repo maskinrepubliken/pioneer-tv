@@ -59,8 +59,9 @@ body {
 .cover img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .cover-paper { padding: 0.6rem; text-align: center; font-family: var(--pioneertv-font-prose); font-size: 1rem; line-height: 1.2; color: var(--pioneertv-ink-muted); }
 
-.spel-card--recent { width: 10.5rem; padding: 0.55rem; }
-.spel-card--recent .cover { height: 8.4rem; }
+.spel-card--recent { width: 12rem; padding: 0.4rem 0.4rem 0.55rem; }
+.spel-card--recent .cover { height: 10rem; border-radius: calc(var(--pioneertv-radius-l) - 0.4rem); }
+.spel-card--recent .title, .spel-card--recent .meta { padding: 0 0.25rem; }
 .spel-card .title {
   margin-top: 0.45rem; font-family: var(--pioneertv-font-prose); font-size: 1rem; line-height: 1.2;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
@@ -78,6 +79,10 @@ body {
 .spel-card--group .meta { margin-top: 0.35rem; }
 
 /* ---- messages: loading, errors ---- */
+.spel-loading {
+  flex: 1; margin: 0; display: flex; align-items: center; justify-content: center;
+  font: italic 400 1.8rem/1.2 var(--pioneertv-font-prose); color: var(--pioneertv-ink-muted);
+}
 .spel-message { flex: 1; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 1.2rem; max-width: 46rem; }
 .spel-message p { margin: 0; font-family: var(--pioneertv-font-prose); font-size: 1.6rem; line-height: 1.3; }
 .spel-message .hint { font-size: 1.1rem; color: var(--pioneertv-ink-muted); }
@@ -120,16 +125,20 @@ html:not(.pioneertv-pointer) .spel-search:focus {
   padding: 0.6rem; margin: -0.6rem;     /* room for the focus ring */
 }
 .spel-grid-scroll::-webkit-scrollbar { display: none; }
+/* Four across, the cover filling its card up to the title: the box art is
+   the point of the page. Rows have a fixed height (the grid keeps only the
+   rows around the focus in the DOM; see spel.js). */
 .spel-grid {
-  display: grid; gap: 0.9rem;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  grid-template-rows: repeat(var(--rows, 1), 9.6rem);
+  display: grid; gap: 1.1rem 1rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(var(--rows, 1), 13.4rem);
 }
-.spel-card--grid { padding: 0.45rem; }
-.spel-card--grid .cover { height: 6.6rem; flex: none; }
-.spel-card--grid .title { font-size: 0.9rem; -webkit-line-clamp: 1; }
+.spel-card--grid { padding: 0.4rem 0.4rem 0.55rem; }
+.spel-card--grid .cover { flex: 1; min-height: 0; border-radius: calc(var(--pioneertv-radius-l) - 0.4rem); }
+.spel-card--grid .cover img { object-fit: contain; }
+.spel-card--grid .title { flex: none; margin-top: 0.5rem; padding: 0 0.25rem; font-size: 1rem; -webkit-line-clamp: 1; }
 
-.spel-info { width: 19rem; flex: none; padding-left: 1.6rem; border-left: 1px solid var(--pioneertv-line); overflow: hidden; }
+.spel-info { width: 16.5rem; flex: none; padding-left: 1.6rem; border-left: 1px solid var(--pioneertv-line); overflow: hidden; }
 .spel-info-title {
   margin: 0 0 0.5rem; font-family: var(--pioneertv-font-display); font-weight: 900; font-size: 1.5rem; line-height: 1.05;
   letter-spacing: -0.01em; text-transform: uppercase;
