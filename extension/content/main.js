@@ -34,6 +34,7 @@
   // The pad in use lends the pointer its colour, the focus ring its accent
   // and everything ochre its highlight (the pink and the green 8BitDo;
   // [pads] in the config). A pad without colours leaves the design system's.
+  // The change fades (content.css registers these as colours).
   function applyPad(pad) {
     const root = document.documentElement;
     if (!root) return;
@@ -51,8 +52,9 @@
     const [r, g, b] = m.slice(1).map((h) => parseInt(h, 16) / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
     return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.18;
   }
+  // Every page starts in the design system's own colours (ochre); the pad's
+  // colours come with its first press there.
   b.on('active_pad', (e) => applyPad(e.pad));
-  b.on('state', (s) => { if (s.status && 'active_pad' in s.status) applyPad(s.status.active_pad); });
   b.on('tv', (e) => {
     if (e.power === 'standby') document.querySelectorAll('video').forEach((v) => { try { v.pause(); } catch {} });
   });

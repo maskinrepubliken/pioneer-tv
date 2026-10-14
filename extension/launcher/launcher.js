@@ -249,7 +249,6 @@
 
   // Pixel icons for the static bits of the page.
   const icons = M.icons;
-  $('search-icon').appendChild(icons.svg('search'));
   document.querySelectorAll('[data-icon]').forEach((el) => el.appendChild(icons.svg(el.dataset.icon)));
   $('pill-wifi').appendChild(icons.svg('wifi'));
   $('pill-tailscale').appendChild(icons.svg('link'));
@@ -260,6 +259,16 @@
   // service. Up from the tiles reaches it.
   $('tv-off').appendChild(icons.svg('power'));
   $('tv-off').addEventListener('click', () => b.cec('tv_off'));
+  // Search: the keyboard opens on the hidden field and shows what is typed;
+  // OK lists the services to search on.
+  $('search-btn').appendChild(icons.svg('search'));
+  $('search-btn').addEventListener('click', () => {
+    searchInput.value = '';
+    targetsSection.hidden = true;
+    M.keyboard.open(searchInput);
+  });
+  $('menu-btn').appendChild(icons.svg('menu'));
+  $('menu-btn').addEventListener('click', () => M.hud.menu.open());
 
   b.on('state', (s) => {
     $('pill-daemon').classList.toggle('on', s.daemonConnected);
@@ -297,30 +306,17 @@
   }
   b.on('state', (s) => applyStatus(s.status));
 
-  // The page does not scroll, and the keyboard sheet covers its lower third.
-  // Lift the page just enough to keep the field being typed into visible.
-  const page = document.querySelector('.page');
-  b.on('keyboard:open', () => requestAnimationFrame(() => {
-    const kb = document.querySelector('.pioneertv-keyboard');
-    const field = document.activeElement && M.nav.isTextField(document.activeElement) ? document.activeElement : searchInput;
-    if (!kb || !field) return;
-    const box = (field.closest('.search') || field).getBoundingClientRect();
-    const visibleBottom = window.innerHeight - kb.getBoundingClientRect().height;
-    const shift = Math.max(0, box.bottom + 24 - visibleBottom);
-    page.style.transform = shift ? `translateY(${-shift}px)` : '';
-  }));
-  b.on('keyboard:close', () => { page.style.transform = ''; });
 
   // ?demo=keyboard|menu|logs opens an overlay after load, for design screenshots.
   const demo = new URLSearchParams(location.search).get('demo');
   if (demo) setTimeout(() => {
-    if (demo === 'keyboard') { M.nav.focus(searchInput); M.keyboard.open(searchInput); }
+    if (demo === 'keyboard') $('search-btn').click();
     else if (demo === 'menu') M.hud.menu.open();
     else if (demo === 'logs') M.logs.open(0);
     else if (demo === 'toast') M.hud.toast('Handkontroll ansluten', 'gamepad', 60000);
   }, 900);
 
   render();
-  // Land on the first tile, not the search field, so Enter does not pop the keyboard.
+  // Land on the first tile.
   requestAnimationFrame(() => M.nav.focus(tilesEl.firstElementChild, { scroll: false }));
 })(window.PioneerTV);

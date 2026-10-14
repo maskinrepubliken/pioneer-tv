@@ -20,7 +20,9 @@
         <span class="pill" id="pill-tailscale" title="Tailscale"></span>
         <span class="pill" id="pill-gamepad" title="Handkontroll"></span>
         <span class="pill" id="pill-daemon" title="Daemon"></span>
-        <button class="tv-off" id="tv-off" type="button" title="Stäng av TV:n" aria-label="Stäng av TV:n"></button>
+        <button class="head-btn" id="search-btn" type="button" title="Sök" aria-label="Sök"></button>
+        <button class="head-btn" id="menu-btn" type="button" title="Meny" aria-label="Meny"></button>
+        <button class="head-btn" id="tv-off" type="button" title="Stäng av TV:n" aria-label="Stäng av TV:n"></button>
       </div>
     </header>
 
@@ -28,12 +30,11 @@
       <section class="tiles" id="tiles" aria-label="Tjänster"></section>
       <section class="tiles tiles-live" id="live" aria-label="Direkt: tv och radio"></section>
 
-      <section class="row">
-        <form class="search pioneertv-card" id="search-form" role="search">
-          <span class="search-icon" id="search-icon"></span>
-          <input id="search" type="search" placeholder="Sök film, serie eller spel…" autocomplete="off" data-pioneertv-initial>
-        </form>
-      </section>
+      <!-- The search button types into this through the on-screen keyboard,
+           which shows the text; the field itself stays out of sight. -->
+      <form class="search-field" id="search-form" role="search">
+        <input id="search" type="search" placeholder="Sök film, serie eller spel…" autocomplete="off" aria-label="Sök">
+      </form>
 
       <section class="search-targets" id="search-targets" hidden>
         <p class="targets-title">Sök efter <em id="targets-query"></em> på</p>

@@ -20,16 +20,16 @@ body {
    focus ring) inside what the TV shows: it crops the edges of the picture. */
 .page { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; padding: 5.5vh 5vw 2vh; }
 
-/* ---- masthead: the status pills at the right, and last the TV's off button ---- */
+/* ---- masthead: the status pills, then search, the menu and the TV's off button ---- */
 .masthead { display: flex; align-items: center; justify-content: flex-end; height: 2.2rem; }
-/* Just the power symbol, the size of the pills beside it. */
-.tv-off {
+/* Round buttons with just their symbol. */
+.head-btn {
   display: inline-flex; align-items: center; justify-content: center; margin: 0; padding: 0;
   width: 2rem; height: 2rem; font-size: 1.1rem; color: var(--pioneertv-ink-muted); cursor: pointer;
   background: transparent; border: 1px solid var(--pioneertv-line-strong); border-radius: 50%;
 }
-.tv-off:hover, .tv-off.pioneertv-hover { background: var(--pioneertv-paper-hover); color: var(--pioneertv-ink); }
-.tv-off.pioneertv-focus {
+.head-btn:hover, .head-btn.pioneertv-hover { background: var(--pioneertv-paper-hover); color: var(--pioneertv-ink); }
+.head-btn.pioneertv-focus {
   background: var(--pioneertv-ochre); color: var(--pioneertv-on-ochre); border-color: var(--pioneertv-ochre);
   outline: 0.2rem solid var(--pioneertv-focus) !important; outline-offset: 0.25rem !important;
   box-shadow: none !important; border-radius: 50% !important;
@@ -123,29 +123,9 @@ body {
 .tile-live.is-opening .perf { display: none; }
 .tile.is-opening .band { background: var(--pioneertv-ochre); }
 
-/* ---- search row. The system sets fields in paper-sunken, but here that is a
-   shade from the paper-hover of a selected tile, so the resting field would
-   read as selected. It rests on raised paper like the tiles instead, with the
-   line-strong edge, and fills with paper-hover only when it has the focus. ---- */
-.row { display: grid; grid-template-columns: 1fr; gap: 1.5rem; align-items: stretch; }
-.search {
-  display: flex; align-items: center; gap: 0.8rem; padding-left: 1.2rem; margin: 0;
-  background: var(--pioneertv-paper-raised); border-radius: var(--pioneertv-radius-m);
-}
-.search-icon { font-size: 1.5rem; color: var(--pioneertv-ink-muted); display: inline-flex; }
-.search input {
-  flex: 1; height: 3.8rem; background: transparent; border: 0; outline: 0;
-  color: var(--pioneertv-ink); font: 1.5rem var(--pioneertv-font-prose);
-}
-/* The field speaks in Fraunces: the prompt in its italic, like a caption. */
-.search input::placeholder { color: var(--pioneertv-ink-faint); font-style: italic; }
-.search input::-webkit-search-cancel-button, .search input::-webkit-search-decoration { -webkit-appearance: none; appearance: none; display: none; }
-.search input.pioneertv-focus { outline: none !important; box-shadow: none !important; }
-html:not(.pioneertv-pointer) .search.pioneertv-card:focus-within {
-  background: var(--pioneertv-paper-hover); border-color: var(--pioneertv-ink);
-  outline: 0.25rem solid var(--pioneertv-focus); outline-offset: 0.3rem;
-}
-html:not(.pioneertv-pointer) .search.pioneertv-card:focus-within .search-icon { color: var(--pioneertv-ink); }
+/* ---- the search field, out of sight: the keyboard shows what is typed ---- */
+.search-field { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; margin: 0; }
+.search-field input { width: 1px; height: 1px; border: 0; padding: 0; }
 
 /* ---- search targets: secondary buttons; the focused one lights in ochre ---- */
 .search-targets { padding-top: 0.6rem; }
@@ -183,4 +163,3 @@ html:not(.pioneertv-pointer) .search.pioneertv-card:focus-within .search-icon { 
 .tile.pioneertv-focus, .target.pioneertv-focus { box-shadow: none !important; }
 .tile.pioneertv-focus { border-radius: var(--pioneertv-radius-card) !important; }
 .target.pioneertv-focus { border-radius: var(--pioneertv-radius-pill) !important; }
-.search input.pioneertv-focus { box-shadow: none !important; }
