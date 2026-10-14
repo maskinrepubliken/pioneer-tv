@@ -26,6 +26,8 @@ window.PioneerTV = window.PioneerTV || {};
     shift: '<path d="M12 4l7 8h-4v7H9v-7H5z"/>',
     backspace: '<path d="M8 6h12v12H8l-5-6z"/><path d="M12 10l4 4M16 10l-4 4"/>',
     dot: '<circle cx="12" cy="12" r="3.5" fill="currentColor" stroke="none"/>',
+    // The daemon: a small devil's head, horns and a grin.
+    daemon: '<path d="M5 3.5c-.3 3 .6 5 2.6 6.2"/><path d="M19 3.5c.3 3-.6 5-2.6 6.2"/><circle cx="12" cy="14" r="6.5"/><path d="M9.2 12.6l1.6.8M14.8 12.6l-1.6.8"/><path d="M9.3 16.3c1.6 1.3 3.8 1.3 5.4 0"/>',
     arrowUp: '<path d="M12 19V5"/><path d="M6 11l6-6 6 6"/>',
     arrowDown: '<path d="M12 5v14"/><path d="M6 13l6 6 6-6"/>',
     arrowLeft: '<path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/>',

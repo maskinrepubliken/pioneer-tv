@@ -253,7 +253,7 @@
   $('pill-wifi').appendChild(icons.svg('wifi'));
   $('pill-tailscale').appendChild(icons.svg('link'));
   $('pill-gamepad').appendChild(icons.svg('gamepad'));
-  $('pill-daemon').appendChild(icons.svg('dot'));
+  $('pill-daemon').appendChild(icons.svg('daemon'));
 
   // Turning the TV off from the start page: the one action that is not a
   // service. Up from the tiles reaches it.
