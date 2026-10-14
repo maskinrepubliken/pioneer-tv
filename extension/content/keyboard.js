@@ -2,7 +2,8 @@
 //
 // A bottom sheet driven by the d-pad. It never takes focus itself: the target
 // field keeps focus and its caret, and we write into it in a way React-style
-// controlled inputs notice.
+// controlled inputs notice. The sheet often covers the field, so its top row
+// shows what the field holds (or its placeholder), with the caret.
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const LAYERS = {
@@ -53,6 +54,10 @@ window.PioneerTV = window.PioneerTV || {};
         const r = this.target.getBoundingClientRect();
         if (r.bottom < 0 || r.top > window.innerHeight) this.target.scrollIntoView({ block: 'nearest' });
       } catch {}
+      // Typing on a real keyboard goes straight to the field: follow it.
+      this._onInput = () => this.showValue();
+      target.addEventListener('input', this._onInput);
+      target.addEventListener('keyup', this._onInput);
       // A pointer click outside the keyboard closes it (see onOutsidePress).
       this._onOutside = (e) => this.onOutsidePress(e);
       for (const t of ['pointerdown', 'mousedown', 'mouseup', 'click']) window.addEventListener(t, this._onOutside, true);
@@ -62,6 +67,12 @@ window.PioneerTV = window.PioneerTV || {};
     close() {
       if (this.root) M.bridge.unmount(this.root);
       this.root = null;
+      this.field = null;
+      if (this.target && this._onInput) {
+        this.target.removeEventListener('input', this._onInput);
+        this.target.removeEventListener('keyup', this._onInput);
+      }
+      this._onInput = null;
       if (M.nav.captured === this) M.nav.captured = null;
       if (this._onOutside) {
         const fn = this._onOutside;
@@ -115,6 +126,15 @@ window.PioneerTV = window.PioneerTV || {};
       root.setAttribute('data-pioneertv-overlay', '');
       M.bridge.sealOverlay(root);
       root.addEventListener('mousedown', (e) => e.preventDefault()); // keep focus in the field
+      const top = document.createElement('div');
+      top.className = 'pioneertv-keytop';
+      this.field = document.createElement('div');
+      this.field.className = 'pioneertv-keyfield';
+      const hint = document.createElement('div');
+      hint.className = 'pioneertv-keyhint';
+      hint.textContent = 'A skriv · X eller håll A: OK · B stäng';
+      top.append(this.field, hint);
+      root.appendChild(top);
       const rows = LAYERS[this.layer];
       this.buttons = rows.map((row, ri) => row.map((key, ci) => {
         const def = typeof key === 'string' ? { k: key, label: key, w: 1 } : key;
@@ -126,7 +146,7 @@ window.PioneerTV = window.PioneerTV || {};
         b.style.flexBasis = '0';
         this.setLabel(b, def);
         b.dataset.key = def.k;
-        b.addEventListener('click', () => { this.row = ri; this.col = ci; this.highlight(); this.press(def); });
+        b.addEventListener('click', () => { this.row = ri; this.col = ci; this.highlight(); this.press(def); this.showValue(); });
         return { def, el: b };
       }));
       for (const row of this.buttons) {
@@ -135,13 +155,35 @@ window.PioneerTV = window.PioneerTV || {};
         for (const { el } of row) r.appendChild(el);
         root.appendChild(r);
       }
-      const hint = document.createElement('div');
-      hint.className = 'pioneertv-keyhint';
-      hint.textContent = 'A skriv · X eller håll A: OK · B stäng · Y tangentbord';
-      root.appendChild(hint);
       M.bridge.mount(root, { modal: true });
       this.root = root;
+      this.showValue();
     },
+
+    // The field's text in the sheet's top row, the caret where it is; the
+    // placeholder in italics while the field is empty. Passwords as dots.
+    showValue() {
+      const box = this.field, el = this.target;
+      if (!box || !el) return;
+      box.replaceChildren();
+      const editable = el.isContentEditable;
+      let value = editable ? (el.textContent || '') : (el.value || '');
+      if (!value) {
+        const ph = el.getAttribute('placeholder') || el.getAttribute('aria-label') || '';
+        box.classList.add('pioneertv-keyfield-empty');
+        box.append(this.caret(), document.createTextNode(ph));
+        return;
+      }
+      box.classList.remove('pioneertv-keyfield-empty');
+      if (el.type === 'password') value = '•'.repeat(value.length);
+      let at = editable || el.selectionStart == null ? value.length : el.selectionStart;
+      const caret = this.caret();
+      box.append(document.createTextNode(value.slice(0, at)), caret, document.createTextNode(value.slice(at)));
+      // Keep the caret in sight in a long text.
+      const over = caret.offsetLeft - box.clientWidth + 40;
+      box.scrollLeft = over > 0 ? over : 0;
+    },
+    caret() { const c = document.createElement('span'); c.className = 'pioneertv-keycaret'; return c; },
 
     displayLabel(def) {
       if (def.k.length === 1 && /[a-zåäö]/i.test(def.k)) return this.shift ? def.k.toUpperCase() : def.k;
@@ -223,7 +265,7 @@ window.PioneerTV = window.PioneerTV || {};
       const held = !!this._holdTimer;
       clearTimeout(this._holdTimer); this._holdTimer = null;
       if (this._holdFired) { this._holdFired = false; return; } // the jump was the action
-      if (held) this.press(this.buttons[this.row][this.col].def); // a short tap: type
+      if (held) { this.press(this.buttons[this.row][this.col].def); this.showValue(); } // a short tap: type
     },
 
     // Move the highlight to a key by its id, e.g. 'done' (OK).

@@ -33,13 +33,13 @@ window.PioneerTV = window.PioneerTV || {};
           // settings page (System), not here. The detail is the button that
           // does the same without the menu.
           { label: 'Tillbaka', icon: 'back', detail: 'håll B', run: () => (b.available ? b.send({ type: 'back' }) : history.back()) },
-          { label: 'Hem', icon: 'home', detail: 'håll Hem', run: () => b.home() },
+          { label: 'Hem', icon: 'home', detail: 'håll Hem', primary: true, run: () => b.home() },   // ochre, like the pause panel's first choice
           // As in the player's pause panel: left and right step the TV's
           // volume on this row, A mutes.
           { label: 'TV-volym', icon: 'volume', detail: '◀ ▶ · även L2/R2', volume: true, run: () => b.cec('mute'), keep: true, disabled: !tv },
           { label: 'Tangentbord', icon: 'keyboard', detail: 'Y', run: () => M.keyboard.toggle() },
           { label: 'Ladda om sidan', icon: 'reload', run: () => location.reload() },
-          { label: 'Stäng av TV:n', icon: 'power', detail: 'håll Select', run: () => b.cec('tv_off'), disabled: !tv },
+          { label: 'Stäng av TV:n', icon: 'power', run: () => b.cec('tv_off'), disabled: !tv },
           { label: 'Inställningar', icon: 'gear', run: () => b.settings() },
         ];
         const root = document.createElement('div');
@@ -55,7 +55,7 @@ window.PioneerTV = window.PioneerTV || {};
         list.className = 'pioneertv-menu-items';
         this.items.forEach((it, i) => {
           const el = document.createElement('div');
-          el.className = 'pioneertv-menu-item' + (it.disabled ? ' pioneertv-menu-disabled' : '');
+          el.className = 'pioneertv-menu-item' + (it.primary ? ' pioneertv-menu-primary' : '') + (it.disabled ? ' pioneertv-menu-disabled' : '');
           el.innerHTML = `<span class="pioneertv-menu-icon">${M.icons.html(it.icon)}</span>`;
           const name = document.createElement('span'); name.textContent = it.label; el.appendChild(name);
           if (it.detail) { const d = document.createElement('span'); d.className = 'pioneertv-menu-detail'; d.textContent = it.detail; el.appendChild(d); }

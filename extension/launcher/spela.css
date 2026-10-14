@@ -18,10 +18,12 @@ body {
 /* EmulatorJS's own bars, menus and messages: the box has its pause panel. */
 #game .ejs_menu_bar, #game .ejs_context_menu, #game .ejs_virtualGamepad_parent { display: none !important; }
 
+/* "Laddar…" in the middle of the dark page, in Fraunces' italic like the
+   other pages' captions, until the game draws. */
 .loading {
-  position: fixed; left: 5vw; bottom: 5vh; margin: 0;
-  font-family: var(--pioneertv-font-mono); font-size: 1rem; letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--pioneertv-ochre);
+  position: fixed; inset: 0; margin: 0; display: flex; align-items: center; justify-content: center;
+  font: italic 400 1.8rem/1.2 var(--pioneertv-font-prose);
+  color: var(--pioneertv-on-dark); pointer-events: none;
 }
 .loading[hidden] { display: none; }
 

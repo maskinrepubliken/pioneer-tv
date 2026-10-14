@@ -256,6 +256,11 @@
   $('pill-gamepad').appendChild(icons.svg('gamepad'));
   $('pill-daemon').appendChild(icons.svg('dot'));
 
+  // Turning the TV off from the start page: the one action that is not a
+  // service. Up from the tiles reaches it.
+  $('tv-off-icon').appendChild(icons.svg('power'));
+  $('tv-off').addEventListener('click', () => b.cec('tv_off'));
+
   b.on('state', (s) => {
     $('pill-daemon').classList.toggle('on', s.daemonConnected);
     if (s.config && Array.isArray(s.config.services) && s.config.services.length) {

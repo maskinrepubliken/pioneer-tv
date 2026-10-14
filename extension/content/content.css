@@ -62,19 +62,29 @@ html.pioneertv-bigscreen, html.pioneertv-bigscreen body { overflow: hidden !impo
 /* ---- keyboard ---- */
 .pioneertv-keyboard {
   position: fixed; left: 0; right: 0; bottom: 0; top: auto; z-index: 2147483000;
-  padding: 18px 22px 12px;
+  padding: 12px 22px 6px;
   background: var(--pioneertv-paper);
   border-top: 1px solid var(--pioneertv-line-strong);
 }
-html.pioneertv-keyboard-open { scroll-padding-bottom: 360px; }
-.pioneertv-keyrow { display: flex; gap: 10px; margin-bottom: 10px; }
+html.pioneertv-keyboard-open { scroll-padding-bottom: 290px; }
+/* Top row: what the field holds, and the hint. */
+.pioneertv-keytop { display: flex; align-items: center; gap: 22px; margin-bottom: 10px; }
+.pioneertv-keyfield {
+  flex: 1; min-width: 0; height: 40px; padding: 0 16px; overflow: hidden; white-space: pre;
+  display: flex; align-items: center;
+  font: 400 22px/1 var(--pioneertv-font-ui); color: var(--pioneertv-ink);
+  background: var(--pioneertv-paper-sunken); border: 1px solid var(--pioneertv-line); border-radius: var(--pioneertv-radius-m);
+}
+.pioneertv-keyfield-empty { font-family: var(--pioneertv-font-prose); font-style: italic; color: var(--pioneertv-ink-faint); }
+.pioneertv-keycaret { display: inline-block; flex: none; width: 2px; height: 26px; margin: 0 1px; background: var(--pioneertv-ochre); }
+.pioneertv-keyrow { display: flex; gap: 8px; margin-bottom: 8px; }
 .pioneertv-key {
-  height: 62px; padding: 0; margin: 0;
-  font: 600 24px/1 var(--pioneertv-font-ui); color: var(--pioneertv-ink);
+  height: 48px; padding: 0; margin: 0;
+  font: 600 21px/1 var(--pioneertv-font-ui); color: var(--pioneertv-ink);
   background: var(--pioneertv-paper-raised); border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-s);
   cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
 }
-.pioneertv-key .pioneertv-icon { font-size: 26px; }
+.pioneertv-key .pioneertv-icon { font-size: 22px; }
 .pioneertv-key:hover { background: var(--pioneertv-paper-hover); }
 .pioneertv-key-accent { background: var(--pioneertv-ochre); border-color: var(--pioneertv-ochre); color: var(--pioneertv-on-ochre); }
 /* The key under the d-pad: ink, like a pressed key, with the focus ring. */
@@ -92,7 +102,7 @@ html.pioneertv-pointer .pioneertv-key.pioneertv-key-accent.pioneertv-key-active 
 }
 .pioneertv-keyhint {
   font: 14px/1.4 var(--pioneertv-font-mono); letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--pioneertv-ink-faint); text-align: right;
+  color: var(--pioneertv-ink-faint); text-align: right; white-space: nowrap;
 }
 
 /* ---- toast ---- */
@@ -163,6 +173,10 @@ html.pioneertv-pointer .pioneertv-key.pioneertv-key-accent.pioneertv-key-active 
   border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-pill);
 }
 .pioneertv-menu-item:hover { background: var(--pioneertv-paper-hover); }
+.pioneertv-menu-primary, .pioneertv-menu-primary:hover, .pioneertv-menu-primary.pioneertv-hover {
+  background: var(--pioneertv-ochre); border-color: var(--pioneertv-ochre); color: var(--pioneertv-on-ochre);
+}
+.pioneertv-menu-primary .pioneertv-menu-icon, .pioneertv-menu-primary .pioneertv-menu-detail { color: var(--pioneertv-on-ochre); }
 .pioneertv-menu-icon { width: 24px; font-size: 22px; display: inline-flex; justify-content: center; flex: none; color: var(--pioneertv-ink-muted); }
 .pioneertv-menu-detail { margin-left: auto; font: 400 15px/1 var(--pioneertv-font-mono); color: var(--pioneertv-ink-faint); white-space: nowrap; }
 html:not(.pioneertv-pointer) .pioneertv-menu-active { outline: 4px solid var(--pioneertv-focus); outline-offset: 5px; }
