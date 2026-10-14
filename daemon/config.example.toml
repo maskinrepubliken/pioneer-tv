@@ -196,5 +196,5 @@ kind = "radio"
 # pointer = "#EFDFD4"
 # accent = "#E09F96"
 # highlight = "#E09F96"
-# (the green one: pointer = "#42584A", accent = "#C3D9CE", highlight = "#42584A";
+# (the green one: pointer = "#D5E2D6", accent = "#93AE99", highlight = "#93AE99";
 # text on a dark highlight turns light by itself)
