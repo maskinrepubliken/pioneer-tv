@@ -94,7 +94,7 @@ async def amain(cfg: dict) -> None:
                 updater.version(), sysinfo.audio_status(),
             )
             batteries = sysinfo.gamepad_batteries()
-            pads = [{"name": p.dev.name, "path": p.dev.path, "battery": batteries.get(p.dev.name)} for p in pads_mgr.pads()]
+            pads = [{"name": p.label, "path": p.dev.path, "battery": batteries.get(p.dev.name), **p.colors} for p in pads_mgr.pads()]
             last_status.clear()
             last_status.update({
                 "type": "status",
@@ -103,6 +103,7 @@ async def amain(cfg: dict) -> None:
                 "interfaces": ifaces,
                 "system": sysstat,
                 "gamepads": pads,
+                "active_pad": pads_mgr.active_pad(),
                 "keyboard_present": pads_mgr.keyboard_present,
                 "cec": {"enabled": cec.enabled, "phys_addr": cec.phys_addr, "tv_power": cec.last_power},
                 "audio": audio,
@@ -167,9 +168,16 @@ async def amain(cfg: dict) -> None:
         "config_changed": config_changed,
     })
 
-    async def on_gamepad_change(connected: bool, name: str) -> None:
+    async def on_gamepad_change(connected: bool, name: str, label: str | None = None) -> None:
         bluetooth.note_seen(name)
-        await emit({"type": "event", "name": "gamepad", "connected": connected, "device": name})
+        await emit({"type": "event", "name": "gamepad", "connected": connected, "device": name, "label": label})
+
+    async def on_active_pad(pad: dict) -> None:
+        # Into the cached status as well, so a status sent from the cache does
+        # not hand back the previous pad's colours.
+        if last_status:
+            last_status["active_pad"] = pad
+        await emit({"type": "event", "name": "active_pad", "pad": pad})
         if connected and cfg["cec"]["tv_on_gamepad_connect"]:
             try:
                 if not (await cec.power_status()).startswith("on"):
@@ -192,7 +200,7 @@ async def amain(cfg: dict) -> None:
         else:
             await dispatcher.release(action)
 
-    pads_mgr = GamepadManager(cfg, dispatcher, mouse, on_gamepad_change, on_keyboard_change)
+    pads_mgr = GamepadManager(cfg, dispatcher, mouse, on_gamepad_change, on_keyboard_change, on_active_pad)
 
     await cec.setup()
     # A USB adapter may come up powered off; paired pads only reconnect to a powered adapter.

@@ -30,7 +30,19 @@
     if (!ui.volume_toast) return;
     M.hud.toast(e.direction === 'up' ? 'Volym +' : e.direction === 'down' ? 'Volym −' : 'Ljud av', e.direction === 'mute' ? 'mute' : 'volume');
   });
-  b.on('gamepad', (e) => M.hud.toast(e.connected ? `Handkontroll ansluten` : 'Handkontroll frånkopplad', 'gamepad'));
+  b.on('gamepad', (e) => M.hud.toast(`${e.label || 'Handkontroll'} ${e.connected ? 'ansluten' : 'frånkopplad'}`, 'gamepad'));
+  // The pad in use lends the pointer its colour and the focus ring its
+  // accent (the pink and the green 8BitDo; [pads] in the config). A pad
+  // without colours leaves the design system's own.
+  function applyPad(pad) {
+    const root = document.documentElement;
+    if (!root) return;
+    const set = (name, value) => (value ? root.style.setProperty(name, value) : root.style.removeProperty(name));
+    set('--pioneertv-pointer-fill', pad && pad.pointer);
+    set('--pioneertv-focus', pad && pad.accent);
+  }
+  b.on('active_pad', (e) => applyPad(e.pad));
+  b.on('state', (s) => { if (s.status && 'active_pad' in s.status) applyPad(s.status.active_pad); });
   b.on('tv', (e) => {
     if (e.power === 'standby') document.querySelectorAll('video').forEach((v) => { try { v.pause(); } catch {} });
   });

@@ -10,6 +10,7 @@ import copy
 import json
 import logging
 import os
+import re
 from pathlib import Path
 from typing import Any
 
@@ -106,6 +107,9 @@ def load_overlay(cfg: dict) -> dict:
         return {}
 
 
+_HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
+
+
 def apply_overlay(cfg: dict) -> None:
     ov = load_overlay(cfg)
     if not ov:
@@ -114,6 +118,8 @@ def apply_overlay(cfg: dict) -> None:
         set_path(cfg, path, value)
     if isinstance(ov.get("services"), list):
         cfg["services"] = ov["services"]
+    if isinstance(ov.get("pads"), dict):
+        cfg["pads"] = {**(cfg.get("pads") or {}), **ov["pads"]}
     log.info("applied settings overlay from %s", overlay_path(cfg))
 
 
@@ -189,5 +195,18 @@ def update(cfg: dict, payload: dict) -> dict:
             services.append(clean)
         overlay["services"] = services
         cfg["services"] = services
+    if isinstance(payload.get("pads"), dict):
+        # Pads by USB serial: a name and two colours each (see config.py).
+        pads = {}
+        for serial, p in payload["pads"].items():
+            if not isinstance(p, dict) or not str(serial).strip():
+                continue
+            clean = {k: str(p[k]).strip() for k in ("name", "pointer", "accent") if p.get(k)}
+            for k in ("pointer", "accent"):
+                if k in clean and not _HEX.match(clean[k]):
+                    raise ValueError(f"{k} for {serial} is not a #rrggbb colour")
+            pads[str(serial).strip()] = clean
+        overlay["pads"] = pads
+        cfg["pads"] = {**(cfg.get("pads") or {}), **pads}
     save_overlay(cfg, overlay)
     return overlay

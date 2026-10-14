@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import collections
 import logging
+import os
 import time
 from typing import Callable, Coroutine
 
@@ -92,6 +93,16 @@ class Gamepad:
         # no key translation, no pointer, only Guide (menu, hold: home) and a
         # long press on Start (menu), so there is always a way out.
         self.shared = shared if shared is not None else {"passthrough": False}
+        # Who this pad is: [pads."<USB serial>"] in the config gives it a name
+        # and its colours (pointer fill, focus ring), e.g. the pink and the
+        # green 8BitDo, which otherwise report the very same name.
+        self.serial = usb_serial(dev)
+        own = (cfg.get("pads") or {}).get(self.serial) or {} if self.serial else {}
+        self.label = own.get("name") or dev.name
+        self.named = bool(own.get("name"))
+        self.colors = {k: own[k] for k in ("pointer", "accent") if own.get(k)}
+        if self.named:
+            log.info("%s (%s) is %s", dev.name, self.serial, self.label)
         button_map = dict(self.cfg["buttons"])
         for needle, quirk in QUIRKS:
             if needle.lower() in dev.name.lower() and quirk.get("buttons"):
@@ -153,7 +164,22 @@ class Gamepad:
             await self.release_everything()
             log.info("stopped %s", self.dev.name)
 
+    def identity(self) -> dict:
+        return {"key": self.serial or self.dev.path, "name": self.label, "named": self.named, **self.colors}
+
+    def mark_active(self) -> None:
+        """This pad is the one in use: the extension takes its colours."""
+        key = self.serial or self.dev.path
+        if self.shared.get("active") == key:
+            return
+        self.shared["active"] = key
+        notify = self.shared.get("notify_active")
+        if notify:
+            asyncio.get_running_loop().create_task(notify(self.identity()))
+
     async def on_key(self, code: int, value: int) -> None:
+        if value == 1:
+            self.mark_active()
         action = self.buttons.get(code)
         if value != 2:
             name = e.KEY.get(code) or e.BTN.get(code) or str(code)
@@ -176,10 +202,12 @@ class Gamepad:
     _passthrough_start = {"long": {"system": "menu"}}
 
     async def on_abs(self, code: int, value: int) -> None:
+        v = self.normalize(code, value) if code in self.absinfo else float(value)
+        if abs(v) > 0.6:
+            self.mark_active()
         if self.shared.get("passthrough"):
             return
         spec = self.axes.get(code)
-        v = self.normalize(code, value) if code in self.absinfo else float(value)
         # Pointer axes would flood the trace; hats, triggers and unmapped axes matter.
         if not (spec and "mouse" in spec) and (abs(v) > 0.5 or value == 0):
             _trace(self.dev.name, "abs", e.ABS.get(code, str(code)), value, describe(spec))
@@ -282,6 +310,28 @@ def usb_base(dev: evdev.InputDevice) -> str:
     return (dev.phys or "").split("/input")[0]
 
 
+def usb_serial(dev: evdev.InputDevice) -> str:
+    """The serial number of the USB device behind an input node, or "". Each
+    8BitDo 2.4 GHz dongle has its own (and is paired with one pad), and it
+    follows the dongle from port to port, so it tells two identical pads apart."""
+    try:
+        here = os.path.realpath(f"/sys/class/input/{os.path.basename(dev.path)}/device")
+    except OSError:
+        return ""
+    for _ in range(8):
+        if os.path.isfile(os.path.join(here, "idVendor")):
+            try:
+                with open(os.path.join(here, "serial")) as f:
+                    return f.read().strip()
+            except OSError:
+                return ""
+        parent = os.path.dirname(here)
+        if parent == here:
+            break
+        here = parent
+    return ""
+
+
 def same_hardware(dev: evdev.InputDevice, pads: list[evdev.InputDevice]) -> bool:
     """Whether dev is another interface of a gamepad. The 8BitDo Ultimate 2C's
     2.4 GHz dongle shows up as a gamepad plus a "Keyboard" and a "Mouse" with
@@ -298,8 +348,9 @@ def same_hardware(dev: evdev.InputDevice, pads: list[evdev.InputDevice]) -> bool
 
 class GamepadManager:
     def __init__(self, cfg: dict, dispatcher: Dispatcher, mouse: MouseDriver,
-                 on_change: Callable[[bool, str], Coroutine],
-                 on_keyboard: Callable[[bool], Coroutine] | None = None) -> None:
+                 on_change: Callable[[bool, str, str | None], Coroutine],
+                 on_keyboard: Callable[[bool], Coroutine] | None = None,
+                 on_active: Callable[[dict], Coroutine] | None = None) -> None:
         self.cfg = cfg
         self.dispatcher = dispatcher
         self.mouse = mouse
@@ -307,13 +358,21 @@ class GamepadManager:
         self.on_keyboard = on_keyboard
         self.active: dict[str, asyncio.Task] = {}
         self.instances: dict[str, Gamepad] = {}
-        self.shared = {"passthrough": False}
+        self.shared = {"passthrough": False, "active": None, "notify_active": on_active}
         self._passthrough_until = 0.0
         self.keyboards: set[str] = set()
         self.keyboard_present = False
 
     def pads(self) -> list[Gamepad]:
         return list(self.instances.values())
+
+    def active_pad(self) -> dict | None:
+        """The pad last used, or the only one connected."""
+        pads = self.pads()
+        for pad in pads:
+            if (pad.serial or pad.dev.path) == self.shared.get("active"):
+                return pad.identity()
+        return pads[0].identity() if len(pads) == 1 else None
 
     async def set_passthrough(self, on: bool, ttl: float = 12.0) -> bool:
         """Game mode. Kept alive by heartbeats; expires on its own if the page vanishes."""
@@ -357,8 +416,8 @@ class GamepadManager:
                 pad = Gamepad(dev, self.cfg, self.dispatcher, self.mouse, self.shared)
                 self.instances[path] = pad
                 self.active[path] = asyncio.create_task(pad.run())
-                log.info("gamepad connected: %s", dev.name)
-                await self.on_change(True, dev.name)
+                log.info("gamepad connected: %s", pad.label)
+                await self.on_change(True, dev.name, pad.label if pad.named else None)
                 continue
             if is_keyboard(dev):
                 candidates.append(dev)
@@ -374,8 +433,8 @@ class GamepadManager:
                 self.active.pop(path).cancel()
                 pad = self.instances.pop(path, None)
                 name = pad.dev.name if pad else path
-                log.info("gamepad removed: %s", name)
-                await self.on_change(False, name)
+                log.info("gamepad removed: %s", pad.label if pad else path)
+                await self.on_change(False, name, pad.label if pad and pad.named else None)
         if keyboards != self.keyboards:
             self.keyboards = keyboards
             self.keyboard_present = bool(keyboards)
