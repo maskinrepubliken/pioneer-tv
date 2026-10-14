@@ -37,6 +37,37 @@
   const PLATFORM_SHORT = { nes: 'NES', snes: 'SNES', n64: 'N64', genesis: 'Genesis', win: 'PC' };
   const platformName = (slug) => PLATFORM_SHORT[slug] || (slug || '').toUpperCase();
 
+  // Sharp box art without the wait: a card shows RomM's small cover at once,
+  // and once it is on screen the big one is fetched (two at a time, the box's
+  // network is slow: a screen of big covers took over half a minute) and
+  // swapped in when it has loaded.
+  const sharpen = (() => {
+    const queue = [];
+    let busy = 0;
+    const next = () => {
+      while (busy < 2 && queue.length) {
+        const img = queue.shift();
+        if (!img.isConnected || !img.dataset.large) continue;
+        busy++;
+        const big = new Image();
+        big.decoding = 'async';
+        const done = () => { busy--; next(); };
+        big.onload = () => { if (img.isConnected) img.src = big.src; done(); };
+        big.onerror = done;
+        big.src = img.dataset.large;
+      }
+    };
+    const seen = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        seen.unobserve(e.target);
+        queue.push(e.target);
+      }
+      next();
+    });
+    return (img) => seen.observe(img);
+  })();
+
   function cover(game) {
     const box = el('span', 'cover');
     const paper = () => { box.className = 'cover cover-paper'; box.textContent = game.name; };
@@ -47,6 +78,10 @@
     img.decoding = 'async';
     img.src = game.cover;
     img.onerror = paper;
+    if (game.coverLarge && game.coverLarge !== game.cover) {
+      img.dataset.large = game.coverLarge;
+      img.addEventListener('load', () => sharpen(img), { once: true });
+    }
     box.appendChild(img);
     return box;
   }

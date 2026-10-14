@@ -65,9 +65,10 @@ window.PioneerTV = window.PioneerTV || {};
       name: r.name || r.fs_name_no_ext || r.fs_name,
       sortKey: r.name_sort_key || '',   // RomM's order: lower case, no leading "The", numbers padded
       platform: r.platform_slug,
-      // RomM's big cover (512 px wide): the cards show box art at about 250
-      // px, where the small one (204 px) went soft. Lazy-loaded by the cards.
-      cover: (r.path_cover_large || r.path_cover_small) ? '/romm' + (r.path_cover_large || r.path_cover_small) : null,
+      // The small cover (204 px) shows at once; the cards swap in the big one
+      // (512 px, five times the bytes) once it has loaded (spel.js, cover()).
+      cover: r.path_cover_small ? '/romm' + r.path_cover_small : (r.path_cover_large ? '/romm' + r.path_cover_large : null),
+      coverLarge: r.path_cover_large ? '/romm' + r.path_cover_large : null,
       year: released ? new Date(released).getFullYear() : null,
       players: meta.player_count || null,
       summary: r.summary || '',
