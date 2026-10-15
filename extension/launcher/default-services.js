@@ -1,9 +1,10 @@
 // Default services shown by the launcher when no daemon config is available
 // (design work on a laptop). On the Pi the daemon's config.toml wins.
 // `{query}` in search_url is replaced with the URL-encoded search string.
-// row: 'live' puts a service in the second row: live TV and radio, no
-// illustration, labelled by kind ('tv' or 'radio'). A relative url opens a
-// page of the launcher, like the radio player.
+// row: 'second' puts a service in the second row of big tiles (Bilder).
+// row: 'live' makes it a live channel ('tv' or 'radio' by kind): those are
+// listed behind the second row's Live tile. A relative url opens a page of
+// the launcher, like the radio player.
 window.PioneerTV = window.PioneerTV || {};
 window.PioneerTV.defaultServices = [
   {
@@ -41,6 +42,14 @@ window.PioneerTV.defaultServices = [
     "search_url": "spel.html?tv=1#/search/{query}",
     "color": "#3b6ea5",
     "glyph": "S"
+  },
+  {
+    "id": "immich",
+    "name": "Bilder",
+    "tagline": "Immich",
+    "url": "https://bilder.lyresten.se/",
+    "color": "#3f7fa6",
+    "row": "second"
   },
   {
     "id": "svt1",

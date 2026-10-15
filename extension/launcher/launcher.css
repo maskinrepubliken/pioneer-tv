@@ -91,36 +91,16 @@ body {
 }
 .tile.pioneertv-focus .band { background: var(--pioneertv-ochre); }
 
-/* ---- second row: live TV and radio. Light cards like the first row, the
-   channel's name in Rubik capitals, centred; along the bottom the channel's
-   own row of holes, its punch card (see punchCard()), each hole in one of the
-   palette's colours: a quiet mark on paper rather than a block. ---- */
-.tiles-live { gap: 0.65rem; margin-top: -1vh; }
-.tiles-live[hidden] { display: none; }
-.tile-live {
-  height: 14vh; padding: 0.7rem 0.45rem 0.6rem; justify-content: space-between; align-items: center; text-align: center;
-  border-radius: var(--pioneertv-radius-l);
-}
-.tile-live .name {
-  flex: 1; width: 100%; padding: 0 6%; display: flex; align-items: center; justify-content: center;
-  font-family: var(--pioneertv-font-display); font-weight: 900; font-size: 1.25rem; line-height: 1;
-  letter-spacing: -0.01em; text-transform: uppercase; hyphens: manual;
-}
-.tile-live .perf { display: block; width: 76%; height: auto; flex: none; }
-.tiles-live .tile-live.pioneertv-focus {
-  outline-width: 0.2rem !important; outline-offset: 0.22rem !important;
-  border-radius: var(--pioneertv-radius-l) !important;
-}
-.tile-live .band { height: 0.3rem; }
+/* ---- second row: Bilder and Live, big tiles like the first row's, each
+   wider as there are fewer of them ---- */
+.tiles-second[hidden] { display: none; }
 
 /* ---- opening: the pressed tile punches a row of holes until the page
    changes (see startOpening()). Empty holes are a line-strong ring, punched
    ones solid ochre; each switches in one step. ---- */
 .tile .opening { display: block; width: 46%; height: auto; margin: 0 auto 0.55rem; overflow: visible; }
-.tile-live .opening { width: 62%; margin: 0; flex: none; }
 .tile .opening circle { fill: transparent; stroke: var(--pioneertv-line-strong); stroke-width: 7; }
 .tile .opening circle.punched { fill: var(--pioneertv-ochre); stroke: var(--pioneertv-ochre); }
-.tile-live.is-opening .perf { display: none; }
 .tile.is-opening .band { background: var(--pioneertv-ochre); }
 
 /* ---- the search field, out of sight: the keyboard shows what is typed ---- */

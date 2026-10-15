@@ -124,8 +124,19 @@ glyph = "S"
 url = "https://spel.lyresten.se"
 api_key = ""
 
-# The second row: live TV and radio, no illustrations. row = "live" puts a
-# service there and kind (tv or radio) labels it. The SVT channels open
+# Photos: Immich, a big tile in the second row.
+[[services]]
+id = "immich"
+name = "Bilder"
+tagline = "Immich"
+url = "https://bilder.lyresten.se/"
+color = "#3f7fa6"
+row = "second"
+
+# The second row of big tiles: row = "second" (Bilder, below), then a Live
+# tile when there are live channels, which lists them in a panel like the
+# quick menu's. row = "live" makes a service such a channel and kind (tv or
+# radio) gives it its icon there. The SVT channels open
 # straight into the stream and take the whole TV (fullscreen = "1"). The
 # radio tiles open the launcher's own player (radio.html), which streams
 # from Sveriges Radio; channel is SR's id. P4 is regional: 206 is P4

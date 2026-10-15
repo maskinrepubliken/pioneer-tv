@@ -193,6 +193,35 @@ window.PioneerTV = window.PioneerTV || {};
       <path d="M80 42 C 80 28, 100 30, 112 18 C 122 8, 140 12, 148 6" stroke="${INK}" stroke-width="2.2" fill="none" stroke-linecap="round" opacity="0.85"/>
     `),
 
+    // Bilder (Immich): a photo standing in a frame on its stand, a landscape
+    // under a sky in the service colour, a second print leaning behind it.
+    immich: (c) => wrap('img', c, `
+      <linearGradient id="frame-U" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8a6a45"/><stop offset="1" stop-color="#4a3622"/></linearGradient>
+      <linearGradient id="mat-U" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fbf6e6"/><stop offset="1" stop-color="#e2d6b4"/></linearGradient>
+      <linearGradient id="sky-U" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${light(c, 0.55)}"/><stop offset="1" stop-color="${c}"/></linearGradient>
+      <linearGradient id="hill1-U" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6f9a6a"/><stop offset="1" stop-color="#3d6a45"/></linearGradient>
+      <linearGradient id="hill2-U" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4f7d52"/><stop offset="1" stop-color="#2e4633"/></linearGradient>
+      <linearGradient id="print-U" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f4edda"/><stop offset="1" stop-color="#cfc3a3"/></linearGradient>
+      <linearGradient id="gloss4-U" x1="0" y1="0" x2="0.5" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity="0.5"/><stop offset="0.45" stop-color="#ffffff" stop-opacity="0"/></linearGradient>`, `
+      <!-- a print leaning behind -->
+      <g transform="rotate(-9 104 60)">
+        <rect x="86" y="22" width="52" height="64" rx="2" fill="url(#print-U)" stroke="${INK}" stroke-width="1.1"/>
+        <rect x="91" y="27" width="42" height="44" fill="${dark(c, 0.2)}" opacity="0.55"/>
+      </g>
+      <!-- the stand behind the frame -->
+      <path d="M78 92 L92 100" stroke="#4a3622" stroke-width="4" stroke-linecap="round"/>
+      <!-- frame, mat and photo -->
+      <rect x="30" y="24" width="68" height="74" rx="3" fill="url(#frame-U)" stroke="${INK}" stroke-width="1.4"/>
+      <rect x="36" y="30" width="56" height="62" rx="1.5" fill="url(#mat-U)"/>
+      <rect x="42" y="36" width="44" height="44" fill="url(#sky-U)" stroke="${dark(c, 0.45)}" stroke-width="1"/>
+      <circle cx="74" cy="46" r="5.5" fill="#f4d98a" stroke="#b8940c" stroke-width="0.8"/>
+      <path d="M42 70 Q 54 56 66 66 Q 74 60 86 66 L 86 80 L 42 80 Z" fill="url(#hill1-U)"/>
+      <path d="M42 80 L42 74 Q 58 64 72 76 Q 78 72 86 74 L 86 80 Z" fill="url(#hill2-U)"/>
+      <path d="M42 36 L 86 36 L 86 40 Q 62 44 42 58 Z" fill="url(#gloss4-U)"/>
+      <!-- the frame's lit edge -->
+      <path d="M31 25 L97 25" stroke="#ffffff" stroke-width="1" opacity="0.3"/>
+    `),
+
     // Default: a cinema ticket with a torn stub, lying at an angle.
     default: (c) => wrap('ticket', c, `
       <linearGradient id="tk-U" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${light(c, 0.45)}"/><stop offset="1" stop-color="${dark(c, 0.15)}"/></linearGradient>`, `
@@ -207,6 +236,8 @@ window.PioneerTV = window.PioneerTV || {};
   };
   ART.plex = ART.jellyfin;
   ART.spel = ART.romm;           // our own Spel pages on top of RomM
+  ART.bilder = ART.immich;
+  ART.live = ART.svt1;           // the start page's Live tile: the mast with its signal
 
   P.art = {
     html(id, color) {

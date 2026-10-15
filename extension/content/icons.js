@@ -21,6 +21,7 @@ window.PioneerTV = window.PioneerTV || {};
     volume: '<path d="M4 10v4h3l4 3V7l-4 3H4z"/><path d="M15 9.5a3.5 3.5 0 0 1 0 5M17.5 7a7 7 0 0 1 0 10"/>',
     mute: '<path d="M4 10v4h3l4 3V7l-4 3H4z"/><path d="M16 10l4 4M20 10l-4 4"/>',
     tv: '<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M8 21h8"/>',
+    radio: '<rect x="3" y="9" width="18" height="11" rx="2"/><path d="M7 9l10-5"/><circle cx="15.5" cy="14.5" r="2.5"/><path d="M6.5 13h4M6.5 16h4"/>',
     check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
     info: '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><circle cx="12" cy="8" r="0.9" fill="currentColor" stroke="none"/>',
     shift: '<path d="M12 4l7 8h-4v7H9v-7H5z"/>',
