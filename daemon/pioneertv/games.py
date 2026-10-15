@@ -85,12 +85,19 @@ CORE_OPTIONS = {
     "dosbox_pure": {
         "dosbox_pure_conf": "inside",
     },
+    # N64 sound stuttered on the TV while the picture kept up: GLideN64 was
+    # compiling each new effect's shader mid-game (its shader store was not
+    # set), and drawing on the emulation's own thread. Stored shaders are
+    # compiled once per game; the threaded renderer moves GL off that thread.
     "mupen64plus_next": {
         "mupen64plus-cpucore": "dynamic_recompiler",
         "mupen64plus-rdp-plugin": "gliden64",
         "mupen64plus-rsp-plugin": "hle",
         "mupen64plus-43screensize": "640x480",
         "mupen64plus-aspect": "4:3",
+        "mupen64plus-EnableShadersStorage": "True",
+        "mupen64plus-ThreadedRenderer": "True",
+        "mupen64plus-EnableN64DepthCompare": "False",
     },
 }
 
@@ -265,11 +272,16 @@ class Games:
         return True, ""
 
     async def _wait_written(self, path: Path | None, before: float, seconds: float) -> bool:
-        for _ in range(int(seconds / 0.05)):
-            await asyncio.sleep(0.05)
-            if path and path.is_file() and path.stat().st_mtime > before and path.stat().st_size > 0:
-                await asyncio.sleep(0.1)             # let the write finish
+        """Until path is written anew and its size has settled."""
+        size = -1
+        for _ in range(int(seconds / 0.02)):
+            await asyncio.sleep(0.02)
+            if not (path and path.is_file() and path.stat().st_mtime > before):
+                continue
+            now = path.stat().st_size
+            if now and now == size:
                 return True
+            size = now
         return False
 
     async def _save_state(self) -> bool:
@@ -283,18 +295,34 @@ class Games:
         return ok
 
     async def pause(self) -> None:
-        """Home in a game: a screenshot and the state, then RetroArch quits and the page shows the pause panel."""
+        """Home in a game: a screenshot and the state, then RetroArch goes and the page shows the pause panel.
+
+        RetroArch's window covers the panel until it has exited, so this is
+        what the person waits for. The picture, then the state (one after the
+        other: RetroArch skipped the save when asked for both at once), about
+        0.3 s together; then RetroArch is not left to shut down at its own
+        pace: the N64 core took 1.6 s to (measured on the box), while
+        everything a resume needs, the game's own save memory included, is in
+        the state just written."""
         if self.state != "running" or not (self.proc and self.proc.returncode is None):
             return
         self.state = "pausing"
-        shot = self.screen_path()
-        before = shot.stat().st_mtime if shot and shot.is_file() else 0
+        started = time.monotonic()
+        shot, state = self.screen_path(), self._auto_state()
+        shot_before = shot.stat().st_mtime if shot and shot.is_file() else 0
+        state_before = state.stat().st_mtime if state.is_file() else 0
         self.command("PAUSE_TOGGLE")
         self.command("SCREENSHOT")
-        await self._wait_written(shot, before, 1.5)
+        got_shot = await self._wait_written(shot, shot_before, 1.5)
+        self.command("SAVE_STATE")
+        saved = await self._wait_written(state, state_before, 4)
         self.screen_at = time.time()
-        await self._save_state()
-        await self._quit_process()
+        if not saved:
+            log.warning("retroarch wrote no state for %s", self.game and self.game["name"])
+        # Only with the state safely written may RetroArch be cut short.
+        await self._quit_process(grace=0.3 if saved else 8)
+        log.info("paused %s in %.2f s (picture %s, state %s)", self.game and self.game["name"],
+                 time.monotonic() - started, "yes" if got_shot else "no", "yes" if saved else "no")
         # _watch sees the exit and, with state "pausing", reports "paused".
 
     async def quit(self) -> None:
@@ -588,17 +616,33 @@ history_list_enable = "false"
         except OSError as exc:
             log.warning("retroarch command %s: %s", text, exc)
 
-    async def _quit_process(self) -> None:
+    async def _quit_process(self, grace: float = 8) -> None:
+        """QUIT, and if RetroArch is still there after grace seconds, end it.
+        A short grace is for a pause, with the state already written."""
         proc = self.proc
         if not (proc and proc.returncode is None):
             return
-        self.command("QUIT")                    # saves the automatic state, then exits
+        self.command("QUIT")
         try:
-            await asyncio.wait_for(asyncio.shield(proc.wait()), 8)
+            await asyncio.wait_for(asyncio.shield(proc.wait()), grace)
+            return
         except asyncio.TimeoutError:
-            log.warning("retroarch did not quit; terminating")
+            pass
+        if grace >= 8:
+            log.warning("retroarch did not quit; ending it")
+        # proc is runuser; the signal has to reach RetroArch itself.
+        cfg = str(self.root / "cfg" / "retroarch.cfg")
+        try:
+            kill = await asyncio.create_subprocess_exec("pkill", "-KILL", "-f", "--", f"retroarch --config {cfg}",
+                                                        stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
+            await kill.wait()
+        except OSError:
+            pass
+        try:
+            await asyncio.wait_for(asyncio.shield(proc.wait()), 3)
+        except asyncio.TimeoutError:
             try:
-                proc.terminate()
+                proc.kill()
             except ProcessLookupError:
                 pass
 

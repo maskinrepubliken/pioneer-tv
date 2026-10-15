@@ -114,10 +114,10 @@ window.PioneerTV = window.PioneerTV || {};
     // Before the game is up (and after an error) it is the quick menu's.
     toggle() { if (this.isOpen()) this.resume('auto'); else M.hud.menu.toggle(); },
 
+    // At once: the save point's time and the players' names fill in when
+    // the daemon's status arrives, a moment later.
     async open() {
       if (this.isOpen()) return;
-      let status = {};
-      try { status = await api(''); } catch {}
       const root = document.createElement('aside');
       root.className = 'paus';
       root.setAttribute('data-pioneertv-overlay', '');
@@ -127,19 +127,24 @@ window.PioneerTV = window.PioneerTV || {};
       this.list = document.createElement('div'); this.list.className = 'paus-items';
       this.status = document.createElement('p'); this.status.className = 'paus-status';
       const pads = document.createElement('div'); pads.className = 'paus-pads';
-      const names = status.players || [];
-      for (let i = 0; i < 2; i++) {
+      const playerLines = [0, 1].map((i) => {
         const p = document.createElement('p');
-        p.textContent = `Spelare ${i + 1} · ${names[i] || '—'}`;
+        p.textContent = `Spelare ${i + 1} · —`;
         pads.appendChild(p);
-      }
+        return p;
+      });
       root.append(label, title, this.status, this.list, pads);
       M.bridge.mount(root, { modal: true });
       this.root = root;
       this.busy = false;
       M.nav.captured = this;
       M.bridge.emit('menu:open');
-      this.show(this.menuItems(status.point));
+      this.show(this.menuItems(null));
+      let status = {};
+      try { status = await api(''); } catch {}
+      if (this.root !== root) return;                  // closed meanwhile
+      (status.players || []).forEach((name, i) => { if (playerLines[i]) playerLines[i].textContent = `Spelare ${i + 1} · ${name}`; });
+      if (status.point) this.show(this.menuItems(status.point), this.index);
     },
 
     // When the game takes the screen back, or an error replaces the panel.
