@@ -105,7 +105,7 @@ mkdir -p "$TARGET" /etc/pioneer-tv "$HOME_DIR/.config"
 rsync -a --delete "$REPO/extension/" "$TARGET/extension/"
 rsync -a --delete "$REPO/daemon/" "$TARGET/daemon/"
 rsync -a "$REPO/system/" "$TARGET/system/"
-chmod +x "$TARGET/system/start-chromium.sh" "$TARGET/system/update.sh" "$TARGET/system/upgrade.sh" "$TARGET/system/chromium-debug.sh" "$TARGET/system/open-launcher.py" "$TARGET/system/build-n64-core.sh"
+chmod +x "$TARGET/system/start-chromium.sh" "$TARGET/system/update.sh" "$TARGET/system/upgrade.sh" "$TARGET/system/chromium-debug.sh" "$TARGET/system/open-launcher.py" "$TARGET/system/build-cores.sh"
 mkdir -p /var/lib/pioneer-tv
 [ -f /etc/pioneer-tv/config.toml ] || cp "$REPO/daemon/config.example.toml" /etc/pioneer-tv/config.toml
 # Config migrations: rewrite lines that still carry an old default verbatim.
@@ -260,8 +260,8 @@ if systemctl --user --machine="$USER_NAME@.host" is-active pipewire >/dev/null 2
 fi
 # Pick up new code if the box is already running (no-op on first install).
 systemctl try-restart pioneer-tv-daemon.service pioneer-tv-weston.service || true
-# RetroArch and the native N64 core: long (a download and a build), so in the
-# background; it returns at once when the core is already there.
+# RetroArch and the game cores: long (downloads and builds), so in the
+# background; it returns at once when they are already there.
 systemctl start --no-block pioneer-tv-cores.service || true
 
 cat <<MSG

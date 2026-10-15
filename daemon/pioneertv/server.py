@@ -64,23 +64,16 @@ class Server:
             ("GET", "/api/update", self.api_update_check),
             ("POST", "/api/update", self.api_update_start),
             ("GET", "/api/update/status", self.api_update_status),
-            ("GET", "/api/native", self.api_native_status),
-            ("POST", "/api/native/play", self.api_native_play),
-            ("POST", "/api/native/quit", self.api_native_quit),
+            ("GET", "/api/games", self.api_games_status),
+            ("GET", "/api/games/screen", self.api_games_screen),
+            ("POST", "/api/games/{action}", self.api_games_action),
         ]
         for method, path, handler in api:
             self.app.router.add_route(method, path, handler)
         self.app.router.add_route("*", "/romm/{path:.*}", self.romm_proxy)
         self.app.on_cleanup.append(self._close_romm_session)
 
-    # ------------------------------------------------------------ player page
-    # The player page is cross-origin isolated: some EmulatorJS cores (DOSBox
-    # Pure, for DOS) run in threads, and the browser only gives a page the
-    # SharedArrayBuffer they need with these two headers. Everything the page
-    # loads comes from this origin (/ext/ and /romm/), so nothing it uses is
-    # turned away; "credentialless" keeps any cross-origin extra working too.
-    ISOLATED_PAGES = ("/ext/launcher/spela.html",)
-
+    # ------------------------------------------------------------ pages
     async def _page_headers(self, request: web.Request, response: web.StreamResponse) -> None:
         # The pages and scripts under /ext/ change with every update, and with
         # no caching headers Chromium kept serving an old spela.js from its
@@ -88,9 +81,6 @@ class Server:
         # local round trip that the ETag usually answers with a 304.
         if request.path.startswith(("/ext/", "/static/")):
             response.headers["Cache-Control"] = "no-cache"
-        if request.path in self.ISOLATED_PAGES:
-            response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
-            response.headers["Cross-Origin-Embedder-Policy"] = "credentialless"
 
     # ------------------------------------------------------------ auth
     @web.middleware
@@ -349,28 +339,44 @@ class Server:
     async def api_update_status(self, request: web.Request) -> web.Response:
         return web.json_response(await updater.status())
 
-    # Games in RetroArch (native.py): which consoles, start one, quit it.
-    async def api_native_status(self, request: web.Request) -> web.Response:
-        hook = self.hooks.get("native_status")
-        return web.json_response(hook() if hook else {"platforms": [], "running": False, "game": None})
+    # Games in RetroArch (games.py): which consoles and what is playing, the
+    # pause screenshot, and play / pause / resume / save_point / quit.
+    async def api_games_status(self, request: web.Request) -> web.Response:
+        games = self.hooks.get("games")
+        return web.json_response(games.status() if games else {"platforms": [], "state": "idle", "game": None})
 
-    async def api_native_play(self, request: web.Request) -> web.Response:
-        data = await self._json(request)
-        try:
-            rom = int(data.get("rom"))
-        except (TypeError, ValueError):
-            return web.json_response({"ok": False, "message": "rom saknas"}, status=400)
-        hook = self.hooks.get("native_play")
-        if not hook:
+    async def api_games_screen(self, request: web.Request) -> web.StreamResponse:
+        games = self.hooks.get("games")
+        path = games.screen_path() if games else None
+        if not path or not path.is_file():
+            raise web.HTTPNotFound()
+        return web.FileResponse(path, headers={"Cache-Control": "no-store"})
+
+    async def api_games_action(self, request: web.Request) -> web.Response:
+        games = self.hooks.get("games")
+        if not games:
             return web.json_response({"ok": False, "message": "inte tillgängligt"}, status=503)
-        ok, msg = await hook(rom)
+        action = request.match_info["action"]
+        data = await self._json(request) if request.can_read_body else {}
+        if action == "play":
+            try:
+                rom = int(data.get("rom"))
+            except (TypeError, ValueError):
+                return web.json_response({"ok": False, "message": "rom saknas"}, status=400)
+            ok, msg = await games.play(rom)
+        elif action == "resume":
+            ok, msg = await games.resume(str(data.get("load", "auto")))
+        elif action == "save_point":
+            ok, msg = games.save_point()
+        elif action == "pause":
+            await games.pause()
+            ok, msg = True, ""
+        elif action == "quit":
+            await games.quit()
+            ok, msg = True, ""
+        else:
+            return web.json_response({"ok": False, "message": "okänd åtgärd"}, status=404)
         return web.json_response({"ok": ok, "message": msg}, status=200 if ok else 409)
-
-    async def api_native_quit(self, request: web.Request) -> web.Response:
-        hook = self.hooks.get("native_quit")
-        if hook:
-            await hook()
-        return web.json_response({"ok": True})
 
     # ------------------------------------------------------------ run
     async def run(self) -> None:

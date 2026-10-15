@@ -40,7 +40,7 @@ class Dispatcher:
         self._swallowed: set[int] = set()
         self._last_input = 0.0
         self._wake_until = 0.0
-        # While a game runs outside the browser (native.py), its handler gets
+        # While a game runs in RetroArch (games.py), its handler gets
         # the box's own buttons (menu, home) first; True means it took them.
         self.system_hook: Callable[[str], Coroutine] | None = None
 

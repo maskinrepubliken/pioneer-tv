@@ -1,75 +1,29 @@
-// Pioneer TV player: one RomM game in RomM's own EmulatorJS, without RomM's
-// or EmulatorJS's interface around it. Opened as spela.html?rom=<id>, with
-// &fresh=1 to start over instead of resuming.
+// Pioneer TV player: one RomM game, played on the box in RetroArch, out of
+// sight. Opened as spela.html?rom=<id>.
 //
-// EmulatorJS 4.2.3 (what RomM 5.4 serves), as used here: the EJS_* globals
-// below, then window.EJS_emulator with pause(), play(), setVolume(v),
-// takeScreenshot(source, format, upscale) -> {blob, format}, and its
-// gameManager with getState(), loadState(bytes), getSaveFile(),
-// getSaveFilePath(), loadSaveFiles(), restart() and FS.
+// This page runs no emulator. The daemon (daemon/pioneertv/games.py) fetches
+// the game from RomM and starts RetroArch, whose window covers this page;
+// what this page shows is what comes before and between: "Laddar…" with the
+// megabytes, errors, and the pause panel over the picture RetroArch took when
+// Home paused it. It talks to the daemon over /api/games/... and follows its
+// `games` events. See docs/superpowers/specs/2026-10-15-retroarch-games-design.md.
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const $ = (id) => document.getElementById(id);
   const params = new URLSearchParams(location.search);
   const romId = Number(params.get('rom'));
-  const fresh = params.get('fresh') === '1';
   M.launcherUrl = new URL('spel.html?tv=1', location.href).href;
 
-  const CORES = { nes: 'fceumm', snes: 'snes9x', n64: 'mupen64plus_next', genesis: 'genesis_plus_gx', dos: 'dosbox_pure' };
-  // Cores built only with threads: they need the page cross-origin isolated,
-  // which the daemon does for this page (server.py, ISOLATED_PAGES).
-  const THREADED = new Set(['dosbox_pure']);
-
-  // The game's file, or null when this page cannot play it: no core for the
-  // console, or a game made of several files.
-  function romFileUrl(game) {
-    if (!CORES[game.platform] || game.multiFile) return null;
-    return M.romm.romUrl(game);
-  }
-
-  // RetroArch settings over EmulatorJS's own, in the retroarch.cfg its
-  // GameManager writes. EmulatorJS keeps
-  // 64 ms of sound queued: on the Pi a frame the browser is late with (the
-  // first seconds, while the core is still being optimised, run at about 42
-  // frames a second; measured on the box) empties that and the sound
-  // crackles. 128 ms rides the dips out, a delay nobody notices on a TV.
-  const RETROARCH = { audio_latency: 128 };
-  function tuneRetroArch() {
-    let GM;
-    const patch = (cls) => {
-      if (!cls || !cls.prototype || cls.prototype.__pioneerTuned || typeof cls.prototype.getRetroArchCfg !== 'function') return;
-      const base = cls.prototype.getRetroArchCfg;
-      cls.prototype.getRetroArchCfg = function () {
-        // Replace EmulatorJS's own line for a key rather than add a second
-        // one: with both in the file RetroArch kept 64 (seen on the box).
-        let cfg = base.call(this);
-        for (const [k, v] of Object.entries(RETROARCH)) {
-          const line = `${k} = ${v}`;
-          const re = new RegExp(`^${k}\\s*=.*$`, 'm');
-          cfg = re.test(cfg) ? cfg.replace(re, line) : `${cfg}${line}\n`;
-        }
-        return cfg;
-      };
-      cls.prototype.__pioneerTuned = true;
-    };
-    // EmulatorJS's scripts set window.EJS_GameManager as they load; catch it
-    // before the emulator constructs one.
-    Object.defineProperty(window, 'EJS_GameManager', {
-      configurable: true,
-      get: () => GM,
-      set: (v) => { GM = v; patch(v); },
-    });
-  }
-
   const loading = $('loading');
+  const screen = $('screen');
   function say(text) { loading.hidden = false; loading.textContent = text; }
 
   // Once the game runs, an extra history entry sits on top of this page, so
   // a "back" from the box (holding B with the pause panel open) lands here
-  // instead of leaving: it means save and quit (see the popstate handler).
+  // instead of leaving: it means quit (see the popstate handler).
   let guarded = false;
   let leaving = false;
-  function guard() { history.pushState({ spela: true }, ''); guarded = true; }
+  function guard() { if (!guarded) { history.pushState({ spela: true }, ''); guarded = true; } }
 
   function back() {
     leaving = true;
@@ -78,6 +32,7 @@ window.PioneerTV = window.PioneerTV || {};
   }
 
   function fail(text) {
+    panel.close();
     loading.hidden = true;
     $('message-text').textContent = text;
     $('message').hidden = false;
@@ -85,89 +40,42 @@ window.PioneerTV = window.PioneerTV || {};
   }
   $('message-back').addEventListener('click', back);
 
-  // ------------------------------------------------------------ native
-  // RetroArch runs in its own window over this page: the daemon fetches the
-  // game, starts it, and says how it goes (native events). When it quits,
-  // this page is on screen again and goes back to the game's list.
-  async function nativePlatforms() {
-    try {
-      const r = await fetch('/api/native');
-      return r.ok ? ((await r.json()).platforms || []) : [];
-    } catch { return []; }
+  // ------------------------------------------------------------ the daemon
+  async function api(path, body) {
+    const opts = body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) };
+    const r = await fetch(`/api/games${path}`, opts);
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok && data.ok !== false) throw new Error(`${path}: ${r.status}`);
+    return data;
   }
 
-  async function playNative(game) {
-    const mb = (n) => (n / 1048576).toFixed(1);
-    let started = false;
-    M.bridge.on('native', (e) => {
-      if (e.state === 'loading') say(`Laddar ${mb(e.got)}${e.total ? ` av ${mb(e.total)}` : ''} MB`);
-      else if (e.state === 'running') { started = true; say('Startar…'); }
-      else if (e.state === 'error') fail(e.message || 'Spelet kunde inte startas');
-      else if (e.state === 'exited') {
-        if (started) back();
-        else fail('Spelet kunde inte startas');
-      }
-    });
-    say('Laddar…');
-    let r;
-    try {
-      r = await fetch('/api/native/play', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rom: game.id }) });
-    } catch { return fail('Boxen svarar inte'); }
-    const body = await r.json().catch(() => ({}));
-    if (!r.ok) return fail(body.message === 'no_key' ? 'Lägg in en API-nyckel för RomM under Inställningar → RomM' : (body.message || 'Spelet kunde inte startas'));
-    M.romm.markPlayed(romId).catch((e) => console.error('update_last_played', e));
-  }
+  const mb = (n) => (n / 1048576).toFixed(1);
+  let game = null;
+  let started = false;
 
-  // The ROM, read with a running count so a large N64 game shows progress.
-  async function download(url) {
-    const resp = await fetch(url);
-    if (!resp.ok) throw new M.romm.RommError(resp.status, resp.status === 401 || resp.status === 403 ? 'auth' : 'down');
-    const total = Number(resp.headers.get('Content-Length')) || 0;
-    const reader = resp.body.getReader();
-    const parts = [];
-    let got = 0;
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      parts.push(value);
-      got += value.length;
-      say(`Laddar ${(got / 1048576).toFixed(1)}${total ? ` av ${(total / 1048576).toFixed(1)}` : ''} MB`);
+  M.bridge.on('games', (e) => {
+    if (leaving) return;
+    if (e.state === 'loading') say(`Laddar ${mb(e.got)}${e.total ? ` av ${mb(e.total)}` : ''} MB`);
+    else if (e.state === 'running') {
+      // RetroArch's window is over this page now; what is here waits behind it.
+      started = true;
+      guard();
+      panel.close();
+      say('Startar…');
+    } else if (e.state === 'paused') {
+      loading.hidden = true;
+      screen.src = `/api/games/screen?t=${Date.now()}`;
+      screen.hidden = false;
+      panel.open();
+    } else if (e.state === 'error') fail(e.message || 'Spelet kunde inte startas');
+    else if (e.state === 'exited') {
+      if (started) back();
+      else fail('Spelet kunde inte startas');
     }
-    return new Blob(parts);
-  }
-
-  async function bytes(url) {
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error(`${url}: ${resp.status}`);
-    return new Uint8Array(await resp.arrayBuffer());
-  }
-
-  // Writes a save file where the core looks for it, then has it read.
-  function putSaveFile(gm, data) {
-    const path = gm.getSaveFilePath();
-    let dir = '';
-    for (const part of path.split('/').slice(0, -1)) {
-      if (!part) continue;
-      dir += '/' + part;
-      if (!gm.FS.analyzePath(dir).exists) gm.FS.mkdir(dir);
-    }
-    if (gm.FS.analyzePath(path).exists) gm.FS.unlink(path);
-    gm.FS.writeFile(path, data);
-    gm.loadSaveFiles();
-  }
-
-  // Unless starting over: the newest state, else the newest save file.
-  async function resume(gm) {
-    const state = await M.romm.latestState(romId);
-    if (state) { gm.loadState(await bytes(state.url)); return 'state'; }
-    const save = await M.romm.latestSave(romId);
-    if (save) { putSaveFile(gm, await bytes(save.url)); return 'save'; }
-    return null;
-  }
+  });
 
   async function start() {
     if (!romId) return fail('Inget spel angivet');
-    let game;
     try {
       game = await M.romm.game(romId);
     } catch (err) {
@@ -177,138 +85,78 @@ window.PioneerTV = window.PioneerTV || {};
     document.title = `${game.name} – Pioneer TV`;
     // RomM lists a game before its scan has found the file; it cannot serve it yet.
     if (game.fileCount === 0) return fail('RomM har inte hittat spelets fil än. Skanna biblioteket i RomM och försök igen.');
-    // A console the box plays in RetroArch (the N64: the browser cannot run
-    // it at speed) goes to the daemon instead; see daemon/pioneertv/native.py.
-    if ((await nativePlatforms()).includes(game.platform)) return playNative(game);
-    const url = romFileUrl(game);
-    if (!url) return fail('Den här konsolen går inte att spela här än');
-    const core = CORES[game.platform];
-    if (THREADED.has(core) && !window.crossOriginIsolated) return fail('Den här konsolen behöver en nyare version av boxen');
-    M.player = { emulator: null, core, game };
-
-    let blob;
-    try { blob = await download(url); } catch { return fail('RomM svarar inte'); }
-    say('Startar…');
-
-    Object.assign(window, {
-      EJS_player: '#game',
-      EJS_core: core,
-      EJS_threads: THREADED.has(core),
-      EJS_gameUrl: URL.createObjectURL(blob),
-      EJS_gameName: game.fileName.replace(/\.[^.]+$/, ''),
-      EJS_pathtodata: M.romm.base + 'assets/emulatorjs/data/',
-      EJS_startOnLoaded: true,
-      EJS_color: '#f5cf5a',
-      EJS_backgroundColor: '#1c1613',
-      EJS_Buttons: Object.fromEntries(['playPause', 'restart', 'mute', 'settings', 'fullscreen', 'saveState', 'loadState',
-        'screenRecord', 'gamepad', 'cheat', 'volume', 'saveSavFiles', 'loadSavFiles', 'quickSave', 'quickLoad',
-        'screenshot', 'cacheManager', 'exitEmulation', 'netplay', 'diskButton', 'contextMenu'].map((k) => [k, false])),
-      EJS_onGameStart: async () => {
-        loading.hidden = true;
-        const emu = window.EJS_emulator;
-        M.player.emulator = emu;
-        guard();
-        M.romm.markPlayed(romId).catch((e) => console.error('update_last_played', e));
-        if (fresh) return;
-        try {
-          const from = await resume(emu.gameManager);
-          if (from) M.hud.toast(from === 'state' ? 'Fortsätter där du slutade' : 'Sparfilen är laddad', 'gamepad', 2500);
-        } catch (e) {
-          console.error('resume', e);
-          M.hud.toast('Sparningen kunde inte laddas', 'gamepad', 3000);
-        }
-      },
-    });
-    tuneRetroArch();
-    const script = document.createElement('script');
-    script.src = M.romm.base + 'assets/emulatorjs/data/loader.js';
-    script.onerror = () => fail('RomM svarar inte');
-    document.body.appendChild(script);
-  }
-
-  // ------------------------------------------------------------ saving
-  // The state (with a screenshot) and, when the core keeps one, the save
-  // file both go to RomM, so the start page can resume and RomM shows them.
-  // A paused emulator draws no frames, so the picture is taken while the
-  // game still runs (as the pause panel opens). It is a nicety: never let it
-  // hold anything up.
-  function screenshot() {
-    return Promise.race([
-      M.player.emulator.takeScreenshot('canvas', 'png', 1).then((r) => r.blob).catch(() => null),
-      new Promise((resolve) => setTimeout(() => resolve(null), 1000)),
-    ]);
-  }
-
-  async function saveAll(shot) {
-    const gm = M.player.emulator.gameManager;
-    const state = gm.getState();
-    await M.romm.uploadState(romId, state, shot, M.player.core);
-    const save = gm.getSaveFile();
-    if (save && save.length) await M.romm.uploadSave(romId, save, shot, M.player.core);
+    let status;
+    try { status = await api(''); } catch { return fail('Boxen svarar inte'); }
+    if (!(status.platforms || []).includes(game.platform)) return fail('Den här konsolen går inte att spela här än');
+    say('Laddar…');
+    let r;
+    try { r = await api('/play', { rom: romId }); } catch { return fail('Boxen svarar inte'); }
+    if (r.ok === false) {
+      return fail(r.message === 'no_key' ? 'Lägg in en API-nyckel för RomM under Inställningar → RomM' : (r.message || 'Spelet kunde inte startas'));
+    }
+    M.romm.markPlayed(romId).catch((e) => console.error('update_last_played', e));
   }
 
   // ------------------------------------------------------------ pause panel
-  // Guide opens it instead of the quick menu. It is a modal layer like the
-  // quick menu: the navigation hands it the pad, game.js stops game mode and
-  // ejs-players.js pauses the emulator while it is open.
-  const hhmm = (iso) => new Date(iso).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+  // Home in a game: the daemon has RetroArch take a picture and quit (saving
+  // where the game was), and this panel opens over the picture. Every way
+  // out but Avsluta starts RetroArch again; B (or Home again) carries on.
+  const hhmm = (s) => new Date(s * 1000).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
 
   const panel = {
     root: null, list: null, items: [], index: 0, busy: false,
     isOpen() { return !!(this.root && this.root.isConnected); },
-    toggle() { this.isOpen() ? this.close() : this.open(); },
+    // Home while the panel is open (main.js routes the menu button here):
+    // carry on, as Fortsätt spela does.
+    // Before the game is up (and after an error) it is the quick menu's.
+    toggle() { if (this.isOpen()) this.resume('auto'); else M.hud.menu.toggle(); },
 
     async open() {
-      if (!M.player || !M.player.emulator || this.isOpen() || this.opening) return;
-      this.opening = true;
-      this.shot = await screenshot();
-      this.opening = false;
+      if (this.isOpen()) return;
+      let status = {};
+      try { status = await api(''); } catch {}
       const root = document.createElement('aside');
       root.className = 'paus';
       root.setAttribute('data-pioneertv-overlay', '');
       M.bridge.sealOverlay(root);
       const label = document.createElement('p'); label.className = 'paus-label'; label.textContent = 'Pausat';
-      const title = document.createElement('h1'); title.className = 'paus-title'; title.textContent = M.player.game.name;
+      const title = document.createElement('h1'); title.className = 'paus-title'; title.textContent = game ? game.name : '';
       this.list = document.createElement('div'); this.list.className = 'paus-items';
       this.status = document.createElement('p'); this.status.className = 'paus-status';
       const pads = document.createElement('div'); pads.className = 'paus-pads';
-      pads.append(...padLines());
+      const names = status.players || [];
+      for (let i = 0; i < 2; i++) {
+        const p = document.createElement('p');
+        p.textContent = `Spelare ${i + 1} · ${names[i] || '—'}`;
+        pads.appendChild(p);
+      }
       root.append(label, title, this.status, this.list, pads);
       M.bridge.mount(root, { modal: true });
       this.root = root;
+      this.busy = false;
       M.nav.captured = this;
       M.bridge.emit('menu:open');
-      this.show(this.menuItems(null));
-      const state = await M.romm.latestState(romId).catch(() => null);
-      if (this.isOpen() && !this.failed) this.show(this.menuItems(state), this.index);
+      this.show(this.menuItems(status.point));
     },
 
+    // When the game takes the screen back, or an error replaces the panel.
     close() {
-      if (this.busy) return;
+      const was = this.isOpen();
       if (this.root) M.bridge.unmount(this.root);
       this.root = null;
-      this.failed = false;
+      this.busy = false;
       if (M.nav.captured === this) M.nav.captured = null;
-      M.bridge.emit('menu:close');
+      if (was) M.bridge.emit('menu:close');
     },
 
-    menuItems(state) {
-      const gm = M.player.emulator.gameManager;
+    menuItems(point) {
       return [
-        { label: 'Fortsätt spela', primary: true, run: () => this.close() },
-        { label: 'Spara läge', run: () => this.save(false) },
-        { label: 'Ladda läge', detail: state ? hhmm(state.updatedAt) : 'inget sparat', disabled: !state,
-          run: async () => { gm.loadState(await bytes(state.url)); this.close(); M.hud.toast('Läget är laddat', 'gamepad', 1800); } },
-        { label: 'Starta om', run: () => { gm.restart(); this.close(); } },
+        { label: 'Fortsätt spela', primary: true, run: () => this.resume('auto') },
+        { label: 'Spara läge', run: () => this.savePoint() },
+        { label: 'Ladda läge', detail: point ? hhmm(point) : 'inget sparat', disabled: !point, run: () => this.resume('point') },
+        { label: 'Starta om', run: () => this.resume('none') },
         { label: 'TV-volym', detail: '◀ ▶ · även L2/R2', volume: true, run: () => M.bridge.cec('mute') },
-        { label: 'Spara och avsluta', quit: true, run: () => this.save(true) },
-      ];
-    },
-
-    failedItems(quit) {
-      return [
-        { label: 'Försök igen', primary: true, run: () => this.save(quit) },
-        { label: quit ? 'Avsluta ändå' : 'Tillbaka till spelet', run: () => (quit ? back() : this.close()) },
+        { label: 'Avsluta', run: () => this.quit() },
       ];
     },
 
@@ -339,36 +187,40 @@ window.PioneerTV = window.PioneerTV || {};
 
     activate() {
       const it = this.items[this.index];
-      // A second press on Spara och avsluta while it saves: quit without
-      // waiting for the save (RomM may be slow or away).
-      if (this.busy && this.quitting && it && it.quit) { back(); return; }
       if (it && !it.disabled && !this.busy) it.run();
     },
 
-    async save(quit) {
+    setStatus(text, error) {
+      this.status.textContent = text;
+      this.status.classList.toggle('fel', !!error);
+    },
+
+    // Back into the game: "auto" where it was, "point" from Spara läge, "none" from the start.
+    async resume(load) {
+      if (this.busy) return;
       this.busy = true;
-      this.quitting = quit;
-      this.status.textContent = quit ? 'Sparar och avslutar… · tryck igen för att avsluta utan att spara' : 'Sparar…';
-      this.status.classList.remove('fel');
-      try {
-        await saveAll(this.shot);
-        if (leaving) return;                    // quit without saving while it ran
-      } catch (e) {
-        if (leaving) return;
-        console.error('save', e);
-        this.busy = false;
-        this.failed = true;
-        this.status.textContent = 'Sparningen misslyckades';
-        this.status.classList.add('fel');
-        this.show(this.failedItems(quit));
-        return;
-      }
-      this.busy = false;
-      if (quit) { back(); return; }
-      this.failed = false;
-      this.status.textContent = '';
-      this.close();
-      M.hud.toast('Sparat', 'gamepad', 1800);
+      this.setStatus(load === 'none' ? 'Startar om…' : 'Fortsätter…');
+      let r;
+      try { r = await api('/resume', { load }); } catch { r = { ok: false, message: 'Boxen svarar inte' }; }
+      if (r.ok === false) { this.busy = false; this.setStatus(r.message || 'Spelet kunde inte startas', true); }
+      // On success the daemon's "running" closes the panel.
+    },
+
+    async savePoint() {
+      if (this.busy) return;
+      let r;
+      try { r = await api('/save_point', {}); } catch { r = { ok: false, message: 'Boxen svarar inte' }; }
+      if (r.ok === false) { this.setStatus(r.message || 'Det gick inte att spara', true); return; }
+      let status = {};
+      try { status = await api(''); } catch {}
+      this.show(this.menuItems(status.point), this.index);
+      this.setStatus('Läget är sparat');
+    },
+
+    async quit() {
+      this.busy = true;
+      try { await api('/quit', {}); } catch {}
+      back();
     },
 
     // Keys while the panel has the pad (spatial-nav hands them over).
@@ -379,91 +231,29 @@ window.PioneerTV = window.PioneerTV || {};
       else if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && it && it.volume) {
         M.bridge.cec(e.key === 'ArrowLeft' ? 'volume_down' : 'volume_up');
       } else if (e.key === 'Enter') this.activate();
-      else if (e.key === 'Escape' && !this.failed) this.close();
+      else if (e.key === 'Escape') this.resume('auto');
     },
   };
 
-  // Which browser gamepad is which of the box's pads. The browser sees two
-  // identical 8BitDo; the daemon knows them apart by their dongles and says
-  // which one was just used (active_pad: on a change of pad, and on the first
-  // input after a rest). A browser pad that pressed within the same moment is
-  // that pad.
-  // Kept for as long as the browser runs: the browser's indices hold until a
-  // pad reconnects, and the next game should not have to learn them again.
-  const STORE = 'pioneertv-padnames';
-  const padNames = new Map((() => { try { return JSON.parse(sessionStorage.getItem(STORE) || '[]'); } catch { return []; } })());
-  const lastPress = new Map();         // "id_index" -> when it last pressed
-  let pendingPad = null;               // an active_pad no browser pad matched yet
-  const MATCH_MS = 400;
-  const padKey = (g) => `${g.id}_${g.index}`;
-  function bind(pad, at) {
-    const near = [...lastPress].filter(([, t]) => Math.abs(t - at) <= MATCH_MS);
-    if (near.length !== 1) return false;
-    padNames.set(near[0][0], pad.name);
-    // The other pad cannot be this one any more.
-    for (const [k, v] of padNames) if (v === pad.name && k !== near[0][0]) padNames.delete(k);
-    try { sessionStorage.setItem(STORE, JSON.stringify([...padNames])); } catch {}
-    return true;
-  }
-  const seen = new Map();              // "id_index" -> was anything pressed
-  setInterval(() => {
-    const now = performance.now();
-    for (const g of navigator.getGamepads ? navigator.getGamepads() : []) {
-      if (!g) continue;
-      const k = padKey(g);
-      const down = g.buttons.some((x) => x.pressed) || g.axes.some((v) => Math.abs(v) > 0.6);
-      if (down && !seen.get(k)) {
-        lastPress.set(k, now);
-        if (pendingPad && now - pendingPad.at <= MATCH_MS && bind(pendingPad.pad, now)) pendingPad = null;
-      }
-      seen.set(k, down);
-    }
-  }, 50);
-  M.bridge.on('active_pad', (e) => {
-    if (!e.pad || !e.pad.named) return;
-    const now = performance.now();
-    if (!bind(e.pad, now)) pendingPad = { pad: e.pad, at: now };
-  });
-
-  function padName(g) {
-    const name = padNames.get(padKey(g));
-    if (name) return name;
-    // One pad on each side: no need to match.
-    const box = ((M.bridge.state.status || {}).gamepads) || [];
-    const browser = navigator.getGamepads ? [...navigator.getGamepads()].filter(Boolean) : [];
-    if (box.length === 1 && browser.length === 1) return box[0].name;
-    return 'Handkontroll';
-  }
-
-  // Who is which player: EmulatorJS's slots as ejs-players.js ordered them.
-  function padLines() {
-    const sel = (window.EJS_emulator && window.EJS_emulator.gamepadSelection) || [];
-    const pads = navigator.getGamepads ? [...navigator.getGamepads()].filter(Boolean) : [];
-    const lines = [];
-    for (let i = 0; i < 2; i++) {
-      const pad = pads.find((g) => `${g.id}_${g.index}` === sel[i]) || (!sel.some(Boolean) ? pads[i] : null);
-      const p = document.createElement('p');
-      p.textContent = `Spelare ${i + 1} · ${pad ? padName(pad) : '—'}`;
-      lines.push(p);
-    }
-    return lines;
-  }
-
   M.pageMenu = panel;
 
+  // Holding B with the panel open (a step back) quits, as Avsluta does.
   window.addEventListener('popstate', () => {
     if (!guarded || leaving) return;
     guarded = false;
-    guard();                                  // stay: what happens next is the panel's call
-    if (panel.failed || panel.busy) return;   // a failed save waits for the person's choice
-    (panel.isOpen() ? Promise.resolve() : panel.open()).then(() => panel.save(true));
+    guard();
+    if (panel.isOpen()) panel.quit();
   });
 
-  // B with the message up goes back; in the game, B belongs to the game.
+  // Leaving this page some other way (holding Home goes to the start page)
+  // leaves nothing paused behind.
+  window.addEventListener('pagehide', () => { if (!leaving && panel.isOpen()) navigator.sendBeacon('/api/games/quit'); });
+
+  // B with the message up goes back.
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !$('message').hidden && !M.nav.captured) { e.preventDefault(); back(); }
   });
 
-  M.spela = { romFileUrl, CORES, saveAll, panel };
+  M.spela = { panel };
   start();
 })(window.PioneerTV);

@@ -159,9 +159,8 @@ remote does not always announce it.
 
 The Spel tile opens our own pages on top of [RomM](https://github.com/rommapp/romm):
 `extension/launcher/spel.html` to browse (recently played, consoles, collections,
-each console's games with covers) and `spela.html` to play, in RomM's EmulatorJS
-but without RomM's interface around it. On the start page X removes a game
-from Senast spelade; X again within five seconds puts it back.
+each console's games with covers) and `spela.html` to play. On the start page X
+removes a game from Senast spelade; X again within five seconds puts it back.
 
 The pages never talk to RomM directly. They call `/romm/...` on their own
 origin, and the daemon forwards that to RomM with the API key added; only
@@ -169,34 +168,40 @@ RomM's `/api/` and `/assets/` are reachable that way. That is why the tile
 opens the pages from the daemon (`http://127.0.0.1:8765/ext/launcher/spel.html`)
 rather than from the extension. Set RomM's address and a client API token
 (RomM: Settings → Client API Tokens, read scopes plus `roms.user.write` and
-`assets.write`) under Inställningar → RomM. A box set up before the Spel
-pages still has a `romm` service pointing at RomM's own web UI in its
-`settings.json`; change its address on the settings page to switch.
+`assets.write`) under Inställningar → RomM.
 
-In a game, Guide opens the pause panel: Fortsätt spela, Spara läge, Ladda
-läge, Starta om, TV-volym (left and right step the TV's volume over CEC, A
-mutes) and Spara och avsluta (press it again while it saves to quit
-without saving). Saving sends a state and the game's own save file to RomM; the next start resumes from the newest state. If saving fails
-on the way out, the panel says so and offers Försök igen or Avsluta ändå.
-Holding B with the panel open (a step back) also saves and quits; holding
-Guide goes home at once, without saving.
+### Playing: RetroArch, out of sight
 
-### N64 in RetroArch
+Games run on the box, in RetroArch, not in the browser (EmulatorJS could not
+keep up on the Pi: the N64 at about 23 of 60 frames a second, SNES and
+Genesis slow and crackling for their first seconds). RetroArch never shows
+itself: no menu, notices or logo, only the game. The design is in
+`docs/superpowers/specs/2026-10-15-retroarch-games-design.md`.
 
-EmulatorJS can only interpret the N64's processor in WebAssembly: Super Mario
-64 runs at about 23 frames a second on a Pi 4, whichever core or options.
-So N64 games can be played in RetroArch instead, with mupen64plus_next built
-for the Pi (GLES3 and its ARM64 recompiler). After an install,
-`pioneer-tv-cores.service` installs RetroArch and builds the core in the
-background (`system/build-n64-core.sh`, once per pinned commit; it takes a
-while). It is off until switched on: Inställningar → RomM → *Spela N64 i
-RetroArch*. Then the player hands N64 games to the daemon (`native.py`),
-which fetches the file from RomM into `/var/lib/pioneer-tv/native/games`
-(1.5 GB at most, the games played longest ago go first), and starts
-RetroArch as the kiosk user on the TV's Weston, over Chromium. The pads go
-to RetroArch; Guide opens RetroArch's own menu and holding it quits. The
-game's state is saved on the way out and resumed next time, on the box
-(`/var/lib/pioneer-tv/native/states`), not in RomM.
+- **Cores.** NES (Nestopia), SNES (snes9x) and Genesis (Genesis Plus GX) from
+  Debian; N64 (mupen64plus_next, GLES3 and its ARM64 recompiler) and DOS
+  (DOSBox Pure) built on the box. `pioneer-tv-cores.service` installs and
+  builds them in the background after an install (`system/build-cores.sh`,
+  once per pinned commit). A console without its core says it cannot be
+  played yet.
+- **Starting.** The player asks the daemon (`games.py`, `/api/games/play`),
+  which fetches the file from RomM into `/var/lib/pioneer-tv/games/cache`
+  (1.5 GB at most; the games played longest ago go first) and starts
+  RetroArch as the kiosk user on the TV's Weston, over Chromium. A game
+  resumes where it was left.
+- **Pausing.** Guide in a game: RetroArch takes a picture and quits, saving
+  where the game was, and the player shows the pause panel over the
+  picture: Fortsätt spela, Spara läge (a save point of its own), Ladda läge,
+  Starta om, TV-volym (left and right step the TV's volume, A mutes) and
+  Avsluta. Everything but Avsluta starts RetroArch again, which takes a
+  second or two; B carries on. Holding Guide goes home; the game is saved as
+  RetroArch quits.
+- **Pads.** While a game runs the pads are RetroArch's (with an autoconfig
+  for the 8BitDo Ultimate 2C); player 1 is the pad last used. A real
+  keyboard plugged in goes to DOS games; RetroArch's own hotkeys are off.
+- **Saves** stay on the box (`/var/lib/pioneer-tv/games/states`, `points`,
+  `saves`), not in RomM. Inställningar → RomM → *Spela spelen på boxen*
+  switches it all off.
 
 Pages the daemon serves under `/ext/` carry their own copies of the shell
 scripts, so the manifest keeps the extension's content scripts off them, and
