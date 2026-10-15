@@ -57,11 +57,14 @@ window.PioneerTV = window.PioneerTV || {};
     if (leaving) return;
     if (e.state === 'loading') say(`Laddar ${mb(e.got)}${e.total ? ` av ${mb(e.total)}` : ''} MB`);
     else if (e.state === 'running') {
-      // RetroArch's window is over this page now; what is here waits behind it.
-      started = true;
+      // RetroArch's window is over this page now; what is here waits behind
+      // it. Back from a pause the picture stays until the game covers it,
+      // with nothing written over it.
       guard();
       panel.close();
-      say('Startar…');
+      if (started) loading.hidden = true;
+      else say('Startar…');
+      started = true;
     } else if (e.state === 'paused') {
       loading.hidden = true;
       screen.src = `/api/games/screen?t=${Date.now()}`;

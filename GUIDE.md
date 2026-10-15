@@ -186,7 +186,7 @@ itself: no menu, notices or logo, only the game. The design is in
   played yet.
 - **Starting.** The player asks the daemon (`games.py`, `/api/games/play`),
   which fetches the file from RomM into `/var/lib/pioneer-tv/games/cache`
-  (1.5 GB at most; the games played longest ago go first) and starts
+  (800 MB at most; the games played longest ago go first) and starts
   RetroArch as the kiosk user on the TV's Weston, over Chromium. A game
   resumes where it was left.
 - **Pausing.** Guide in a game: RetroArch takes a picture and quits, saving

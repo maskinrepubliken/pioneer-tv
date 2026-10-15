@@ -11,9 +11,11 @@ RetroArch is only ever the game picture: no menu, no notices, no logo. The
 player page (extension/launcher/spela.js) asks for a game; this module
 fetches it from RomM into a cache, writes RetroArch's config and starts it
 as the kiosk user. Kiosk-shell puts its window over Chromium. Home pauses:
-a screenshot, then QUIT (RetroArch saves its automatic state as it goes),
-and the page shows our pause panel over the screenshot. Resuming starts
-RetroArch again from that state.
+a screenshot, then the state into slot 0 (SAVE_STATE; RetroArch's own
+save-on-quit did not happen when it was told to QUIT over its command port,
+seen on the box), then QUIT, and the page shows our pause panel over the
+screenshot. Resuming starts RetroArch again with that slot as its entry
+state (--entryslot 0).
 
 While a game runs the pads are RetroArch's (the pad manager leaves them
 alone, as in the browser's game mode) and Home comes here, through the
@@ -146,7 +148,8 @@ class Games:
         return Path(self.game["path"]).stem if self.game else ""
 
     def _auto_state(self) -> Path:
-        return self.root / "states" / f"{self._base()}.state.auto"
+        """Where the game was left: RetroArch's slot 0, written by SAVE_STATE."""
+        return self.root / "states" / f"{self._base()}.state"
 
     def _point_path(self) -> Path | None:
         return self.root / "points" / f"{self.game['id']}.state" if self.game else None
@@ -193,8 +196,26 @@ class Games:
         self._own(point)
         return True, ""
 
+    async def _wait_written(self, path: Path | None, before: float, seconds: float) -> bool:
+        for _ in range(int(seconds / 0.05)):
+            await asyncio.sleep(0.05)
+            if path and path.is_file() and path.stat().st_mtime > before and path.stat().st_size > 0:
+                await asyncio.sleep(0.1)             # let the write finish
+                return True
+        return False
+
+    async def _save_state(self) -> bool:
+        """The game where it is, into slot 0."""
+        state = self._auto_state()
+        before = state.stat().st_mtime if state.is_file() else 0
+        self.command("SAVE_STATE")
+        ok = await self._wait_written(state, before, 4)
+        if not ok:
+            log.warning("retroarch wrote no state for %s", self.game and self.game["name"])
+        return ok
+
     async def pause(self) -> None:
-        """Home in a game: a screenshot, then RetroArch quits (saving its state), and the page shows the pause panel."""
+        """Home in a game: a screenshot and the state, then RetroArch quits and the page shows the pause panel."""
         if self.state != "running" or not (self.proc and self.proc.returncode is None):
             return
         self.state = "pausing"
@@ -202,17 +223,18 @@ class Games:
         before = shot.stat().st_mtime if shot and shot.is_file() else 0
         self.command("PAUSE_TOGGLE")
         self.command("SCREENSHOT")
-        for _ in range(30):                     # up to 1.5 s for the picture
-            await asyncio.sleep(0.05)
-            if shot and shot.is_file() and shot.stat().st_mtime > before:
-                break
+        await self._wait_written(shot, before, 1.5)
         self.screen_at = time.time()
+        await self._save_state()
         await self._quit_process()
         # _watch sees the exit and, with state "pausing", reports "paused".
 
     async def quit(self) -> None:
-        """Leave the game for good: RetroArch quits (saving its state) and the page goes back."""
-        self.state = "quitting" if self.proc and self.proc.returncode is None else "idle"
+        """Leave the game for good: its state saved, RetroArch quits and the page goes back."""
+        running = bool(self.proc and self.proc.returncode is None)
+        if running and self.state == "running":
+            await self._save_state()
+        self.state = "quitting" if running else "idle"
         await self._quit_process()
         if self.state != "quitting":
             self.game = None
@@ -284,7 +306,7 @@ class Games:
 
     def _make_room(self, need: int) -> None:
         """Keep the cache under games.cache_mb: the games played longest ago go first."""
-        limit = int(self.gcfg.get("cache_mb", 1500)) * (1 << 20)
+        limit = int(self.gcfg.get("cache_mb", 800)) * (1 << 20)
         cache = self.root / "cache"
         entries = []
         for d in cache.iterdir() if cache.is_dir() else []:
@@ -310,7 +332,7 @@ class Games:
         order = [first] + [i for i in range(len(pads)) if i != first]
         return order[:2] + [1] * (2 - len(order[:2])), [pads[i].label for i in order[:2]]
 
-    def write_config(self, core_name: str, autoload: bool = True) -> None:
+    def write_config(self, core_name: str) -> None:
         r = self.root
         for sub in ("states", "saves", "screens", "points", "system", "autoconfig/udev", "cfg"):
             (r / sub).mkdir(parents=True, exist_ok=True)
@@ -372,8 +394,9 @@ sort_savefiles_by_content_enable = "false"
 sort_savestates_by_content_enable = "false"
 sort_screenshots_by_content_enable = "false"
 auto_screenshot_filename = "false"
-savestate_auto_save = "true"
-savestate_auto_load = "{"true" if autoload else "false"}"
+savestate_auto_save = "false"
+savestate_auto_load = "false"
+state_slot = "0"
 savestate_thumbnail_enable = "false"
 autosave_interval = "30"
 rewind_enable = "false"
@@ -407,13 +430,8 @@ history_list_enable = "false"
             except OSError:
                 pass
 
-    async def _launch(self, autoload: bool) -> None:
-        core = self.core_for(self.game["platform"])
-        if not core:
-            self.state = "idle"
-            await self._event("error", message="Den här konsolen går inte att spela här än")
-            return
-        self.write_config(Path(core).name.replace("_libretro.so", ""), autoload=autoload)
+    def command_line(self, core: str, autoload: bool) -> list[str]:
+        """RetroArch as the kiosk user, on the TV's Weston, from where the game was left unless not."""
         g = self.gcfg
         user = g.get("user", "pi")
         try:
@@ -423,8 +441,20 @@ history_list_enable = "false"
             uid, home = 1000, "/home/pi"
         env = [f"XDG_RUNTIME_DIR={g.get('runtime_dir', f'/run/user/{uid}')}",
                f"WAYLAND_DISPLAY={g.get('wayland_display', 'wayland-1')}", f"HOME={home}"]
-        cmd = [g.get("retroarch", "retroarch"), "--config", str(self.root / "cfg" / "retroarch.cfg"), "-L", core, self.game["path"]]
-        cmd = (["runuser", "-u", user, "--"] if os.geteuid() == 0 else []) + ["env", *env, *cmd]
+        cmd = [g.get("retroarch", "retroarch"), "--config", str(self.root / "cfg" / "retroarch.cfg"), "--verbose", "-L", core]
+        if autoload and self._auto_state().is_file():
+            cmd += ["--entryslot", "0"]
+        cmd.append(self.game["path"])
+        return (["runuser", "-u", user, "--"] if os.geteuid() == 0 else []) + ["env", *env, *cmd]
+
+    async def _launch(self, autoload: bool) -> None:
+        core = self.core_for(self.game["platform"])
+        if not core:
+            self.state = "idle"
+            await self._event("error", message="Den här konsolen går inte att spela här än")
+            return
+        self.write_config(Path(core).name.replace("_libretro.so", ""))
+        cmd = self.command_line(core, autoload)
         log.info("starting %s (%s)", self.game["name"], "resuming" if autoload else "from the start")
         log_path = self.root / "retroarch.log"
         with open(log_path, "wb") as out:

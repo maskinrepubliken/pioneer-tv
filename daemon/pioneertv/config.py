@@ -95,7 +95,7 @@ DEFAULTS: dict[str, Any] = {
         "user": "pi",
         "wayland_display": "wayland-1",
         "dir": "/var/lib/pioneer-tv/games",
-        "cache_mb": 1500,
+        "cache_mb": 800,
         "port": 55355,
         "audio_driver": "pipewire",
         "cores": {

@@ -99,7 +99,7 @@ back to the list.
 ## Storage
 
 Under `/var/lib/pioneer-tv/games/`, owned by the kiosk user:
-`cache/<rom id>/<file>` (at most 1.5 GB; the games played longest ago are
+`cache/<rom id>/<file>` (at most 800 MB; the games played longest ago are
 dropped first), `states/` (RetroArch's automatic state per game),
 `points/<rom id>.state` (Spara läge), `saves/` (the games' own save files),
 `screens/` (the pause screenshot), `cfg/` (written on each start).

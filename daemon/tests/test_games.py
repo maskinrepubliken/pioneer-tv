@@ -45,7 +45,8 @@ class Pads:
 
 
 # A stand-in for RetroArch: listens on the command port; SCREENSHOT writes the
-# picture, QUIT writes the automatic state and exits.
+# picture, SAVE_STATE the state, QUIT exits (without saving, as the real one
+# did when told to quit over the port).
 FAKE_RA = r'''
 import socket, sys, pathlib
 port, shot, state = int(sys.argv[1]), sys.argv[2], sys.argv[3]
@@ -55,8 +56,9 @@ while True:
     msg = s.recv(64).decode()
     if msg == "SCREENSHOT":
         pathlib.Path(shot).write_bytes(b"png")
-    elif msg == "QUIT":
+    elif msg == "SAVE_STATE":
         pathlib.Path(state).write_bytes(b"state")
+    elif msg == "QUIT":
         sys.exit(0)
 '''
 
@@ -86,8 +88,9 @@ class GamesTests(unittest.IsolatedAsyncioTestCase):
             self.events.append(msg)
         self.cfg = config._merge(config.DEFAULTS, {"games": {
             "retroarch": str(ra), "dir": str(d / "games"), "port": free_port(),
-            "cores": {"snes": str(core), "n64": str(d / "missing.so")},
         }})
+        # Only this test's cores, not the box's own (which may well be installed).
+        self.cfg["games"]["cores"] = {"snes": str(core), "n64": str(d / "missing.so")}
         self.pads = Pads([Pad("/dev/input/event7", "B", "Grön handkontroll"), Pad("/dev/input/event5", "A", "Rosa handkontroll")], active="B")
         self.games = Games(self.cfg, emit, self.pads, Dispatcher())
 
@@ -104,17 +107,23 @@ class GamesTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(joy, [1, 0])                 # event5 is RetroArch's pad 0, event7 its pad 1
         self.assertEqual(names, ["Grön handkontroll", "Rosa handkontroll"])
 
-    def test_config_is_quiet_and_resumes(self):
-        self.games.write_config("snes9x", autoload=True)
+    def test_config_is_quiet(self):
+        self.games.write_config("snes9x")
         root = Path(self.cfg["games"]["dir"])
         cfg = (root / "cfg" / "retroarch.cfg").read_text()
-        for line in ('network_cmd_enable = "true"', 'savestate_auto_save = "true"', 'savestate_auto_load = "true"',
-                     'video_font_enable = "false"', 'menu_enable_widgets = "false"', 'input_exit_emulator = "nul"',
-                     'input_player1_joypad_index = "1"'):
+        for line in ('network_cmd_enable = "true"', 'state_slot = "0"', 'video_font_enable = "false"',
+                     'menu_enable_widgets = "false"', 'input_exit_emulator = "nul"', 'input_player1_joypad_index = "1"'):
             self.assertIn(line, cfg)
-        self.games.write_config("snes9x", autoload=False)
-        self.assertIn('savestate_auto_load = "false"', (root / "cfg" / "retroarch.cfg").read_text())
         self.assertTrue(any((root / "autoconfig" / "udev").iterdir()))
+
+    def test_resumes_from_slot_zero_when_there_is_a_state(self):
+        g = self.games
+        g.game = {"id": 7, "name": "Testspel", "platform": "snes", "path": str(Path(self.dir.name) / "Testspel.smc")}
+        self.assertNotIn("--entryslot", g.command_line("core.so", autoload=True))
+        g._auto_state().parent.mkdir(parents=True, exist_ok=True)
+        g._auto_state().write_bytes(b"state")
+        self.assertIn("--entryslot", g.command_line("core.so", autoload=True))
+        self.assertNotIn("--entryslot", g.command_line("core.so", autoload=False))   # Starta om
 
     def test_cache_drops_the_oldest(self):
         self.cfg["games"]["cache_mb"] = 1
