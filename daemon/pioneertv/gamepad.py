@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import asyncio
 import collections
+import copy
 import logging
 import os
 import time
@@ -115,15 +116,19 @@ class Gamepad:
             y.setdefault("long", {"system": "menu"})
             button_map["BTN_NORTH"] = y
         self.buttons: dict[int, dict] = {}
+        # Each pad its own copies: the dispatcher keeps a held action's repeat
+        # and long press by the action object, and with the config's dicts
+        # shared, one pad's press could take over another's repeat and leave
+        # it running (the TV's volume went on falling by itself).
         for name, action in button_map.items():
             code = getattr(e, name, None)
             if code is not None:
-                self.buttons[code] = action
+                self.buttons[code] = copy.deepcopy(action)
         self.axes: dict[int, dict] = {}
         for name, spec in self.cfg["axes"].items():
             code = getattr(e, name, None)
             if code is not None:
-                self.axes[code] = spec
+                self.axes[code] = copy.deepcopy(spec)
         self.absinfo = {code: info for code, info in dev.capabilities().get(e.EV_ABS, [])}
         # No ABS_RX/RY but a signed ABS_Z/RZ: that is the right stick (generic HID pads).
         if e.ABS_RX not in self.absinfo and e.ABS_Z in self.absinfo and self.absinfo[e.ABS_Z].min < 0:

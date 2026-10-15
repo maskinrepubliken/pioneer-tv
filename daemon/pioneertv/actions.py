@@ -14,6 +14,7 @@ log = logging.getLogger("pioneertv.actions")
 
 # After this long without input, check the TV really is awake before acting.
 IDLE_RECHECK_SECONDS = 10.0
+REPEAT_MAX_SECONDS = 8.0
 # A TV reports itself "on" the moment it accepts the command, while the panel
 # stays dark for a few seconds more. Input keeps being swallowed for this long
 # after a wake, or the presses that follow land on a screen nobody can see yet.
@@ -138,6 +139,10 @@ class Dispatcher:
         elif "cec" in action or "system" in action:
             await self._run_once(action)
             if action.get("repeat"):
+                # Never two repeats for one action: a press whose release went
+                # missing must not leave the first running for ever.
+                if old := self._repeat_tasks.pop(id(action), None):
+                    old.cancel()
                 self._repeat_tasks[id(action)] = asyncio.create_task(self._repeat(action))
 
     async def _end(self, action: Action) -> None:
@@ -157,13 +162,20 @@ class Dispatcher:
             task.cancel()
 
     async def _repeat(self, action: Action) -> None:
+        # A held button repeats for REPEAT_MAX_SECONDS at most: if its release
+        # is ever lost, the TV's volume does not run to the end of its scale.
+        started = time.monotonic()
         try:
             await asyncio.sleep(0.4)
-            while True:
+            while time.monotonic() - started < REPEAT_MAX_SECONDS:
                 await self._run_once(action)
                 await asyncio.sleep(self.repeat_ms / 1000)
+            log.warning("stopped repeating %s after %.0f s", action, REPEAT_MAX_SECONDS)
         except asyncio.CancelledError:
             pass
+        finally:
+            if self._repeat_tasks.get(id(action)) is asyncio.current_task():
+                del self._repeat_tasks[id(action)]
 
     async def _run_once(self, action: Action) -> None:
         if "cec" in action:
