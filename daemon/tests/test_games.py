@@ -111,19 +111,26 @@ class GamesTests(unittest.IsolatedAsyncioTestCase):
         self.games.write_config("snes9x")
         root = Path(self.cfg["games"]["dir"])
         cfg = (root / "cfg" / "retroarch.cfg").read_text()
-        for line in ('network_cmd_enable = "true"', 'state_slot = "0"', 'video_font_enable = "false"',
+        for line in ('network_cmd_enable = "true"', 'state_slot = "1"', 'video_font_enable = "false"',
                      'menu_enable_widgets = "false"', 'input_exit_emulator = "nul"', 'input_player1_joypad_index = "1"'):
             self.assertIn(line, cfg)
         self.assertTrue(any((root / "autoconfig" / "udev").iterdir()))
 
-    def test_resumes_from_slot_zero_when_there_is_a_state(self):
+    def test_the_state_is_staged_for_auto_load(self):
         g = self.games
         g.game = {"id": 7, "name": "Testspel", "platform": "snes", "path": str(Path(self.dir.name) / "Testspel.smc")}
-        self.assertNotIn("--entryslot", g.command_line("core.so", autoload=True))
+        auto = g._auto_state().with_name("Testspel.state.auto")
+        self.assertFalse(g._stage_state(True))                    # nothing saved yet
         g._auto_state().parent.mkdir(parents=True, exist_ok=True)
         g._auto_state().write_bytes(b"state")
-        self.assertIn("--entryslot", g.command_line("core.so", autoload=True))
-        self.assertNotIn("--entryslot", g.command_line("core.so", autoload=False))   # Starta om
+        self.assertTrue(g._stage_state(True))
+        self.assertEqual(auto.read_bytes(), b"state")
+        self.assertFalse(g._stage_state(False))                   # Starta om: nothing to auto-load
+        self.assertFalse(auto.exists())
+        g.write_config("snes9x", autoload=True)
+        cfg = (Path(self.cfg["games"]["dir"]) / "cfg" / "retroarch.cfg").read_text()
+        self.assertIn('savestate_auto_load = "true"', cfg)
+        self.assertIn('core_info_savestate_bypass = "true"', cfg)
 
     def test_cache_drops_the_oldest(self):
         self.cfg["games"]["cache_mb"] = 1

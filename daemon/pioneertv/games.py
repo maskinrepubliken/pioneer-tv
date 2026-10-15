@@ -11,11 +11,13 @@ RetroArch is only ever the game picture: no menu, no notices, no logo. The
 player page (extension/launcher/spela.js) asks for a game; this module
 fetches it from RomM into a cache, writes RetroArch's config and starts it
 as the kiosk user. Kiosk-shell puts its window over Chromium. Home pauses:
-a screenshot, then the state into slot 0 (SAVE_STATE; RetroArch's own
-save-on-quit did not happen when it was told to QUIT over its command port,
-seen on the box), then QUIT, and the page shows our pause panel over the
-screenshot. Resuming starts RetroArch again with that slot as its entry
-state (--entryslot 0).
+a screenshot, then the state into slot 1 (SAVE_STATE), then QUIT, and the
+page shows our pause panel over the screenshot. Resuming starts RetroArch
+again with that state copied to where its auto-load looks. (RetroArch 1.20
+only saves or loads a state for a core its core info list knows, and that
+list comes from its own cores folder, which ours are not in: every save
+said "Core does not support save states" until core_info_savestate_bypass.
+--entryslot loaded nothing either; auto-load does. Measured on the box.)
 
 While a game runs the pads are RetroArch's (the pad manager leaves them
 alone, as in the browser's game mode) and Home comes here, through the
@@ -148,8 +150,8 @@ class Games:
         return Path(self.game["path"]).stem if self.game else ""
 
     def _auto_state(self) -> Path:
-        """Where the game was left: RetroArch's slot 0, written by SAVE_STATE."""
-        return self.root / "states" / f"{self._base()}.state"
+        """Where the game was left: RetroArch's slot 1, written by SAVE_STATE."""
+        return self.root / "states" / f"{self._base()}.state1"
 
     def _point_path(self) -> Path | None:
         return self.root / "points" / f"{self.game['id']}.state" if self.game else None
@@ -205,7 +207,7 @@ class Games:
         return False
 
     async def _save_state(self) -> bool:
-        """The game where it is, into slot 0."""
+        """The game where it is, into slot 1."""
         state = self._auto_state()
         before = state.stat().st_mtime if state.is_file() else 0
         self.command("SAVE_STATE")
@@ -332,7 +334,7 @@ class Games:
         order = [first] + [i for i in range(len(pads)) if i != first]
         return order[:2] + [1] * (2 - len(order[:2])), [pads[i].label for i in order[:2]]
 
-    def write_config(self, core_name: str) -> None:
+    def write_config(self, core_name: str, autoload: bool = False) -> None:
         r = self.root
         for sub in ("states", "saves", "screens", "points", "system", "autoconfig/udev", "cfg"):
             (r / sub).mkdir(parents=True, exist_ok=True)
@@ -395,8 +397,9 @@ sort_savestates_by_content_enable = "false"
 sort_screenshots_by_content_enable = "false"
 auto_screenshot_filename = "false"
 savestate_auto_save = "false"
-savestate_auto_load = "false"
-state_slot = "0"
+savestate_auto_load = "{"true" if autoload else "false"}"
+state_slot = "1"
+core_info_savestate_bypass = "true"
 savestate_thumbnail_enable = "false"
 autosave_interval = "30"
 rewind_enable = "false"
@@ -430,6 +433,17 @@ history_list_enable = "false"
             except OSError:
                 pass
 
+    def _stage_state(self, autoload: bool) -> bool:
+        """Where RetroArch's auto-load looks: the game's state when resuming,
+        nothing when starting over. True when there is a state to load."""
+        auto = self._auto_state().with_name(f"{self._base()}.state.auto")
+        if autoload and self._auto_state().is_file():
+            shutil.copyfile(self._auto_state(), auto)
+            self._own(auto)
+            return True
+        auto.unlink(missing_ok=True)
+        return False
+
     def command_line(self, core: str, autoload: bool) -> list[str]:
         """RetroArch as the kiosk user, on the TV's Weston, from where the game was left unless not."""
         g = self.gcfg
@@ -441,10 +455,8 @@ history_list_enable = "false"
             uid, home = 1000, "/home/pi"
         env = [f"XDG_RUNTIME_DIR={g.get('runtime_dir', f'/run/user/{uid}')}",
                f"WAYLAND_DISPLAY={g.get('wayland_display', 'wayland-1')}", f"HOME={home}"]
-        cmd = [g.get("retroarch", "retroarch"), "--config", str(self.root / "cfg" / "retroarch.cfg"), "--verbose", "-L", core]
-        if autoload and self._auto_state().is_file():
-            cmd += ["--entryslot", "0"]
-        cmd.append(self.game["path"])
+        cmd = [g.get("retroarch", "retroarch"), "--config", str(self.root / "cfg" / "retroarch.cfg"), "--verbose",
+               "-L", core, self.game["path"]]
         return (["runuser", "-u", user, "--"] if os.geteuid() == 0 else []) + ["env", *env, *cmd]
 
     async def _launch(self, autoload: bool) -> None:
@@ -453,7 +465,8 @@ history_list_enable = "false"
             self.state = "idle"
             await self._event("error", message="Den här konsolen går inte att spela här än")
             return
-        self.write_config(Path(core).name.replace("_libretro.so", ""))
+        resume = self._stage_state(autoload)
+        self.write_config(Path(core).name.replace("_libretro.so", ""), autoload=resume)
         cmd = self.command_line(core, autoload)
         log.info("starting %s (%s)", self.game["name"], "resuming" if autoload else "from the start")
         log_path = self.root / "retroarch.log"
