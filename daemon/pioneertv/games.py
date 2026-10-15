@@ -32,6 +32,7 @@ import pwd
 import shutil
 import socket
 import time
+import zipfile
 from pathlib import Path
 from typing import Callable, Coroutine
 from urllib.parse import quote
@@ -79,6 +80,11 @@ input_r_y_minus_axis = "-4"
 
 # Core options, in RetroArch's core options file (keyed by the core's name).
 CORE_OPTIONS = {
+    # A DOS game's own dosbox.conf (at the root of its archive, see
+    # dos_bundle) says what to run; without it DOSBox Pure shows its own menu.
+    "dosbox_pure": {
+        "dosbox_pure_conf": "inside",
+    },
     "mupen64plus_next": {
         "mupen64plus-cpucore": "dynamic_recompiler",
         "mupen64plus-rdp-plugin": "gliden64",
@@ -102,6 +108,66 @@ HOTKEYS = (
     "send_debug_info", "turbo_fire_toggle", "record_replay", "play_replay", "replay_slot_increase",
     "replay_slot_decrease", "shader_toggle", "frame_time_counter_reset",
 )
+
+
+def dos_bundle(path: Path) -> Path:
+    """A DOS game as DOSBox Pure can start it on its own.
+
+    RomM's DOS games are js-dos bundles: the game under GAME/ and what to run
+    in .jsdos/dosbox.conf ("mount c GAME", "c:", "call HOCUS.BAT"). EmulatorJS
+    unpacked them and ran that; DOSBox Pure mounts the archive itself as C:
+    and only reads a dosbox.conf at its root, so it showed its own menu
+    instead. Repacked once, next to the original: GAME/'s contents at the
+    root and the conf beside them, its mount of C: dropped and its paths made
+    relative to the new root. Anything that is not such a bundle is used as it is."""
+    if path.suffix.lower() != ".zip":
+        return path
+    out = path.with_name(path.stem + ".pure.zip")
+    if out.is_file() and out.stat().st_mtime >= path.stat().st_mtime:
+        return out
+    try:
+        with zipfile.ZipFile(path) as z:
+            names = z.namelist()
+            conf_name = next((n for n in names if n.lower() == ".jsdos/dosbox.conf"), None)
+            if not conf_name or any(n.lower() == "dosbox.conf" for n in names):
+                return path
+            conf = z.read(conf_name).decode("latin-1")
+            prefix = ""
+            lines = []
+            in_autoexec = False
+            for line in conf.splitlines():
+                bare = line.strip()
+                if bare.startswith("["):
+                    in_autoexec = bare.lower() == "[autoexec]"
+                if in_autoexec:
+                    words = bare.split()
+                    if len(words) >= 3 and words[0].lower() == "mount" and words[1].lower().rstrip(":") == "c":
+                        prefix = words[2].strip('"').rstrip("/\\") + "/"
+                        continue
+                lines.append(line)
+            if not prefix:
+                return path
+            text = "\n".join(lines) + "\n"
+            # Paths in the rest of the autoexec (an imgmount of the CD, say)
+            # were given from the archive's root; they now start inside GAME/.
+            for sep in ("/", "\\"):
+                text = text.replace(prefix.rstrip("/") + sep, "")
+            tmp = out.with_name(out.name + ".part")
+            with zipfile.ZipFile(tmp, "w", zipfile.ZIP_STORED) as dst:
+                dst.writestr("dosbox.conf", text)
+                for info in z.infolist():
+                    name = info.filename[len(prefix):]
+                    # GAME/ may carry a dosbox.conf of its own: ours, from the
+                    # bundle's, is the one at the root.
+                    if not info.filename.startswith(prefix) or info.is_dir() or name.lower() == "dosbox.conf":
+                        continue
+                    dst.writestr(name, z.read(info))
+            tmp.rename(out)
+            log.info("%s: repacked for DOSBox Pure (%s at the root)", path.name, prefix)
+            return out
+    except (OSError, zipfile.BadZipFile) as exc:
+        log.warning("%s: could not repack for DOSBox Pure: %s", path.name, exc)
+        return path
 
 
 class Games:
@@ -302,6 +368,8 @@ class Games:
                                 last = time.monotonic()
                                 await self._event("loading", got=got, total=total)
                 part.rename(path)
+            if game["platform"] == "dos":
+                path = dos_bundle(path)
             game["path"] = str(path)
             self._own(self.root)
             return game
@@ -351,8 +419,9 @@ video_shader_enable = "false"
 video_font_enable = "false"
 video_gpu_screenshot = "true"
 video_aspect_ratio_auto = "true"
-audio_driver = "{self.gcfg.get("audio_driver", "pipewire")}"
-audio_latency = "64"
+audio_driver = "{self.gcfg.get("audio_driver", "pulse")}"
+audio_latency = "{int(self.gcfg.get("audio_latency", 128))}"
+audio_resampler_quality = "2"
 audio_enable_menu = "false"
 input_driver = "wayland"
 input_joypad_driver = "udev"

@@ -97,7 +97,10 @@ DEFAULTS: dict[str, Any] = {
         "dir": "/var/lib/pioneer-tv/games",
         "cache_mb": 800,
         "port": 55355,
-        "audio_driver": "pipewire",
+        # Through PipeWire's PulseAudio side: N64 sound stuttered with
+        # RetroArch's own pipewire driver and 64 ms (heard on the TV).
+        "audio_driver": "pulse",
+        "audio_latency": 128,
         "cores": {
             "nes": "/usr/lib/aarch64-linux-gnu/libretro/nestopia_libretro.so",
             "snes": "/usr/lib/aarch64-linux-gnu/libretro/snes9x_libretro.so",

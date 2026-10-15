@@ -132,6 +132,31 @@ class GamesTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn('savestate_auto_load = "true"', cfg)
         self.assertIn('core_info_savestate_bypass = "true"', cfg)
 
+    def test_dos_bundles_are_repacked_for_dosbox_pure(self):
+        import zipfile
+        from pioneertv.games import dos_bundle
+        src = Path(self.dir.name) / "Game.zip"
+        conf = "[cpu]\ncycles=auto\n\n[autoexec]\n@echo off\nmount c GAME\nc:\nimgmount d GAME/cd/game.iso -t iso\ncall GO.BAT\n"
+        with zipfile.ZipFile(src, "w") as z:
+            z.writestr(".jsdos/dosbox.conf", conf)
+            z.writestr("GAME/GO.BAT", "go")
+            z.writestr("GAME/cd/game.iso", "iso")
+            z.writestr("GAME/dosbox.conf", "[autoexec]\nmount c .\n")   # the game's own, left out
+        out = dos_bundle(src)
+        self.assertNotEqual(out, src)
+        with zipfile.ZipFile(out) as z:
+            self.assertEqual(sorted(z.namelist()), ["GO.BAT", "cd/game.iso", "dosbox.conf"])
+            text = z.read("dosbox.conf").decode()
+        self.assertNotIn("mount c", text.lower())
+        self.assertIn("imgmount d cd/game.iso", text)
+        self.assertIn("call GO.BAT", text)
+        self.assertIn("cycles=auto", text)
+        self.assertEqual(dos_bundle(src), out)                    # once
+        plain = Path(self.dir.name) / "Plain.zip"
+        with zipfile.ZipFile(plain, "w") as z:
+            z.writestr("GO.EXE", "x")
+        self.assertEqual(dos_bundle(plain), plain)                 # not a bundle: as it is
+
     def test_cache_drops_the_oldest(self):
         self.cfg["games"]["cache_mb"] = 1
         cache = Path(self.cfg["games"]["dir"]) / "cache"
