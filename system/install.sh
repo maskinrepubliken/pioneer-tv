@@ -60,7 +60,14 @@ echo "== packages"
 export DEBIAN_FRONTEND=noninteractive
 # A box on weak Wi-Fi may not reach the mirrors right now; the packages it
 # already has are what matters, so a failed refresh is a warning.
-apt-get update || echo "warning: apt-get update failed, installing from the package lists we have" >&2
+if ! apt-get update; then
+  # A list cut short by a dropped connection breaks every apt command after
+  # it ("Problem with MergeList ..."; seen on the box in October). Fetch the
+  # lists afresh once; if the mirrors are just out of reach, carry on.
+  echo "warning: apt-get update failed; fetching the package lists afresh" >&2
+  find /var/lib/apt/lists -maxdepth 1 -type f ! -name lock -delete
+  apt-get update || echo "warning: apt-get update failed, installing from the package lists we have" >&2
+fi
 # shellcheck disable=SC2086
 apt-get install -y --no-upgrade --no-install-recommends $REQUIRED
 # Raspberry Pi OS ships its own Chromium build (with Widevine and the V4L2
