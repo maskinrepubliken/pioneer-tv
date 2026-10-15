@@ -57,6 +57,19 @@ window.PioneerTV = window.PioneerTV || {};
   }
   const json = async (path, opts) => (await request(path, opts)).json();
 
+  // How many can play. RomM's player_count is "1" for most games whatever
+  // they are (Contra too, with "Co-operative" and "Multiplayer" among its
+  // game modes), so a count of one only counts when the modes back it up.
+  // A number, "flera" (more than one, how many unknown) or null.
+  const MULTI = /multiplayer|co-?operative|split screen|mmo|battle royale/i;
+  function playersOf(meta) {
+    const n = parseInt(String(meta.player_count || '').split(/[-–]/).pop(), 10);
+    const modes = meta.game_modes || [];
+    if (n > 1) return n;
+    if (modes.some((m) => MULTI.test(m))) return 'flera';
+    return n === 1 && modes.length ? 1 : null;   // no modes: the 1 is only RomM's default
+  }
+
   function toGame(r) {
     const meta = r.metadatum || {};
     const released = meta.first_release_date;
@@ -70,7 +83,7 @@ window.PioneerTV = window.PioneerTV || {};
       cover: r.path_cover_small ? '/romm' + r.path_cover_small : (r.path_cover_large ? '/romm' + r.path_cover_large : null),
       coverLarge: r.path_cover_large ? '/romm' + r.path_cover_large : null,
       year: released ? new Date(released).getFullYear() : null,
-      players: meta.player_count || null,
+      players: playersOf(meta),
       summary: r.summary || '',
       lastPlayed: (r.rom_user && r.rom_user.last_played) || null,
       publisher: (meta.publishers && meta.publishers[0]) || (meta.companies && meta.companies[0]) || null,

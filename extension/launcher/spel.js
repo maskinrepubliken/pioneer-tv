@@ -261,7 +261,7 @@
   }
   const fold = (s) => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('sv-SE');
 
-  const PLAYERS = (p) => (p ? `${p} spelare` : null);
+  const PLAYERS = (p) => (p === 'flera' ? 'flera spelare' : p ? `${p} spelare` : null);
 
   async function grid(opts, token) {
     setLegend([['A', 'spela'], ['L1', ''], ['R1', 'hoppa en bokstav'], ['Y', 'sök'], ['B', 'tillbaka']]);
