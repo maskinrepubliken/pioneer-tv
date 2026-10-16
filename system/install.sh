@@ -91,7 +91,9 @@ fi
 # packages the screen depends on are checked against dpkg's checksums on every
 # install and update, and any that fail are reinstalled.
 echo "== verify"
-VERIFY="chromium chromium-common libwidevinecdm0 weston libweston-14-0 libgbm1 mesa-libgallium libegl-mesa0 libegl1 libgles2 libdrm2 libwayland-client0 libwayland-server0 python3-aiohttp python3-evdev pipewire wireplumber"
+# Sound too: in October a damaged module in libpipewire-0.3-modules made
+# PipeWire crash at every start, and the TV had picture but no sound.
+VERIFY="chromium chromium-common libwidevinecdm0 weston libweston-14-0 libgbm1 mesa-libgallium libegl-mesa0 libegl1 libgles2 libdrm2 libwayland-client0 libwayland-server0 python3-aiohttp python3-evdev pipewire pipewire-bin pipewire-pulse libpipewire-0.3-0t64 libpipewire-0.3-modules libspa-0.2-modules wireplumber libwireplumber-0.5-0 libasound2t64 retroarch"
 BROKEN=""
 for p in $VERIFY; do
   dpkg -s "$p" >/dev/null 2>&1 || continue
@@ -265,6 +267,8 @@ systemctl enable --now pioneer-tv-upgrade.timer
 # The user's service manager (and with it PipeWire) must be up before the display starts.
 loginctl enable-linger "$USER_NAME" || true
 if systemctl --user --machine="$USER_NAME@.host" is-active pipewire >/dev/null 2>&1 || systemctl --user --machine="$USER_NAME@.host" list-units >/dev/null 2>&1; then
+  # A PipeWire that crashed until systemd gave up stays down: clear that first.
+  systemctl --user --machine="$USER_NAME@.host" reset-failed pipewire pipewire-pulse wireplumber 2>/dev/null || true
   systemctl --user --machine="$USER_NAME@.host" enable --now pipewire pipewire-pulse wireplumber 2>/dev/null || true
   systemctl --user --machine="$USER_NAME@.host" restart wireplumber 2>/dev/null || true
 fi
