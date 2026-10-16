@@ -231,7 +231,9 @@ if [ -d /etc/NetworkManager ]; then
   for c in $(nmcli -t -f NAME,TYPE connection show 2>/dev/null | awk -F: '$2 ~ /wireless/ {print $1}'); do
     nmcli connection modify "$c" 802-11-wireless.powersave 2 2>/dev/null || true
   done
-  iw dev wlan0 set power_save off 2>/dev/null || true
+  for d in /sys/class/net/wl*; do
+    [ -e "$d" ] && iw dev "$(basename "$d")" set power_save off 2>/dev/null || true
+  done
 fi
 # Bluetooth: Xbox controllers need ERTM off to pair.
 echo 'options bluetooth disable_ertm=1' > /etc/modprobe.d/pioneer-tv-bluetooth.conf

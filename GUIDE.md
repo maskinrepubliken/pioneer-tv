@@ -387,6 +387,17 @@ over CEC; Chromium itself stays at 100 %. To check from a shell as `pi`:
   make players stall and drop to low quality. Ethernet, or a 5 GHz network,
   is still the real fix for streaming.
 
+- A USB Wi-Fi card with a better antenna can sit beside the Pi's own radio.
+  Saved networks are not tied to `wlan0`, so a network comes up on
+  whichever card NetworkManager picks. To see which card works better on a
+  given network, run `system/wifi-compare.sh "<SSID>"` as root. It moves the
+  connection to each card in turn and measures signal, link rate, ping and a
+  download. Over SSH on Wi-Fi, start it with `systemd-run` (see the script's
+  header) and read `/tmp/wifi-compare.txt` afterwards. If the USB card wins,
+  tie the profile to it with
+  `nmcli connection modify "<SSID>" connection.interface-name wlan1`, or turn
+  off the Pi's own radio with `dtoverlay=disable-wifi` in `config.txt`.
+
 - Streams are kept on H.264. Chromium says yes to every codec it can decode
   in software, so SVT Play served AV1, which the Pi 4 has no hardware for:
   four `dav1d` threads for a 540p stream, one frame in eight dropped, and a

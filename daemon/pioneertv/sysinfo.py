@@ -67,9 +67,11 @@ async def wifi_status() -> dict:
         return info
     for line in out.splitlines():
         parts = line.split(":")
-        if len(parts) >= 4 and parts[1] == "wifi":
+        # With two cards (the Pi's own and a USB one) report the one that is connected.
+        if len(parts) >= 4 and parts[1] == "wifi" and (info["device"] is None or parts[2] == "connected"):
             info.update(device=parts[0], state=parts[2], ssid=parts[3] or None)
-            break
+            if parts[2] == "connected":
+                break
     if info["state"] == "connected":
         rc, out = await run("nmcli", "-t", "-f", "ACTIVE,SSID,SIGNAL", "device", "wifi", "list")
         for line in out.splitlines():
@@ -125,7 +127,8 @@ async def wifi_add(ssid: str, password: str | None, hidden: bool = False, priori
     if not ssid:
         return False, "no SSID"
     await run("nmcli", "connection", "delete", "id", ssid, timeout=15)  # replace an old profile of the same name
-    cmd = ["nmcli", "connection", "add", "type", "wifi", "con-name", ssid, "ifname", "wlan0", "ssid", ssid,
+    # No interface name: the profile comes up on whichever card can see the network.
+    cmd = ["nmcli", "connection", "add", "type", "wifi", "con-name", ssid, "ssid", ssid,
            "connection.autoconnect", "yes", "connection.autoconnect-priority", str(int(priority))]
     if password:
         cmd += ["wifi-sec.key-mgmt", "wpa-psk", "wifi-sec.psk", password]
