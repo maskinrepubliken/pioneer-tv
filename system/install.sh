@@ -120,7 +120,7 @@ sed -i \
   -e 's|^BTN_EAST   = { key = "KEY_ESC" }$|BTN_EAST   = { key = "KEY_ESC", long = { system = "back" } }       # hold B: one page back|' \
   -e 's|^BTN_SELECT = { system = "status", long = { cec = "tv_toggle" } }$|BTN_SELECT = { system = "status" }|' \
   -e 's|^BTN_MODE   = { system = "home" }$|BTN_MODE   = { system = "menu", long = { system = "home" } }      # hold Home: the start page|' \
-  -e 's|^BTN_NORTH  = { system = "keyboard" }$|BTN_NORTH  = { system = "keyboard", long = { system = "menu" } }  # hold Y: quick menu|' \
+  -e 's|^BTN_NORTH  = { system = "keyboard", long = { system = "menu" } }  # hold Y: quick menu$|BTN_NORTH  = { system = "keyboard" }|' \
   -e 's|^color = "#b5122b"$|color = "#b8940c"|' \
   -e 's|^auto_connect = false$|auto_connect = true|' \
   -e 's|^reconnect_interval = 60 .*|reconnect_interval = 300     # seconds|' \

@@ -30,11 +30,11 @@ what was learned on the way.
 | A / Cross | Select (Enter) |
 | B / Circle | Escape: closes an overlay, releases an engaged slider, leaves a text field. Hold: one page back |
 | X / Square | Play, pause (Space) |
-| Y / Triangle | On-screen keyboard. Hold: quick menu |
+| Y / Triangle | On-screen keyboard |
 | L1, R1 | Shift+Tab, Tab (previous, next focusable) |
 | L2, R2 | TV volume down, up (CEC, repeats while held) |
 | Right stick | Mouse pointer; click on the stick to left-click |
-| Start | Quick menu (also: hold Y) |
+| Start | Quick menu |
 | Select | Status toast |
 | Guide / Home / PS / Xbox | Quick menu (press again to close it); in a Spel game, the pause panel instead. Hold: home. Also wakes the TV and switches input when the pad connects |
 
