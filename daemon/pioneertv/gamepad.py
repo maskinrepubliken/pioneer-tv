@@ -60,7 +60,7 @@ QUIRKS = [
     ("Stratus XL", {"invert": ["ABS_Y", "ABS_RZ"], "buttons": {
         "BTN_B": {"key": "KEY_ESC", "long": {"system": "back"}},
         "BTN_C": {"key": "KEY_SPACE"},                                  # X
-        "BTN_NORTH": {"system": "keyboard", "long": {"system": "menu"}},  # Y; held, the menu: no Start or Guide
+        "BTN_NORTH": {"system": "keyboard", "long": {"system": "menu"}},  # Y
         "BTN_WEST": {"key": "KEY_TAB", "modifiers": ["KEY_LEFTSHIFT"]}, # L1: previous focusable
         "BTN_Z": {"key": "KEY_TAB"},                                    # R1: next focusable
         "BTN_TL": {"cec": "volume_down", "repeat": True},               # L2
@@ -70,11 +70,11 @@ QUIRKS = [
     # 8BitDo Ultimate 2C on its 2.4 GHz dongle (2dc8:310a, xpad). xpad reports
     # the left face button (X) as BTN_NORTH and the top one (Y) as BTN_WEST,
     # the reverse of where they sit; swapped back so X is OK/space and Y opens
-    # the keyboard, as on every other pad. Verified on
+    # the keyboard (hold: the quick menu), as on every other pad. Verified on
     # the box button by button; everything else matches the defaults.
     ("Ultimate 2C", {"buttons": {
         "BTN_NORTH": {"key": "KEY_SPACE"},                                  # X
-        "BTN_WEST": {"system": "keyboard"},                                 # Y
+        "BTN_WEST": {"system": "keyboard", "long": {"system": "menu"}},     # Y
     }}),
 ]
 
@@ -336,49 +336,26 @@ def usb_base(dev: evdev.InputDevice) -> str:
     return (dev.phys or "").split("/input")[0]
 
 
-def usb_device_dir(dev: evdev.InputDevice) -> str:
-    """The sysfs folder of the USB device behind an input node, or ""."""
+def usb_serial(dev: evdev.InputDevice) -> str:
+    """The serial number of the USB device behind an input node, or "". Each
+    8BitDo 2.4 GHz dongle has its own (and is paired with one pad), and it
+    follows the dongle from port to port, so it tells two identical pads apart."""
     try:
         here = os.path.realpath(f"/sys/class/input/{os.path.basename(dev.path)}/device")
     except OSError:
         return ""
     for _ in range(8):
         if os.path.isfile(os.path.join(here, "idVendor")):
-            return here
+            try:
+                with open(os.path.join(here, "serial")) as f:
+                    return f.read().strip()
+            except OSError:
+                return ""
         parent = os.path.dirname(here)
         if parent == here:
             break
         here = parent
     return ""
-
-
-def usb_serial(dev: evdev.InputDevice) -> str:
-    """The serial number of the USB device behind an input node, or "". Each
-    8BitDo 2.4 GHz dongle has its own (and is paired with one pad), and it
-    follows the dongle from port to port, so it tells two identical pads apart."""
-    here = usb_device_dir(dev)
-    if not here:
-        return ""
-    try:
-        with open(os.path.join(here, "serial")) as f:
-            return f.read().strip()
-    except OSError:
-        return ""
-
-
-# Dongles cut off by sleep_pads, so a daemon restart in the middle can bring
-# them back (/run is cleared on boot, when they come back on their own).
-ASLEEP_FILE = "/run/pioneer-tv/dongles-off"
-
-
-def _authorize(path: str, on: bool) -> bool:
-    try:
-        with open(os.path.join(path, "authorized"), "w") as f:
-            f.write("1" if on else "0")
-        return True
-    except OSError as exc:
-        log.warning("%s: could not %s it: %s", path, "authorize" if on else "deauthorize", exc)
-        return False
 
 
 def same_hardware(dev: evdev.InputDevice, pads: list[evdev.InputDevice]) -> bool:
@@ -417,58 +394,6 @@ class GamepadManager:
 
     def pads(self) -> list[Gamepad]:
         return list(self.instances.values())
-
-    async def sleep_pads(self) -> None:
-        """Put the pads to sleep, with the TV going off. There is no command
-        to switch a pad off over its dongle (xpad, the Xbox 360 protocol), but
-        an 8BitDo that loses its dongle looks for it for about a minute and
-        then switches itself off: so the dongles are cut off (USB authorized
-        = 0) for gamepad.sleep_seconds and then let back in. A Bluetooth pad
-        is disconnected and goes to sleep on its own."""
-        seconds = float(self.cfg["gamepad"].get("sleep_seconds", 90))
-        dongles: set[str] = set()
-        for pad in self.pads():
-            phys = (pad.dev.phys or "").lower()
-            if phys.startswith("usb-"):
-                path = usb_device_dir(pad.dev)
-                if path:
-                    dongles.add(path)
-            elif pad.dev.uniq:                      # Bluetooth: its address
-                try:
-                    proc = await asyncio.create_subprocess_exec("bluetoothctl", "disconnect", pad.dev.uniq,
-                                                                stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
-                    await asyncio.wait_for(proc.wait(), 10)
-                    log.info("%s: disconnected, to sleep", pad.label)
-                except (OSError, asyncio.TimeoutError) as exc:
-                    log.warning("%s: could not disconnect: %s", pad.label, exc)
-        if not dongles:
-            return
-        off = [p for p in sorted(dongles) if _authorize(p, False)]
-        if not off:
-            return
-        try:
-            os.makedirs(os.path.dirname(ASLEEP_FILE), exist_ok=True)
-            with open(ASLEEP_FILE, "w") as f:
-                f.write("\n".join(off))
-        except OSError:
-            pass
-        log.info("pads to sleep: %d dongle(s) cut off for %.0f s", len(off), seconds)
-        asyncio.get_running_loop().call_later(seconds, lambda: asyncio.ensure_future(self.wake_dongles()))
-
-    async def wake_dongles(self) -> None:
-        """Let the dongles sleep_pads cut off back in (also after a restart)."""
-        try:
-            with open(ASLEEP_FILE) as f:
-                paths = [l.strip() for l in f if l.strip()]
-        except OSError:
-            return
-        for p in paths:
-            _authorize(p, True)
-        try:
-            os.remove(ASLEEP_FILE)
-        except OSError:
-            pass
-        log.info("dongles back: %d", len(paths))
 
     def active_pad(self) -> dict | None:
         """The pad last used, or the only one connected."""

@@ -142,43 +142,6 @@
     if (onFocus) onFocus(target);
   });
 
-  // ------------------------------------------------------------ search
-  // As on the start page: a search button (and Y) opens the keyboard on a
-  // field out of sight, and the keyboard shows what is typed. In a console
-  // or collection the games narrow as it is typed; on the start view OK
-  // searches every game. The view on screen says what happens (searchCtl).
-  const searchField = el('input', 'spel-search-field');
-  searchField.type = 'search';
-  searchField.autocomplete = 'off';
-  searchField.tabIndex = -1;
-  searchField.setAttribute('aria-label', 'Sök');
-  document.body.appendChild(searchField);
-  let searchCtl = null;   // { placeholder, onInput(q), onDone(q), clear() }
-  searchField.addEventListener('input', () => { if (searchCtl && searchCtl.onInput) searchCtl.onInput(searchField.value.trim()); });
-  // The keyboard's OK sends Enter to the field (and focuses it): the view
-  // takes it from there, and the focus leaves the hidden field.
-  searchField.addEventListener('keydown', (e) => {
-    if (e.key !== 'Enter') return;
-    e.preventDefault();
-    searchField.blur();
-    if (searchCtl && searchCtl.onDone) searchCtl.onDone(searchField.value.trim());
-  });
-  function openSearch() {
-    if (!searchCtl) return;
-    searchField.placeholder = searchCtl.placeholder || 'Sök…';
-    M.keyboard.open(searchField);
-  }
-  M.pageSearch = openSearch;
-  function searchButton() {
-    const btn = el('button', 'spel-search-btn');
-    btn.type = 'button';
-    btn.title = 'Sök';
-    btn.setAttribute('aria-label', 'Sök');
-    btn.appendChild(M.icons.svg('search'));
-    btn.addEventListener('click', openSearch);
-    return btn;
-  }
-
   // ------------------------------------------------------------ messages
   function message(text, hint, retry) {
     view.innerHTML = '';
@@ -222,13 +185,7 @@
     head.appendChild(el('h1', 'spel-title', 'Spel'));
     const total = platforms.reduce((n, p) => n + p.count, 0);
     head.appendChild(el('span', 'spel-count', `${platforms.length} konsoler · ${total} spel`));
-    head.appendChild(searchButton());
     view.appendChild(head);
-    searchField.value = '';
-    searchCtl = {
-      placeholder: 'Sök bland alla spel…',
-      onDone: (q) => { if (q) location.hash = `#/search/${encodeURIComponent(q)}`; },
-    };
 
     const section = (label, cards, id) => {
       const s = el('section', 'spel-section');
@@ -286,7 +243,7 @@
 
   // ------------------------------------------------------------ grid
   // A console's, a collection's or a search's games: covers three across, an info panel
-  // that follows the focus, letter jumps on L1/R1 and the search. Only
+  // that follows the focus, letter jumps on L1/R1 and a search field. Only
   // the rows around the focus are in the DOM (a console can have nearly a
   // thousand games): the spatial navigation moves into the row just outside
   // the view by geometry, and focusin then shifts the window around it.
@@ -319,12 +276,14 @@
     view.innerHTML = '';
     const head = el('header', 'spel-head');
     head.appendChild(el('h1', 'spel-title', title));
+    const search = el('input', 'spel-search');
+    search.type = 'search';
+    search.placeholder = 'Sök bland spelen…';
+    search.autocomplete = 'off';
+    head.appendChild(search);
     const count = el('span', 'spel-count');
     head.appendChild(count);
-    const btn = searchButton();
-    head.appendChild(btn);
     view.appendChild(head);
-    let query = '';
 
     const body = el('div', 'spel-grid-body');
     const scroller = el('div', 'spel-grid-scroll');
@@ -379,7 +338,7 @@
       for (const node of nodes.values()) node.remove();
       nodes.clear();
       windowStart = -1;
-      count.textContent = query ? `”${query}” · ${list.length} av ${games.length} spel` : `${games.length} spel`;
+      count.textContent = list.length === games.length ? `${games.length} spel` : `${list.length} av ${games.length} spel`;
       renderWindow(0);
       if (!list.length) showInfo(null);
     }
@@ -392,25 +351,10 @@
       showInfo(shown[i]);
     };
 
-    function narrow(q) {
-      query = q;
-      const f = fold(q);
-      setShown(f ? games.filter((g) => fold(g.name).includes(f)) : games);
-    }
-    searchField.value = '';
-    searchCtl = {
-      placeholder: opts.search ? `Sök bland träffarna…` : `Sök bland ${title}…`,
-      onInput: narrow,
-      onDone: () => { if (shown.length) focusIndex(0); else M.nav.focus(btn); },
-      // B with a search in place clears it before it goes back.
-      clear: () => {
-        if (!query) return false;
-        searchField.value = '';
-        narrow('');
-        focusIndex(0);
-        return true;
-      },
-    };
+    search.addEventListener('input', () => {
+      const q = fold(search.value.trim());
+      setShown(q ? games.filter((g) => fold(g.name).includes(q)) : games);
+    });
 
     // L1/R1 arrive as Shift+Tab/Tab: jump to the previous/next letter.
     gridEl.addEventListener('keydown', (e) => {
@@ -437,11 +381,21 @@
       M.hud.toast(letterKey(shown[i]).toUpperCase(), '', 700);
     });
 
+    // B in the search field: clear the filter first, then go back.
+    search.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape' || M.nav.captured || !search.value) return;
+      e.preventDefault();
+      e.stopPropagation();
+      search.value = '';
+      setShown(games);
+      focusIndex(0);
+    });
+
     setShown(games);
     const saved = lastFocus[route];
     const savedIndex = saved ? shown.findIndex((g) => `game:${g.id}` === saved) : -1;
     if (shown.length) focusIndex(Math.max(savedIndex, 0));
-    else M.nav.focus(btn);
+    else M.nav.focus(search);
   }
 
   async function gridTitle(opts) {
@@ -482,7 +436,8 @@
   window.addEventListener('keydown', (e) => {
     if (M.nav.captured) return;                     // the menu or keyboard has the pad
     const active = document.activeElement;
-    if (M.nav.isTextField(active) && active !== searchField) return;   // a text field keeps its keys
+    // A text field keeps its keys, except B in an empty search field: back.
+    if (M.nav.isTextField(active) && !(e.key === 'Escape' && active.classList.contains('spel-search') && !active.value)) return;
     if (e.key === ' ') {
       e.preventDefault();
       if (e.repeat) return;
@@ -490,7 +445,6 @@
       else if (active && active.classList.contains('spel-card--recent')) remove(active);
     } else if (e.key === 'Escape') {
       e.preventDefault();
-      if (searchCtl && searchCtl.clear && searchCtl.clear()) return;
       if ((location.hash || '#/') === '#/') b.home();
       else history.back();
     }

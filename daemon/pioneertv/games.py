@@ -85,21 +85,15 @@ CORE_OPTIONS = {
     "dosbox_pure": {
         "dosbox_pure_conf": "inside",
     },
-    # N64 music played in slow motion and GoldenEye stuttered: the Pi did not
-    # keep up. Measured unthrottled over each game's first 1800 frames (60 is
-    # full speed, and heavy scenes run below the average): GoldenEye 79 at
-    # 640x480 with framebuffer emulation, 169 at 320x240 without; Super Mario
-    # 64 100 and 164. 320x240 is about the N64's own resolution; without
-    # framebuffer emulation a few effects drawn from the framebuffer (some
-    # menus and screen transitions) are lost. GLideN64's shaders are stored
-    # (compiled once per game) and drawn on a thread of their own: without
-    # the threaded renderer the core hung in RetroArch on the box.
+    # N64 sound stuttered on the TV while the picture kept up: GLideN64 was
+    # compiling each new effect's shader mid-game (its shader store was not
+    # set), and drawing on the emulation's own thread. Stored shaders are
+    # compiled once per game; the threaded renderer moves GL off that thread.
     "mupen64plus_next": {
         "mupen64plus-cpucore": "dynamic_recompiler",
         "mupen64plus-rdp-plugin": "gliden64",
         "mupen64plus-rsp-plugin": "hle",
-        "mupen64plus-43screensize": "320x240",
-        "mupen64plus-EnableFBEmulation": "False",
+        "mupen64plus-43screensize": "640x480",
         "mupen64plus-aspect": "4:3",
         "mupen64plus-EnableShadersStorage": "True",
         "mupen64plus-ThreadedRenderer": "True",

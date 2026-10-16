@@ -48,13 +48,8 @@
     for (const s of first) tilesEl.appendChild(tile(s, ++n, (a) => open(s.url, a)));
     for (const s of second) secondEl.appendChild(tile(s, ++n, (a) => open(s.url, a)));
     if (live.length) secondEl.appendChild(tile(LIVE_TILE, ++n, () => showLive(live)));
-    // Both rows in the same columns, so every tile is the same size; a
-    // shorter second row sits in the middle.
-    const cols = Math.max(1, Math.min(first.length, 5));
-    tilesEl.style.setProperty('--tiles', String(cols));
-    secondEl.style.setProperty('--tiles', String(Math.max(cols, secondEl.children.length)));
-    const spare = cols - secondEl.children.length;
-    if (secondEl.firstElementChild) secondEl.firstElementChild.style.gridColumnStart = spare > 0 ? String(Math.floor(spare / 2) + 1) : '';
+    tilesEl.style.setProperty('--tiles', String(Math.max(1, Math.min(first.length, 5))));
+    secondEl.style.setProperty('--tiles', String(Math.max(1, secondEl.children.length)));
     secondEl.hidden = !secondEl.children.length;
     fitMainNames();
   }
@@ -209,7 +204,6 @@
     searchInput.value = '';
     M.keyboard.open(searchInput);
   });
-  M.pageSearch = () => $('search-btn').click();      // Y does the same
   $('menu-btn').appendChild(icons.svg('menu'));
   $('menu-btn').addEventListener('click', () => M.hud.menu.open());
 

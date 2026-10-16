@@ -193,70 +193,34 @@ window.PioneerTV = window.PioneerTV || {};
       <path d="M80 42 C 80 28, 100 30, 112 18 C 122 8, 140 12, 148 6" stroke="${INK}" stroke-width="2.2" fill="none" stroke-linecap="round" opacity="0.85"/>
     `),
 
-    // Bilder (Immich): an old rangefinder camera seen from the front, the
-    // body covered in the service colour under a brushed top plate, a big
-    // lens with light in its glass.
-    immich: (c) => wrap('cam', c, `
-      <linearGradient id="plate-U" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3f1ea"/><stop offset="0.5" stop-color="#cfcbbf"/><stop offset="1" stop-color="#a9a496"/></linearGradient>
-      <linearGradient id="hide-U" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="${light(c, 0.3)}"/><stop offset="0.6" stop-color="${c}"/><stop offset="1" stop-color="${dark(c, 0.35)}"/></linearGradient>
-      <linearGradient id="barrel-U" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5a544b"/><stop offset="1" stop-color="#1f1b17"/></linearGradient>
-      <radialGradient id="glass-U" cx="38%" cy="35%" r="70%"><stop offset="0" stop-color="${light(c, 0.7)}"/><stop offset="0.35" stop-color="${dark(c, 0.3)}"/><stop offset="1" stop-color="#0f0d0b"/></radialGradient>
-      <linearGradient id="window-U" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#cfe3ea"/><stop offset="1" stop-color="#5f7f8a"/></linearGradient>`, `
-      <!-- shutter button and dial on the top plate -->
-      <rect x="104" y="24" width="12" height="8" rx="2" fill="url(#plate-U)" stroke="${INK}" stroke-width="1.1"/>
-      <rect x="107" y="20" width="6" height="5" rx="1.5" fill="#2f2a24"/>
-      <rect x="40" y="26" width="18" height="6" rx="2" fill="url(#plate-U)" stroke="${INK}" stroke-width="1.1"/>
-      <!-- body: top plate, then the covered lower part -->
-      <rect x="22" y="30" width="116" height="62" rx="9" fill="url(#hide-U)" stroke="${INK}" stroke-width="1.4"/>
-      <path d="M22 50 L22 39 a9 9 0 0 1 9 -9 L129 30 a9 9 0 0 1 9 9 L138 50 Z" fill="url(#plate-U)" stroke="${INK}" stroke-width="1.4"/>
-      <!-- leather grain -->
-      <g stroke="${dark(c, 0.45)}" stroke-width="0.8" opacity="0.35">
-        <path d="M26 58 h20 M30 64 h16 M26 70 h22 M28 76 h18 M26 82 h20 M114 58 h20 M114 64 h16 M112 70 h22 M116 76 h18 M114 82 h20"/>
+    // Bilder (Immich): a photo standing in a frame on its stand, a landscape
+    // under a sky in the service colour, a second print leaning behind it.
+    immich: (c) => wrap('img', c, `
+      <linearGradient id="frame-U" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8a6a45"/><stop offset="1" stop-color="#4a3622"/></linearGradient>
+      <linearGradient id="mat-U" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fbf6e6"/><stop offset="1" stop-color="#e2d6b4"/></linearGradient>
+      <linearGradient id="sky-U" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${light(c, 0.55)}"/><stop offset="1" stop-color="${c}"/></linearGradient>
+      <linearGradient id="hill1-U" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6f9a6a"/><stop offset="1" stop-color="#3d6a45"/></linearGradient>
+      <linearGradient id="hill2-U" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4f7d52"/><stop offset="1" stop-color="#2e4633"/></linearGradient>
+      <linearGradient id="print-U" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f4edda"/><stop offset="1" stop-color="#cfc3a3"/></linearGradient>
+      <linearGradient id="gloss4-U" x1="0" y1="0" x2="0.5" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity="0.5"/><stop offset="0.45" stop-color="#ffffff" stop-opacity="0"/></linearGradient>`, `
+      <!-- a print leaning behind -->
+      <g transform="rotate(-9 104 60)">
+        <rect x="86" y="22" width="52" height="64" rx="2" fill="url(#print-U)" stroke="${INK}" stroke-width="1.1"/>
+        <rect x="91" y="27" width="42" height="44" fill="${dark(c, 0.2)}" opacity="0.55"/>
       </g>
-      <!-- rangefinder and viewfinder windows -->
-      <rect x="30" y="36" width="16" height="9" rx="1.5" fill="url(#window-U)" stroke="${INK}" stroke-width="1"/>
-      <rect x="112" y="36" width="18" height="9" rx="1.5" fill="url(#window-U)" stroke="${INK}" stroke-width="1"/>
-      <path d="M31 37 l6 0 l-5 6 Z" fill="#ffffff" opacity="0.5"/>
-      <!-- lens: mount, barrel, glass, reflections -->
-      <circle cx="80" cy="64" r="27" fill="url(#plate-U)" stroke="${INK}" stroke-width="1.4"/>
-      <circle cx="80" cy="64" r="21" fill="url(#barrel-U)" stroke="${INK}" stroke-width="1.2"/>
-      <g stroke="#8a8478" stroke-width="0.8" opacity="0.7"><circle cx="80" cy="64" r="18.5" fill="none"/></g>
-      <circle cx="80" cy="64" r="14" fill="url(#glass-U)"/>
-      <ellipse cx="74.5" cy="58" rx="5" ry="3.2" fill="#ffffff" opacity="0.55" transform="rotate(-30 74.5 58)"/>
-      <circle cx="86" cy="70" r="1.8" fill="#ffffff" opacity="0.35"/>
-      <!-- strap lugs -->
-      <rect x="18" y="40" width="5" height="8" rx="1.5" fill="#a9a496" stroke="${INK}" stroke-width="0.9"/>
-      <rect x="137" y="40" width="5" height="8" rx="1.5" fill="#a9a496" stroke="${INK}" stroke-width="0.9"/>
-      <!-- the top plate's lit edge -->
-      <path d="M32 31 L128 31" stroke="#ffffff" stroke-width="1" opacity="0.6"/>
+      <!-- the stand behind the frame -->
+      <path d="M78 92 L92 100" stroke="#4a3622" stroke-width="4" stroke-linecap="round"/>
+      <!-- frame, mat and photo -->
+      <rect x="30" y="24" width="68" height="74" rx="3" fill="url(#frame-U)" stroke="${INK}" stroke-width="1.4"/>
+      <rect x="36" y="30" width="56" height="62" rx="1.5" fill="url(#mat-U)"/>
+      <rect x="42" y="36" width="44" height="44" fill="url(#sky-U)" stroke="${dark(c, 0.45)}" stroke-width="1"/>
+      <circle cx="74" cy="46" r="5.5" fill="#f4d98a" stroke="#b8940c" stroke-width="0.8"/>
+      <path d="M42 70 Q 54 56 66 66 Q 74 60 86 66 L 86 80 L 42 80 Z" fill="url(#hill1-U)"/>
+      <path d="M42 80 L42 74 Q 58 64 72 76 Q 78 72 86 74 L 86 80 Z" fill="url(#hill2-U)"/>
+      <path d="M42 36 L 86 36 L 86 40 Q 62 44 42 58 Z" fill="url(#gloss4-U)"/>
+      <!-- the frame's lit edge -->
+      <path d="M31 25 L97 25" stroke="#ffffff" stroke-width="1" opacity="0.3"/>
     `),
-
-    // Spel: the box's own two pads, the pink and the green 8BitDo Ultimate
-    // 2C, one leaning on the other. Their colours, not the service's.
-    pads: () => {
-      const pad = (id, t, body, deep, rim, stick, btn) => `
-        <g transform="${t}">
-          <path d="M22 66 C 22 50, 34 42, 48 42 L 112 42 C 126 42, 138 50, 138 66 L 140 88 C 141 98, 130 104, 122 98 L 108 86 L 52 86 L 38 98 C 30 104, 19 98, 20 88 Z" fill="${deep}" transform="translate(0 6)"/>
-          <path d="M22 66 C 22 50, 34 42, 48 42 L 112 42 C 126 42, 138 50, 138 66 L 140 88 C 141 98, 130 104, 122 98 L 108 86 L 52 86 L 38 98 C 30 104, 19 98, 20 88 Z" fill="url(#${id}-body-U)" stroke="${INK}" stroke-width="1.6"/>
-          <path d="M30 50 Q 80 40 130 50 L 128 56 Q 80 48 32 58 Z" fill="#ffffff" opacity="0.35"/>
-          <rect x="40" y="34" width="26" height="10" rx="4" fill="${deep}" stroke="${INK}" stroke-width="1.2"/>
-          <rect x="94" y="34" width="26" height="10" rx="4" fill="${deep}" stroke="${INK}" stroke-width="1.2"/>
-          <g transform="translate(66 76)"><path d="M-4 -12 h8 v8 h8 v8 h-8 v8 h-8 v-8 h-8 v-8 h8 z" fill="${stick}" stroke="${INK}" stroke-width="1.1"/></g>
-          <circle cx="114" cy="54" r="5.4" fill="${btn}" stroke="${INK}" stroke-width="1"/>
-          <circle cx="104" cy="64" r="5.4" fill="${btn}" stroke="${INK}" stroke-width="1"/>
-          <circle cx="124" cy="64" r="5.4" fill="${btn}" stroke="${INK}" stroke-width="1"/>
-          <circle cx="114" cy="74" r="5.4" fill="${btn}" stroke="${INK}" stroke-width="1"/>
-          <circle cx="80" cy="54" r="4" fill="none" stroke="${rim}" stroke-width="1.6"/>
-          <circle cx="46" cy="58" r="9" fill="${rim}" stroke="${INK}" stroke-width="1.1"/><circle cx="46" cy="58" r="6" fill="${stick}" stroke="${INK}" stroke-width="0.8"/>
-          <circle cx="98" cy="80" r="9" fill="${rim}" stroke="${INK}" stroke-width="1.1"/><circle cx="98" cy="80" r="6" fill="${stick}" stroke="${INK}" stroke-width="0.8"/>
-        </g>`;
-      return wrap('pads', '#e09f96', `
-        <linearGradient id="green-body-U" x1="0" y1="0" x2="0.6" y2="1"><stop offset="0" stop-color="#e2ede6"/><stop offset="0.6" stop-color="#c3d9ce"/><stop offset="1" stop-color="#9fb9ab"/></linearGradient>
-        <linearGradient id="pink-body-U" x1="0" y1="0" x2="0.6" y2="1"><stop offset="0" stop-color="#f8ebe6"/><stop offset="0.6" stop-color="#efcfc6"/><stop offset="1" stop-color="#d9aa9f"/></linearGradient>`, `
-        ${pad('green', 'translate(46 -10) scale(0.74) rotate(14 80 70)', '#c3d9ce', '#8fa99b', '#7d978a', '#42584a', '#42584a')}
-        ${pad('pink', 'translate(-2 22) scale(0.8) rotate(-8 80 70)', '#efcfc6', '#c99a8f', '#e09f96', '#f7f3ee', '#f7f3ee')}
-      `);
-    },
 
     // Default: a cinema ticket with a torn stub, lying at an angle.
     default: (c) => wrap('ticket', c, `
@@ -271,8 +235,7 @@ window.PioneerTV = window.PioneerTV || {};
     `),
   };
   ART.plex = ART.jellyfin;
-  ART.spel = ART.pads;           // our own Spel pages on top of RomM: the two pads
-  ART.romm = ART.pads;           // (the box's tile still has RomM's id)
+  ART.spel = ART.romm;           // our own Spel pages on top of RomM
   ART.bilder = ART.immich;
   ART.live = ART.svt1;           // the start page's Live tile: the mast with its signal
 

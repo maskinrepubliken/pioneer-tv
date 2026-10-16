@@ -111,22 +111,17 @@ body {
 .legend .credit img { display: block; width: 8.5rem; min-width: 120px; height: auto; }
 
 /* ---- grid view: covers on the left, the info panel on the right ---- */
-/* Search: a round button at the right of the heading, as on the start
-   page; the field it types into is out of sight (the keyboard shows it). */
-.spel-head .spel-count { margin-left: auto; }
-.spel-head .spel-search-btn { align-self: center; }
-.spel-search-btn {
-  display: inline-flex; align-items: center; justify-content: center; margin: 0; padding: 0; flex: none;
-  width: 2rem; height: 2rem; font-size: 1.1rem; color: var(--pioneertv-ink-muted); cursor: pointer;
-  background: transparent; border: 1px solid var(--pioneertv-line-strong); border-radius: 50%;
+.spel-search {
+  flex: 1; max-width: 22rem; margin-left: auto; height: 2.6rem; padding: 0 1rem;
+  font: 1.1rem var(--pioneertv-font-prose); color: var(--pioneertv-ink);
+  background: var(--pioneertv-paper-raised); border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-pill);
 }
-.spel-search-btn:hover, .spel-search-btn.pioneertv-hover { background: var(--pioneertv-paper-hover); color: var(--pioneertv-ink); }
-.spel-search-btn.pioneertv-focus {
-  background: var(--pioneertv-ochre); color: var(--pioneertv-on-ochre); border-color: var(--pioneertv-ochre);
+.spel-search::placeholder { color: var(--pioneertv-ink-faint); font-style: italic; }
+.spel-search::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
+html:not(.pioneertv-pointer) .spel-search:focus {
   outline: 0.2rem solid var(--pioneertv-focus) !important; outline-offset: 0.25rem !important;
-  box-shadow: none !important; border-radius: 50% !important;
+  background: var(--pioneertv-paper-hover); box-shadow: none !important;
 }
-.spel-search-field { position: fixed; left: -100px; top: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; pointer-events: none; }
 .spel-grid-body { flex: 1; min-height: 0; display: flex; gap: 2rem; }
 .spel-grid-scroll {
   flex: 1; min-width: 0; overflow-y: auto; scrollbar-width: none;

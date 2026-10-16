@@ -44,8 +44,6 @@ class Dispatcher:
         # While a game runs in RetroArch (games.py), its handler gets
         # the box's own buttons (menu, home) first; True means it took them.
         self.system_hook: Callable[[str], Coroutine] | None = None
-        # Called when the box itself turns the TV off (the menu, the start page).
-        self.on_tv_off: Callable[[], Coroutine] | None = None
 
     # ------------------------------------------------------------ public
     def _tv_is_off(self) -> bool:
@@ -188,9 +186,6 @@ class Dispatcher:
             await self.emit({"type": "event", "name": action["system"]})
 
     async def cec_command(self, command: str) -> None:
-        if command == "tv_off" and self.on_tv_off:
-            # The pads go to sleep with the TV (gamepad.py, sleep_pads).
-            asyncio.create_task(self.on_tv_off())
         if command in ("volume_up", "volume_down", "mute"):
             await self.emit({"type": "event", "name": "volume", "direction": command.split("_")[-1] if "_" in command else "mute"})
         try:

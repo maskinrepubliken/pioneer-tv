@@ -30,11 +30,11 @@ what was learned on the way.
 | A / Cross | Select (Enter) |
 | B / Circle | Escape: closes an overlay, releases an engaged slider, leaves a text field. Hold: one page back |
 | X / Square | Play, pause (Space) |
-| Y / Triangle | On-screen keyboard |
+| Y / Triangle | On-screen keyboard. Hold: quick menu |
 | L1, R1 | Shift+Tab, Tab (previous, next focusable) |
 | L2, R2 | TV volume down, up (CEC, repeats while held) |
 | Right stick | Mouse pointer; click on the stick to left-click |
-| Start | Quick menu |
+| Start | Quick menu (also: hold Y) |
 | Select | Status toast |
 | Guide / Home / PS / Xbox | Quick menu (press again to close it); in a Spel game, the pause panel instead. Hold: home. Also wakes the TV and switches input when the pad connects |
 
@@ -139,14 +139,6 @@ to `0.0.0.0` in `config.toml`, set an access key under Fjärråtkomst; non-local
 requests must then carry it (`?token=` once, stored as a cookie).
 
 ## The TV (HDMI-CEC)
-
-Turning the TV off from the box (Stäng av TV:n in the quick menu, or the
-power button on the start page) puts the pads to sleep as well. There is no
-command to switch a pad off over its 2.4 GHz dongle, but an 8BitDo that
-loses its dongle looks for it for about a minute and then switches itself
-off; so the daemon cuts the dongles off (USB `authorized = 0`) for
-`gamepad.sleep_seconds` (90) and then lets them back in. A Bluetooth pad is
-disconnected. `gamepad.sleep_with_tv = false` turns this off.
 
 The daemon claims a CEC playback address and follows the bus, so the box and
 the TV stay in step:
@@ -331,11 +323,6 @@ flag set we measured. A TV without a 720p mode (many only offer 1080p and
 the flags can be overridden with `PIONEER_TV_GPU_FLAGS` in `chromium.env`.
 A Pi 3 was tried first and was too slow for Cineasterna's software-decoded
 Widevine video; it is no longer supported.
-
-The installer overclocks a Pi 4 to 2.0 GHz (`over_voltage=6`) with the GPU
-at 600 MHz, for N64 games; it takes effect on the next boot.
-`PIONEER_TV_OVERCLOCK=0` in the installer's environment takes the lines out
-of `config.txt` again.
 
 ## Known board quirk: no hardware cursor
 

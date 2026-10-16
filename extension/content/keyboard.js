@@ -90,9 +90,6 @@ window.PioneerTV = window.PioneerTV || {};
       if (this.isOpen()) return this.close();
       const active = this.deepActive();
       if (M.nav.isTextField(active)) return this.open(active);
-      // A page whose search field is out of sight (the start page, Spel)
-      // says what Y does: open the keyboard on it.
-      if (typeof M.pageSearch === 'function') return M.pageSearch();
       // Type into the page's first text field without moving the d-pad focus
       // there: the ring stays where the person left it.
       const first = this.findTextField();

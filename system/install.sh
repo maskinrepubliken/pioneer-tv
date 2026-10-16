@@ -120,7 +120,7 @@ sed -i \
   -e 's|^BTN_EAST   = { key = "KEY_ESC" }$|BTN_EAST   = { key = "KEY_ESC", long = { system = "back" } }       # hold B: one page back|' \
   -e 's|^BTN_SELECT = { system = "status", long = { cec = "tv_toggle" } }$|BTN_SELECT = { system = "status" }|' \
   -e 's|^BTN_MODE   = { system = "home" }$|BTN_MODE   = { system = "menu", long = { system = "home" } }      # hold Home: the start page|' \
-  -e 's|^BTN_NORTH  = { system = "keyboard", long = { system = "menu" } }  # hold Y: quick menu$|BTN_NORTH  = { system = "keyboard" }|' \
+  -e 's|^BTN_NORTH  = { system = "keyboard" }$|BTN_NORTH  = { system = "keyboard", long = { system = "menu" } }  # hold Y: quick menu|' \
   -e 's|^color = "#b5122b"$|color = "#b8940c"|' \
   -e 's|^auto_connect = false$|auto_connect = true|' \
   -e 's|^reconnect_interval = 60 .*|reconnect_interval = 300     # seconds|' \
@@ -194,22 +194,9 @@ if touch "$BOOT/.pioneer-tv-write-test" 2>/dev/null; then
   rm -f "$BOOT/.pioneer-tv-write-test"
   grep -q '^dtoverlay=vc4-kms-v3d' "$BOOT/config.txt" || echo 'dtoverlay=vc4-kms-v3d' >> "$BOOT/config.txt"
   grep -q '^disable_overscan=1' "$BOOT/config.txt" || echo 'disable_overscan=1' >> "$BOOT/config.txt"
-  # Pi 4: 2.0 GHz (over_voltage=6, Raspberry Pi's own pairing for it) and the
-  # GPU at 600 MHz, for the games: N64 emulation is what needs it (GLideN64
-  # draws on the GPU, the recompiler runs on the CPU). Takes effect on the
-  # next boot. PIONEER_TV_OVERCLOCK=0 takes it out again.
-  set_boot() {   # key value: one line for key in config.txt, replaced or added
-    if grep -q "^$1=" "$BOOT/config.txt"; then sed -i "s/^$1=.*/$1=$2/" "$BOOT/config.txt"
-    else echo "$1=$2" >> "$BOOT/config.txt"; fi
-  }
-  case "$MODEL" in
-    *"Raspberry Pi 4"*|*"Raspberry Pi 400"*)
-      if [ "${PIONEER_TV_OVERCLOCK:-1}" = "1" ]; then
-        set_boot arm_freq 2000; set_boot over_voltage 6; set_boot gpu_freq 600
-      else
-        sed -i '/^arm_freq=/d; /^over_voltage=/d; /^gpu_freq=/d' "$BOOT/config.txt"
-      fi ;;
-  esac
+  # An earlier install's overclock (arm_freq, over_voltage, gpu_freq) is taken
+  # out again: the TV went silent with it in place.
+  sed -i '/^arm_freq=/d; /^over_voltage=/d; /^gpu_freq=/d' "$BOOT/config.txt"
   # temp_soft_limit is a Pi 3B+ knob; the Pi 4 has no soft limit (it scales
   # voltage and frequency instead), so an earlier install's line is removed.
   sed -i '/^temp_soft_limit=/d' "$BOOT/config.txt"
