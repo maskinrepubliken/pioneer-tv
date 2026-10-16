@@ -204,6 +204,7 @@
     searchInput.value = '';
     M.keyboard.open(searchInput);
   });
+  M.pageSearch = () => $('search-btn').click();      // Y does the same
   $('menu-btn').appendChild(icons.svg('menu'));
   $('menu-btn').addEventListener('click', () => M.hud.menu.open());
 
