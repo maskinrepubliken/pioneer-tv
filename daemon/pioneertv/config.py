@@ -44,6 +44,10 @@ DEFAULTS: dict[str, Any] = {
         "trigger_threshold": 0.5,
         "long_press_ms": 800,
         "repeat_ms": 220,            # for actions marked repeat = true
+        # Turning the TV off from the box puts the pads to sleep: their dongles
+        # are cut off this long, past the minute an 8BitDo looks for one.
+        "sleep_with_tv": True,
+        "sleep_seconds": 90,
         "unipolar_axes": ["ABS_Z", "ABS_RZ", "ABS_BRAKE", "ABS_GAS", "ABS_THROTTLE"],
         "invert_axes": [],           # e.g. ["ABS_Y", "ABS_RY"]; Nintendo pads get this automatically
         "buttons": {

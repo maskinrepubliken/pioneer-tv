@@ -140,6 +140,14 @@ requests must then carry it (`?token=` once, stored as a cookie).
 
 ## The TV (HDMI-CEC)
 
+Turning the TV off from the box (Stäng av TV:n in the quick menu, or the
+power button on the start page) puts the pads to sleep as well. There is no
+command to switch a pad off over its 2.4 GHz dongle, but an 8BitDo that
+loses its dongle looks for it for about a minute and then switches itself
+off; so the daemon cuts the dongles off (USB `authorized = 0`) for
+`gamepad.sleep_seconds` (90) and then lets them back in. A Bluetooth pad is
+disconnected. `gamepad.sleep_with_tv = false` turns this off.
+
 The daemon claims a CEC playback address and follows the bus, so the box and
 the TV stay in step:
 

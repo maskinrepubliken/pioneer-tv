@@ -204,6 +204,11 @@ async def amain(cfg: dict) -> None:
             await dispatcher.release(action)
 
     pads_mgr = GamepadManager(cfg, dispatcher, mouse, on_gamepad_change, on_keyboard_change, on_active_pad)
+    # Turning the TV off from the box puts the pads to sleep too; dongles cut
+    # off when the daemon last stopped come back now.
+    if cfg["gamepad"].get("sleep_with_tv", True):
+        dispatcher.on_tv_off = pads_mgr.sleep_pads
+    await pads_mgr.wake_dongles()
 
     # Games, played in RetroArch out of sight (games.py).
     games = Games(cfg, emit, pads_mgr, dispatcher)
