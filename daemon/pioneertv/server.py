@@ -17,7 +17,7 @@ from urllib.parse import urlparse
 import aiohttp
 from aiohttp import WSMsgType, web
 
-from . import romm, settings, sysinfo, updater
+from . import romm, settings, sysinfo, updater, wifitest
 
 log = logging.getLogger("pioneertv.server")
 WEB_DIR = Path(__file__).resolve().parent / "web"
@@ -50,6 +50,7 @@ class Server:
             ("POST", "/api/wifi/connect", self.api_wifi_connect),
             ("POST", "/api/wifi/forget", self.api_wifi_forget),
             ("POST", "/api/wifi/add", self.api_wifi_add),
+            ("POST", "/api/wifi/compare", self.api_wifi_compare),
             ("GET", "/api/bluetooth/devices", self.api_bt_devices),
             ("POST", "/api/bluetooth/scan", self.api_bt_scan),
             ("POST", "/api/bluetooth/pair", self.api_bt_pair),
@@ -241,6 +242,11 @@ class Server:
         data = await self._json(request)
         ok, msg = await sysinfo.wifi_connect(str(data.get("ssid", "")), data.get("password") or None)
         return web.json_response({"ok": ok, "message": msg}, status=200 if ok else 400)
+
+    async def api_wifi_compare(self, request: web.Request) -> web.Response:
+        # Another Wi-Fi card measured against the one in use, on the same
+        # network, without moving the box off it (wifitest.py). Takes a while.
+        return web.json_response(await wifitest.compare())
 
     async def api_wifi_add(self, request: web.Request) -> web.Response:
         data = await self._json(request)
