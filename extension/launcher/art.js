@@ -231,6 +231,33 @@ window.PioneerTV = window.PioneerTV || {};
       <path d="M32 31 L128 31" stroke="#ffffff" stroke-width="1" opacity="0.6"/>
     `),
 
+    // Spel: the box's own two pads, the pink and the green 8BitDo Ultimate
+    // 2C, one leaning on the other. Their colours, not the service's.
+    pads: () => {
+      const pad = (id, t, body, deep, rim, stick, btn) => `
+        <g transform="${t}">
+          <path d="M22 66 C 22 50, 34 42, 48 42 L 112 42 C 126 42, 138 50, 138 66 L 140 88 C 141 98, 130 104, 122 98 L 108 86 L 52 86 L 38 98 C 30 104, 19 98, 20 88 Z" fill="${deep}" transform="translate(0 6)"/>
+          <path d="M22 66 C 22 50, 34 42, 48 42 L 112 42 C 126 42, 138 50, 138 66 L 140 88 C 141 98, 130 104, 122 98 L 108 86 L 52 86 L 38 98 C 30 104, 19 98, 20 88 Z" fill="url(#${id}-body-U)" stroke="${INK}" stroke-width="1.6"/>
+          <path d="M30 50 Q 80 40 130 50 L 128 56 Q 80 48 32 58 Z" fill="#ffffff" opacity="0.35"/>
+          <rect x="40" y="34" width="26" height="10" rx="4" fill="${deep}" stroke="${INK}" stroke-width="1.2"/>
+          <rect x="94" y="34" width="26" height="10" rx="4" fill="${deep}" stroke="${INK}" stroke-width="1.2"/>
+          <g transform="translate(66 76)"><path d="M-4 -12 h8 v8 h8 v8 h-8 v8 h-8 v-8 h-8 v-8 h8 z" fill="${stick}" stroke="${INK}" stroke-width="1.1"/></g>
+          <circle cx="114" cy="54" r="5.4" fill="${btn}" stroke="${INK}" stroke-width="1"/>
+          <circle cx="104" cy="64" r="5.4" fill="${btn}" stroke="${INK}" stroke-width="1"/>
+          <circle cx="124" cy="64" r="5.4" fill="${btn}" stroke="${INK}" stroke-width="1"/>
+          <circle cx="114" cy="74" r="5.4" fill="${btn}" stroke="${INK}" stroke-width="1"/>
+          <circle cx="80" cy="54" r="4" fill="none" stroke="${rim}" stroke-width="1.6"/>
+          <circle cx="46" cy="58" r="9" fill="${rim}" stroke="${INK}" stroke-width="1.1"/><circle cx="46" cy="58" r="6" fill="${stick}" stroke="${INK}" stroke-width="0.8"/>
+          <circle cx="98" cy="80" r="9" fill="${rim}" stroke="${INK}" stroke-width="1.1"/><circle cx="98" cy="80" r="6" fill="${stick}" stroke="${INK}" stroke-width="0.8"/>
+        </g>`;
+      return wrap('pads', '#e09f96', `
+        <linearGradient id="green-body-U" x1="0" y1="0" x2="0.6" y2="1"><stop offset="0" stop-color="#e2ede6"/><stop offset="0.6" stop-color="#c3d9ce"/><stop offset="1" stop-color="#9fb9ab"/></linearGradient>
+        <linearGradient id="pink-body-U" x1="0" y1="0" x2="0.6" y2="1"><stop offset="0" stop-color="#f8ebe6"/><stop offset="0.6" stop-color="#efcfc6"/><stop offset="1" stop-color="#d9aa9f"/></linearGradient>`, `
+        ${pad('green', 'translate(46 -10) scale(0.74) rotate(14 80 70)', '#c3d9ce', '#8fa99b', '#7d978a', '#42584a', '#42584a')}
+        ${pad('pink', 'translate(-2 22) scale(0.8) rotate(-8 80 70)', '#efcfc6', '#c99a8f', '#e09f96', '#f7f3ee', '#f7f3ee')}
+      `);
+    },
+
     // Default: a cinema ticket with a torn stub, lying at an angle.
     default: (c) => wrap('ticket', c, `
       <linearGradient id="tk-U" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${light(c, 0.45)}"/><stop offset="1" stop-color="${dark(c, 0.15)}"/></linearGradient>`, `
@@ -244,7 +271,8 @@ window.PioneerTV = window.PioneerTV || {};
     `),
   };
   ART.plex = ART.jellyfin;
-  ART.spel = ART.romm;           // our own Spel pages on top of RomM
+  ART.spel = ART.pads;           // our own Spel pages on top of RomM: the two pads
+  ART.romm = ART.pads;           // (the box's tile still has RomM's id)
   ART.bilder = ART.immich;
   ART.live = ART.svt1;           // the start page's Live tile: the mast with its signal
 
