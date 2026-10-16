@@ -3,8 +3,10 @@
    a little more on the TV's 1.45vw), so a laptop window and the TV look the
    same. Tokens in tokens.css, primitives in paper.css.
 
-   The system allows no motion except a response to input, so the tiles do
-   not glide in or float: focus is an instant change of ring and marker. */
+   The system allows no motion except a response to input. Focus is an
+   instant change of ring and marker; the one exception, asked for, is that
+   the focused tile (and button) then bobs gently up and down, eased, for as
+   long as it has the focus (see pioneertv-bob). Nothing glides in. */
 
 html { font-size: 1.45vw; }
 * { box-sizing: border-box; }
@@ -90,6 +92,16 @@ body {
   outline: 0.25rem solid var(--pioneertv-focus) !important; outline-offset: 0.3rem !important; z-index: 2;
 }
 .tile.pioneertv-focus .band { background: var(--pioneertv-ochre); }
+
+/* The focused tile bobs: a slow rise and fall, eased at both ends, the ring
+   moving with it. Transform only, so the compositor does it on the Pi's GPU. */
+@keyframes pioneertv-bob { from { transform: translateY(0); } to { transform: translateY(-0.5rem); } }
+@keyframes pioneertv-bob-small { from { transform: translateY(0); } to { transform: translateY(-0.18rem); } }
+.tile.pioneertv-focus { animation: pioneertv-bob 1.3s ease-in-out infinite alternate; will-change: transform; }
+.head-btn.pioneertv-focus { animation: pioneertv-bob-small 1.3s ease-in-out infinite alternate; }
+@media (prefers-reduced-motion: reduce) {
+  .tile.pioneertv-focus, .head-btn.pioneertv-focus { animation: none; }
+}
 
 /* ---- second row: Bilder and Live, big tiles like the first row's, each
    wider as there are fewer of them ---- */
