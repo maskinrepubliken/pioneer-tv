@@ -93,7 +93,7 @@ fi
 echo "== verify"
 # Sound too: in October a damaged module in libpipewire-0.3-modules made
 # PipeWire crash at every start, and the TV had picture but no sound.
-VERIFY="chromium chromium-common libwidevinecdm0 weston libweston-14-0 libgbm1 mesa-libgallium libegl-mesa0 libegl1 libgles2 libdrm2 libwayland-client0 libwayland-server0 python3-aiohttp python3-evdev pipewire pipewire-bin pipewire-pulse libpipewire-0.3-0t64 libpipewire-0.3-modules libspa-0.2-modules wireplumber libwireplumber-0.5-0 libasound2t64 retroarch"
+VERIFY="chromium chromium-common libwidevinecdm0 weston libweston-14-0 libgbm1 mesa-libgallium libegl-mesa0 libegl1 libgles2 libdrm2 libwayland-client0 libwayland-server0 python3-aiohttp python3-evdev pipewire pipewire-bin pipewire-pulse libpipewire-0.3-0t64 libpipewire-0.3-modules libspa-0.2-modules wireplumber libwireplumber-0.5-0 libasound2t64 retroarch openssh-server openssh-sftp-server openssh-client"
 BROKEN=""
 for p in $VERIFY; do
   dpkg -s "$p" >/dev/null 2>&1 || continue
@@ -196,19 +196,17 @@ if touch "$BOOT/.pioneer-tv-write-test" 2>/dev/null; then
   rm -f "$BOOT/.pioneer-tv-write-test"
   grep -q '^dtoverlay=vc4-kms-v3d' "$BOOT/config.txt" || echo 'dtoverlay=vc4-kms-v3d' >> "$BOOT/config.txt"
   grep -q '^disable_overscan=1' "$BOOT/config.txt" || echo 'disable_overscan=1' >> "$BOOT/config.txt"
-  # Pi 4: 2.0 GHz (over_voltage=6, Raspberry Pi's own pairing for it) and the
-  # GPU at 600 MHz, for the games: N64 emulation is what needs it (GLideN64
-  # draws on the GPU, the recompiler runs on the CPU). Takes effect on the
-  # next boot. PIONEER_TV_OVERCLOCK=0 takes it out again. (It was taken out
-  # on 16 October when the TV went silent; that was damaged PipeWire files
-  # on the SD card, not the clock, and it is back.)
+  # Pi 4 overclock (2.0 GHz, over_voltage=6, GPU at 600 MHz), only with
+  # PIONEER_TV_OVERCLOCK=1; otherwise its lines are taken out. Both boots at
+  # 2.0 GHz in October left damaged files on the SD card (PipeWire's modules,
+  # then the SSH server would not start), so it is off. Next boot.
   set_boot() {   # key value: one line for key in config.txt, replaced or added
     if grep -q "^$1=" "$BOOT/config.txt"; then sed -i "s/^$1=.*/$1=$2/" "$BOOT/config.txt"
     else echo "$1=$2" >> "$BOOT/config.txt"; fi
   }
   case "$MODEL" in
     *"Raspberry Pi 4"*|*"Raspberry Pi 400"*)
-      if [ "${PIONEER_TV_OVERCLOCK:-1}" = "1" ]; then
+      if [ "${PIONEER_TV_OVERCLOCK:-0}" = "1" ]; then
         set_boot arm_freq 2000; set_boot over_voltage 6; set_boot gpu_freq 600
       else
         sed -i '/^arm_freq=/d; /^over_voltage=/d; /^gpu_freq=/d' "$BOOT/config.txt"
@@ -274,6 +272,10 @@ systemctl daemon-reload
 systemctl disable getty@tty1.service || true
 systemctl set-default graphical.target
 systemctl enable seatd bluetooth pioneer-tv-governor.service
+# SSH is how the box is looked after from elsewhere: make sure it runs (in
+# October it did not come up after a boot that damaged files).
+systemctl reset-failed ssh 2>/dev/null || true
+systemctl enable --now ssh 2>/dev/null || true
 systemctl disable hciuart 2>/dev/null || true   # legacy; fails on Bookworm's kernel-attached Bluetooth
 rfkill unblock bluetooth 2>/dev/null || true
 systemctl enable zramswap 2>/dev/null || true
