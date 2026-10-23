@@ -324,11 +324,11 @@ the flags can be overridden with `PIONEER_TV_GPU_FLAGS` in `chromium.env`.
 A Pi 3 was tried first and was too slow for Cineasterna's software-decoded
 Widevine video; it is no longer supported.
 
-With `PIONEER_TV_OVERCLOCK=1` in its environment the installer overclocks a
-Pi 4 to 2.0 GHz (`over_voltage=6`) with the GPU at 600 MHz; it takes effect
-on the next boot. It is off by default: both boots at 2.0 GHz in October
-left damaged files on the SD card. Without it the lines are taken out of
-`config.txt`.
+The box is never overclocked. Both boots at 2.0 GHz (`over_voltage=6`, GPU at
+600 MHz) in October left damaged files on the SD card, and the card had to be
+replaced. The installer takes any `arm_freq`, `over_voltage` and `gpu_freq`
+lines out of `config.txt`. Games that do not keep up are made lighter instead
+(the N64 runs at 320x240).
 
 ## Known board quirk: no hardware cursor
 

@@ -196,22 +196,11 @@ if touch "$BOOT/.pioneer-tv-write-test" 2>/dev/null; then
   rm -f "$BOOT/.pioneer-tv-write-test"
   grep -q '^dtoverlay=vc4-kms-v3d' "$BOOT/config.txt" || echo 'dtoverlay=vc4-kms-v3d' >> "$BOOT/config.txt"
   grep -q '^disable_overscan=1' "$BOOT/config.txt" || echo 'disable_overscan=1' >> "$BOOT/config.txt"
-  # Pi 4 overclock (2.0 GHz, over_voltage=6, GPU at 600 MHz), only with
-  # PIONEER_TV_OVERCLOCK=1; otherwise its lines are taken out. Both boots at
-  # 2.0 GHz in October left damaged files on the SD card (PipeWire's modules,
-  # then the SSH server would not start), so it is off. Next boot.
-  set_boot() {   # key value: one line for key in config.txt, replaced or added
-    if grep -q "^$1=" "$BOOT/config.txt"; then sed -i "s/^$1=.*/$1=$2/" "$BOOT/config.txt"
-    else echo "$1=$2" >> "$BOOT/config.txt"; fi
-  }
-  case "$MODEL" in
-    *"Raspberry Pi 4"*|*"Raspberry Pi 400"*)
-      if [ "${PIONEER_TV_OVERCLOCK:-0}" = "1" ]; then
-        set_boot arm_freq 2000; set_boot over_voltage 6; set_boot gpu_freq 600
-      else
-        sed -i '/^arm_freq=/d; /^over_voltage=/d; /^gpu_freq=/d' "$BOOT/config.txt"
-      fi ;;
-  esac
+  # The box is never overclocked: both boots at 2.0 GHz (over_voltage=6,
+  # GPU at 600 MHz) in October left damaged files on the SD card (PipeWire's
+  # modules, then the SSH server would not start). Lines an earlier install
+  # wrote are taken out; next boot.
+  sed -i '/^arm_freq=/d; /^over_voltage=/d; /^gpu_freq=/d' "$BOOT/config.txt"
   # temp_soft_limit is a Pi 3B+ knob; the Pi 4 has no soft limit (it scales
   # voltage and frequency instead), so an earlier install's line is removed.
   sed -i '/^temp_soft_limit=/d' "$BOOT/config.txt"
