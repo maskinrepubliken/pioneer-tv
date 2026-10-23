@@ -27,12 +27,20 @@ window.PioneerTV.defaultServices = [
   },
   {
     "id": "jellyfin",
-    "name": "Jellyfin",
-    "tagline": "Egna filmer och serier",
+    "name": "Film & serier",
+    "tagline": "Jellyfin",
     "url": "http://100.123.142.8:8096/web/",
     "search_url": "http://100.123.142.8:8096/web/#/search.html?query={query}",
     "color": "#7b5ea7",
     "glyph": "J"
+  },
+  {
+    "id": "musik",
+    "name": "Musik",
+    "tagline": "Jellyfin",
+    "url": "musik.html?tv=1",
+    "color": "#a8533a",
+    "glyph": "M"
   },
   {
     "id": "spel",

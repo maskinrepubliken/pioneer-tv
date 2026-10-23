@@ -1,0 +1,114 @@
+/* Pioneer TV Musik pages, on top of spel.css: the same canvas, heading,
+   cards, messages and legend. What is music's own: square covers, song
+   rows, a list's head beside its songs, and the full-screen "Spelas nu". */
+
+.musik-head { flex: none; align-items: center; }
+.musik-head .spel-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
+/* What plays, small, in the heading while browsing; X opens it big. */
+.musik-mini {
+  flex: none; max-width: 20rem; display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.35rem 0.9rem 0.35rem 0.35rem;
+  font: 0.95rem/1.15 var(--pioneertv-font-prose); color: var(--pioneertv-ink); text-align: left; cursor: pointer;
+  background: var(--pioneertv-paper-raised); border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-pill);
+}
+.musik-mini[hidden] { display: none; }
+.musik-mini img { width: 1.9rem; height: 1.9rem; border-radius: 50%; object-fit: cover; flex: none; }
+.musik-mini span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.musik-mini.pioneertv-focus {
+  outline: 0.2rem solid var(--pioneertv-focus) !important; outline-offset: 0.25rem !important;
+  box-shadow: none !important; border-radius: var(--pioneertv-radius-pill) !important;
+}
+
+/* One scrolling column for a view; the focus ring needs the margin. */
+.musik-scroll {
+  flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none;
+  padding: 0.6rem; margin: -0.6rem;
+}
+.musik-scroll::-webkit-scrollbar { display: none; }
+
+/* ---- the top row: Blanda allt, Album, Artister ---- */
+.musik-actions { display: flex; gap: 1rem; margin-bottom: 1.3rem; }
+.musik-actions .spel-card--group { min-width: 11rem; }
+.musik-shuffle { align-self: stretch; }
+
+/* ---- square cards: playlists, albums, artists ---- */
+.musik-grid { display: grid; gap: 1.2rem 1.1rem; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.musik-row { display: flex; gap: 1.1rem; overflow-x: auto; scrollbar-width: none; padding: 0.6rem; margin: -0.6rem; }
+.musik-row::-webkit-scrollbar { display: none; }
+.musik-row .musik-card { width: 11.5rem; }
+.musik-card { padding: 0.4rem 0.4rem 0.6rem; content-visibility: auto; contain-intrinsic-size: auto 15rem; }
+.musik-card .cover { aspect-ratio: 1; width: 100%; border-radius: calc(var(--pioneertv-radius-l) - 0.4rem); }
+.musik-card .cover img { object-fit: cover; }
+.musik-card--artist .cover { border-radius: 50%; }
+.musik-card .title { padding: 0 0.25rem; -webkit-line-clamp: 1; }
+.musik-card .meta { padding: 0 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---- a list: its head on the left, its songs on the right ---- */
+.musik-list { flex: 1; min-height: 0; display: flex; gap: 2.2rem; }
+.musik-list-head { width: 17rem; flex: none; display: flex; flex-direction: column; gap: 0.8rem; }
+.musik-list-head .cover { width: 17rem; height: 17rem; border-radius: var(--pioneertv-radius-l); }
+.musik-list-head .cover img { object-fit: cover; }
+.musik-list-name {
+  margin: 0; font-family: var(--pioneertv-font-prose); font-size: 1.45rem; line-height: 1.2;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.musik-list-meta { margin: 0; font-family: var(--pioneertv-font-mono); font-size: 0.8rem; color: var(--pioneertv-ink-faint); }
+.musik-list-buttons { display: flex; gap: 0.8rem; margin-top: 0.3rem; }
+.musik-list-buttons .knapp { padding: 0.85rem 1.4rem; }
+.musik-songs { flex: 1; min-width: 0; }
+
+/* A song row: number (or its album's cover), title and artist, length. */
+.musik-song {
+  width: 100%; display: grid; grid-template-columns: 2.4rem minmax(0, 1fr) auto; align-items: center; gap: 1rem;
+  padding: 0.55rem 0.9rem; margin: 0; text-align: left; cursor: pointer;
+  font: inherit; color: var(--pioneertv-ink); background: none; border: 0; border-bottom: 1px solid var(--pioneertv-line);
+  border-radius: var(--pioneertv-radius-s);
+}
+.musik-song .n { font-family: var(--pioneertv-font-mono); font-size: 0.85rem; color: var(--pioneertv-ink-faint); text-align: right; }
+.musik-song img { width: 2.4rem; height: 2.4rem; border-radius: var(--pioneertv-radius-s); object-fit: cover; display: block; }
+.musik-song .t { min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
+.musik-song .t b { font: 400 1.1rem/1.2 var(--pioneertv-font-prose); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.musik-song .t span { font-size: 0.85rem; color: var(--pioneertv-ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.musik-song .d { font-family: var(--pioneertv-font-mono); font-size: 0.85rem; color: var(--pioneertv-ink-faint); font-variant-numeric: tabular-nums; }
+.musik-song.playing .t b { font-weight: 600; }
+.musik-song.playing .n { color: var(--pioneertv-ochre); }
+.musik-song.pioneertv-focus {
+  background: var(--pioneertv-paper-hover); outline: 0.2rem solid var(--pioneertv-focus) !important; outline-offset: 0.1rem !important;
+  box-shadow: none !important; border-radius: var(--pioneertv-radius-s) !important;
+}
+
+.musik-empty { margin: 0.4rem 0 1.2rem; font: italic 1.1rem var(--pioneertv-font-prose); color: var(--pioneertv-ink-muted); }
+
+/* ---- Spelas nu: over the whole page ---- */
+.musik-np {
+  position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column; padding: 5vh 5vw 2vh;
+  background: var(--pioneertv-paper);
+}
+.musik-np[hidden] { display: none; }
+.musik-np-main { flex: 1; min-height: 0; display: flex; align-items: center; gap: 3rem; }
+.musik-np-cover {
+  width: 24rem; height: 24rem; flex: none; border-radius: var(--pioneertv-radius-l); overflow: hidden;
+  background: var(--pioneertv-paper-sunken); box-shadow: 0 0.8rem 2.4rem rgba(40, 30, 20, 0.18);
+}
+.musik-np-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.musik-np-text { flex: 1; min-width: 0; }
+.musik-np-title {
+  margin: 0 0 0.6rem; font-family: var(--pioneertv-font-display); font-weight: 900; font-size: 2.6rem; line-height: 1.02;
+  letter-spacing: -0.01em; text-transform: uppercase;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.musik-np-artist { margin: 0 0 0.3rem; font: 1.5rem/1.25 var(--pioneertv-font-prose); }
+.musik-np-album { margin: 0 0 2rem; font: italic 1.15rem/1.25 var(--pioneertv-font-prose); color: var(--pioneertv-ink-muted); }
+.musik-np-progress { height: 0.45rem; border-radius: 0.3rem; background: var(--pioneertv-paper-sunken); overflow: hidden; }
+.musik-np-bar { height: 100%; width: 0; background: var(--pioneertv-ochre); }
+.musik-np-times {
+  display: flex; justify-content: space-between; margin: 0.6rem 0 0;
+  font-family: var(--pioneertv-font-mono); font-size: 0.95rem; color: var(--pioneertv-ink-faint); font-variant-numeric: tabular-nums;
+}
+#np-state { font-family: var(--pioneertv-font-ui); font-weight: 600; color: var(--pioneertv-ink); }
+#np-state.fel { color: var(--pioneertv-alarm); }
+.musik-np-queue { width: 17rem; flex: none; align-self: stretch; padding-left: 1.8rem; border-left: 1px solid var(--pioneertv-line); overflow: hidden; }
+.musik-np-queue ol { list-style: none; margin: 0; padding: 0; }
+.musik-np-queue li { padding: 0.5rem 0; border-bottom: 1px solid var(--pioneertv-line); }
+.musik-np-queue li b { display: block; font: 400 1.05rem/1.2 var(--pioneertv-font-prose); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.musik-np-queue li span { display: block; font-size: 0.85rem; color: var(--pioneertv-ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

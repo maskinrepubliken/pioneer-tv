@@ -11,6 +11,7 @@ what was learned on the way.
 - [Settings and status](#settings-and-status)
 - [The TV (HDMI-CEC)](#the-tv-hdmi-cec)
 - [Games](#games)
+- [Music](#music)
 - [Updating the box](#updating-the-box)
 - [Logs and CEC debugging](#logs-and-cec-debugging)
 - [Working on the home screen without a Pi](#working-on-the-home-screen-without-a-pi)
@@ -215,6 +216,32 @@ Gamepad API and its own button mapping applies. The extension leaves the page's 
 A few buttons still belong to the box: Guide opens the quick menu and holding it goes home, holding
 Start opens the quick menu too and the triggers set the TV volume. While an overlay is open the pad
 drives it as usual. Game mode ends when the page goes away or stops sending heartbeats.
+
+## Music
+
+The Musik tile opens our own pages on top of [Jellyfin](https://jellyfin.org/)'s
+music library, `extension/launcher/musik.html`: Blanda allt, Album and
+Artister, then your playlists; a playlist or an album lists its songs beside
+its cover, with Spela and Blanda. Typing in the search field (Y opens the
+keyboard) searches songs, albums and artists. Films, series and clips are still
+Jellyfin's own web UI, behind the Film & serier tile.
+
+A song plays in the page itself and "Spelas nu" covers the screen: A or X
+pauses, L1/R1 go to the previous and next song, left and right seek ten
+seconds, B goes back to browsing while the music plays on, and X brings
+"Spelas nu" back. The music lives only as long as the page: leaving it (Home
+included) stops it. A song that cannot be played is skipped after a few
+seconds; a stream that stalls for ten seconds is picked up again where it was.
+Jellyfin hears what plays (`Sessions/Playing`), so "played" and play counts
+follow the box.
+
+As with RomM the pages never talk to Jellyfin directly: `/jellyfin/...` on
+their own origin is forwarded by the daemon with the API key added, and only
+the library, the images, the audio stream and those reports are reachable.
+Jellyfin sends a song as it is when Chromium can play it and transcodes it to
+MP3 otherwise, so the Pi does no work. Set Jellyfin's address (without
+`/web/`), an API key (Jellyfin: Dashboard → API Keys) and, if not the first
+administrator, the user whose playlists to show under Inställningar → Jellyfin.
 
 ## Updating the box
 

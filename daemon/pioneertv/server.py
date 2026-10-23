@@ -4,6 +4,7 @@
   /              settings page (also reachable over Tailscale via `tailscale serve`)
   /api/...       JSON API used by the settings page
   /romm/...      RomM's API and assets with the API key added, for the Spel pages
+  /jellyfin/...  Jellyfin's library and audio with the API key added, for the Musik pages
 """
 from __future__ import annotations
 
@@ -17,7 +18,7 @@ from urllib.parse import urlparse
 import aiohttp
 from aiohttp import WSMsgType, web
 
-from . import romm, settings, sysinfo, updater, wifitest
+from . import jellyfin, romm, settings, sysinfo, updater, wifitest
 
 log = logging.getLogger("pioneertv.server")
 WEB_DIR = Path(__file__).resolve().parent / "web"
@@ -34,7 +35,8 @@ class Server:
         self.hooks = hooks  # status(), system_action(name), cec(name), config_changed()
         self.clients: set[web.WebSocketResponse] = set()
         self.current_url: str | None = None
-        self.romm_session: aiohttp.ClientSession | None = None
+        self.proxy_session: aiohttp.ClientSession | None = None
+        self._jellyfin_user: tuple[tuple, dict] | None = None   # (url, key, wanted) -> user
         self.app = web.Application(middlewares=[self.auth_middleware])
         self.app.router.add_get("/ws", self.ws_handler)
         self.app.router.add_get("/", self.index)
@@ -68,11 +70,13 @@ class Server:
             ("GET", "/api/games", self.api_games_status),
             ("GET", "/api/games/screen", self.api_games_screen),
             ("POST", "/api/games/{action}", self.api_games_action),
+            ("GET", "/api/jellyfin", self.api_jellyfin),
         ]
         for method, path, handler in api:
             self.app.router.add_route(method, path, handler)
         self.app.router.add_route("*", "/romm/{path:.*}", self.romm_proxy)
-        self.app.on_cleanup.append(self._close_romm_session)
+        self.app.router.add_route("*", "/jellyfin/{path:.*}", self.jellyfin_proxy)
+        self.app.on_cleanup.append(self._close_proxy_session)
 
     # ------------------------------------------------------------ pages
     async def _page_headers(self, request: web.Request, response: web.StreamResponse) -> None:
@@ -168,7 +172,7 @@ class Server:
         data = json.dumps(msg)
         await asyncio.gather(*(c.send_str(data) for c in list(self.clients)), return_exceptions=True)
 
-    # ------------------------------------------------------------ RomM
+    # ------------------------------------------------------------ RomM, Jellyfin
     async def romm_proxy(self, request: web.Request) -> web.StreamResponse:
         # Only the Spel pages, which the daemon serves itself, may use RomM's
         # key: any read or write another site's page sends is refused.
@@ -182,34 +186,85 @@ class Server:
             return web.json_response({"error": "not_found"}, status=404)
         if not cfg.get("api_key"):
             return web.json_response({"error": "no_key"}, status=503)
-        if self.romm_session is None:
-            # Bodies pass through as RomM sent them (compressed or not), so the
-            # length and encoding headers stay true.
-            self.romm_session = aiohttp.ClientSession(auto_decompress=False,
-                                                      timeout=aiohttp.ClientTimeout(total=None, sock_connect=5))
-        headers = romm.request_headers(request.headers, cfg["api_key"])
+        return await self._forward(request, target, romm.request_headers(request.headers, cfg["api_key"]),
+                                   romm.RESPONSE_HEADERS, "romm")
+
+    async def jellyfin_proxy(self, request: web.Request) -> web.StreamResponse:
+        # As RomM's: only the box's own pages (the Musik pages) get the key.
+        if request.method not in jellyfin.METHODS:
+            return web.json_response({"error": "method_not_allowed"}, status=405)
+        if request.headers.get("Sec-Fetch-Site", "") not in romm.OWN_FETCH_SITES:
+            return web.json_response({"error": "cross-site request refused"}, status=403)
+        cfg = self.cfg.get("jellyfin") or {}
+        target = jellyfin.target_url(cfg.get("url", ""), request.match_info["path"], request.query_string,
+                                     request.method)
+        if target is None:
+            return web.json_response({"error": "not_found"}, status=404)
+        if not cfg.get("api_key"):
+            return web.json_response({"error": "no_key"}, status=503)
+        return await self._forward(request, target, jellyfin.request_headers(request.headers, cfg["api_key"]),
+                                   jellyfin.RESPONSE_HEADERS, "jellyfin")
+
+    def _session(self) -> aiohttp.ClientSession:
+        if self.proxy_session is None:
+            # Bodies pass through as the server sent them (compressed or not),
+            # so the length and encoding headers stay true.
+            self.proxy_session = aiohttp.ClientSession(auto_decompress=False,
+                                                       timeout=aiohttp.ClientTimeout(total=None, sock_connect=5))
+        return self.proxy_session
+
+    async def _forward(self, request: web.Request, target: str, headers: dict, keep: frozenset,
+                       name: str) -> web.StreamResponse:
         # Uploads are streamed: an N64 state is about 16 MB, past aiohttp's
-        # 1 MiB limit for a body read whole.
+        # 1 MiB limit for a body read whole. Downloads too (a song, a game).
         body = request.content if request.body_exists else None
         try:
-            async with self.romm_session.request(request.method, target, headers=headers,
-                                                 data=body, allow_redirects=False) as upstream:
+            async with self._session().request(request.method, target, headers=headers,
+                                               data=body, allow_redirects=False) as upstream:
                 resp = web.StreamResponse(status=upstream.status)
-                for name, value in upstream.headers.items():
-                    if name.lower() in romm.RESPONSE_HEADERS:
-                        resp.headers[name] = value
+                for header, value in upstream.headers.items():
+                    if header.lower() in keep:
+                        resp.headers[header] = value
                 await resp.prepare(request)
                 async for chunk in upstream.content.iter_chunked(65536):
                     await resp.write(chunk)
                 await resp.write_eof()
                 return resp
         except aiohttp.ClientError as exc:
-            log.warning("romm: %s %s failed: %s", request.method, target, exc)
+            log.warning("%s: %s %s failed: %s", name, request.method, target, exc)
             return web.json_response({"error": "unreachable"}, status=502)
 
-    async def _close_romm_session(self, _app: web.Application) -> None:
-        if self.romm_session is not None:
-            await self.romm_session.close()
+    async def _close_proxy_session(self, _app: web.Application) -> None:
+        if self.proxy_session is not None:
+            await self.proxy_session.close()
+
+    async def api_jellyfin(self, request: web.Request) -> web.Response:
+        """Who the Musik pages play as: {ok, user_id, user} or {ok: false, error}."""
+        cfg = self.cfg.get("jellyfin") or {}
+        url, key, wanted = cfg.get("url", ""), cfg.get("api_key", ""), cfg.get("user", "")
+        if not url or not key:
+            return web.json_response({"ok": False, "error": "no_key"})
+        cache_key = (url, key, wanted)
+        if self._jellyfin_user and self._jellyfin_user[0] == cache_key:
+            user = self._jellyfin_user[1]
+        else:
+            try:
+                async with self._session().get(url.rstrip("/") + "/Users",
+                                               headers={"Authorization": jellyfin.auth_header(key)},
+                                               timeout=aiohttp.ClientTimeout(total=10)) as resp:
+                    if resp.status in (401, 403):
+                        return web.json_response({"ok": False, "error": "auth"})
+                    if resp.status != 200:
+                        return web.json_response({"ok": False, "error": "down"})
+                    users = json.loads(await resp.read())
+            except (aiohttp.ClientError, asyncio.TimeoutError, ValueError) as exc:
+                log.warning("jellyfin: users: %s", exc)
+                return web.json_response({"ok": False, "error": "down"})
+            user = jellyfin.pick_user(users if isinstance(users, list) else [], wanted)
+            if user is None:
+                return web.json_response({"ok": False, "error": "no_user"})
+            self._jellyfin_user = (cache_key, user)
+        return web.json_response({"ok": True, "user_id": user.get("Id"), "user": user.get("Name")})
 
     # ------------------------------------------------------------ API
     async def _json(self, request: web.Request) -> dict:

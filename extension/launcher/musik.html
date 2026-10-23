@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Musik – Pioneer TV</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="../fonts/fonts.css">
+  <link rel="stylesheet" href="../content/tokens.css">
+  <link rel="stylesheet" href="../content/cursor.css">
+  <link rel="stylesheet" href="../content/paper.css">
+  <link rel="stylesheet" href="../content/content.css">
+  <link rel="stylesheet" href="spel.css">
+  <link rel="stylesheet" href="musik.css">
+</head>
+<body>
+  <div class="page">
+    <header class="spel-head musik-head">
+      <h1 class="spel-title" id="title">Musik</h1>
+      <input class="spel-search" id="search" type="search" placeholder="Sök låt, album eller artist…" autocomplete="off">
+      <button class="musik-mini" id="mini" type="button" hidden></button>
+    </header>
+    <main class="view" id="view" aria-live="polite"></main>
+    <footer class="legend" id="legend"></footer>
+  </div>
+
+  <section class="musik-np" id="np" hidden>
+    <div class="musik-np-main">
+      <div class="musik-np-cover" id="np-cover"></div>
+      <div class="musik-np-text">
+        <p class="spel-label" id="np-label">Spelas nu</p>
+        <h1 class="musik-np-title" id="np-title"></h1>
+        <p class="musik-np-artist" id="np-artist"></p>
+        <p class="musik-np-album" id="np-album"></p>
+        <div class="musik-np-progress"><div class="musik-np-bar" id="np-bar"></div></div>
+        <p class="musik-np-times"><span id="np-pos">0:00</span><span id="np-state"></span><span id="np-len"></span></p>
+      </div>
+      <aside class="musik-np-queue">
+        <p class="spel-label">Näst på tur</p>
+        <ol id="np-queue"></ol>
+      </aside>
+    </div>
+    <footer class="legend" id="np-legend"></footer>
+  </section>
+
+  <audio id="audio" preload="auto"></audio>
+
+  <script src="../content/icons.js"></script>
+  <script src="../content/bridge.js"></script>
+  <script src="../content/spatial-nav.js"></script>
+  <script src="../content/keyboard.js"></script>
+  <script src="../content/hud.js"></script>
+  <script src="../content/logs.js"></script>
+  <script src="../content/cursor.js"></script>
+  <script src="../content/video.js"></script>
+  <script src="../content/bigscreen.js"></script>
+  <script src="../content/game.js"></script>
+  <script src="../content/main.js"></script>
+  <script src="jellyfin.js"></script>
+  <script src="musik.js"></script>
+</body>
+</html>

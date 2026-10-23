@@ -60,6 +60,14 @@ SCHEMA: list[dict] = [
             {"path": "games.enabled", "type": "bool", "label": "Spela spelen på boxen (RetroArch)"},
         ],
     },
+    {
+        "id": "jellyfin", "title": "Jellyfin",
+        "fields": [
+            {"path": "jellyfin.url", "type": "text", "label": "Adress till Jellyfin (utan /web/)"},
+            {"path": "jellyfin.api_key", "type": "text", "label": "API-nyckel", "secret": True},
+            {"path": "jellyfin.user", "type": "text", "label": "Användare vars spellistor visas (tom = första administratören)"},
+        ],
+    },
 ]
 
 SERVICE_FIELDS = ["id", "name", "tagline", "url", "search_url", "color", "glyph", "logo", "mode", "fullscreen", "row", "kind"]

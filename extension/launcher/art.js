@@ -222,6 +222,36 @@ window.PioneerTV = window.PioneerTV || {};
       <path d="M31 25 L97 25" stroke="#ffffff" stroke-width="1" opacity="0.3"/>
     `),
 
+    // Musik: a record player seen from the front and above, a black record
+    // with a label in the service colour, the tone arm resting on it.
+    musik: (c) => wrap('musik', c, `
+      <linearGradient id="plinth-U" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c79a6a"/><stop offset="1" stop-color="#8a5f38"/></linearGradient>
+      <linearGradient id="plinthfront-U" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a5232"/><stop offset="1" stop-color="#5c3c22"/></linearGradient>
+      <radialGradient id="vinyl-U" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#4a423a"/><stop offset="0.6" stop-color="#221d18"/><stop offset="1" stop-color="#14110e"/></radialGradient>
+      <radialGradient id="label-U" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="${light(c, 0.35)}"/><stop offset="1" stop-color="${dark(c, 0.1)}"/></radialGradient>
+      <linearGradient id="arm-U" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f3efe6"/><stop offset="1" stop-color="#a7a094"/></linearGradient>`, `
+      <!-- the plinth: its top in perspective, then its front -->
+      <path d="M22 44 L138 44 L148 82 L12 82 Z" fill="url(#plinth-U)" stroke="${INK}" stroke-width="1.4" stroke-linejoin="round"/>
+      <path d="M12 82 L148 82 L148 92 Q148 94 146 94 L14 94 Q12 94 12 92 Z" fill="url(#plinthfront-U)" stroke="${INK}" stroke-width="1.4"/>
+      <path d="M24 46 L136 46" stroke="#ffffff" stroke-width="1" opacity="0.35"/>
+      <!-- the record, flattened by the angle -->
+      <ellipse cx="70" cy="63" rx="46" ry="15" fill="${INK}" opacity="0.25" transform="translate(0 2)"/>
+      <ellipse cx="70" cy="62" rx="46" ry="15" fill="url(#vinyl-U)" stroke="${INK}" stroke-width="1.2"/>
+      <ellipse cx="70" cy="62" rx="36" ry="11.6" fill="none" stroke="#ffffff" stroke-width="0.6" opacity="0.16"/>
+      <ellipse cx="70" cy="62" rx="28" ry="9" fill="none" stroke="#ffffff" stroke-width="0.6" opacity="0.12"/>
+      <path d="M38 56 Q 58 49 86 51" stroke="#ffffff" stroke-width="1.6" opacity="0.22" fill="none" stroke-linecap="round"/>
+      <ellipse cx="70" cy="62" rx="13" ry="4.4" fill="url(#label-U)" stroke="${INK}" stroke-width="0.8"/>
+      <ellipse cx="70" cy="62" rx="1.6" ry="0.7" fill="${INK}"/>
+      <!-- the tone arm from its pivot at the back right down onto the record -->
+      <circle cx="128" cy="52" r="6" fill="url(#arm-U)" stroke="${INK}" stroke-width="1.2"/>
+      <path d="M128 52 L118 66 L96 68" stroke="${INK}" stroke-width="4.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M128 52 L118 66 L96 68" stroke="url(#arm-U)" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="89" y="65" width="9" height="5" rx="1.2" fill="${dark(c, 0.2)}" stroke="${INK}" stroke-width="1"/>
+      <!-- two knobs on the front -->
+      <circle cx="126" cy="88" r="2.4" fill="#e9e2d2" stroke="${INK}" stroke-width="0.9"/>
+      <circle cx="136" cy="88" r="2.4" fill="${c}" stroke="${INK}" stroke-width="0.9"/>
+    `),
+
     // Spel: the box's own two pads, the pink and the green 8BitDo Ultimate
     // 2C, one leaning on the other. Their colours, not the service's.
     pads: () => {

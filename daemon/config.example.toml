@@ -92,13 +92,25 @@ glyph = "S"
 
 [[services]]
 id = "jellyfin"
-name = "Jellyfin"
-tagline = "Egna filmer och serier"
+name = "Film & serier"
+tagline = "Jellyfin"
 # The server's Tailscale address; the status views report whether that peer is online.
 url = "http://100.123.142.8:8096/web/"
 search_url = "http://100.123.142.8:8096/web/#/search.html?query={query}"
 color = "#7b5ea7"
 glyph = "J"
+
+# Music: our own Musik pages on top of Jellyfin (extension/launcher/musik.html),
+# opened from the daemon so that /jellyfin/ is on the same origin. Set the
+# server and an API key under [jellyfin] below or on the settings page.
+[[services]]
+id = "musik"
+name = "Musik"
+tagline = "Jellyfin"
+url = "http://127.0.0.1:8765/ext/launcher/musik.html?tv=1"
+search_url = "http://127.0.0.1:8765/ext/launcher/musik.html?tv=1#/search/{query}"
+color = "#a8533a"
+glyph = "M"
 
 # Games: our own Spel pages on top of RomM (extension/launcher/spel.html).
 # They are opened from the daemon so that /romm/ is on the same origin; set
@@ -123,6 +135,14 @@ glyph = "S"
 # with read scopes plus roms.user.write and assets.write.
 url = "https://spel.lyresten.se"
 api_key = ""
+
+[jellyfin]
+# Base URL of Jellyfin (without /web/), an API key (Jellyfin: Dashboard → API
+# Keys) and the user whose playlists the Musik pages show (empty: the first
+# administrator).
+url = "http://100.123.142.8:8096"
+api_key = ""
+user = ""
 
 # Photos: Immich, a big tile in the second row.
 [[services]]

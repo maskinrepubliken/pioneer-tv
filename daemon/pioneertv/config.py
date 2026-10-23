@@ -86,6 +86,10 @@ DEFAULTS: dict[str, Any] = {
     "remote": {"token": ""},
     # RomM for the Spel pages: base URL and a client API token (see /romm/ in server.py).
     "romm": {"url": "", "api_key": ""},
+    # Jellyfin for the Musik pages: base URL (no /web/), an API key from its
+    # dashboard, and the user whose playlists they show (empty: the first
+    # administrator). See /jellyfin/ in server.py.
+    "jellyfin": {"url": "", "api_key": "", "user": ""},
     # Games: played in RetroArch on the TV's Weston (games.py). A console is
     # offered when its core is in place; pioneer-tv-cores.service installs
     # Debian's and builds the rest (system/build-cores.sh).
