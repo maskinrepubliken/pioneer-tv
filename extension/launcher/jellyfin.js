@@ -56,8 +56,22 @@ window.PioneerTV = window.PioneerTV || {};
 
   const image = (id, tag, size) => (id && tag ? `${BASE}Items/${id}/Images/Primary?fillHeight=${size}&fillWidth=${size}&quality=90&tag=${tag}` : null);
 
+  // What Chromium on the box plays as it is: container -> audio codecs.
+  // Everything else (E-AC-3 in m4a, PCM in AIFF, ...) Jellyfin transcodes.
+  const DIRECT = {
+    mp3: ['mp3'], flac: ['flac'], m4a: ['aac'], mp4: ['aac'], aac: ['aac'],
+    ogg: ['vorbis', 'opus'], oga: ['vorbis', 'opus'], opus: ['opus'], webm: ['opus', 'vorbis'], wav: ['pcm_s16le', 'pcm_s24le'],
+  };
+  function direct(i) {
+    const src = i.MediaSources && i.MediaSources[0];
+    if (!src) return false;
+    const stream = (src.MediaStreams || []).find((x) => x.Type === 'Audio');
+    return !!(stream && (DIRECT[(src.Container || '').toLowerCase()] || []).includes((stream.Codec || '').toLowerCase()));
+  }
+
   function toSong(i) {
     return {
+      direct: direct(i),
       id: i.Id,
       name: i.Name,
       artist: (i.Artists && i.Artists.join(', ')) || i.AlbumArtist || '',
@@ -84,8 +98,7 @@ window.PioneerTV = window.PioneerTV || {};
     };
   }
 
-  const SONG_FIELDS = 'Fields=MediaSources&EnableImageTypes=Primary';
-  const GROUP_FIELDS = 'Fields=ChildCount,PrimaryImageAspectRatio&EnableImageTypes=Primary';
+  const SONG = { Fields: 'MediaSources', EnableImageTypes: 'Primary' };
   const q = (params) => Object.entries(params).filter(([, v]) => v != null && v !== '')
     .map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');
 
@@ -97,10 +110,12 @@ window.PioneerTV = window.PioneerTV || {};
   M.jellyfin = {
     JellyfinError,
     user,
+    // Jellyfin's MediaType says "Unknown" for most playlists of songs (seen on
+    // the server, 12.1), so it cannot tell them apart: every playlist that
+    // has something in it is shown.
     async playlists() {
-      const all = await items({ IncludeItemTypes: 'Playlist', SortBy: 'SortName', Fields: 'ChildCount', EnableImageTypes: 'Primary' }, (i) => ({ ...toGroup(i), mediaType: i.MediaType }));
-      // Jellyfin lists video playlists too; only songs belong here.
-      return all.filter((p) => !p.mediaType || p.mediaType === 'Audio');
+      const all = await items({ IncludeItemTypes: 'Playlist', SortBy: 'SortName', Fields: 'ChildCount', EnableImageTypes: 'Primary' }, toGroup);
+      return all.filter((p) => p.count !== 0);
     },
     albums(opts = {}) {
       return items({ IncludeItemTypes: 'MusicAlbum', SortBy: opts.artistId ? 'ProductionYear,SortName' : 'SortName',
@@ -116,30 +131,32 @@ window.PioneerTV = window.PioneerTV || {};
     // A playlist in its own order, an album in disc and track order, an artist's songs album by album.
     async songs(group) {
       if (group.kind === 'playlist') {
-        const d = await json(`Playlists/${group.id}/Items?${q({ userId: await user() })}&${SONG_FIELDS}`);
+        const d = await json(`Playlists/${group.id}/Items?${q({ userId: await user(), ...SONG })}`);
         return (d.Items || []).map(toSong);
       }
       const key = group.kind === 'album' ? { ParentId: group.id } : { ArtistIds: group.id };
-      return items({ ...key, IncludeItemTypes: 'Audio', SortBy: group.kind === 'album' ? 'ParentIndexNumber,IndexNumber,SortName' : 'ProductionYear,Album,ParentIndexNumber,IndexNumber' }, toSong);
+      return items({ ...SONG, ...key, IncludeItemTypes: 'Audio', SortBy: group.kind === 'album' ? 'ParentIndexNumber,IndexNumber,SortName' : 'ProductionYear,Album,ParentIndexNumber,IndexNumber' }, toSong);
     },
     shuffleAll(limit = 300) {
-      return items({ IncludeItemTypes: 'Audio', SortBy: 'Random', Limit: limit }, toSong);
+      return items({ ...SONG, IncludeItemTypes: 'Audio', SortBy: 'Random', Limit: limit }, toSong);
     },
     async search(term) {
       const uid = await user();
       const [songs, albums, artists] = await Promise.all([
-        items({ searchTerm: term, IncludeItemTypes: 'Audio', Limit: 40 }, toSong),
+        items({ ...SONG, searchTerm: term, IncludeItemTypes: 'Audio', Limit: 40 }, toSong),
         items({ searchTerm: term, IncludeItemTypes: 'MusicAlbum', Limit: 30, EnableImageTypes: 'Primary' }, toGroup),
         json(`Artists?${q({ userId: uid, searchTerm: term, Limit: 20, EnableImageTypes: 'Primary' })}`).then((d) => (d.Items || []).map(toGroup)),
       ]);
       return { songs, albums, artists };
     },
-    // The song as Chromium can play it: as it is when the container and codec
-    // suit, else transcoded by Jellyfin to MP3 (the Pi does no work).
+    // The song as Chromium can play it: the file as it is when it can (it
+    // has a length and seeks), else transcoded by Jellyfin to MP3, streamed
+    // without a length (the Pi does no work either way). Jellyfin's own
+    // choice through Audio/universal transcoded AAC in m4a too.
     streamUrl(song) {
+      if (song.direct) return `${BASE}Audio/${song.id}/stream?${q({ static: 'true', DeviceId: DEVICE })}`;
       return `${BASE}Audio/${song.id}/universal?${q({
-        UserId: userId, DeviceId: DEVICE, MaxStreamingBitrate: 320000,
-        Container: 'mp3,flac,ogg,opus,webm|opus,webma,m4a,aac,mp4|aac,wav',
+        UserId: userId, DeviceId: DEVICE, MaxStreamingBitrate: 320000, Container: 'mp3',
         TranscodingContainer: 'mp3', TranscodingProtocol: 'http', AudioCodec: 'mp3',
       })}`;
     },

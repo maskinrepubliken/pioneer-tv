@@ -1,5 +1,6 @@
 """The daemon's /jellyfin/ route and /api/jellyfin against a fake Jellyfin.
 Needs aiohttp: `python -m unittest tests.test_server_jellyfin` from daemon/."""
+import gzip
 import json
 import unittest
 
@@ -20,6 +21,10 @@ async def echo(request: web.Request) -> web.Response:
     if 'Token="good"' not in auth:
         return web.json_response({}, status=401)
     if request.path == "/Users":
+        # Jellyfin compresses whenever the client lets it.
+        if "gzip" in request.headers.get("Accept-Encoding", ""):
+            return web.Response(body=gzip.compress(json.dumps(USERS).encode()),
+                                headers={"Content-Encoding": "gzip", "Content-Type": "application/json"})
         return web.json_response(USERS)
     if request.path.startswith("/Audio/"):
         # A song: Range must reach Jellyfin so seeking works.

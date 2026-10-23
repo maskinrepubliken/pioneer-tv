@@ -34,9 +34,14 @@
   };
   const songs = (n) => (n === 1 ? '1 låt' : `${n} låtar`);
 
-  function cover(src, name) {
+  // A picture, or paper with the name on it; initial: only its first letter,
+  // big (an artist without a photo: their names can run long).
+  function cover(src, name, { initial } = {}) {
     const box = el('span', 'cover');
-    const paper = () => { box.className = 'cover cover-paper'; box.textContent = name; };
+    const paper = () => {
+      box.className = `cover cover-paper${initial ? ' cover-initial' : ''}`;
+      box.textContent = initial ? (name || '?').trim().charAt(0).toUpperCase() : name;
+    };
     if (!src) { paper(); return box; }
     const img = el('img');
     img.alt = '';
@@ -89,7 +94,7 @@
     a.href = HREF[g.kind] + encodeURIComponent(g.id);
     a.dataset.key = `${g.kind}:${g.id}`;
     a.appendChild(el('span', 'band'));
-    a.appendChild(cover(g.cover, g.name));
+    a.appendChild(cover(g.cover, g.name, { initial: g.kind === 'artist' }));
     a.appendChild(el('span', 'title', g.name));
     const meta = g.kind === 'album' ? [g.artist, g.year].filter(Boolean).join(' · ')
       : g.kind === 'playlist' && g.count != null ? songs(g.count) : '';

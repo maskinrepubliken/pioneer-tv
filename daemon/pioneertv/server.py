@@ -249,8 +249,11 @@ class Server:
             user = self._jellyfin_user[1]
         else:
             try:
+                # The shared session leaves bodies compressed (for the proxy);
+                # this one is read here, so ask for it plain.
                 async with self._session().get(url.rstrip("/") + "/Users",
-                                               headers={"Authorization": jellyfin.auth_header(key)},
+                                               headers={"Authorization": jellyfin.auth_header(key),
+                                                        "Accept-Encoding": "identity"},
                                                timeout=aiohttp.ClientTimeout(total=10)) as resp:
                     if resp.status in (401, 403):
                         return web.json_response({"ok": False, "error": "auth"})
