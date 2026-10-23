@@ -60,8 +60,8 @@ touched by the daemon.
 
 The installer pulls in Weston, Chromium, Widevine, v4l-utils, BlueZ, aiohttp and
 evdev, copies the repo to `/opt/pioneer-tv`, installs the systemd units,
-sets the video mode (1280x720), enables
-zram and sets the CPU governor to performance at
+sets the video mode (1280x720), leaves swap in compressed memory to
+Raspberry Pi OS's own zram, sets the CPU governor to performance at
 boot, and sets the boot target to graphical. Rerunning it is safe. Pair the first gamepad from the shell (later ones from the settings page):
 
 ```

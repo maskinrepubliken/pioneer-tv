@@ -79,7 +79,7 @@ apt-get install -y --no-upgrade --no-install-recommends chromium \
 # Nice to have; not present on every image.
 # bluez-firmware carries the onboard chip's patch file; the kernel (hci_bcm)
 # attaches the chip itself on Bookworm, no hciuart service needed.
-for p in bluez-firmware firmware-brcm80211 libwidevinecdm0 zram-tools fonts-noto-color-emoji; do
+for p in bluez-firmware firmware-brcm80211 libwidevinecdm0 fonts-noto-color-emoji; do
   apt-get install -y --no-upgrade --no-install-recommends "$p" || echo "warning: $p not available, continuing"
 done
 fi
@@ -262,8 +262,12 @@ fi
 echo uinput > /etc/modules-load.d/pioneer-tv.conf
 
 echo "== performance"
-if [ -f /etc/default/zramswap ]; then
-  sed -i 's/^#\?PERCENT=.*/PERCENT=60/; s/^#\?ALGO=.*/ALGO=lz4/' /etc/default/zramswap
+# Swap in compressed memory is Raspberry Pi OS's own now (rpi-swap, on
+# /dev/zram0); zram-tools, which this installer used to add, fails at every
+# boot trying to take the same device. Taken away where it is still there.
+if dpkg -s zram-tools >/dev/null 2>&1; then
+  systemctl disable zramswap 2>/dev/null || true
+  apt-get purge -y zram-tools || true
 fi
 echo 'vm.swappiness=100' > /etc/sysctl.d/90-pioneer-tv.conf
 
@@ -278,7 +282,6 @@ systemctl reset-failed ssh 2>/dev/null || true
 systemctl enable --now ssh 2>/dev/null || true
 systemctl disable hciuart 2>/dev/null || true   # legacy; fails on Bookworm's kernel-attached Bluetooth
 rfkill unblock bluetooth 2>/dev/null || true
-systemctl enable zramswap 2>/dev/null || true
 systemctl enable pioneer-tv-daemon.service pioneer-tv-weston.service
 systemctl enable --now pioneer-tv-upgrade.timer
 # The user's service manager (and with it PipeWire) must be up before the display starts.
