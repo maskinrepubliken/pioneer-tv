@@ -155,3 +155,35 @@ Decided with the user:
 - A second session ("Pioneer TV (fork)") works on a different Pi with a
   small SPI display and an amplifier HAT (`pioneer-cd`); it is unrelated to
   this box.
+
+## Later the same day (no access to the box)
+
+- The box came back after the power cycle but **SSH refuses this
+  environment's key** (`lyret@freakiskapet`): the new card only has the key
+  it was set up with, and password login is off. The user will add the key
+  tomorrow, either by hand on the Pi or by running Start → Meny →
+  Uppdatera systemet: the installer now adds the keys in
+  `system/authorized_keys` (77cb149). The Tailscale address is
+  100.127.191.97. The user has said the TV no longer has to stay off.
+- Freeze guards in the installer (77cb149): hardware watchdog through
+  systemd (15 s), `kernel.panic = 10`, a persistent journal written every
+  15 s, and `pioneer-tv-vitals` logging memory, swap, load, temperature and
+  the biggest process every 10 s. They arm on the next update. The freeze's
+  own boot may not have a persistent journal (it was not set before), so
+  `journalctl -b -1` may come back empty: check `journalctl --list-boots`
+  first. The plan in step 3 above still stands.
+- GUIDE.md now covers labwc, the overlay and the guards; Weston's quirks
+  are gone from it.
+- **Film & serier** (831b46c): `extension/launcher/film.*`, the video calls
+  in `jellyfin.js`, proxy prefixes for `UserViews`, `UserItems/` and
+  `Shows/`, and `daemon/pioneertv/video.py` (mpv, `/api/video/play|stop`,
+  `video` events: running, ended, stopped, error). Tried in the preview
+  against a stand-in Jellyfin and in tests against a stand-in mpv; **not
+  yet on the box**, and the tile still opens Jellyfin's web UI. On the box:
+  open `http://127.0.0.1:8765/ext/launcher/film.html`, check the real
+  libraries, then play something and check mpv's window comes up over
+  Chromium on labwc, `Shift+TAB` in input.conf (L1), the subtitles from
+  Jellyfin (external ones are fetched with the same token header), and that
+  "Fortsätt titta" moves. Then point the tile at the page (as Musik's is).
+  The pause panel (Fortsätt, Ljud, Undertexter) belongs in the overlay and
+  waits on the freeze, as does project 1 step 3.
