@@ -22,8 +22,11 @@ if LIB not in os.environ.get("LD_PRELOAD", ""):
             os.environ["LD_PRELOAD"] = ":".join(filter(None, [os.path.join(d, LIB), os.environ.get("LD_PRELOAD")]))
             os.execv(sys.executable, [sys.executable] + sys.argv)
 
+os.environ.setdefault("GTK_A11Y", "none")     # no accessibility bus on the box
+
 import gi  # noqa: E402
 
+gi.require_version("Gdk", "4.0")
 gi.require_version("Gtk", "4.0")
 gi.require_version("Gtk4LayerShell", "1.0")
 gi.require_version("WebKit", "6.0")

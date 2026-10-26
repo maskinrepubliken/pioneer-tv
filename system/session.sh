@@ -12,9 +12,13 @@ PIONEER_TV_DIR=${PIONEER_TV_DIR:-/opt/pioneer-tv}
 # frames on a Pi 4: the TV gets 1280x720 (or its scaling when it has no such mode).
 wlr-randr --output HDMI-A-1 --mode "${WIDTH}x${HEIGHT}@60" 2>&1 || wlr-randr --output HDMI-A-1 --custom-mode "${WIDTH}x${HEIGHT}@60" 2>&1 || true
 
-# The overlay draws the box's own panels over any window (overlay.py).
+# The overlay draws the box's own panels over any window (overlay.py). It
+# starts without the ambient capability (CAP_WAKE_ALARM) that the login
+# session hands every process here: with it, bubblewrap refuses to set up
+# WebKit's sandbox ("Unexpected capabilities but not setuid") and the page
+# never loads.
 if [ -x "$PIONEER_TV_DIR/system/overlay.py" ]; then
-  "$PIONEER_TV_DIR/system/overlay.py" &
+  setpriv --inh-caps=-all --ambient-caps=-all "$PIONEER_TV_DIR/system/overlay.py" &
 fi
 
 exec "$PIONEER_TV_DIR/system/start-chromium.sh"
