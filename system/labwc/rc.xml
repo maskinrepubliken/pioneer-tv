@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<!-- Pioneer TV: labwc as a kiosk. Every window fills the screen without a
+     frame; there are no key bindings (labwc's defaults include Alt+F4 and
+     Alt+Tab, which a keyboard plugged in for a DOS game must not reach), so
+     one binding that does nothing stands in for them. Read from
+     /opt/pioneer-tv/system/labwc (pioneer-tv-display.service, labwc -C). -->
+<labwc_config>
+  <core>
+    <decoration>client</decoration>
+    <gap>0</gap>
+  </core>
+  <focus><followMouse>no</followMouse></focus>
+  <windowRules>
+    <windowRule identifier="*" serverDecoration="no">
+      <action name="Maximize"/>
+    </windowRule>
+  </windowRules>
+  <keyboard>
+    <keybind key="W-F24"><action name="None"/></keybind>
+  </keyboard>
+</labwc_config>

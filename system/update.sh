@@ -48,5 +48,5 @@ finish ok "updated $FROM -> $TO"
 log "restarting services"
 systemctl restart pioneer-tv-daemon.service
 # Chromium loads the extension at start, so the display must restart too.
-systemctl restart pioneer-tv-weston.service
+systemctl restart pioneer-tv-display.service
 log "done"

@@ -99,7 +99,7 @@ profile in `~/.pioneer-tv/chromium` remembers the sessions.
 
 ```
 journalctl -fu pioneer-tv-daemon        # gamepad, CEC and bridge log
-journalctl -fu pioneer-tv-weston        # Weston output
+journalctl -fu pioneer-tv-display       # labwc, Chromium and overlay output
 tail -f ~/.pioneer-tv/chromium.log      # Chromium output (extension load errors land here)
 sudo python3 -m pioneertv -v            # run the daemon in the foreground (from /opt/pioneer-tv/daemon)
 curl -s localhost:8765/api/status     # what the settings page sees

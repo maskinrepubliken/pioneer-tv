@@ -140,7 +140,7 @@ async def amain(cfg: dict) -> None:
     # ------------------------------------------------------------ hooks
     async def system_action(name: str) -> tuple[bool, str]:
         commands = {
-            "restart_ui": ["systemctl", "restart", "pioneer-tv-weston"],
+            "restart_ui": ["systemctl", "restart", "pioneer-tv-display"],
             "restart_daemon": ["systemctl", "restart", "pioneer-tv-daemon"],
             "reboot": ["systemctl", "reboot"],
             "shutdown": ["systemctl", "poweroff"],

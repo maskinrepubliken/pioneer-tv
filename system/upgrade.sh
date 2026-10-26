@@ -21,7 +21,7 @@ after=$(version)
 log "after:  $after"
 if [ "$before" != "$after" ]; then
   log "upgraded; restarting the screen"
-  systemctl try-restart pioneer-tv-weston.service
+  systemctl try-restart pioneer-tv-display.service
 else
   log "already current"
 fi

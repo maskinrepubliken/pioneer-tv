@@ -10,7 +10,7 @@ import unittest
 from pathlib import Path
 
 from pioneertv import config
-from pioneertv.games import Games
+from pioneertv.games import Games, wayland_socket
 
 
 class Vinput:
@@ -222,6 +222,20 @@ class GamesTests(unittest.IsolatedAsyncioTestCase):
         ok, _ = await g.resume("none")
         await asyncio.sleep(0.05)
         self.assertEqual(launched, [True, False])
+
+
+
+class WaylandSocket(unittest.TestCase):
+    def test_finds_the_compositor_socket(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(wayland_socket(d), "wayland-0")          # none yet: labwc's name
+            Path(d, "wayland-1.lock").touch()
+            s = socket.socket(socket.AF_UNIX)
+            s.bind(os.path.join(d, "wayland-1"))
+            try:
+                self.assertEqual(wayland_socket(d), "wayland-1")
+            finally:
+                s.close()
 
 
 if __name__ == "__main__":

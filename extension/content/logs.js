@@ -5,7 +5,7 @@ window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const UNITS = [
     ['pioneer-tv-daemon', 'Daemon'],
-    ['pioneer-tv-weston', 'Skärm'],
+    ['pioneer-tv-display', 'Skärm'],
     ['chromium', 'Chromium'],
     ['pioneer-tv-update', 'Uppdatering'],
     ['bluetooth', 'Bluetooth'],

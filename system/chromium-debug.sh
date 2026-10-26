@@ -6,7 +6,7 @@
 set -u
 PIONEER_TV_DIR=${PIONEER_TV_DIR:-/opt/pioneer-tv}
 export XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-/run/user/$(id -u)}
-export WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-wayland-1}
+export WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-$(basename "$(ls -1 "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"/wayland-[0-9] 2>/dev/null | head -1)")}
 [ -S "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" ] || WAYLAND_DISPLAY=wayland-0
 BIN=$(command -v chromium-browser || command -v chromium)
 PROFILE=$(mktemp -d /tmp/pioneer-tv-debug.XXXX)

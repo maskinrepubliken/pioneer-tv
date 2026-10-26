@@ -183,6 +183,13 @@ def dos_bundle(path: Path) -> Path:
         return path
 
 
+
+def wayland_socket(runtime_dir: str) -> str:
+    """The compositor's socket in runtime_dir: labwc's is wayland-0, Weston's
+    was wayland-1. The newest, should a stale one be left behind."""
+    socks = [p for p in Path(runtime_dir).glob("wayland-[0-9]*") if p.is_socket()]
+    return max(socks, key=lambda p: p.stat().st_mtime).name if socks else "wayland-0"
+
 class Games:
     def __init__(self, cfg: dict, emit: Callable[[dict], Coroutine], pads, dispatcher) -> None:
         self.cfg = cfg
@@ -548,7 +555,7 @@ history_list_enable = "false"
         return False
 
     def command_line(self, core: str, autoload: bool) -> list[str]:
-        """RetroArch as the kiosk user, on the TV's Weston, from where the game was left unless not."""
+        """RetroArch as the kiosk user, on the TV's display, from where the game was left unless not."""
         g = self.gcfg
         user = g.get("user", "pi")
         try:
@@ -556,8 +563,9 @@ history_list_enable = "false"
             uid, home = pw.pw_uid, pw.pw_dir
         except KeyError:
             uid, home = 1000, "/home/pi"
-        env = [f"XDG_RUNTIME_DIR={g.get('runtime_dir', f'/run/user/{uid}')}",
-               f"WAYLAND_DISPLAY={g.get('wayland_display', 'wayland-1')}", f"HOME={home}"]
+        runtime = g.get("runtime_dir") or f"/run/user/{uid}"
+        env = [f"XDG_RUNTIME_DIR={runtime}", f"WAYLAND_DISPLAY={g.get('wayland_display') or wayland_socket(runtime)}",
+               f"HOME={home}"]
         cmd = [g.get("retroarch", "retroarch"), "--config", str(self.root / "cfg" / "retroarch.cfg"), "--verbose",
                "-L", core, self.game["path"]]
         return (["runuser", "-u", user, "--"] if os.geteuid() == 0 else []) + ["env", *env, *cmd]

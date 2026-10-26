@@ -97,7 +97,7 @@ DEFAULTS: dict[str, Any] = {
         "enabled": True,
         "retroarch": "/usr/bin/retroarch",
         "user": "pi",
-        "wayland_display": "wayland-1",
+        "wayland_display": "",          # empty: the compositor's socket, found in runtime_dir
         "dir": "/var/lib/pioneer-tv/games",
         "cache_mb": 800,
         "port": 55355,
