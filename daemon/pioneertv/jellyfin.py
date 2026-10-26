@@ -1,12 +1,14 @@
 """Rules for the /jellyfin/ proxy, shared by the daemon and dev/preview.py.
 
-The Musik pages talk to Jellyfin only through /jellyfin/ on their own
-origin: the API key stays out of the browser, and Jellyfin's plain http on
-its Tailscale address is the daemon's business. Only what the pages need is
-reachable: reading the library (items, playlists, artists, search, images),
-the audio stream, and the reports of what is playing (so Jellyfin's "played"
-and play counts follow the box). Never its users' settings, the dashboard or
-its web UI. Stdlib only, so the preview can import it on a laptop.
+The Musik and Film & serier pages talk to Jellyfin only through /jellyfin/
+on their own origin: the API key stays out of the browser, and Jellyfin's
+plain http on its Tailscale address is the daemon's business. Only what the
+pages need is reachable: reading the library (items, playlists, artists,
+search, images, libraries, series), the audio stream, and the reports of
+what is playing (so Jellyfin's "played" and play counts follow the box).
+Never its users' settings, the dashboard or its web UI. Videos are not
+streamed through here: mpv, started by the daemon (video.py), fetches them
+from Jellyfin itself. Stdlib only, so the preview can import it on a laptop.
 """
 from __future__ import annotations
 
@@ -15,7 +17,9 @@ from urllib.parse import unquote
 
 # Path prefixes (lower case: Jellyfin's routes ignore case) and the methods
 # each allows.
-READ_PREFIXES = ("items", "users/", "playlists/", "artists", "search/hints", "audio/")
+# userviews, useritems/ and shows/ are for the Film & serier pages: the
+# libraries, what was begun, and a series' seasons and episodes.
+READ_PREFIXES = ("items", "users/", "playlists/", "artists", "search/hints", "audio/", "userviews", "useritems/", "shows/")
 REPORT_PREFIXES = ("sessions/playing",)
 REQUEST_HEADERS = ("Content-Type", "Content-Length", "Accept", "Range", "If-None-Match", "If-Modified-Since")
 RESPONSE_HEADERS = frozenset({

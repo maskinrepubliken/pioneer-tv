@@ -1,10 +1,10 @@
-// Pioneer TV: the Musik pages' client for Jellyfin.
+// Pioneer TV: the Musik and Film & serier pages' client for Jellyfin.
 //
 // Every request goes to /jellyfin/ on the page's own origin, where the daemon
 // (or dev/preview.py) adds the API key and forwards to Jellyfin; the key never
 // reaches the browser. Who the box plays as comes from /api/jellyfin. Knows
-// nothing about the DOM: songs, albums, artists and playlists are trimmed to
-// the few fields the pages show.
+// nothing about the DOM: songs, albums, artists, playlists, films, series and
+// episodes are trimmed to the few fields the pages show.
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const BASE = new URL('/jellyfin/', location.origin).href;
@@ -99,6 +99,62 @@ window.PioneerTV = window.PioneerTV || {};
   }
 
   const SONG = { Fields: 'MediaSources', EnableImageTypes: 'Primary' };
+
+  // ------------------------------------------------------------ video
+  // Libraries that are not for the Film & serier pages.
+  const SKIP_VIEWS = new Set(['music', 'playlists', 'books', 'photos', 'livetv', 'audiobooks']);
+  const VIDEO_FIELDS = 'Overview,ProductionYear,ChildCount';
+  const picture = (id, kind, tag, width) => (id && tag ? `${BASE}Items/${id}/Images/${kind}?fillWidth=${width}&quality=85&tag=${tag}` : null);
+
+  // A track as the detail page lists it and mpv picks it: index is
+  // Jellyfin's (over all streams), external ones are separate files.
+  function toTrack(s) {
+    const label = s.DisplayTitle || [s.Language, s.Codec].filter(Boolean).join(' ') || `Spår ${s.Index}`;
+    return { index: s.Index, label, language: s.Language || '', external: !!s.IsExternal, codec: (s.Codec || '').toLowerCase() };
+  }
+
+  // A film, a series, a season, an episode, a clip or a folder.
+  function toVideo(i) {
+    const type = i.Type;
+    const kind = type === 'Movie' ? 'movie' : type === 'Series' ? 'series' : type === 'Season' ? 'season'
+      : type === 'Episode' ? 'episode' : i.IsFolder ? 'folder' : 'video';
+    const tags = i.ImageTags || {};
+    const ud = i.UserData || {};
+    const src = (i.MediaSources || [])[0];
+    const streams = (src && src.MediaStreams) || [];
+    const portrait = ['movie', 'series', 'season'].includes(kind);
+    const backdrop = picture(i.Id, 'Backdrop', (i.BackdropImageTags || [])[0], 1280)
+      || picture(i.ParentBackdropItemId, 'Backdrop', (i.ParentBackdropImageTags || [])[0], 1280);
+    return {
+      id: i.Id,
+      kind,
+      name: i.Name,
+      year: i.ProductionYear || null,
+      overview: i.Overview || '',
+      genres: i.Genres || [],
+      seconds: i.RunTimeTicks ? i.RunTimeTicks / TICKS : null,
+      position: ud.PlaybackPositionTicks ? ud.PlaybackPositionTicks / TICKS : 0,
+      played: !!ud.Played,
+      percent: ud.PlayedPercentage || 0,
+      count: i.ChildCount ?? null,
+      series: i.SeriesName || '',
+      seriesId: i.SeriesId || null,
+      seasonId: i.SeasonId || null,
+      season: i.ParentIndexNumber ?? null,
+      episode: i.IndexNumber ?? null,
+      // Portrait for films, series and seasons; a 16:9 still for the rest
+      // (a film's or a series' Primary is its poster, so not that).
+      poster: picture(i.Id, 'Primary', tags.Primary, 400) || picture(i.SeriesId, 'Primary', i.SeriesPrimaryImageTag, 400),
+      still: (portrait ? null : picture(i.Id, 'Primary', tags.Primary, 640)) || picture(i.Id, 'Thumb', tags.Thumb, 640) || backdrop,
+      backdrop,
+      sourceId: src ? src.Id : null,
+      audio: streams.filter((s) => s.Type === 'Audio').map(toTrack),
+      subtitles: streams.filter((s) => s.Type === 'Subtitle').map(toTrack),
+      // Chosen by Jellyfin from the user's own settings (language, subtitle mode).
+      defaultAudio: src && src.DefaultAudioStreamIndex != null ? src.DefaultAudioStreamIndex : null,
+      defaultSubtitle: src && src.DefaultSubtitleStreamIndex != null ? src.DefaultSubtitleStreamIndex : -1,
+    };
+  }
   const q = (params) => Object.entries(params).filter(([, v]) => v != null && v !== '')
     .map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');
 
@@ -160,6 +216,40 @@ window.PioneerTV = window.PioneerTV || {};
         TranscodingContainer: 'mp3', TranscodingProtocol: 'http', AudioCodec: 'mp3',
       })}`;
     },
+    // ---------------------------------------------------------- film and series
+    // Jellyfin's own libraries, music and what is not video left out, so a
+    // library added in Jellyfin shows up as a tab by itself.
+    async libraries() {
+      const d = await json(`UserViews?${q({ userId: await user() })}`);
+      return (d.Items || []).filter((v) => !SKIP_VIEWS.has((v.CollectionType || '').toLowerCase()))
+        .map((v) => ({ id: v.Id, name: v.Name, type: (v.CollectionType || 'mixed').toLowerCase() }));
+    },
+    // A library's (or a folder's) cards: films, series, or what a home video
+    // library holds (folders first).
+    browse(lib) {
+      const kind = { movies: 'Movie', tvshows: 'Series' }[lib.type];
+      const params = kind ? { IncludeItemTypes: kind, Recursive: 'true', SortBy: 'SortName' }
+        : { Recursive: 'false', SortBy: 'IsFolder,SortName', SortOrder: 'Descending,Ascending' };
+      return items({ ParentId: lib.id, ...params, Fields: VIDEO_FIELDS, EnableImageTypes: 'Primary,Thumb,Backdrop' }, toVideo);
+    },
+    // Begun but not finished, latest first.
+    async resume(lib) {
+      const d = await json(`UserItems/Resume?${q({ userId: await user(), ParentId: lib.id, MediaTypes: 'Video', Limit: 16,
+        Fields: VIDEO_FIELDS, EnableImageTypes: 'Primary,Thumb,Backdrop' })}`);
+      return (d.Items || []).map(toVideo);
+    },
+    async video(id) {
+      return toVideo(await json(`Items/${id}?${q({ userId: await user(), Fields: `${VIDEO_FIELDS},MediaSources,Genres` })}`));
+    },
+    async seasons(seriesId) {
+      const d = await json(`Shows/${seriesId}/Seasons?${q({ userId: await user(), Fields: VIDEO_FIELDS })}`);
+      return (d.Items || []).map(toVideo);
+    },
+    async episodes(seriesId, seasonId) {
+      const d = await json(`Shows/${seriesId}/Episodes?${q({ userId: await user(), SeasonId: seasonId, Fields: VIDEO_FIELDS })}`);
+      return (d.Items || []).map(toVideo);
+    },
+
     // Tells Jellyfin what plays, so "played" and play counts follow the box.
     // Failures are only logged: the music does not depend on them.
     report(what, song, seconds) {

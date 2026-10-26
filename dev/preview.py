@@ -11,7 +11,7 @@ uncached, so a reload always shows the file on disk.
 /romm/ forwards to RomM the way the daemon does, so the Spel pages work here
 against a real server. It reads ROMM_URL and ROMM_API_KEY from the
 environment, or from ~/.config/pioneer-tv/romm.env (KEY=value lines).
-/jellyfin/ and /api/jellyfin do the same for the Musik pages, with
+/jellyfin/ and /api/jellyfin do the same for the Musik and Film & serier pages, with
 JELLYFIN_URL, JELLYFIN_API_KEY and JELLYFIN_USER (or jellyfin.env)."""
 import http.server
 import json
@@ -34,6 +34,7 @@ REDIRECTS = {
     "/settings": "/static/settings.html?mock=1",
     "/spel": "/ext/launcher/spel.html?tv=1",
     "/musik": "/ext/launcher/musik.html?tv=1",
+    "/film": "/ext/launcher/film.html?tv=1",
 }
 
 
@@ -77,6 +78,8 @@ Piltangenter navigerar, Enter väljer, Escape stänger. Layouten är ritad för 
 <ul><li><a href="/spel">Spel mot RomM</a> (kräver ROMM_URL och ROMM_API_KEY)</li></ul>
 <h2>Musik</h2>
 <ul><li><a href="/musik">Musik mot Jellyfin</a> (kräver JELLYFIN_URL och JELLYFIN_API_KEY)</li></ul>
+<h2>Film &amp; serier</h2>
+<ul><li><a href="/film">Film &amp; serier mot Jellyfin</a> (samma; att spela kräver boxen)</li></ul>
 <h2>Inställningar</h2>
 <ul><li><a href="/settings">Inställningssidan med exempeldata</a></li></ul>
 <h2>Designsystemet</h2>

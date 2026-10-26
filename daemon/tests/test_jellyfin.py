@@ -10,7 +10,8 @@ B = "http://jf:8096"
 class TargetUrl(unittest.TestCase):
     def test_library_reads(self):
         for p in ["Items", "Items/abc/Images/Primary", "Users/u1/Items", "Playlists/p1/Items", "Artists/AlbumArtists",
-                  "Search/Hints", "Audio/a1/universal"]:
+                  "Search/Hints", "Audio/a1/universal", "UserViews", "UserItems/Resume", "Shows/s1/Seasons",
+                  "Shows/s1/Episodes"]:
             self.assertEqual(jellyfin.target_url(B, p), f"{B}/{p}", p)
 
     def test_case_ignored_and_query_kept(self):

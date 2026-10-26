@@ -86,7 +86,7 @@ DEFAULTS: dict[str, Any] = {
     "remote": {"token": ""},
     # RomM for the Spel pages: base URL and a client API token (see /romm/ in server.py).
     "romm": {"url": "", "api_key": ""},
-    # Jellyfin for the Musik pages: base URL (no /web/), an API key from its
+    # Jellyfin for the Musik and Film & serier pages: base URL (no /web/), an API key from its
     # dashboard, and the user whose playlists they show (empty: the first
     # administrator). See /jellyfin/ in server.py.
     "jellyfin": {"url": "", "api_key": "", "user": ""},
@@ -112,6 +112,13 @@ DEFAULTS: dict[str, Any] = {
             "n64": "/var/lib/pioneer-tv/cores/mupen64plus_next_libretro.so",
             "dos": "/var/lib/pioneer-tv/cores/dosbox_pure_libretro.so",
         },
+    },
+    # Films and series from Jellyfin, played in mpv on the TV's display (video.py).
+    "video": {
+        "mpv": "/usr/bin/mpv",
+        "user": "pi",
+        "wayland_display": "",          # empty: the compositor's socket, found in runtime_dir
+        "dir": "/var/lib/pioneer-tv/video",
     },
     # Pads by the serial number of their USB device (a 2.4 GHz dongle):
     # {"<serial>": {"name": ..., "pointer": "#rrggbb", "accent": "#rrggbb",

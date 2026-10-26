@@ -73,6 +73,8 @@ class Server:
             ("GET", "/api/games", self.api_games_status),
             ("GET", "/api/games/screen", self.api_games_screen),
             ("POST", "/api/games/{action}", self.api_games_action),
+            ("GET", "/api/video", self.api_video_status),
+            ("POST", "/api/video/{action}", self.api_video_action),
             ("GET", "/api/jellyfin", self.api_jellyfin),
         ]
         for method, path, handler in api:
@@ -454,6 +456,35 @@ class Server:
             ok, msg = True, ""
         elif action == "quit":
             await games.quit()
+            ok, msg = True, ""
+        else:
+            return web.json_response({"ok": False, "message": "okänd åtgärd"}, status=404)
+        return web.json_response({"ok": ok, "message": msg}, status=200 if ok else 409)
+
+    # Films and series in mpv (video.py): what plays, and play / stop.
+    async def api_video_status(self, request: web.Request) -> web.Response:
+        video = self.hooks.get("video")
+        return web.json_response(video.status() if video else {"state": "idle", "item": None})
+
+    async def api_video_action(self, request: web.Request) -> web.Response:
+        video = self.hooks.get("video")
+        if not video:
+            return web.json_response({"ok": False, "message": "inte tillgängligt"}, status=503)
+        action = request.match_info["action"]
+        data = await self._json(request) if request.can_read_body else {}
+        if action == "play":
+            def index(name: str) -> int | None:
+                try:
+                    return int(data[name]) if data.get(name) is not None else None
+                except (TypeError, ValueError):
+                    return None
+            try:
+                start = float(data.get("start") or 0)
+            except (TypeError, ValueError):
+                start = 0.0
+            ok, msg = await video.play(str(data.get("id") or ""), start, index("audio"), index("subtitle"))
+        elif action == "stop":
+            await video.stop()
             ok, msg = True, ""
         else:
             return web.json_response({"ok": False, "message": "okänd åtgärd"}, status=404)

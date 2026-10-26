@@ -1,0 +1,113 @@
+/* Pioneer TV Film & serier pages, on top of spel.css: the same canvas,
+   heading, cards, messages and legend. What is film's own: the library tabs,
+   portrait posters and 16:9 stills, how far into a video the line under it
+   reaches, the detail page, a series' episodes, and the black screen behind
+   mpv. */
+
+.film-head { flex: none; align-items: center; }
+.film-head .spel-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 0 1 auto; }
+
+/* ---- the libraries, as tabs in the heading ---- */
+.film-tabs { display: flex; flex: 0 1 auto; min-width: 0; gap: 0.5rem; margin-left: auto; overflow-x: auto; scrollbar-width: none; padding: 0.4rem; margin-right: -0.4rem; }
+.film-tabs::-webkit-scrollbar { display: none; }
+.film-tabs[hidden] { display: none; }
+.film-tab, .film-season {
+  flex: none; padding: 0.55rem 1.1rem; white-space: nowrap; text-decoration: none;
+  font: 600 1rem/1 var(--pioneertv-font-ui); color: var(--pioneertv-ink-muted);
+  border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-pill);
+}
+.film-tab.aktiv, .film-season.aktiv { color: var(--pioneertv-ink); background: var(--pioneertv-paper-raised); border-color: var(--pioneertv-ink); }
+.film-tab.pioneertv-focus, .film-season.pioneertv-focus {
+  outline: 0.2rem solid var(--pioneertv-focus) !important; outline-offset: 0.2rem !important;
+  box-shadow: none !important; border-radius: var(--pioneertv-radius-pill) !important;
+}
+
+/* One scrolling column for a view; the focus ring needs the margin. */
+.film-scroll {
+  flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none;
+  padding: 0.6rem; margin: -0.6rem;
+}
+.film-scroll::-webkit-scrollbar { display: none; }
+.film-scroll .spel-label:not(:first-child) { margin-top: 1.3rem; }
+
+/* ---- cards ---- */
+.film-card { padding: 0.4rem 0.4rem 0.6rem; content-visibility: auto; contain-intrinsic-size: auto 16rem; }
+.film-card .cover { position: relative; width: 100%; border-radius: calc(var(--pioneertv-radius-l) - 0.4rem); }
+.film-card .cover img { object-fit: cover; }
+.film-card--poster .cover { aspect-ratio: 2 / 3; }
+.film-card--still .cover { aspect-ratio: 16 / 9; }
+.film-card .title { padding: 0 0.25rem; -webkit-line-clamp: 1; }
+.film-card .meta { padding: 0 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.film-row { display: flex; gap: 1.1rem; overflow-x: auto; scrollbar-width: none; padding: 0.6rem; margin: -0.6rem; }
+.film-row::-webkit-scrollbar { display: none; }
+.film-row .film-card { width: 15rem; flex: none; }
+
+.film-grid { display: grid; gap: 1.2rem 1.1rem; }
+.film-grid--poster { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.film-grid--still { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.film-grid + .film-grid { margin-top: 1.2rem; }
+.film-folders { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.2rem; }
+.film-folder { min-width: 12rem; }
+
+/* How far into it: a thin ochre line along the foot of the picture. */
+.film-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 0.3rem; background: var(--pioneertv-paper-sunken); }
+.film-progress span { display: block; height: 100%; background: var(--pioneertv-ochre); }
+
+.film-empty { margin: 0.4rem 0 1.2rem; font: italic 1.1rem var(--pioneertv-font-prose); color: var(--pioneertv-ink-muted); }
+
+/* ---- a film, an episode, a series: picture on the left, the rest beside it ---- */
+.film-detail { flex: 1; min-height: 0; display: flex; gap: 2.4rem; }
+.film-side { width: 16rem; flex: none; }
+.film-side .cover { width: 100%; aspect-ratio: 2 / 3; border-radius: var(--pioneertv-radius-l); }
+.film-side .cover img { object-fit: cover; }
+.film-side--still { width: 24rem; }
+.film-side--still .cover { aspect-ratio: 16 / 9; }
+.film-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.film-name {
+  margin: 0 0 0.6rem; font-family: var(--pioneertv-font-display); font-weight: 900; font-size: 2.2rem; line-height: 1.02;
+  letter-spacing: -0.01em; text-transform: uppercase;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.film-meta { margin: 0 0 1rem; font-family: var(--pioneertv-font-mono); font-size: 0.85rem; color: var(--pioneertv-ink-faint); }
+.film-overview {
+  margin: 0 0 1.4rem; max-width: 46rem; font: 1.1rem/1.5 var(--pioneertv-font-prose); color: var(--pioneertv-ink-muted);
+  display: -webkit-box; -webkit-line-clamp: 7; -webkit-box-orient: vertical; overflow: hidden;
+}
+.film-overview--short { -webkit-line-clamp: 3; margin-bottom: 1rem; }
+.film-buttons { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-bottom: 0.9rem; }
+.film-buttons .knapp { padding: 0.9rem 1.5rem; }
+.film-track { font-weight: 400; }
+.film-track-label { font-family: var(--pioneertv-font-mono); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--pioneertv-ink-faint); margin-right: 0.3rem; }
+
+/* ---- a series' seasons and episodes ---- */
+.film-seasons { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.9rem; padding: 0.3rem 0; }
+.film-episodes { display: flex; flex-direction: column; }
+.film-episode {
+  display: grid; grid-template-columns: 11rem minmax(0, 1fr) auto; align-items: center; gap: 1.2rem;
+  padding: 0.6rem 0.8rem; text-decoration: none; color: var(--pioneertv-ink);
+  border-bottom: 1px solid var(--pioneertv-line); border-radius: var(--pioneertv-radius-s);
+}
+.film-episode .cover { position: relative; aspect-ratio: 16 / 9; border-radius: var(--pioneertv-radius-s); }
+.film-episode .cover img { object-fit: cover; }
+.film-episode .t { min-width: 0; display: flex; flex-direction: column; gap: 0.25rem; }
+.film-episode .t b { font: 400 1.15rem/1.2 var(--pioneertv-font-prose); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.film-episode .t span {
+  font-size: 0.85rem; line-height: 1.35; color: var(--pioneertv-ink-muted);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.film-episode .d { font-family: var(--pioneertv-font-mono); font-size: 0.85rem; color: var(--pioneertv-ink-faint); }
+.film-episode.sedd .t b { color: var(--pioneertv-ink-muted); }
+.film-episode.pioneertv-focus {
+  background: var(--pioneertv-paper-hover); outline: 0.2rem solid var(--pioneertv-focus) !important; outline-offset: 0.1rem !important;
+  box-shadow: none !important; border-radius: var(--pioneertv-radius-s) !important;
+}
+
+/* ---- behind mpv: black, with what comes before and after ---- */
+.film-player {
+  position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem;
+  background: #000; color: var(--pioneertv-on-dark);
+}
+.film-player[hidden] { display: none; }
+.film-player-text { margin: 0; font: italic 400 2rem/1.2 var(--pioneertv-font-prose); }
+.film-player-hint { margin: 0; font: 1.1rem/1.3 var(--pioneertv-font-ui); color: var(--pioneertv-on-dark); }

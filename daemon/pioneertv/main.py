@@ -13,6 +13,7 @@ from .actions import Dispatcher
 from .cec import Cec
 from .gamepad import GamepadManager, MouseDriver
 from .games import Games
+from .video import Video
 from .server import Server
 from .virtual_input import VirtualInput
 
@@ -210,6 +211,11 @@ async def amain(cfg: dict) -> None:
     server.hooks["games"] = games
     await games.reap_strays()
 
+    # Films and series from Jellyfin, played in mpv (video.py).
+    video = Video(cfg, emit, dispatcher)
+    server.hooks["video"] = video
+    await video.reap_strays()
+
     await cec.setup()
     # A USB adapter may come up powered off; paired pads only reconnect to a powered adapter.
     await sysinfo.run("bluetoothctl", "power", "on", timeout=10)
@@ -232,6 +238,10 @@ async def amain(cfg: dict) -> None:
         await asyncio.wait_for(games.close(), 10)
     except Exception as exc:
         log.warning("closing the game: %s", exc)
+    try:
+        await asyncio.wait_for(video.close(), 8)
+    except Exception as exc:
+        log.warning("stopping the video: %s", exc)
     for t in tasks:
         t.cancel()
     # Name whatever is slow to stop, so a long shutdown says why.

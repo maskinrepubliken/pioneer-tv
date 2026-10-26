@@ -12,6 +12,7 @@ what was learned on the way.
 - [The TV (HDMI-CEC)](#the-tv-hdmi-cec)
 - [Games](#games)
 - [Music](#music)
+- [Film and series](#film-and-series)
 - [Updating the box](#updating-the-box)
 - [Logs and CEC debugging](#logs-and-cec-debugging)
 - [Working on the home screen without a Pi](#working-on-the-home-screen-without-a-pi)
@@ -234,8 +235,9 @@ The Musik tile opens our own pages on top of [Jellyfin](https://jellyfin.org/)'s
 music library, `extension/launcher/musik.html`: Blanda allt, Album and
 Artister, then your playlists; a playlist or an album lists its songs beside
 its cover, with Spela and Blanda. Typing in the search field (Y opens the
-keyboard) searches songs, albums and artists. Films, series and clips are still
-Jellyfin's own web UI, behind the Film & serier tile.
+keyboard) searches songs, albums and artists. Films, series and clips are
+Jellyfin's own web UI behind the Film & serier tile until our own pages
+([Film and series](#film-and-series)) have been tried on the box.
 
 A song plays in the page itself and "Spelas nu" covers the screen: A or X
 pauses, L1/R1 go to the previous and next song, left and right seek ten
@@ -253,6 +255,46 @@ Jellyfin sends a song as it is when Chromium can play it and transcodes it to
 MP3 otherwise, so the Pi does no work. Set Jellyfin's address (without
 `/web/`), an API key (Jellyfin: Dashboard → API Keys) and, if not the first
 administrator, the user whose playlists to show under Inställningar → Jellyfin.
+
+## Film and series
+
+`extension/launcher/film.html` is our own Film & serier page on top of
+Jellyfin, served by the daemon like Musik
+(`http://127.0.0.1:8765/ext/launcher/film.html`). Its tabs are Jellyfin's
+own libraries (`UserViews`), music, photos and books left out, so a library
+added in Jellyfin appears by itself. Each tab starts with "Fortsätt titta"
+(what was begun) and then holds the library's films or series as posters, or
+a home video library's folders and clips. A on a film, an episode or a clip
+opens its page: the picture, year, length and overview, Spela or "Fortsätt
+från …" and "Spela från början", and, when there is a choice, Ljud and
+Undertexter (A steps through them). Which sound and subtitles are chosen
+first is Jellyfin's call, from the user's own settings. A series opens on
+the first season not finished, its seasons as buttons above the episodes.
+
+Videos play in **mpv**, not Chromium, started by the daemon
+(`daemon/pioneertv/video.py`) as games are: Chromium on the Pi cannot decode
+HEVC or 10-bit video, and mpv decodes it in hardware (1080p HEVC 10-bit with
+`--hwdec=drm --vo=gpu --profile=fast`: no dropped frames at about 22 % CPU;
+plain `--vo=gpu` dropped about nine a second). mpv streams the file as it is
+from Jellyfin (`/Videos/<id>/stream?static=true`), so nothing is
+transcoded; it keeps a minute ahead in its cache, since the 1080p HEVC files
+need about 4.5 Mbit/s and Jellyfin delivered about 5.3 to the box. The API
+key goes to mpv in its config file (`/var/lib/pioneer-tv/video/mpv/`,
+readable by the kiosk user alone), never on its command line.
+
+While a video plays: A, B or X pauses and resumes, with the timeline shown;
+left and right seek ten seconds, L1 and R1 a minute; holding B stops; Home
+pauses and opens the quick menu over the video; holding Home stops and goes
+home. Nothing plays on by itself, not even the next episode: at the end the
+screen goes black and says "Tryck B för att fortsätta". Jellyfin hears what
+plays every ten seconds and where it stopped, so "Fortsätt titta" follows
+the box. The panel planned for pausing (Fortsätt, Ljud, Undertexter) will be
+drawn by the overlay; until then mpv's own timeline shows.
+
+**Status, October 2026.** Built and tried in the preview against a stand-in
+Jellyfin, and `video.py` against a stand-in mpv; not yet on the box, so the
+Film & serier tile still opens Jellyfin's web UI. To try it there, open the
+page above from the box (or point the tile at it).
 
 ## Updating the box
 
@@ -295,6 +337,9 @@ menu or a toast open), the settings page with its mock data, and a specimen
 of the Maskinrepubliken design system in its three themes. The design system
 is vendored in `design/maskinrepubliken/`; after pulling a new `tokens.json`,
 run `python3 dev/tokens-css.py` to regenerate `tokens.css`.
+
+The Film & serier page (http://localhost:5178/film) runs against Jellyfin as
+the Musik pages do; Spela needs the box.
 
 The Spel pages (http://localhost:5178/spel) run against a real RomM: the
 preview forwards `/romm/` like the daemon does, with the address and key
