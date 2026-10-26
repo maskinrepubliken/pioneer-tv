@@ -165,13 +165,12 @@ Decided with the user:
   Uppdatera systemet: the installer now adds the keys in
   `system/authorized_keys` (77cb149). The Tailscale address is
   100.127.191.97. The user has said the TV no longer has to stay off.
-- Freeze guards in the installer (77cb149): hardware watchdog through
-  systemd (15 s), `kernel.panic = 10`, a persistent journal written every
-  15 s, and `pioneer-tv-vitals` logging memory, swap, load, temperature and
-  the biggest process every 10 s. They arm on the next update. The freeze's
-  own boot may not have a persistent journal (it was not set before), so
-  `journalctl -b -1` may come back empty: check `journalctl --list-boots`
-  first. The plan in step 3 above still stands.
+- **The freeze was a power cut** (the user, later that evening), not the
+  overlay or the GPU. "The incident to start with" above is closed; the
+  overlay's menu can be tested as planned (step 4).
+- Guards in the installer (77cb149, trimmed afterwards): the hardware
+  watchdog through systemd (15 s), `kernel.panic = 10`, and a persistent
+  journal. They arm on the next update.
 - GUIDE.md now covers labwc, the overlay and the guards; Weston's quirks
   are gone from it.
 - **Film & serier** (831b46c): `extension/launcher/film.*`, the video calls
@@ -185,5 +184,5 @@ Decided with the user:
   Chromium on labwc, `Shift+TAB` in input.conf (L1), the subtitles from
   Jellyfin (external ones are fetched with the same token header), and that
   "Fortsätt titta" moves. Then point the tile at the page (as Musik's is).
-  The pause panel (Fortsätt, Ljud, Undertexter) belongs in the overlay and
-  waits on the freeze, as does project 1 step 3.
+  The pause panel (Fortsätt, Ljud, Undertexter) belongs in the overlay,
+  as does project 1 step 3.

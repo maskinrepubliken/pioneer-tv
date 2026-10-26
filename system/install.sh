@@ -114,7 +114,7 @@ mkdir -p "$TARGET" /etc/pioneer-tv "$HOME_DIR/.config"
 rsync -a --delete "$REPO/extension/" "$TARGET/extension/"
 rsync -a --delete "$REPO/daemon/" "$TARGET/daemon/"
 rsync -a "$REPO/system/" "$TARGET/system/"
-chmod +x "$TARGET/system/start-chromium.sh" "$TARGET/system/update.sh" "$TARGET/system/upgrade.sh" "$TARGET/system/chromium-debug.sh" "$TARGET/system/open-launcher.py" "$TARGET/system/build-cores.sh" "$TARGET/system/vitals.sh"
+chmod +x "$TARGET/system/start-chromium.sh" "$TARGET/system/update.sh" "$TARGET/system/upgrade.sh" "$TARGET/system/chromium-debug.sh" "$TARGET/system/open-launcher.py" "$TARGET/system/build-cores.sh"
 mkdir -p /var/lib/pioneer-tv
 [ -f /etc/pioneer-tv/config.toml ] || cp "$REPO/daemon/config.example.toml" /etc/pioneer-tv/config.toml
 # Config migrations: rewrite lines that still carry an old default verbatim.
@@ -183,7 +183,7 @@ cp "$REPO/system/chromium-policies.json" /etc/chromium/policies/managed/pioneer-
 cp "$REPO/system/pioneer-tv-daemon.service" "$REPO/system/pioneer-tv-display.service" "$REPO/system/pioneer-tv-weston.service" \
    "$REPO/system/pioneer-tv-governor.service" \
    "$REPO/system/pioneer-tv-upgrade.service" "$REPO/system/pioneer-tv-upgrade.timer" \
-   "$REPO/system/pioneer-tv-cores.service" "$REPO/system/pioneer-tv-vitals.service" /etc/systemd/system/
+   "$REPO/system/pioneer-tv-cores.service" /etc/systemd/system/
 
 echo "$REPO" > /etc/pioneer-tv/repo
 
@@ -253,13 +253,11 @@ fi
 # uinput at boot
 echo uinput > /etc/modules-load.d/pioneer-tv.conf
 
-echo "== freezes"
-# In October the box froze during a test of the overlay: no ping, no SSH, for
-# minutes, until the power was pulled, and the cause could not be read. Now a
-# hang resets the board (the hardware watchdog, 15 s; a kernel panic reboots
-# after 10 s), the journal is kept on the card and written out every 15 s
-# (journalctl -b -1 after a reset), and pioneer-tv-vitals logs memory, load
-# and temperature every ten seconds up to the moment it stops.
+echo "== hangs and power cuts"
+# A box that hangs resets itself (the hardware watchdog, 15 s; a kernel panic
+# reboots after 10 s) instead of waiting for someone to pull the plug, and
+# the journal is kept on the card, so the boot before a reset or a power cut
+# can be read (journalctl -b -1).
 mkdir -p /etc/systemd/system.conf.d /etc/systemd/journald.conf.d /var/log/journal
 cp "$REPO/system/watchdog.conf" /etc/systemd/system.conf.d/pioneer-tv-watchdog.conf
 cp "$REPO/system/journald.conf" /etc/systemd/journald.conf.d/pioneer-tv.conf
@@ -299,7 +297,6 @@ systemctl daemon-reload
 systemctl disable getty@tty1.service || true
 systemctl set-default graphical.target
 systemctl enable seatd bluetooth pioneer-tv-governor.service
-systemctl enable --now pioneer-tv-vitals.service
 # SSH is how the box is looked after from elsewhere: make sure it runs (in
 # October it did not come up after a boot that damaged files).
 systemctl reset-failed ssh 2>/dev/null || true
@@ -321,7 +318,7 @@ if systemctl --user --machine="$USER_NAME@.host" is-active pipewire >/dev/null 2
   systemctl --user --machine="$USER_NAME@.host" restart wireplumber 2>/dev/null || true
 fi
 # Pick up new code if the box is already running (no-op on first install).
-systemctl try-restart pioneer-tv-daemon.service pioneer-tv-display.service pioneer-tv-vitals.service || true
+systemctl try-restart pioneer-tv-daemon.service pioneer-tv-display.service || true
 # A box still on Weston changes over now (starting labwc stops it: Conflicts=).
 if systemctl is-active -q pioneer-tv-weston.service; then systemctl start pioneer-tv-display.service || true; fi
 # RetroArch and the game cores: long (downloads and builds), so in the

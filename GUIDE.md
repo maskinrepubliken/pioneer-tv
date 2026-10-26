@@ -20,7 +20,7 @@ what was learned on the way.
 - [Board and video mode](#board-and-video-mode)
 - [The display: labwc](#the-display-labwc)
 - [The overlay](#the-overlay)
-- [When the box freezes](#when-the-box-freezes)
+- [When the box hangs](#when-the-box-hangs)
 - [The pointer](#the-pointer)
 - [Overlays and fullscreen](#overlays-and-fullscreen)
 - [Sound](#sound)
@@ -72,7 +72,7 @@ v4l-utils, BlueZ, aiohttp and evdev, copies the repo to `/opt/pioneer-tv`, insta
 sets the video mode (1280x720), leaves swap in compressed memory to
 Raspberry Pi OS's own zram, sets the CPU governor to performance at
 boot, sets the boot target to graphical, and arms the guards in
-[When the box freezes](#when-the-box-freezes). It also adds the SSH keys in
+[When the box hangs](#when-the-box-hangs). It also adds the SSH keys in
 `system/authorized_keys` to the kiosk user's, so a freshly installed card can
 be reached from the same machines as the old one. Rerunning it is safe. Pair the first gamepad from the shell (later ones from the settings page):
 
@@ -111,7 +111,7 @@ profile in `~/.pioneer-tv/chromium` remembers the sessions.
 ```
 journalctl -fu pioneer-tv-daemon        # gamepad, CEC and bridge log
 journalctl -fu pioneer-tv-display       # labwc, Chromium and overlay output
-journalctl -b -1 -u pioneer-tv-vitals   # memory, load and temperature up to the last boot's end
+journalctl -b -1 --no-pager             # the boot before a reset or a power cut
 tail -f ~/.pioneer-tv/chromium.log      # Chromium output (extension load errors land here)
 sudo python3 -m pioneertv -v            # run the daemon in the foreground (from /opt/pioneer-tv/daemon)
 curl -s localhost:8765/api/status     # what the settings page sees
@@ -471,35 +471,28 @@ The login session gives every process the ambient capability
 `session.sh` therefore starts the overlay through `setpriv --inh-caps=-all
 --ambient-caps=-all`. Do not switch WebKit's sandbox off instead.
 
-**Status, October 2026.** The overlay starts and connects. The first time
-its menu was opened (with SVT1 playing in Chromium) the whole box froze; see
-below. The menu, keys reaching it, the relays, pausing and resuming media,
-and the toasts are not yet verified on the box.
+**Status, October 2026.** The overlay starts and connects. The menu, keys
+reaching it, the relays, pausing and resuming media, and the toasts are not
+yet verified on the box. (The box went dark during the first test of the
+menu; that was a power cut, not the overlay.)
 
-## When the box freezes
+## When the box hangs
 
-In October the box froze while the overlay's quick menu was opened over
-SVT1: no ping and no SSH, over Tailscale or the LAN, for minutes, until the
-power was pulled. The cause is not yet known. Since then the installer
-arms three guards:
+The installer arms two guards:
 
 - **The hardware watchdog.** `dtparam=watchdog=on` in `config.txt` and
   `RuntimeWatchdogSec=15s` (`system/watchdog.conf`, in
   `/etc/systemd/system.conf.d/`): systemd pets the board's watchdog, and if
   the whole box hangs the board resets itself after 15 seconds. A kernel
   panic reboots after 10 (`kernel.panic`).
-- **A journal that survives.** The journal is kept on the card and written
-  out every 15 seconds rather than every five minutes (`system/journald.conf`),
-  so the boot before a reset can be read: `journalctl -b -1 --no-pager`.
-- **Vitals.** `pioneer-tv-vitals.service` (`system/vitals.sh`) logs one line
-  every ten seconds: memory available, swap used, memory pressure, load,
-  temperature, throttling and the biggest process. The last lines before a
-  freeze show whether memory ran out.
+- **A journal that survives.** The journal is kept on the card
+  (`system/journald.conf`), so the boot before a reset or a power cut can be
+  read: `journalctl -b -1 --no-pager`, and `journalctl --list-boots` for
+  which boots there are.
 
-After a freeze, look in this order: `journalctl -b -1 -k` for vc4, v3d,
-"hung task", OOM and undervoltage; `journalctl -b -1 -u pioneer-tv-vitals |
-tail`; `journalctl -b -1 -u pioneer-tv-display` for labwc and the overlay;
-and `vcgencmd get_throttled`.
+After a reset, look in `journalctl -b -1 -k` for vc4, v3d, "hung task", OOM
+and undervoltage, in `journalctl -b -1 -u pioneer-tv-display` for labwc and
+the overlay, and at `vcgencmd get_throttled`.
 
 ## The pointer
 
