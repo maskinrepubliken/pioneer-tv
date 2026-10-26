@@ -70,6 +70,7 @@ async function handleDaemonMessage(msg) {
     if (msg.name === 'home') return goHome();
     if (msg.name === 'reload') return reloadActive();
     if (msg.name === 'back') return goBack();
+    if (msg.name === 'settings') return openSettings();
     return forwardToActiveTab(msg);
   }
 }
@@ -93,6 +94,11 @@ async function goHome() {
 async function reloadActive() {
   const tab = await activeTab();
   if (tab) chrome.tabs.reload(tab.id);
+}
+
+async function openSettings() {
+  const tab = await activeTab();
+  if (tab) chrome.tabs.update(tab.id, { url: (config && config.settings_url) || 'http://127.0.0.1:8765/' });
 }
 
 async function goBack() {
@@ -152,7 +158,7 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
       goBack();
       break;
     case 'settings':
-      activeTab().then((tab) => tab && chrome.tabs.update(tab.id, { url: (config && config.settings_url) || 'http://127.0.0.1:8765/' }));
+      openSettings();
       break;
     case 'navigate':
       if (sender.tab) chrome.tabs.update(sender.tab.id, { url: msg.url });

@@ -25,36 +25,18 @@
   });
   // Our own volume note is off by default: the TV draws its own volume bar.
   // Settings → TV → "Visa en notis vid volymändring" turns it back on.
+  // With the overlay up (labwc) it shows the toasts over everything; the
+  // page keeps only its own (overlay.py in the daemon).
+  const overlay = () => !!(b.state.config && b.state.config.overlay);
   b.on('volume', (e) => {
     const ui = (b.state.config && b.state.config.ui) || {};
-    if (!ui.volume_toast) return;
+    if (!ui.volume_toast || overlay()) return;
     M.hud.toast(e.direction === 'up' ? 'Volym +' : e.direction === 'down' ? 'Volym −' : 'Ljud av', e.direction === 'mute' ? 'mute' : 'volume');
   });
-  b.on('gamepad', (e) => M.hud.toast(`${e.label || 'Handkontroll'} ${e.connected ? 'ansluten' : 'frånkopplad'}`, 'gamepad'));
-  // The pad in use lends the pointer its colour, the focus ring its accent
-  // and everything ochre its highlight (the pink and the green 8BitDo;
-  // [pads] in the config). A pad without colours leaves the design system's.
-  // The change fades (content.css registers these as colours).
-  function applyPad(pad) {
-    const root = document.documentElement;
-    if (!root) return;
-    const set = (name, value) => (value ? root.style.setProperty(name, value) : root.style.removeProperty(name));
-    set('--pioneertv-pointer-fill', pad && pad.pointer);
-    set('--pioneertv-focus', pad && pad.accent);
-    set('--pioneertv-ochre', pad && pad.highlight);
-    set('--pioneertv-focus-on-dark', pad && pad.highlight);
-    // Text on the highlight: ink on a light one, paper on a dark one.
-    set('--pioneertv-on-ochre', pad && pad.highlight && dark(pad.highlight) ? 'var(--pioneertv-on-dark)' : null);
-  }
-  function dark(hex) {
-    const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex || '');
-    if (!m) return false;
-    const [r, g, b] = m.slice(1).map((h) => parseInt(h, 16) / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.18;
-  }
+  b.on('gamepad', (e) => overlay() || M.hud.toast(`${e.label || 'Handkontroll'} ${e.connected ? 'ansluten' : 'frånkopplad'}`, 'gamepad'));
   // Every page starts in the design system's own colours (ochre); the pad's
   // colours come with its first press there.
-  b.on('active_pad', (e) => applyPad(e.pad));
+  b.on('active_pad', (e) => M.hud.applyPad(e.pad));
   b.on('tv', (e) => {
     if (e.power === 'standby') document.querySelectorAll('video').forEach((v) => { try { v.pause(); } catch {} });
   });
@@ -65,10 +47,30 @@
   b.on('toast', (e) => M.hud.toast(e.text, e.icon || ''));
   b.on('keyboard_present', (e) => {
     b.state.physicalKeyboard = !!e.present;
-    M.hud.toast(e.present ? 'Tangentbord anslutet' : 'Tangentbord frånkopplat', 'keyboard');
+    if (!overlay()) M.hud.toast(e.present ? 'Tangentbord anslutet' : 'Tangentbord frånkopplat', 'keyboard');
   });
 
   b.on('state', (s) => document.documentElement.classList.toggle('pioneertv-tv', !!s.tvMode));
+
+  // A menu of the page's own (the quick menu without the overlay, the game
+  // player's pause panel, the start page's Live list) keeps Home, Y and B
+  // while it is open: the daemon is told, and sends them here.
+  b.on('menu:open', () => b.daemon({ type: 'page_menu', open: true }));
+  b.on('menu:close', () => b.daemon({ type: 'page_menu', open: false }));
+  window.addEventListener('pagehide', () => { if (M.hud.menu.isOpen() || (M.pageMenu && M.pageMenu.isOpen())) b.daemon({ type: 'page_menu', open: false }); });
+
+  // The overlay's quick menu pauses what plays here, and carries it on when
+  // it closes: only what it paused, so a video paused before stays paused.
+  let held = [];
+  b.on('media', (e) => {
+    if (e.action === 'pause') {
+      held = [...document.querySelectorAll('video, audio')].filter((m) => !m.paused && !m.ended);
+      held.forEach((m) => { try { m.pause(); } catch {} });
+    } else {
+      held.forEach((m) => { if (m.isConnected) m.play().catch(() => {}); });
+      held = [];
+    }
+  });
 
   // Escape closes overlays before it reaches the page.
   window.addEventListener('keydown', (e) => {

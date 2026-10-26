@@ -36,13 +36,13 @@ window.PioneerTV = window.PioneerTV || {};
           // Most used first. The logs and the system update live on the
           // settings page (System), not here. The detail is the button that
           // does the same without the menu.
-          { label: 'Tillbaka', icon: 'back', detail: 'håll B', run: () => (b.available ? b.send({ type: 'back' }) : history.back()) },
+          { label: 'Tillbaka', icon: 'back', detail: 'håll B', run: () => b.back() },
           { label: 'Hem', icon: 'home', detail: 'håll Hem', primary: true, run: () => b.home() },   // ochre, like the pause panel's first choice
           // As in the player's pause panel: left and right step the TV's
           // volume on this row, A mutes.
           { label: 'TV-volym', icon: 'volume', detail: '◀ ▶ · även L2/R2', volume: true, run: () => b.cec('mute'), keep: true, disabled: !tv },
-          { label: 'Tangentbord', icon: 'keyboard', detail: 'Y', run: () => M.keyboard.toggle() },
-          { label: 'Ladda om sidan', icon: 'reload', run: () => location.reload() },
+          { label: 'Tangentbord', icon: 'keyboard', detail: 'Y', run: () => b.keyboard() },
+          { label: 'Ladda om sidan', icon: 'reload', run: () => b.reload() },
           { label: 'Stäng av TV:n', icon: 'power', run: () => b.cec('tv_off'), disabled: !tv },
           { label: 'Inställningar', icon: 'gear', run: () => b.settings() },
         ];
@@ -173,6 +173,28 @@ window.PioneerTV = window.PioneerTV || {};
       },
     },
   };
+
+  // The pad in use lends the pointer its colour, the focus ring its accent
+  // and everything ochre its highlight (the pink and the green 8BitDo;
+  // [pads] in the config). A pad without colours leaves the design system's.
+  // The change fades (content.css registers these as colours).
+  hud.applyPad = function (pad) {
+    const root = document.documentElement;
+    if (!root) return;
+    const set = (name, value) => (value ? root.style.setProperty(name, value) : root.style.removeProperty(name));
+    set('--pioneertv-pointer-fill', pad && pad.pointer);
+    set('--pioneertv-focus', pad && pad.accent);
+    set('--pioneertv-ochre', pad && pad.highlight);
+    set('--pioneertv-focus-on-dark', pad && pad.highlight);
+    // Text on the highlight: ink on a light one, paper on a dark one.
+    set('--pioneertv-on-ochre', pad && pad.highlight && dark(pad.highlight) ? 'var(--pioneertv-on-dark)' : null);
+  };
+  function dark(hex) {
+    const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex || '');
+    if (!m) return false;
+    const [r, g, b] = m.slice(1).map((h) => parseInt(h, 16) / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.18;
+  }
 
   // Back on a page kept in the back/forward cache: a panel left open while
   // its choice was opening another page closes.

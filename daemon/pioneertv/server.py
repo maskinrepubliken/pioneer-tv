@@ -19,6 +19,7 @@ import aiohttp
 from aiohttp import WSMsgType, web
 
 from . import jellyfin, romm, settings, sysinfo, updater, wifitest
+from .overlay import Router
 
 log = logging.getLogger("pioneertv.server")
 WEB_DIR = Path(__file__).resolve().parent / "web"
@@ -35,6 +36,8 @@ class Server:
         self.hooks = hooks  # status(), system_action(name), cec(name), config_changed()
         self.clients: set[web.WebSocketResponse] = set()
         self.current_url: str | None = None
+        self.router = Router()           # the overlay's panels or the page's (overlay.py)
+        self._tasks: set[asyncio.Task] = set()
         self.proxy_session: aiohttp.ClientSession | None = None
         self._jellyfin_user: tuple[tuple, dict] | None = None   # (url, key, wanted) -> user
         self.app = web.Application(middlewares=[self.auth_middleware])
@@ -130,6 +133,7 @@ class Server:
             "services": self.cfg["services"],
             "ui": self.cfg.get("ui", {}),
             "settings_url": f"http://127.0.0.1:{self.port}/",
+            "overlay": self.router.present,
         }
 
     async def ws_handler(self, request: web.Request) -> web.WebSocketResponse:
@@ -157,6 +161,12 @@ class Server:
                     log.info("page: %s", self.current_url)
                 elif t == "hello":
                     log.info("hello from %s %s", data.get("client"), data.get("version"))
+                    if data.get("client") == "overlay":
+                        self.router.connected(ws)
+                        await self.broadcast(self.config_message())
+                elif t in ("overlay_menu", "page_menu", "relay"):
+                    for event in self.router.handle(data):
+                        await self.broadcast(event)
                 elif t == "debug":
                     log.info("extension: %s", str(data.get("text", ""))[:500])
                 else:
@@ -164,12 +174,19 @@ class Server:
         finally:
             self.clients.discard(ws)
             log.info("extension disconnected (%d clients)", len(self.clients))
+            if self.router.disconnected(ws):
+                # Not awaited here: a socket that closed may have its handler
+                # cancelled, and a send cut off by that leaves half a frame on
+                # every other socket, which then breaks (seen in the tests).
+                task = asyncio.create_task(self.broadcast(self.config_message()))
+                self._tasks.add(task)
+                task.add_done_callback(self._tasks.discard)
         return ws
 
     async def broadcast(self, msg: dict) -> None:
         if not self.clients:
             return
-        data = json.dumps(msg)
+        data = json.dumps(self.router.tag(msg))
         await asyncio.gather(*(c.send_str(data) for c in list(self.clients)), return_exceptions=True)
 
     # ------------------------------------------------------------ RomM, Jellyfin

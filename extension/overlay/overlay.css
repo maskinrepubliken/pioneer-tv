@@ -1,0 +1,3 @@
+/* Pioneer TV overlay: nothing of its own shows; what is drawn is the quick
+   menu and the toasts (content.css), over whatever window is below. */
+html, body { margin: 0; height: 100%; background: transparent !important; overflow: hidden; }

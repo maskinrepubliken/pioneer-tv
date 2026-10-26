@@ -12,10 +12,16 @@ window.PioneerTV = window.PioneerTV || {};
   // scripts: the manifest excludes them, as they carry their own copies. They
   // talk to the daemon over its WebSocket instead of through the extension.
   const LAUNCHER_EXT_URL = 'chrome-extension://dpigdefepjjejbkidlabpjlnleidgjaf/launcher/index.html';
+  // The overlay (extension/overlay/, in its own WebKit over every window on
+  // labwc) draws the quick menu and the toasts; every other page is a page.
+  // The daemon addresses some events to one or the other ("target").
+  const role = location.pathname.startsWith('/ext/overlay/') ? 'overlay' : 'page';
+  const forMe = (msg) => !msg.target || msg.target === role;
   let ws = null;
 
   const bridge = {
     available: hasExt,
+    overlay: role === 'overlay',
     state: {
       daemonConnected: false,
       config: null,
@@ -119,13 +125,32 @@ window.PioneerTV = window.PioneerTV || {};
       if (hasExt) this.send({ type: 'navigate', url });
       else location.href = url;
     },
+    // What the overlay cannot do itself it asks the page to do, through the
+    // daemon and the extension (overlay.py in the daemon: relay).
+    relay(name) { this.daemon({ type: 'relay', name }); },
     home() {
       if (hasExt) this.send({ type: 'home' });
+      else if (this.overlay) this.relay('home');
       else if (this.state.daemonConnected) location.href = LAUNCHER_EXT_URL;
       else location.href = M.launcherUrl || '../launcher/index.html';
     },
+    back() {
+      if (hasExt) this.send({ type: 'back' });
+      else if (this.overlay) this.relay('back');
+      else history.back();
+    },
+    reload() {
+      if (hasExt) this.send({ type: 'reload' });
+      else if (this.overlay) this.relay('reload');
+      else location.reload();
+    },
+    keyboard() {
+      if (this.overlay) this.relay('keyboard');
+      else if (M.keyboard) M.keyboard.toggle();
+    },
     settings() {
       if (hasExt) this.send({ type: 'settings' });
+      else if (this.overlay) this.relay('settings');
       else location.href = 'http://127.0.0.1:8765/';
     },
     // Call the daemon's HTTP API. Pages on https cannot fetch localhost
@@ -168,7 +193,7 @@ window.PioneerTV = window.PioneerTV || {};
       }
       chrome.runtime.onMessage.addListener((msg) => {
         if (msg.type === 'state') this._applyState(msg);
-        else if (msg.type === 'event') this.emit(msg.name, msg);
+        else if (msg.type === 'event' && forMe(msg)) this.emit(msg.name, msg);
       });
       chrome.runtime.sendMessage({ type: 'getState' }).then((s) => s && this._applyState(s)).catch(() => {});
     },
@@ -186,7 +211,7 @@ window.PioneerTV = window.PioneerTV || {};
         else if (msg.type === 'status') { state.status = msg; this._applyState(state); }
         // home, back and reload are the extension background's to carry out
         // for the tab; doing them here as well would do them twice.
-        else if (msg.type === 'event' && !['home', 'back', 'reload'].includes(msg.name)) this.emit(msg.name, msg);
+        else if (msg.type === 'event' && forMe(msg) && !['home', 'back', 'reload', 'settings'].includes(msg.name)) this.emit(msg.name, msg);
       };
       ws.onerror = () => {};
       ws.onclose = () => {
