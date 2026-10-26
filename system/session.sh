@@ -2,7 +2,7 @@
 # Pioneer TV display session, run by labwc (pioneer-tv-display.service,
 # labwc -S): sets the TV's mode, starts the overlay, then Chromium. labwc
 # exits when this does, so a Chromium that quits restarts the whole display
-# under systemd, as with Weston before.
+# under systemd.
 [ -f /etc/pioneer-tv/board.env ] && . /etc/pioneer-tv/board.env
 WIDTH=${PIONEER_TV_WIDTH:-1280}
 HEIGHT=${PIONEER_TV_HEIGHT:-720}

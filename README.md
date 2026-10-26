@@ -16,7 +16,8 @@ Chromium plays the video. Pioneer TV is everything around it:
   keyboard and a quick menu
 - `daemon/` a Python service that turns the gamepad into key presses, controls the TV over HDMI-CEC and
   serves a settings page
-- `system/` the kiosk setup: Weston, Chromium, systemd units and the install script
+- `system/` the kiosk setup: the labwc display, Chromium, the overlay that draws the box's own panels
+  over every window, systemd units and the install script
 
 ## Hardware
 

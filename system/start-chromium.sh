@@ -1,6 +1,7 @@
 #!/bin/bash
 # Launches Chromium in kiosk mode with the Pioneer TV extension.
-# Started by Weston's autolaunch (see weston.ini). Edit /etc/pioneer-tv/chromium.env
+# Started last by session.sh, labwc's session (weston.ini's autolaunch under
+# Weston). Edit /etc/pioneer-tv/chromium.env
 # to add flags or change the profile location.
 #
 # Built for a Raspberry Pi 4 (4 GB): Chromium composites and rasterises on the
@@ -105,5 +106,6 @@ python3 "$PIONEER_TV_DIR/system/open-launcher.py" "$DEVTOOLS_PORT" "$EXT_ID" 120
   $EXTRA_FLAGS \
   "about:blank" &
 CHROMIUM_PID=$!
-# Exit when Chromium exits so Weston's autolaunch watch restarts everything.
+# Exit when Chromium exits: the session, and with it the compositor, ends and
+# systemd restarts the whole display.
 wait "$CHROMIUM_PID"

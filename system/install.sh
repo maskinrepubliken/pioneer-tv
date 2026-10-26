@@ -114,7 +114,7 @@ mkdir -p "$TARGET" /etc/pioneer-tv "$HOME_DIR/.config"
 rsync -a --delete "$REPO/extension/" "$TARGET/extension/"
 rsync -a --delete "$REPO/daemon/" "$TARGET/daemon/"
 rsync -a "$REPO/system/" "$TARGET/system/"
-chmod +x "$TARGET/system/start-chromium.sh" "$TARGET/system/update.sh" "$TARGET/system/upgrade.sh" "$TARGET/system/chromium-debug.sh" "$TARGET/system/open-launcher.py" "$TARGET/system/build-cores.sh"
+chmod +x "$TARGET/system/start-chromium.sh" "$TARGET/system/update.sh" "$TARGET/system/upgrade.sh" "$TARGET/system/chromium-debug.sh" "$TARGET/system/open-launcher.py" "$TARGET/system/build-cores.sh" "$TARGET/system/vitals.sh"
 mkdir -p /var/lib/pioneer-tv
 [ -f /etc/pioneer-tv/config.toml ] || cp "$REPO/daemon/config.example.toml" /etc/pioneer-tv/config.toml
 # Config migrations: rewrite lines that still carry an old default verbatim.
@@ -183,7 +183,7 @@ cp "$REPO/system/chromium-policies.json" /etc/chromium/policies/managed/pioneer-
 cp "$REPO/system/pioneer-tv-daemon.service" "$REPO/system/pioneer-tv-display.service" "$REPO/system/pioneer-tv-weston.service" \
    "$REPO/system/pioneer-tv-governor.service" \
    "$REPO/system/pioneer-tv-upgrade.service" "$REPO/system/pioneer-tv-upgrade.timer" \
-   "$REPO/system/pioneer-tv-cores.service" /etc/systemd/system/
+   "$REPO/system/pioneer-tv-cores.service" "$REPO/system/pioneer-tv-vitals.service" /etc/systemd/system/
 
 echo "$REPO" > /etc/pioneer-tv/repo
 
@@ -205,6 +205,8 @@ if touch "$BOOT/.pioneer-tv-write-test" 2>/dev/null; then
   # temp_soft_limit is a Pi 3B+ knob; the Pi 4 has no soft limit (it scales
   # voltage and frequency instead), so an earlier install's line is removed.
   sed -i '/^temp_soft_limit=/d' "$BOOT/config.txt"
+  # The hardware watchdog that systemd pets (watchdog.conf, below).
+  grep -q '^dtparam=watchdog=on' "$BOOT/config.txt" || echo 'dtparam=watchdog=on' >> "$BOOT/config.txt"
   if grep -q 'video=HDMI-A-1' "$BOOT/cmdline.txt"; then
     sed -i "s/video=HDMI-A-1:[^ ]*/video=HDMI-A-1:${MODE}D/" "$BOOT/cmdline.txt"
   else
@@ -251,6 +253,37 @@ fi
 # uinput at boot
 echo uinput > /etc/modules-load.d/pioneer-tv.conf
 
+echo "== freezes"
+# In October the box froze during a test of the overlay: no ping, no SSH, for
+# minutes, until the power was pulled, and the cause could not be read. Now a
+# hang resets the board (the hardware watchdog, 15 s; a kernel panic reboots
+# after 10 s), the journal is kept on the card and written out every 15 s
+# (journalctl -b -1 after a reset), and pioneer-tv-vitals logs memory, load
+# and temperature every ten seconds up to the moment it stops.
+mkdir -p /etc/systemd/system.conf.d /etc/systemd/journald.conf.d /var/log/journal
+cp "$REPO/system/watchdog.conf" /etc/systemd/system.conf.d/pioneer-tv-watchdog.conf
+cp "$REPO/system/journald.conf" /etc/systemd/journald.conf.d/pioneer-tv.conf
+systemd-tmpfiles --create --prefix /var/log/journal 2>/dev/null || true
+systemctl restart systemd-journald 2>/dev/null || true
+journalctl --flush 2>/dev/null || true
+echo 'kernel.panic = 10' > /etc/sysctl.d/91-pioneer-tv-panic.conf
+sysctl -q -p /etc/sysctl.d/91-pioneer-tv-panic.conf 2>/dev/null || true
+# The watchdog setting takes effect now, without a reboot.
+systemctl daemon-reexec 2>/dev/null || true
+
+echo "== ssh keys"
+# A fresh card knows no keys but the one it was set up with; the keys in
+# system/authorized_keys are added (never removed), so the same machines can
+# reach a reinstalled box.
+mkdir -p "$HOME_DIR/.ssh"
+touch "$HOME_DIR/.ssh/authorized_keys"
+grep -v '^\(#\|$\)' "$REPO/system/authorized_keys" | while read -r key; do
+  grep -qxF "$key" "$HOME_DIR/.ssh/authorized_keys" || echo "$key" >> "$HOME_DIR/.ssh/authorized_keys"
+done
+chown -R "$USER_NAME:$USER_NAME" "$HOME_DIR/.ssh"
+chmod 700 "$HOME_DIR/.ssh"
+chmod 600 "$HOME_DIR/.ssh/authorized_keys"
+
 echo "== performance"
 # Swap in compressed memory is Raspberry Pi OS's own now (rpi-swap, on
 # /dev/zram0); zram-tools, which this installer used to add, fails at every
@@ -266,6 +299,7 @@ systemctl daemon-reload
 systemctl disable getty@tty1.service || true
 systemctl set-default graphical.target
 systemctl enable seatd bluetooth pioneer-tv-governor.service
+systemctl enable --now pioneer-tv-vitals.service
 # SSH is how the box is looked after from elsewhere: make sure it runs (in
 # October it did not come up after a boot that damaged files).
 systemctl reset-failed ssh 2>/dev/null || true
@@ -287,7 +321,7 @@ if systemctl --user --machine="$USER_NAME@.host" is-active pipewire >/dev/null 2
   systemctl --user --machine="$USER_NAME@.host" restart wireplumber 2>/dev/null || true
 fi
 # Pick up new code if the box is already running (no-op on first install).
-systemctl try-restart pioneer-tv-daemon.service pioneer-tv-display.service || true
+systemctl try-restart pioneer-tv-daemon.service pioneer-tv-display.service pioneer-tv-vitals.service || true
 # A box still on Weston changes over now (starting labwc stops it: Conflicts=).
 if systemctl is-active -q pioneer-tv-weston.service; then systemctl start pioneer-tv-display.service || true; fi
 # RetroArch and the game cores: long (downloads and builds), so in the

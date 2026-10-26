@@ -1,4 +1,4 @@
-"""Games, played in RetroArch on the TV's Weston, out of sight.
+"""Games, played in RetroArch on the TV's display (labwc), out of sight.
 
 The Spel pages browse RomM in Chromium; playing happens here. EmulatorJS in
 the browser interpreted the N64's processor in WebAssembly (about 23 of 60

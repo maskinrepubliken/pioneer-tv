@@ -1,5 +1,5 @@
 #!/bin/bash
-# Opens Chromium on the running Weston display with the extension loaded and
+# Opens Chromium on the running display (labwc) with the extension loaded and
 # chrome://extensions in front, so load errors are visible. Uses a throwaway
 # profile; the kiosk instance keeps running underneath. Run as pi:
 #   /opt/pioneer-tv/system/chromium-debug.sh

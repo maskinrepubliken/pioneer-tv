@@ -1,0 +1,5 @@
+# SSH keys that may log in as the kiosk user. install.sh adds any of these
+# that are missing to ~/.ssh/authorized_keys and never removes a key, so a
+# freshly installed card can be looked after from the same machines as the
+# old one. Public keys only.
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN9c8NeA+7kCl4kPmySMQw3fUB0wUB5vf9U/ZneNklzx lyret@freakiskapet

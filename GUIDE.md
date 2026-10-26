@@ -17,7 +17,10 @@ what was learned on the way.
 - [Working on the home screen without a Pi](#working-on-the-home-screen-without-a-pi)
 - [Design](#design)
 - [Board and video mode](#board-and-video-mode)
-- [Known board quirk: no hardware cursor](#known-board-quirk-no-hardware-cursor)
+- [The display: labwc](#the-display-labwc)
+- [The overlay](#the-overlay)
+- [When the box freezes](#when-the-box-freezes)
+- [The pointer](#the-pointer)
 - [Overlays and fullscreen](#overlays-and-fullscreen)
 - [Sound](#sound)
 - [Performance notes](#performance-notes)
@@ -45,25 +48,32 @@ The TV remote works too: keys the TV forwards over CEC are mapped in `[cec.remot
 ## How it fits together
 
 ```
- gamepad ──evdev──▶ daemon ──uinput──▶ Weston ──▶ Chromium (kiosk, --load-extension)
-                      │                              ├─ content scripts: spatial nav, keyboard, HUD
-                      │◀────── ws://127.0.0.1:8765/ws ┤  background: single tab, home, dev shortcuts
-                      │──── http://127.0.0.1:8765/ ───▶│  launcher page: services from config
-                      └──cec-ctl──▶ /dev/cec0 ──▶ TV     settings page: status, Wi-Fi, Bluetooth, services
+ gamepad ──evdev──▶ daemon ──uinput──▶ labwc ──▶ Chromium (kiosk, --load-extension)
+                      │                   │          ├─ content scripts: spatial nav, keyboard, HUD
+                      │                   │          ├─ background: single tab, home, dev shortcuts
+                      │◀── ws://127.0.0.1:8765/ws ───┤  launcher page: services from config
+                      │                   │             settings page: status, Wi-Fi, Bluetooth, services
+                      │                   ├────▶ RetroArch (a game, started by the daemon)
+                      │◀── ws ────────────┴────▶ overlay (WebKit, top layer): quick menu, toasts
+                      └──cec-ctl──▶ /dev/cec0 ──▶ TV
 ```
 
 Navigation keys go through a virtual keyboard so every page, and Chromium
 itself, sees ordinary key presses. Buttons that mean something to the shell
-(home, menu, keyboard) go over the WebSocket as events. CEC is only ever
-touched by the daemon.
+(home, menu, keyboard) go over the WebSocket as events, to the overlay while
+it is up and to the page otherwise ([The overlay](#the-overlay)). CEC is only
+ever touched by the daemon.
 
 ## Installing in detail
 
-The installer pulls in Weston, Chromium, Widevine, v4l-utils, BlueZ, aiohttp and
-evdev, copies the repo to `/opt/pioneer-tv`, installs the systemd units,
+The installer pulls in labwc, Chromium, Widevine, WebKitGTK (for the overlay),
+v4l-utils, BlueZ, aiohttp and evdev, copies the repo to `/opt/pioneer-tv`, installs the systemd units,
 sets the video mode (1280x720), leaves swap in compressed memory to
 Raspberry Pi OS's own zram, sets the CPU governor to performance at
-boot, and sets the boot target to graphical. Rerunning it is safe. Pair the first gamepad from the shell (later ones from the settings page):
+boot, sets the boot target to graphical, and arms the guards in
+[When the box freezes](#when-the-box-freezes). It also adds the SSH keys in
+`system/authorized_keys` to the kiosk user's, so a freshly installed card can
+be reached from the same machines as the old one. Rerunning it is safe. Pair the first gamepad from the shell (later ones from the settings page):
 
 ```
 bluetoothctl
@@ -100,6 +110,7 @@ profile in `~/.pioneer-tv/chromium` remembers the sessions.
 ```
 journalctl -fu pioneer-tv-daemon        # gamepad, CEC and bridge log
 journalctl -fu pioneer-tv-display       # labwc, Chromium and overlay output
+journalctl -b -1 -u pioneer-tv-vitals   # memory, load and temperature up to the last boot's end
 tail -f ~/.pioneer-tv/chromium.log      # Chromium output (extension load errors land here)
 sudo python3 -m pioneertv -v            # run the daemon in the foreground (from /opt/pioneer-tv/daemon)
 curl -s localhost:8765/api/status     # what the settings page sees
@@ -188,7 +199,7 @@ itself: no menu, notices or logo, only the game. The design is in
 - **Starting.** The player asks the daemon (`games.py`, `/api/games/play`),
   which fetches the file from RomM into `/var/lib/pioneer-tv/games/cache`
   (800 MB at most; the games played longest ago go first) and starts
-  RetroArch as the kiosk user on the TV's Weston, over Chromium. A game
+  RetroArch as the kiosk user on the TV's display, over Chromium. A game
   resumes where it was left.
 - **Pausing.** Guide in a game: RetroArch takes a picture and quits, saving
   where the game was, and the player shows the pause panel over the
@@ -345,7 +356,7 @@ Pioneer TV runs on a Raspberry Pi 4 with 4 GB; the installer warns on anything
 else and carries on. The window is 1280x720: players cap stream quality to the
 window size, and 1080p in a browser drops frames on this board under every
 flag set we measured. A TV without a 720p mode (many only offer 1080p and
-1360x768) gets Weston's scaling, which is cheap. The size is written to
+1360x768) is asked for a custom 1280x720 mode (session.sh, `wlr-randr`). The size is written to
 `/etc/pioneer-tv/board.env`. Chromium composites and rasterises on the GPU;
 the flags can be overridden with `PIONEER_TV_GPU_FLAGS` in `chromium.env`.
 A Pi 3 was tried first and was too slow for Cineasterna's software-decoded
@@ -357,11 +368,99 @@ replaced. The installer takes any `arm_freq`, `over_voltage` and `gpu_freq`
 lines out of `config.txt`. Games that do not keep up are made lighter instead
 (the N64 runs at 320x240).
 
-## Known board quirk: no hardware cursor
+## The display: labwc
+
+The screen is [labwc](https://labwc.github.io/), a small wlroots compositor,
+run by `pioneer-tv-display.service` as `labwc -C /opt/pioneer-tv/system/labwc
+-S /opt/pioneer-tv/system/session.sh`. Its config (`system/labwc/rc.xml`)
+makes it a kiosk: every window fills the screen without a frame, and there
+are no key bindings, so Alt+F4 or Alt+Tab on a keyboard plugged in for a DOS
+game do nothing. `session.sh` sets the TV to 1280x720 with `wlr-randr`,
+starts the overlay and then Chromium; when Chromium exits the session ends,
+labwc with it, and systemd restarts the display.
+
+labwc replaced Weston in October because Weston has no way to draw one
+client over another, which the overlay needs. Chromium also plays cleaner on
+it: SVT1 at 720p dropped no frames after warming up, against about 4 % on
+Weston. Weston (`pioneer-tv-weston.service`) stays installed but switched
+off until labwc has proved itself; enabling it again and disabling
+`pioneer-tv-display` goes back, and the box then works as before without the
+overlay. Weston's two quirks no longer apply on labwc: the abort on the first
+mouse cursor ([The pointer](#the-pointer)) and its atomic modesetting, which
+failed on the Pi 4 and had to be switched off (`WESTON_DISABLE_ATOMIC=1`).
+
+To look at the screen from SSH, as `pi`:
+
+```
+export XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-0
+grim shot.png                          # a screenshot of everything, the overlay included
+wlr-randr                              # outputs and modes
+wlr-randr --output HDMI-A-1 --off      # black until --on or the display restarts
+```
+
+## The overlay
+
+`system/overlay.py` is a transparent WebKitGTK window on labwc's overlay
+layer (wlr-layer-shell, through gtk4-layer-shell), above every other window:
+Chromium, RetroArch and, later, mpv. It shows the daemon's
+`/ext/overlay/index.html` (`extension/overlay/`), which uses the same `hud.js`
+as the pages for the quick menu and the toasts, so they look the same over a
+game as over a web page. A page that does not load (the daemon not up yet) is
+tried again every three seconds.
+
+Who gets Home, Y and B is decided in the daemon (`daemon/pioneertv/overlay.py`):
+the overlay while it is connected, a page's own menu while one is open (the
+game player's pause panel, the start page's Live list), the page otherwise.
+Toasts go to the overlay whenever it is there. The overlay's window takes the
+keyboard (layer-shell `EXCLUSIVE`) only while its menu is open, so the rest
+of the time every key goes to the window below and the overlay is only seen.
+What the menu cannot do itself (home, back, reload, the keyboard, settings)
+it asks the page to do through the daemon. Opening the menu broadcasts
+`media: pause`, and the page pauses its video and audio; closing it resumes
+them. Without the overlay (on Weston, or with it down) the pages draw their
+own menu and toasts as before.
+
+The login session gives every process the ambient capability
+`CAP_WAKE_ALARM`, and with it bubblewrap refuses to set up WebKit's sandbox
+("Unexpected capabilities but not setuid"), so the page never loads.
+`session.sh` therefore starts the overlay through `setpriv --inh-caps=-all
+--ambient-caps=-all`. Do not switch WebKit's sandbox off instead.
+
+**Status, October 2026.** The overlay starts and connects. The first time
+its menu was opened (with SVT1 playing in Chromium) the whole box froze; see
+below. The menu, keys reaching it, the relays, pausing and resuming media,
+and the toasts are not yet verified on the box.
+
+## When the box freezes
+
+In October the box froze while the overlay's quick menu was opened over
+SVT1: no ping and no SSH, over Tailscale or the LAN, for minutes, until the
+power was pulled. The cause is not yet known. Since then the installer
+arms three guards:
+
+- **The hardware watchdog.** `dtparam=watchdog=on` in `config.txt` and
+  `RuntimeWatchdogSec=15s` (`system/watchdog.conf`, in
+  `/etc/systemd/system.conf.d/`): systemd pets the board's watchdog, and if
+  the whole box hangs the board resets itself after 15 seconds. A kernel
+  panic reboots after 10 (`kernel.panic`).
+- **A journal that survives.** The journal is kept on the card and written
+  out every 15 seconds rather than every five minutes (`system/journald.conf`),
+  so the boot before a reset can be read: `journalctl -b -1 --no-pager`.
+- **Vitals.** `pioneer-tv-vitals.service` (`system/vitals.sh`) logs one line
+  every ten seconds: memory available, swap used, memory pressure, load,
+  temperature, throttling and the biggest process. The last lines before a
+  freeze show whether memory ran out.
+
+After a freeze, look in this order: `journalctl -b -1 -k` for vc4, v3d,
+"hung task", OOM and undervoltage; `journalctl -b -1 -u pioneer-tv-vitals |
+tail`; `journalctl -b -1 -u pioneer-tv-display` for labwc and the overlay;
+and `vcgencmd get_throttled`.
+
+## The pointer
 
 Weston 14 aborted (an assertion in backend-drm/state-propose.c) the first time
 any client showed a mouse cursor, and none of Weston's switches avoided it. So
-the box has no pointer device at all: the daemon streams right-stick motion to the extension, which draws its
+the box has no pointer device at all, and still has none on labwc: the daemon streams right-stick motion to the extension, which draws its
 own pointer (`cursor.js`), delivers hover and clicks to what is under it, and
 scrolls when pushed against the top or bottom edge. A clicks at the pointer
 for a few seconds after it last moved, and is the normal "select" otherwise.
@@ -433,8 +532,8 @@ over CEC; Chromium itself stays at 100 %. To check from a shell as `pi`:
   than sending HEVC, which the Pi's browser cannot decode in hardware.
 - Check `chrome://gpu` for "Video Decode: Hardware accelerated". If it is not,
   unprotected H.264 (SVT Play, Jellyfin) is software decoded too.
-- Weston has `watch=true` on the autolaunch: if Chromium dies, Weston exits and
-  systemd restarts both, which is faster and cleaner than a hung browser.
+- If Chromium dies, `session.sh` ends, labwc exits with it and systemd
+  restarts the whole display, which is faster and cleaner than a hung browser.
 
 ## Verify these against the live sites
 
