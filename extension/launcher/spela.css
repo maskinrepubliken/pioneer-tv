@@ -1,7 +1,7 @@
 /* Pioneer TV player. The game itself is RetroArch's window over this page
-   (games.py); here is the dark ground before it, and its errors. The pause
-   panel is the overlay's. Same 1280x720 canvas and tokens as the other
-   launcher pages. */
+   (games.py); here is the ink before it, and what it says: a full-screen
+   message (screen.css), as the film's. The pause panel is the overlay's.
+   Same 1280x720 canvas and tokens as the other launcher pages. */
 
 html { font-size: 1.45vw; }
 * { box-sizing: border-box; }
@@ -12,31 +12,3 @@ body {
   background-color: var(--pioneertv-surface-ink);
   overflow: hidden;
 }
-
-/* "Laddar…" in the middle of the dark page, in Fraunces' italic like the
-   other pages' captions, until the game draws. */
-.loading {
-  position: fixed; inset: 0; margin: 0; display: flex; align-items: center; justify-content: center;
-  font: italic 400 1.8rem/1.2 var(--pioneertv-font-prose);
-  color: var(--pioneertv-on-dark); pointer-events: none;
-}
-.loading[hidden] { display: none; }
-
-.spela-message {
-  position: fixed; inset: 0; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 1.4rem;
-  padding: 0 10vw; background: var(--pioneertv-paper); color: var(--pioneertv-ink);
-}
-.spela-message[hidden] { display: none; }
-.spela-message p { margin: 0; max-width: 40rem; font-family: var(--pioneertv-font-prose); font-size: 1.8rem; line-height: 1.3; }
-
-.knapp {
-  font: 600 1.15rem/1 var(--pioneertv-font-ui); padding: 1rem 1.8rem; margin: 0; cursor: pointer; text-align: left;
-  color: var(--pioneertv-ink); background: var(--pioneertv-paper);
-  border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-pill);
-}
-.knapp.primar { background: var(--pioneertv-ochre); border-color: var(--pioneertv-ochre); color: var(--pioneertv-on-ochre); }
-.knapp.pioneertv-focus {
-  outline: 0.2rem solid var(--pioneertv-focus) !important; outline-offset: 0.25rem !important;
-  box-shadow: none !important; border-radius: var(--pioneertv-radius-pill) !important;
-}
-

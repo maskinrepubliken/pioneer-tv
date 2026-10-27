@@ -11,13 +11,14 @@
 // docs/superpowers/specs/2026-10-15-retroarch-games-design.md.
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
-  const $ = (id) => document.getElementById(id);
   const params = new URLSearchParams(location.search);
   const romId = Number(params.get('rom'));
   M.launcherUrl = new URL('spel.html?tv=1', location.href).href;
 
-  const loading = $('loading');
-  function say(text) { loading.hidden = false; loading.textContent = text; }
+  // What is said here is a full-screen message (screen.js), the same as
+  // the film's and the resting home page's.
+  const say = (text) => M.screen.show(text, game ? game.name : '');
+  let failed = false;
 
   // Once the game runs, an extra history entry sits on top of this page, so
   // a "back" from the box lands here instead of leaving: it means quit (see
@@ -33,12 +34,9 @@ window.PioneerTV = window.PioneerTV || {};
   }
 
   function fail(text) {
-    loading.hidden = true;
-    $('message-text').textContent = text;
-    $('message').hidden = false;
-    M.nav.focus($('message-back'));
+    failed = true;
+    M.screen.show(text, 'Tryck B för att gå tillbaka');
   }
-  $('message-back').addEventListener('click', back);
 
   // ------------------------------------------------------------ the daemon
   async function api(path, body) {
@@ -104,11 +102,13 @@ window.PioneerTV = window.PioneerTV || {};
   // leaves nothing running behind.
   window.addEventListener('pagehide', () => { if (!leaving && started) navigator.sendBeacon('/api/games/quit'); });
 
-  // B with the message up goes back.
+  // B (or A) with something gone wrong goes back; so does a click.
   window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !$('message').hidden && !M.nav.captured) { e.preventDefault(); back(); }
+    if (failed && (e.key === 'Escape' || e.key === 'Enter') && !M.nav.captured) { e.preventDefault(); back(); }
   });
+  window.addEventListener('click', () => { if (failed) back(); });
 
   M.spela = {};
+  say('Laddar…');
   start();
 })(window.PioneerTV);

@@ -148,6 +148,18 @@
         { name: 'Tjänsten svarar inte (Jellyfin)', url: `${L}film.html?tv=1&mockerror=down`, ready: '.spel-message', note: 'Försöker igen två gånger först, några sekunder.' },
       ] },
 
+    { part: 'Komponenter', group: 'Helskärmsmeddelande', files: 'launcher/screen.js (M.screen) · launcher/screen.css (.pioneertv-screen)',
+      used: 'Allt som tar hela skärmen för en mening: spelet på väg (spela.js), filmen (film.js) och hem när boxen vilar (launcher.js). Samma design överallt.',
+      items: [
+        { name: 'Spelet laddas', url: `${L}spela.html?rom=101`, ready: '.pioneertv-screen',
+          setup: ({ P }) => P.bridge.emit('games', { state: 'loading', got: 12.4e6, total: 31.5e6 }) },
+        { name: 'Filmen startar', url: `${L}film.html?tv=1#/item/film1`, ready: '.knapp.primar',
+          setup: ({ P }) => { P.film.player.state = 'starting'; P.film.player.show('Startar…', 'Fyren'); } },
+        { name: 'Något gick fel', url: `${L}spela.html?rom=101`, ready: '.pioneertv-screen',
+          setup: ({ P }) => P.bridge.emit('games', { state: 'error', message: 'Spelet kunde inte startas: core not found' }) },
+        { name: 'Vilar', url: HOME, ready: '#tao-text:not(:empty)', setup: ({ P }) => P.home.rest(true) },
+      ] },
+
     { part: 'Sidor', group: 'Hem', files: 'launcher/index.html · launcher.js · mandelbrot.js · tao.js · home.css · daemon idle.py',
       used: 'Håll Hem; boxen går hit av sig själv efter 10 min utan knapptryck. Den är skärmsläckaren; en knapp öppnar huvudmenyn.',
       items: [
@@ -157,7 +169,7 @@
           setup: ({ P }) => P.home.fractal.jump(0.5),
           note: 'Nära det djupaste av en zoom, där bredden är en tjugotusendel av början.' },
         { name: 'Vilar (TV:n av)', url: HOME, ready: '#tao-text:not(:empty)', setup: ({ P }) => P.home.rest(true),
-          note: 'Efter 5 min hemma utan knapptryck stängs TV:n av; sidan visar bara ”Vilar – tryck en knapp för att väcka TV:n” i vitt på svart, stilla, tills TV:n är på igen.' },
+          note: 'Efter 5 min hemma utan knapptryck stängs TV:n av; elden slocknar och ett helskärmsmeddelande säger Vilar, stilla, tills TV:n är på igen.' },
       ] },
     { part: 'Sidor', group: 'Spel', files: 'launcher/spel.html · spel.js · spel.css · romm.js', used: 'Rutan Spel.',
       items: [
@@ -168,12 +180,12 @@
       ] },
     { part: 'Sidor', group: 'Spela ett spel', files: 'launcher/spela.html · spela.js · spela.css', used: 'Innan RetroArchs fönster täcker skärmen.',
       items: [
-        { name: 'Laddar (innan spelet hämtats)', url: `${L}spela.html?rom=101`, ready: '#loading' },
-        { name: 'Laddar, med megabyte', url: `${L}spela.html?rom=101`, ready: '#loading',
+        { name: 'Laddar (innan spelet hämtats)', url: `${L}spela.html?rom=101`, ready: '.pioneertv-screen' },
+        { name: 'Laddar, med megabyte', url: `${L}spela.html?rom=101`, ready: '.pioneertv-screen',
           setup: ({ P }) => P.bridge.emit('games', { state: 'loading', got: 12.4e6, total: 31.5e6 }) },
-        { name: 'Startar', url: `${L}spela.html?rom=101`, ready: '#loading', setup: ({ P }) => P.bridge.emit('games', { state: 'running' }),
+        { name: 'Startar', url: `${L}spela.html?rom=101`, ready: '.pioneertv-screen', setup: ({ P }) => P.bridge.emit('games', { state: 'running' }),
           note: 'Står kvar under RetroArchs fönster tills spelet täcker skärmen.' },
-        { name: 'Fel: spelet kunde inte startas', url: `${L}spela.html?rom=101`, ready: '#loading',
+        { name: 'Fel: spelet kunde inte startas', url: `${L}spela.html?rom=101`, ready: '.pioneertv-screen',
           setup: ({ P }) => P.bridge.emit('games', { state: 'error', message: 'Spelet kunde inte startas: core not found' }) },
       ] },
     { part: 'Sidor', group: 'Musik', files: 'launcher/musik.html · musik.js · musik.css · jellyfin.js', used: 'Rutan Musik.',

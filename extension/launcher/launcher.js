@@ -5,8 +5,8 @@
 // (the daemon passes it on to the overlay).
 //
 // Left alone here, the daemon turns the TV off (idle.py) and says "rest":
-// the page then shows only "Vilar – tryck en knapp för att väcka TV:n" in
-// white on black, still, until the TV is on again.
+// the fire goes out and a full-screen message (screen.js, as when a game
+// or a film starts) says "Vilar", still, until the TV is on again.
 (function (M) {
   const b = M.bridge;
   M.launcherUrl = location.href;
@@ -50,8 +50,8 @@
   function rest(on) {
     if (document.documentElement.classList.contains('resting') === on) return;
     document.documentElement.classList.toggle('resting', on);
-    if (on) { fractal.stop(); lines(false); }
-    else { fractal.start(); lines(true); }
+    if (on) { fractal.stop(); lines(false); M.screen.show('Vilar', 'Tryck en knapp för att väcka TV:n'); }
+    else { M.screen.hide(); fractal.start(); lines(true); }
   }
   b.on('rest', (e) => rest(!!e.on));
   b.on('tv', (e) => { if (e.power) rest(e.power === 'standby'); });

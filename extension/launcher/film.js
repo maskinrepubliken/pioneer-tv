@@ -413,19 +413,17 @@
   }
 
   // ------------------------------------------------------------ playing
-  // The daemon starts mpv; this page waits in black behind it.
+  // The daemon starts mpv; this page waits behind it, in a full-screen
+  // message (screen.js) that says how it goes.
   const player = {
-    root: $('player'),
     state: 'idle',                    // idle | starting | running | ended | error
-    isOpen() { return !this.root.hidden; },
+    isOpen() { return M.screen.isOpen(); },
     show(text, hint) {
-      $('player-text').textContent = text || '';
-      $('player-hint').textContent = hint || '';
-      this.root.hidden = false;
+      M.screen.show(text, hint);
       M.nav.captured = this;
     },
     close() {
-      this.root.hidden = true;
+      M.screen.hide();
       this.state = 'idle';
       if (M.nav.captured === this) M.nav.captured = null;
       route();                        // the position has moved: show it
@@ -465,8 +463,7 @@
     if (player.state === 'idle') return;
     if (e.state === 'running') {
       player.state = 'running';
-      $('player-text').textContent = '';
-      $('player-hint').textContent = '';
+      M.screen.show('');                // mpv covers it; nothing to read behind
     } else if (e.state === 'ended') {
       player.state = 'ended';
       player.show('Slut', 'Tryck B för att fortsätta');
