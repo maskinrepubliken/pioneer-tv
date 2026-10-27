@@ -10,7 +10,7 @@ import unittest
 from pathlib import Path
 
 from pioneertv import config
-from pioneertv.games import Games, wayland_socket
+from pioneertv.games import Games, autoconfig, wayland_socket
 
 
 class Vinput:
@@ -272,6 +272,27 @@ class GamesTests(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(0.05)
         self.assertEqual(launched, [True, False])
 
+
+
+class PadLetters(unittest.TestCase):
+    """The button marked A plays the console's A: the 8BitDo's A is button 0,
+    B 1, X 2, Y 3."""
+    def bindings(self, platform):
+        text = autoconfig("8BitDo Ultimate 2C Wireless Controller", platform)
+        return {k.split("_")[1]: v.strip('" ') for k, v in (l.split("=") for l in text.splitlines()
+                                                          if l.startswith("input_") and l.split("_")[1] in "abxy" and l.endswith('"') and "_btn" in l)}
+
+    def test_snes_and_nes_by_name(self):
+        for platform in ("snes", "nes", None):
+            self.assertEqual(self.bindings(platform), {"a": "0", "b": "1", "x": "2", "y": "3"})
+
+    def test_n64_a_and_b(self):
+        b = self.bindings("n64")
+        self.assertEqual((b["b"], b["y"]), ("0", "1"))          # the core's A is RetroPad B, its B RetroPad Y
+
+    def test_mega_drive_a_b_and_c(self):
+        b = self.bindings("genesis")
+        self.assertEqual((b["y"], b["b"], b["a"]), ("0", "1", "2"))   # A, B, and C on X
 
 
 class WaylandSocket(unittest.TestCase):

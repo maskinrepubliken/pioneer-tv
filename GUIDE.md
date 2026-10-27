@@ -235,7 +235,10 @@ itself: no menu, notices or logo, only the game. The design is in
   starts RetroArch again, which takes a second or two. Holding Guide goes
   home; the game is saved as RetroArch quits.
 - **Pads.** While a game runs the pads are RetroArch's (with an autoconfig
-  for the 8BitDo Ultimate 2C); player 1 is the pad last used. A real
+  for the 8BitDo Ultimate 2C); player 1 is the pad last used. The button
+  marked A plays the console's A and B its B, by the letters rather than
+  the places (`LETTERS` in games.py): on the SNES and NES all four match,
+  on the N64 A and B do, and on the Mega Drive A and B do and C is on X. A real
   keyboard plugged in goes to DOS games; RetroArch's own hotkeys are off.
 - **Saves** stay on the box (`/var/lib/pioneer-tv/games/states`, `points`,
   `saves`), not in RomM. Inställningar → RomM → *Spela spelen på boxen*

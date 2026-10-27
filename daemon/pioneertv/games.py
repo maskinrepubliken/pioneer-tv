@@ -45,16 +45,27 @@ log = logging.getLogger("pioneertv.games")
 # driver, which numbers buttons in the order of their key codes: SOUTH 0,
 # EAST 1, NORTH 2, WEST 3, TL 4, TR 5, SELECT 6, START 7, MODE 8, THUMBL 9,
 # THUMBR 10. xpad reports the left face button as NORTH and the top one as
-# WEST (see gamepad.py's quirk), so 2 is the RetroPad's Y (left) and 3 its X
-# (top). Guide (8) is left unbound: it belongs to the box.
-AUTOCONFIG = {
-    "8BitDo Ultimate 2C Wireless Controller": """\
-input_driver = "udev"
-input_device = "8BitDo Ultimate 2C Wireless Controller"
-input_b_btn = "0"
-input_a_btn = "1"
-input_y_btn = "2"
-input_x_btn = "3"
+# WEST (see gamepad.py's quirk). Its buttons are marked as on an Xbox pad:
+# A at the bottom (0), B on the right (1), X on the left (2), Y at the top
+# (3). Guide (8) is left unbound: it belongs to the box.
+PAD_BUTTONS = {"A": "0", "B": "1", "X": "2", "Y": "3"}
+
+# The button marked A plays the console's A, B its B, and so on: the
+# letters, not the places, count (asked for; the place matters less). Which
+# RetroPad button each console's core reads as its A or B differs, so the
+# pad's letters go to RetroPad buttons per console. SNES and NES: the
+# RetroPad's names are Nintendo's. N64 (Mupen64Plus-Next): RetroPad B is
+# the N64's A and Y its B; A and X are C buttons, also on the right stick.
+# Mega Drive (Genesis Plus GX): Y is its A, B its B, A its C (marked X on
+# the pad, which has no C) and X its Y on a six-button pad. Libretro's core
+# documentation, October 2026.
+LETTERS = {           # RetroPad button -> the pad's letter that presses it
+    "default": {"a": "A", "b": "B", "x": "X", "y": "Y"},
+    "n64": {"b": "A", "y": "B", "a": "X", "x": "Y"},
+    "genesis": {"y": "A", "b": "B", "a": "X", "x": "Y"},
+}
+
+AUTOCONFIG_REST = """\
 input_l_btn = "4"
 input_r_btn = "5"
 input_select_btn = "6"
@@ -75,8 +86,15 @@ input_r_x_plus_axis = "+3"
 input_r_x_minus_axis = "-3"
 input_r_y_plus_axis = "+4"
 input_r_y_minus_axis = "-4"
-""",
-}
+"""
+PADS = ["8BitDo Ultimate 2C Wireless Controller"]
+
+
+def autoconfig(name: str, platform: str | None) -> str:
+    """RetroArch's autoconfig for one pad, its letters as the console reads them."""
+    letters = LETTERS.get(platform or "", LETTERS["default"])
+    face = "".join(f'input_{retropad}_btn = "{PAD_BUTTONS[letter]}"\n' for retropad, letter in sorted(letters.items()))
+    return f'input_driver = "udev"\ninput_device = "{name}"\n' + face + AUTOCONFIG_REST
 
 # Core options, in RetroArch's core options file (keyed by the core's name).
 CORE_OPTIONS = {
@@ -527,8 +545,9 @@ history_list_enable = "false"
         (r / "cfg" / "retroarch.cfg").write_text(cfg)
         opts = CORE_OPTIONS.get(core_name, {})
         (r / "cfg" / "retroarch-core-options.cfg").write_text("".join(f'{k} = "{v}"\n' for k, v in opts.items()))
-        for name, text in AUTOCONFIG.items():
-            (r / "autoconfig" / "udev" / (name.replace(" ", "_") + ".cfg")).write_text(text)
+        platform = self.game["platform"] if self.game else None
+        for name in PADS:
+            (r / "autoconfig" / "udev" / (name.replace(" ", "_") + ".cfg")).write_text(autoconfig(name, platform))
         self._own(r)
 
     def _own(self, path: Path) -> None:
