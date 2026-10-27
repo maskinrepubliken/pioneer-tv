@@ -17,7 +17,7 @@
   // Y: the keyboard, except that with the quick menu open it closes the menu
   // (the menu is what Y's long press opened, so Y is the way out of it too).
   b.on('keyboard', () => (M.hud.menu.isOpen() ? M.hud.menu.close() : M.keyboard.toggle()));
-  // A page with its own menu (the game player's pause panel) takes Guide.
+  // A page with its own menu (M.pageMenu) takes Guide.
   b.on('menu', () => (M.pageMenu ? M.pageMenu.toggle() : M.hud.menu.toggle()));
   b.on('logs', () => M.logs.toggle());
   b.on('escape', () => {
@@ -54,8 +54,8 @@
 
   b.on('state', (s) => document.documentElement.classList.toggle('pioneertv-tv', !!s.tvMode));
 
-  // A menu of the page's own (the quick menu without the overlay, the game
-  // player's pause panel, the start page's Live list) keeps Home, Y and B
+  // A menu of the page's own (the quick menu without the overlay, the start
+  // page's Live list) keeps Home, Y and B
   // while it is open: the daemon is told, and sends them here.
   b.on('menu:open', () => b.daemon({ type: 'page_menu', open: true }));
   b.on('menu:close', () => b.daemon({ type: 'page_menu', open: false }));

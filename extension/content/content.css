@@ -161,11 +161,10 @@ html.pioneertv-pointer .pioneertv-key.pioneertv-key-accent.pioneertv-key-active 
 }
 .pioneertv-logs .pioneertv-keyhint .pioneertv-icon { font-size: 13px; }
 
-/* ---- quick menu: a paper card at the right, over the page as it is. Drawn
-   like the player's pause panel (launcher/spela.css): the title in Rubik
-   capitals, the choices as pill buttons with the focus ring, and the box's
-   status at the foot. In px, since the pages under it set their own rem; at
-   the TV's 1280x720 these are the pause panel's sizes. ---- */
+/* ---- quick menu: a paper card at the right, over the page as it is; the
+   overlay's pause panels are the same card. The title in Rubik capitals,
+   the choices as pill buttons with the focus ring, and the box's status at
+   the foot. In px, since the pages under it set their own rem. ---- */
 .pioneertv-menu {
   position: fixed; inset: 0; z-index: 2147483002;
   background: transparent;

@@ -1,5 +1,6 @@
 """games.py without RetroArch: the consoles it offers, the config it writes,
-the cache, players, and pausing and resuming against a stand-in RetroArch.
+the cache, players, the pad's letters, and holding a game where it is
+against a stand-in RetroArch.
 `python -m unittest tests.test_games` from daemon/."""
 import asyncio
 import os
@@ -180,33 +181,14 @@ class GamesTests(unittest.IsolatedAsyncioTestCase):
         g.game = {"id": 7, "name": "Testspel", "platform": "snes", "path": str(game_path)}
         g.write_config("snes9x")
         g.proc = await asyncio.create_subprocess_exec(sys.executable, "-c", FAKE_RA, str(self.cfg["games"]["port"]),
-                                                      str(g.screen_path()), str(g._auto_state()), str(self.heard))
+                                                      str(Path(self.dir.name) / "shot.png"), str(g._auto_state()), str(self.heard))
         await asyncio.sleep(0.3)
         g.state = "running"
         g.pads.shared["games"] = True
         asyncio.create_task(g._watch(g.proc, Path(self.dir.name) / "ra.log"))
 
-    async def test_pause_save_point_and_quit(self):
+    async def test_home_holds_the_game(self):
         g = self.games
-        rom = Path(self.dir.name) / "Testspel (U).smc"
-        rom.write_bytes(b"rom")
-        await self.start_fake(rom)
-        await g.pause()
-        await asyncio.sleep(0.2)
-        self.assertEqual(g.state, "paused")
-        self.assertTrue(g.screen_path().is_file())
-        self.assertTrue(g._auto_state().is_file())
-        self.assertFalse(g.pads.shared["games"])                 # the pads are Chromium's again
-        self.assertIn("paused", [e.get("state") for e in self.events])
-        self.assertEqual(await g.save_point(), (True, ""))
-        self.assertIsNotNone(g.status()["point"])
-        await g.quit()
-        self.assertEqual(g.state, "idle")
-        self.assertIsNone(g.game)
-
-    async def test_with_the_overlay_home_holds_the_game(self):
-        g = self.games
-        g.overlay = lambda: True
         g.dispatcher.system_hook = g.on_system
         rom = Path(self.dir.name) / "Testspel (U).smc"
         rom.write_bytes(b"rom")
@@ -247,31 +229,6 @@ class GamesTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(g.state, "idle")
         self.assertIn("SAVE_STATE", heard())
         self.assertIn("exited", [e.get("state") for e in self.events])
-
-    async def test_resume_from_the_point_restores_it(self):
-        g = self.games
-        rom = Path(self.dir.name) / "Testspel (U).smc"
-        rom.write_bytes(b"rom")
-        await self.start_fake(rom)
-        await g.pause()
-        await asyncio.sleep(0.2)
-        await g.save_point()
-        g._auto_state().write_bytes(b"later")
-        launched = []
-
-        async def launch(autoload):
-            launched.append(autoload)
-        g._launch = launch
-        ok, _ = await g.resume("point")
-        await asyncio.sleep(0.05)
-        self.assertTrue(ok)
-        self.assertEqual(g._auto_state().read_bytes(), b"state")   # the point, not the later state
-        self.assertEqual(launched, [True])
-        g.task = None
-        ok, _ = await g.resume("none")
-        await asyncio.sleep(0.05)
-        self.assertEqual(launched, [True, False])
-
 
 
 class PadLetters(unittest.TestCase):

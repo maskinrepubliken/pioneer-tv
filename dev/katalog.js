@@ -87,15 +87,12 @@
       { name: 'Fel: nyckeln godtas inte', url: `${L}spel.html?tv=1&mockerror=auth`, ready: '.spel-message' },
       { name: 'Fel: RomM svarar inte', url: `${L}spel.html?tv=1&mockerror=down`, ready: '.spel-message', note: 'Försöker igen två gånger först, några sekunder.' },
     ] },
-    { group: 'Spela ett spel (innan och mellan RetroArch)', items: [
+    { group: 'Spela ett spel (innan RetroArch täcker)', items: [
       { name: 'Laddar (innan spelet hämtats)', url: `${L}spela.html?rom=101`, wait: 1500 },
       { name: 'Laddar, med megabyte', url: `${L}spela.html?rom=101`, wait: 1500,
         setup: ({ P }) => P.bridge.emit('games', { state: 'loading', got: 12.4e6, total: 31.5e6 }) },
       { name: 'Startar', url: `${L}spela.html?rom=101`, wait: 1500, setup: ({ P }) => P.bridge.emit('games', { state: 'running' }),
         note: 'Står kvar under RetroArchs fönster tills spelet täcker skärmen.' },
-      { name: 'Pausmenyn utan overlay', url: `${L}spela.html?rom=101`, wait: 1500,
-        setup: async ({ P }) => { P.bridge.emit('games', { state: 'running' }); await sleep(100); P.bridge.emit('games', { state: 'paused' }); },
-        note: 'Bara om overlayn inte kör. Bilden bakom är RetroArchs skärmdump.' },
       { name: 'Fel: spelet kunde inte startas', url: `${L}spela.html?rom=101`, wait: 1500,
         setup: ({ P }) => P.bridge.emit('games', { state: 'error', message: 'Spelet kunde inte startas: core not found' }) },
     ] },

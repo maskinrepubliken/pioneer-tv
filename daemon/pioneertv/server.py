@@ -71,7 +71,6 @@ class Server:
             ("POST", "/api/update", self.api_update_start),
             ("GET", "/api/update/status", self.api_update_status),
             ("GET", "/api/games", self.api_games_status),
-            ("GET", "/api/games/screen", self.api_games_screen),
             ("POST", "/api/games/{action}", self.api_games_action),
             ("GET", "/api/video", self.api_video_status),
             ("POST", "/api/video/{action}", self.api_video_action),
@@ -427,18 +426,11 @@ class Server:
     async def api_update_status(self, request: web.Request) -> web.Response:
         return web.json_response(await updater.status())
 
-    # Games in RetroArch (games.py): which consoles and what is playing, the
-    # pause screenshot, and play / pause / resume / save_point / quit.
+    # Games in RetroArch (games.py): which consoles and what is playing, and
+    # play / resume / save_point / quit (the overlay's pause panel).
     async def api_games_status(self, request: web.Request) -> web.Response:
         games = self.hooks.get("games")
         return web.json_response(games.status() if games else {"platforms": [], "state": "idle", "game": None})
-
-    async def api_games_screen(self, request: web.Request) -> web.StreamResponse:
-        games = self.hooks.get("games")
-        path = games.screen_path() if games else None
-        if not path or not path.is_file():
-            raise web.HTTPNotFound()
-        return web.FileResponse(path, headers={"Cache-Control": "no-store"})
 
     async def api_games_action(self, request: web.Request) -> web.Response:
         games = self.hooks.get("games")
@@ -457,7 +449,7 @@ class Server:
         elif action == "save_point":
             ok, msg = await games.save_point()
         elif action == "pause":
-            await games.pause()
+            await games.hold()
             ok, msg = True, ""
         elif action == "quit":
             await games.quit()

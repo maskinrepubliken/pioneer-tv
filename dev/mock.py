@@ -287,7 +287,7 @@ def daemon(path: str, query: str, method: str) -> tuple[int, str, bytes] | None:
     if path == "/api/games":
         return js({"platforms": ["snes", "n64", "genesis", "nes", "dos"], "state": "idle", "game": None,
                    "point": None, "players": ["Rosa handkontroll", "Grön handkontroll"]})
-    if path.startswith("/api/games/") and path != "/api/games/screen":
+    if path.startswith("/api/games/"):
         return js({"ok": True, "message": ""})
     if path == "/api/video":
         return js({"state": "idle", "item": None, "choice": {}})

@@ -10,10 +10,11 @@ second, unthrottled). See docs/superpowers/specs/2026-10-15-retroarch-games-desi
 RetroArch is only ever the game picture: no menu, no notices, no logo. The
 player page (extension/launcher/spela.js) asks for a game; this module
 fetches it from RomM into a cache, writes RetroArch's config and starts it
-as the kiosk user. Kiosk-shell puts its window over Chromium. Home pauses:
-a screenshot, then the state into slot 1 (SAVE_STATE), then QUIT, and the
-page shows our pause panel over the screenshot. Resuming starts RetroArch
-again with that state copied to where its auto-load looks. (RetroArch 1.20
+as the kiosk user; its window covers Chromium's. Home pauses RetroArch where
+it is and the overlay draws the pause panel over it (hold(), below).
+Leaving a game saves its state into slot 1 (SAVE_STATE) before QUIT, and
+the next play starts from it, copied to where RetroArch's auto-load looks.
+(RetroArch 1.20
 only saves or loads a state for a core its core info list knows, and that
 list comes from its own cores folder, which ours are not in: every save
 said "Core does not support save states" until core_info_savestate_bypass.
@@ -209,18 +210,15 @@ def wayland_socket(runtime_dir: str) -> str:
     return max(socks, key=lambda p: p.stat().st_mtime).name if socks else "wayland-0"
 
 class Games:
-    def __init__(self, cfg: dict, emit: Callable[[dict], Coroutine], pads, dispatcher,
-                 overlay: Callable[[], bool] = lambda: False) -> None:
+    def __init__(self, cfg: dict, emit: Callable[[dict], Coroutine], pads, dispatcher) -> None:
         self.cfg = cfg
-        self.overlay = overlay          # True while the overlay is up: it draws the pause panel over the game
         self.emit = emit
         self.pads = pads                # the pad manager: its shared["games"] leaves the pads to RetroArch
         self.dispatcher = dispatcher
         self.proc: asyncio.subprocess.Process | None = None
-        self.game: dict | None = None   # the game being played or paused
-        self.state = "idle"             # idle | loading | running | held | pausing | paused | quitting
+        self.game: dict | None = None   # the game being played
+        self.state = "idle"             # idle | loading | running | held | quitting
         self.task: asyncio.Task | None = None
-        self.screen_at = 0.0
 
     # ------------------------------------------------------------ config
     @property
@@ -262,9 +260,6 @@ class Games:
     def _point_path(self) -> Path | None:
         return self.root / "points" / f"{self.game['id']}.state" if self.game else None
 
-    def screen_path(self) -> Path | None:
-        return self.root / "screens" / f"{self._base()}.png" if self.game else None
-
     # ------------------------------------------------------------ the API
     def _busy(self) -> bool:
         return (self.task is not None and not self.task.done()) or bool(self.proc and self.proc.returncode is None)
@@ -280,27 +275,14 @@ class Games:
         return True, ""
 
     async def resume(self, load: str = "auto") -> tuple[bool, str]:
-        """The paused game again: load "auto" (where it was), "point" (Spara läge's) or "none" (from the start)."""
-        if self.state == "held":
-            return await self._unhold(load)
-        if self._busy():
-            return False, "ett spel körs redan"
-        if not self.game or self.state != "paused":
+        """The held game again: load "auto" (where it is), "point" (Spara läge's) or "none" (from the start)."""
+        if self.state != "held":
             return False, "inget pausat spel"
-        if load == "point":
-            point = self._point_path()
-            if not point or not point.is_file():
-                return False, "inget sparat läge"
-            shutil.copyfile(point, self._auto_state())
-            self._own(self._auto_state())
-        self.task = asyncio.create_task(self._launch(autoload=load != "none"))
-        return True, ""
+        return await self._unhold(load)
 
     async def save_point(self) -> tuple[bool, str]:
-        """Spara läge: the state the game was paused with becomes its save point."""
-        if self.state == "held" and not await self._save_state():
-            return False, "inget att spara"
-        if not self.game or self.state not in ("paused", "held") or not self._auto_state().is_file():
+        """Spara läge: the game where it is held becomes its save point."""
+        if self.state != "held" or not self.game or not await self._save_state() or not self._auto_state().is_file():
             return False, "inget att spara"
         point = self._point_path()
         point.parent.mkdir(parents=True, exist_ok=True)
@@ -330,37 +312,6 @@ class Games:
         if not ok:
             log.warning("retroarch wrote no state for %s", self.game and self.game["name"])
         return ok
-
-    async def pause(self) -> None:
-        """Home in a game: a screenshot and the state, then RetroArch goes and the page shows the pause panel.
-
-        RetroArch's window covers the panel until it has exited, so this is
-        what the person waits for. The picture, then the state (one after the
-        other: RetroArch skipped the save when asked for both at once), about
-        0.3 s together; then RetroArch is not left to shut down at its own
-        pace: the N64 core took 1.6 s to (measured on the box), while
-        everything a resume needs, the game's own save memory included, is in
-        the state just written."""
-        if self.state != "running" or not (self.proc and self.proc.returncode is None):
-            return
-        self.state = "pausing"
-        started = time.monotonic()
-        shot, state = self.screen_path(), self._auto_state()
-        shot_before = shot.stat().st_mtime if shot and shot.is_file() else 0
-        state_before = state.stat().st_mtime if state.is_file() else 0
-        self.command("PAUSE_TOGGLE")
-        self.command("SCREENSHOT")
-        got_shot = await self._wait_written(shot, shot_before, 1.5)
-        self.command("SAVE_STATE")
-        saved = await self._wait_written(state, state_before, 4)
-        self.screen_at = time.time()
-        if not saved:
-            log.warning("retroarch wrote no state for %s", self.game and self.game["name"])
-        # Only with the state safely written may RetroArch be cut short.
-        await self._quit_process(grace=0.3 if saved else 8)
-        log.info("paused %s in %.2f s (picture %s, state %s)", self.game and self.game["name"],
-                 time.monotonic() - started, "yes" if got_shot else "no", "yes" if saved else "no")
-        # _watch sees the exit and, with state "pausing", reports "paused".
 
     async def quit(self) -> None:
         """Leave the game for good: its state saved, RetroArch quits and the page goes back."""
@@ -626,10 +577,6 @@ history_list_enable = "false"
         if proc is self.proc:
             self.proc = None
         log.info("retroarch exited (%s) after %.0f s", rc, ran)
-        if self.state == "pausing":
-            self.state = "paused"
-            await self._event("paused", screen=self.screen_at)
-            return
         quitting = self.state == "quitting"
         game, self.game, self.state = self.game, None, "idle"
         if rc and ran < 10 and not quitting:
@@ -656,8 +603,7 @@ history_list_enable = "false"
             log.warning("retroarch command %s: %s", text, exc)
 
     async def _quit_process(self, grace: float = 8) -> None:
-        """QUIT, and if RetroArch is still there after grace seconds, end it.
-        A short grace is for a pause, with the state already written."""
+        """QUIT, and if RetroArch is still there after grace seconds, end it."""
         proc = self.proc
         if not (proc and proc.returncode is None):
             return
@@ -667,8 +613,7 @@ history_list_enable = "false"
             return
         except asyncio.TimeoutError:
             pass
-        if grace >= 8:
-            log.warning("retroarch did not quit; ending it")
+        log.warning("retroarch did not quit; ending it")
         # proc is runuser; the signal has to reach RetroArch itself.
         cfg = str(self.root / "cfg" / "retroarch.cfg")
         try:
@@ -686,11 +631,11 @@ history_list_enable = "false"
                 pass
 
     # ------------------------------------------------------------ held
-    # With the overlay up, Home holds the game where it is instead: RetroArch
-    # pauses and stays on screen, and the overlay draws the pause panel over
-    # it. Nothing is written or restarted, so carrying on is instant; Spara
-    # läge, Ladda läge and Starta om are RetroArch's own commands. Without the
-    # overlay (should it be down) Home pauses as before.
+    # Home holds the game where it is: RetroArch pauses and stays on screen,
+    # and the overlay draws the pause panel over it. Nothing is written or
+    # restarted, so carrying on is instant; Spara läge, Ladda läge and Starta
+    # om are RetroArch's own commands. (Should the overlay be down, the game
+    # still holds; Home carries on and holding B quits.)
     async def hold(self) -> None:
         if self.state != "running" or not (self.proc and self.proc.returncode is None):
             return
@@ -728,10 +673,8 @@ history_list_enable = "false"
         """The box's own buttons while RetroArch has the screen. True: handled here."""
         if name == "menu" and self.state == "held":
             asyncio.create_task(self._unhold("auto"))           # Home again: carry on
-        elif name == "menu" and self.overlay():
-            asyncio.create_task(self.hold())
         elif name == "menu":
-            asyncio.create_task(self.pause())
+            asyncio.create_task(self.hold())
         elif name == "back" and self.state == "held":            # hold B on the panel: Avsluta
             asyncio.create_task(self.quit())
         elif name == "home":

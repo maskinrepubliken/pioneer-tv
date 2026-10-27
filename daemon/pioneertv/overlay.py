@@ -3,8 +3,8 @@
 The overlay (system/overlay.py, a WebKit page on labwc's top layer) draws
 the quick menu and the toasts over any window, Chromium, RetroArch or mpv.
 While it is connected the daemon sends those to it; without it (the overlay
-down) they go to the page, as before. A page's own menu (the
-game player's pause panel, the start page's Live list) keeps its buttons:
+down) they go to the page, as before. A page's own menu (the start page's
+Live list) keeps its buttons:
 Home, Y and B go to whichever menu is open.
 
 Events the daemon broadcasts get a "target" ("overlay" or "page") here;

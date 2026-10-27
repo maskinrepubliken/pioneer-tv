@@ -228,12 +228,10 @@ itself: no menu, notices or logo, only the game. The design is in
   right step the TV's volume, A mutes) and Avsluta. Each is one of
   RetroArch's own commands (`PAUSE_TOGGLE`, `SAVE_STATE`, `LOAD_STATE`,
   `RESET`), so carrying on is instant; B or Guide carries on, holding B
-  quits. While the panel is open the pads drive it, not the game. Should
-  the overlay be down, Guide pauses the old way:
-  RetroArch takes a picture and quits, saving where the game was, the
-  player page shows the panel over the picture, and everything but Avsluta
-  starts RetroArch again, which takes a second or two. Holding Guide goes
-  home; the game is saved as RetroArch quits.
+  quits. While the panel is open the pads drive it, not the game. (Should
+  the overlay be down the game still holds, with nothing drawn: Guide
+  carries on, holding B quits.) Holding Guide goes home; the game is saved
+  as RetroArch quits.
 - **Pads.** While a game runs the pads are RetroArch's (with an autoconfig
   for the 8BitDo Ultimate 2C); player 1 is the pad last used. The button
   marked A plays the console's A and B its B, by the letters rather than
@@ -505,7 +503,7 @@ tried again every three seconds.
 
 Who gets Home, Y and B is decided in the daemon (`daemon/pioneertv/overlay.py`):
 the overlay while it is connected, a page's own menu while one is open (the
-game player's pause panel, the start page's Live list), the page otherwise.
+start page's Live list), the page otherwise.
 Toasts go to the overlay whenever it is there. The overlay's window takes the
 keyboard (layer-shell `EXCLUSIVE`) only while its menu is open, so the rest
 of the time every key goes to the window below and the overlay is only seen.

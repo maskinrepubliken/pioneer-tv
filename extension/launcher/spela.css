@@ -1,7 +1,7 @@
 /* Pioneer TV player. The game itself is RetroArch's window over this page
-   (games.py); here is the dark ground before it, and the pause panel over
-   the picture RetroArch took when it paused. Same 1280x720 canvas and
-   tokens as the other launcher pages. */
+   (games.py); here is the dark ground before it, and its errors. The pause
+   panel is the overlay's. Same 1280x720 canvas and tokens as the other
+   launcher pages. */
 
 html { font-size: 1.45vw; }
 * { box-sizing: border-box; }
@@ -12,11 +12,6 @@ body {
   background-color: var(--pioneertv-surface-ink);
   overflow: hidden;
 }
-
-.stage { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
-/* The paused game, as RetroArch drew it, filling the screen as it did. */
-.screen { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
-.screen[hidden] { display: none; }
 
 /* "Laddar…" in the middle of the dark page, in Fraunces' italic like the
    other pages' captions, until the game draws. */
@@ -45,27 +40,3 @@ body {
   box-shadow: none !important; border-radius: var(--pioneertv-radius-pill) !important;
 }
 
-/* ---- pause panel: paper on the right, over the paused game ---- */
-.paus {
-  position: fixed; top: 4vh; right: 3vw; bottom: 4vh; width: 24rem; margin: 0; inset-inline-start: auto;
-  display: flex; flex-direction: column; gap: 0.7rem; padding: 1.6rem 1.6rem 1.2rem;
-  background: var(--pioneertv-paper); color: var(--pioneertv-ink);
-  border: 0; border-radius: var(--pioneertv-radius-panel);
-}
-.paus-label {
-  margin: 0; font-family: var(--pioneertv-font-mono); font-size: 0.8rem; letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--pioneertv-ink-faint);
-}
-.paus-title {
-  margin: 0 0 0.3rem; font-family: var(--pioneertv-font-display); font-weight: 900; font-size: 1.6rem; line-height: 1.05;
-  letter-spacing: -0.01em; text-transform: uppercase;
-}
-.paus-status { margin: 0; min-height: 1.2rem; font-family: var(--pioneertv-font-mono); font-size: 0.85rem; color: var(--pioneertv-ink-muted); }
-.paus-status.fel { color: var(--pioneertv-alarm); }
-.paus-items { display: flex; flex-direction: column; gap: 0.6rem; }
-.paus-item { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding: 0.8rem 1.4rem; }
-.paus-detail { font-family: var(--pioneertv-font-mono); font-size: 0.8rem; font-weight: 400; color: var(--pioneertv-ink-faint); }
-.paus-item.primar .paus-detail { color: var(--pioneertv-on-ochre); }
-.paus-disabled { color: var(--pioneertv-ink-faint); border-color: var(--pioneertv-line); }
-.paus-pads { margin-top: auto; padding-top: 0.8rem; border-top: 1px solid var(--pioneertv-line); }
-.paus-pads p { margin: 0.15rem 0; font-family: var(--pioneertv-font-mono); font-size: 0.8rem; color: var(--pioneertv-ink-muted); }
