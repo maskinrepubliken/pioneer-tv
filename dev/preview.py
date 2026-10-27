@@ -41,6 +41,27 @@ ROUTES = {                      # URL prefix -> folder
     "/design/": ROOT / "design",
     "/dev/": ROOT / "dev",
 }
+# What the catalogue watches (/__changes): a save under these redraws the
+# views on screen.
+WATCHED = (ROOT / "extension", ROOT / "daemon" / "pioneertv" / "web", ROOT / "dev")
+
+
+def newest() -> dict:
+    """The file changed last under WATCHED: its time and its path."""
+    best, where = 0.0, ""
+    stack = list(WATCHED)
+    while stack:
+        with os.scandir(stack.pop()) as entries:
+            for e in entries:
+                if e.name.startswith(".") or e.name == "__pycache__":
+                    continue
+                if e.is_dir(follow_symlinks=False):
+                    stack.append(e.path)
+                elif (t := e.stat().st_mtime) > best:
+                    best, where = t, e.path
+    return {"t": best, "path": str(pathlib.Path(where).relative_to(ROOT)) if where else ""}
+
+
 REDIRECTS = {
     "/launcher": "/ext/launcher/index.html?tv=1",
     "/settings": "/static/settings.html?mock=1",
@@ -84,13 +105,11 @@ INDEX = """<!doctype html><html lang="sv"><meta charset="utf-8">
 <p>Sidorna läses direkt från repot. Spara en fil och ladda om.
 Piltangenter navigerar, Enter väljer, Escape stänger. Layouten är ritad för 1280×720.</p>
 <h2>Katalog</h2>
-<ul><li><a href="/katalog">Alla vyer</a>: varje skärm, meny, panel och notis i sina lägen, med låtsasdata</li></ul>
-<h2>Startsidan</h2>
+<ul><li><a href="/katalog">Alla vyer</a>: varje skärm, meny, panel och notis i sina lägen, med låtsasdata. Ritar om det som syns när en fil sparas.</li></ul>
+<h2>Hem och overlayn</h2>
 <ul>
-  <li><a href="/launcher">Startsidan i TV-läge</a></li>
-  <li><a href="/ext/launcher/index.html?tv=1&demo=keyboard">… med tangentbordet öppet</a></li>
-  <li><a href="/ext/launcher/index.html?tv=1&demo=menu">… med snabbmenyn öppen</a></li>
-  <li><a href="/ext/launcher/index.html?tv=1&demo=toast">… med ett meddelande</a></li>
+  <li><a href="/launcher">Hem: klockan</a></li>
+  <li><a href="/ext/overlay/index.html">Overlayn</a> (genomskinlig; huvudmenyn och notiserna visas i katalogen)</li>
 </ul>
 <h2>Spel</h2>
 <ul><li><a href="/spel">Spel mot RomM</a> (kräver ROMM_URL och ROMM_API_KEY)</li></ul>
@@ -235,6 +254,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             return
         if clean == "/api/jellyfin":
             return self.jellyfin_user()
+        if clean == "/__changes":
+            return self.send_json(200, newest())
         if clean in ("/", "/index.html"):
             body = INDEX.encode()
             self.send_response(200)
@@ -255,7 +276,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         super().end_headers()
 
     def log_message(self, fmt, *args):
-        sys.stderr.write("%s %s\n" % (self.command, self.path))
+        if not self.path.startswith("/__changes"):      # asked every second
+            sys.stderr.write("%s %s\n" % (self.command, self.path))
 
 
 if __name__ == "__main__":

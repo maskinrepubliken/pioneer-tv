@@ -14,6 +14,23 @@ body {
   padding: 8px 14px; border: 1px solid var(--pioneertv-line-strong); border-radius: 999px;
 }
 .toc a:hover { background: var(--pioneertv-paper-raised); }
+.toc a.on { background: var(--pioneertv-ink); color: var(--pioneertv-paper); border-color: var(--pioneertv-ink); }
+section.group[hidden], h2.part[hidden] { display: none; }
+
+/* A view drawn here rather than in a frame (a toast): the same 1280x720
+   canvas, on the ink of the home page. */
+.drawn {
+  position: absolute; left: 0; top: 0; width: 1280px; height: 720px; transform: scale(0.3); transform-origin: 0 0;
+  background: var(--pioneertv-surface-ink); font-family: var(--pioneertv-font-ui); color: var(--pioneertv-ink);
+}
+.drawn .pioneertv-toast { position: absolute; }
+
+/* "Ritar om": a file was saved and the views in sight are drawn again. */
+.changed {
+  position: fixed; right: 20px; bottom: 20px; z-index: 20; margin: 0; padding: 10px 16px;
+  font: 13px var(--pioneertv-font-mono); color: var(--pioneertv-paper);
+  background: var(--pioneertv-ink); border-radius: 999px;
+}
 
 section.group { padding: 24px 40px 8px; }
 h2.part {

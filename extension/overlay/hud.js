@@ -13,15 +13,12 @@ window.PioneerTV = window.PioneerTV || {};
   hud.toastEl = null;
   hud.toastTimer = null;
   hud.toast = function (text, icon = '', ms = 1800) {
-    if (!this.toastEl) {
-      this.toastEl = document.createElement('div');
-      this.toastEl.className = 'pioneertv-toast pioneertv-card';
+    const first = !this.toastEl;
+    this.toastEl = M.toastCard(text, icon, this.toastEl);
+    if (first) {
       this.toastEl.setAttribute('data-pioneertv-overlay', '');
       M.bridge.mount(this.toastEl);
     }
-    this.toastEl.innerHTML = '';
-    if (icon) { const i = document.createElement('span'); i.className = 'pioneertv-toast-icon'; i.appendChild(M.icons.svg(M.icons.names.includes(icon) ? icon : 'info')); this.toastEl.appendChild(i); }
-    const t = document.createElement('span'); t.textContent = text; this.toastEl.appendChild(t);
     this.toastEl.classList.add('pioneertv-toast-show');
     clearTimeout(this.toastTimer);
     this.toastTimer = setTimeout(() => this.toastEl.classList.remove('pioneertv-toast-show'), ms);

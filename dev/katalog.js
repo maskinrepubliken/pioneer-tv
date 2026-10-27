@@ -7,13 +7,14 @@
   const L = '/ext/launcher/';
 
   // ------------------------------------------------------------ helpers
-  // Waits for a selector in the frame's document.
-  async function waitFor(doc, selector, ms = 6000) {
+  // Waits for a selector in the frame's document, or for a test of it to
+  // come true.
+  async function waitFor(doc, ready, ms = 6000) {
     const until = Date.now() + ms;
     while (Date.now() < until) {
-      const el = doc.querySelector(selector);
-      if (el) return el;
-      await sleep(80);
+      const found = typeof ready === 'function' ? ready(doc) : doc.querySelector(ready);
+      if (found) return found;
+      await sleep(50);
     }
     return null;
   }
@@ -63,13 +64,21 @@
   const LONG = 600000;
   // zoom: the part of the screen a small view shows, [x, y, width] of 1280x720.
   const TOAST_CORNER = [560, 0, 720];
-  // A toast as the box shows it: drawn by the overlay over whatever is on screen.
+  // A toast as the box shows it: drawn by the overlay over whatever is on
+  // screen. Small, it is drawn here with the overlay's own toast.js and
+  // toast.css (no frame, so the whole group shows at once); large, in the
+  // overlay itself.
   const toast = (text, icon, note) => ({
     name: text, under: HOME, url: OVERLAY, note, zoom: TOAST_CORNER,
     setup: ({ P }) => P.hud.toast(text, icon, LONG),
+    draw: (stage) => {
+      const card = window.PioneerTV.toastCard(text, icon);
+      card.classList.add('pioneertv-toast-show');
+      stage.appendChild(card);
+    },
   });
   const VIEWS = [
-    { part: 'Komponenter', group: 'Notis', files: 'overlay/hud.js (hud.toast) · overlay/overlay.css (.pioneertv-toast)',
+    { part: 'Komponenter', group: 'Notis', files: 'overlay/toast.js · overlay/toast.css · overlay/hud.js (hud.toast)',
       used: 'Över allt på skärmen, ritad av overlayn. Sidorna skickar sina dit (content/hud.js), inställningssidan via /api/toast och daemonen med händelsen toast.',
       items: [
         toast('Rosa handkontroll ansluten', 'gamepad', 'hud.listen · gamepad'),
@@ -154,7 +163,7 @@
 
     { part: 'Sidor', group: 'Hem', files: 'launcher/index.html · launcher.js · overlay/clock.js', used: 'Håll Hem. Bara klockan; en knapp öppnar huvudmenyn.',
       items: [
-        { name: 'Hem', url: HOME, wait: 600 },
+        { name: 'Hem', url: HOME, ready: '.pioneertv-saver' },
       ] },
     { part: 'Sidor', group: 'Spel', files: 'launcher/spel.html · spel.js · spel.css · romm.js', used: 'Rutan Spel.',
       items: [
@@ -165,12 +174,12 @@
       ] },
     { part: 'Sidor', group: 'Spela ett spel', files: 'launcher/spela.html · spela.js · spela.css', used: 'Innan RetroArchs fönster täcker skärmen.',
       items: [
-        { name: 'Laddar (innan spelet hämtats)', url: `${L}spela.html?rom=101`, wait: 1500 },
-        { name: 'Laddar, med megabyte', url: `${L}spela.html?rom=101`, wait: 1500,
+        { name: 'Laddar (innan spelet hämtats)', url: `${L}spela.html?rom=101`, ready: '#loading' },
+        { name: 'Laddar, med megabyte', url: `${L}spela.html?rom=101`, ready: '#loading',
           setup: ({ P }) => P.bridge.emit('games', { state: 'loading', got: 12.4e6, total: 31.5e6 }) },
-        { name: 'Startar', url: `${L}spela.html?rom=101`, wait: 1500, setup: ({ P }) => P.bridge.emit('games', { state: 'running' }),
+        { name: 'Startar', url: `${L}spela.html?rom=101`, ready: '#loading', setup: ({ P }) => P.bridge.emit('games', { state: 'running' }),
           note: 'Står kvar under RetroArchs fönster tills spelet täcker skärmen.' },
-        { name: 'Fel: spelet kunde inte startas', url: `${L}spela.html?rom=101`, wait: 1500,
+        { name: 'Fel: spelet kunde inte startas', url: `${L}spela.html?rom=101`, ready: '#loading',
           setup: ({ P }) => P.bridge.emit('games', { state: 'error', message: 'Spelet kunde inte startas: core not found' }) },
       ] },
     { part: 'Sidor', group: 'Musik', files: 'launcher/musik.html · musik.js · musik.css · jellyfin.js', used: 'Rutan Musik.',
@@ -207,11 +216,11 @@
       ] },
     { part: 'Sidor', group: 'Radio', files: 'launcher/radio.html · radio.js', used: 'Huvudmenyn → Live → P1–P4.',
       items: [
-        { name: 'Radio', url: `${L}radio.html?channel=132&name=P1`, wait: 2000, note: 'Hämtar tablån från Sveriges Radio på riktigt.' },
+        { name: 'Radio', url: `${L}radio.html?channel=132&name=P1`, ready: (doc) => doc.getElementById('now-title').textContent !== '…', note: 'Hämtar tablån från Sveriges Radio på riktigt.' },
       ] },
     { part: 'Sidor', group: 'Inställningar', files: 'daemon/pioneertv/web/settings.html · settings.js', used: 'Huvudmenyn → Inställningar → en flik.',
       items: [
-        { name: 'Inställningar', url: '/static/settings.html?mock=1', wait: 1500, note: 'Med inställningssidans egen exempeldata.' },
+        { name: 'Inställningar', url: '/static/settings.html?mock=1', ready: '.card', note: 'Med inställningssidans egen exempeldata.' },
       ] },
   ];
 
@@ -243,8 +252,7 @@
     style.textContent = '.film-card, .musik-card { content-visibility: visible !important; }';
     doc.head.appendChild(style);
     if (entry.ready) await waitFor(doc, entry.ready);
-    if (entry.wait) await sleep(entry.wait);
-    await sleep(150);
+    await sleep(60);
     if (entry.setup) {
       try {
         await entry.setup({ win, doc, P: win.PioneerTV });
@@ -255,11 +263,32 @@
     return frame;
   }
 
+  // A small view that draws itself here (a toast), on the ink of the home
+  // page, in the same 1280x720 canvas as the frames.
+  function drawHere(entry, stage) {
+    const canvas = document.createElement('div');
+    canvas.className = 'drawn';
+    entry.draw(canvas);
+    stage.appendChild(canvas);
+  }
+
   // ------------------------------------------------------------ the index
+  // #grupp=<name> shows one group (its views are the only ones drawn),
+  // #vy=<id> one view large; both together keep the group behind the view.
+  const slug = (s) => s.toLowerCase().replace(/[^a-z0-9åäö]+/g, '-').replace(/^-|-$/g, '');
+  const parse = () => Object.fromEntries(location.hash.slice(1).split('&').filter(Boolean).map((p) => p.split('=').map(decodeURIComponent)));
+  const hashOf = (o) => '#' + Object.entries(o).filter(([, v]) => v).map(([key, v]) => `${key}=${encodeURIComponent(v)}`).join('&');
   const sections = document.getElementById('sections');
   const toc = document.getElementById('toc');
   const all = [];
+  const parts = {};
+  const allLink = document.createElement('a');
+  allLink.href = '#';
+  allLink.textContent = 'Alla';
+  allLink.className = 'toc-all';
+  toc.appendChild(allLink);
   VIEWS.forEach((g, gi) => {
+    g.slug = slug(g.group);
     const sec = document.createElement('section');
     sec.className = 'group';
     sec.id = `g${gi}`;
@@ -268,26 +297,29 @@
       p.className = 'part';
       p.textContent = g.part;
       sections.appendChild(p);
+      parts[g.part] = p;
       const t = document.createElement('span');
       t.className = 'toc-part';
       t.textContent = g.part;
       toc.appendChild(t);
     }
+    g.section = sec;
     const h = document.createElement('h3');
     h.textContent = g.group;
     sec.appendChild(h);
     const meta = document.createElement('dl');
     meta.className = 'meta';
-    for (const [k, v] of [['Kod', g.files], ['Används', g.used]]) {
+    for (const [key, v] of [['Kod', g.files], ['Används', g.used]]) {
       if (!v) continue;
-      const dt = document.createElement('dt'); dt.textContent = k;
+      const dt = document.createElement('dt'); dt.textContent = key;
       const dd = document.createElement('dd'); dd.textContent = v;
       meta.append(dt, dd);
     }
     sec.appendChild(meta);
     const a = document.createElement('a');
-    a.href = `#g${gi}`;
+    a.href = hashOf({ grupp: g.slug });
     a.textContent = g.group;
+    a.dataset.grupp = g.slug;
     toc.appendChild(a);
     const grid = document.createElement('div');
     grid.className = 'grid';
@@ -297,7 +329,8 @@
       all.push(entry);
       const card = document.createElement('a');
       card.className = 'card';
-      card.href = `#vy=${entry.id}`;
+      card.href = hashOf({ vy: entry.id });
+      card.addEventListener('click', (e) => { e.preventDefault(); location.hash = hashOf({ grupp: parse().grupp, vy: entry.id }); });
       const thumb = document.createElement('div');
       thumb.className = 'thumb';
       const wait = document.createElement('div');
@@ -320,37 +353,65 @@
     sections.appendChild(sec);
   });
 
-  // Small views load when they come near the screen, a few at a time.
+  function showGroup(name) {
+    const g = VIEWS.find((x) => x.slug === name);
+    VIEWS.forEach((x) => { x.section.hidden = !!g && x !== g; });
+    for (const [part, h] of Object.entries(parts)) h.hidden = !!g && g.part !== part;
+    toc.querySelectorAll('a').forEach((a) => a.classList.toggle('on', g ? a.dataset.grupp === name : a === allLink));
+    if (g) window.scrollTo(0, 0);
+  }
+
+  // Small views are drawn when they come near the screen, a few at a time,
+  // and drawn again after a save (version) when they are or come in sight.
+  let version = 0;
+  const near = new Set();
   const queue = [];
   let running = 0;
+  function want(entry) {
+    if (entry.drawn === version || entry.busy || queue.includes(entry)) return;
+    queue.push(entry);
+    pump();
+  }
   function pump() {
-    while (running < 4 && queue.length) {
+    while (running < 6 && queue.length) {
       const entry = queue.shift();
       running++;
+      entry.busy = true;
+      const drawing = version;
       const stage = document.createElement('div');
+      stage.className = 'small';
       stage.style.cssText = 'position:absolute;inset:0;transform-origin:0 0';
       if (entry.zoom) {
         const [x, y, w] = entry.zoom;
         stage.style.transform = `scale(${1280 / w}) translate(${-x * 0.3}px, ${-y * 0.3}px)`;
       }
-      entry.thumb.appendChild(stage);
-      load(entry, stage).finally(() => {
+      // Under the one it replaces, which stays until this one is drawn.
+      entry.thumb.insertBefore(stage, entry.thumb.firstChild);
+      const done = entry.draw ? Promise.resolve(drawHere(entry, stage)) : load(entry, stage);
+      done.finally(() => {
         running--;
+        entry.busy = false;
+        entry.drawn = drawing;
+        entry.thumb.querySelectorAll('.small').forEach((s) => { if (s !== stage) s.remove(); });
         const w = entry.thumb.querySelector('.wait');
         if (w) w.remove();
+        if (drawing !== version && near.has(entry)) want(entry);
         pump();
       });
     }
   }
+  const byThumb = new Map(all.map((e) => [e.thumb, e]));
   const seen = new IntersectionObserver((list) => {
     for (const it of list) {
-      if (!it.isIntersecting) continue;
-      seen.unobserve(it.target);
-      queue.push(all.find((e) => e.thumb === it.target));
-      pump();
+      const entry = byThumb.get(it.target);
+      if (it.isIntersecting) { near.add(entry); want(entry); }
+      else near.delete(entry);
     }
   }, { rootMargin: '400px' });
   all.forEach((e) => seen.observe(e.thumb));
+  // Those drawn here cost nothing: all of them at once.
+  const drawAll = () => all.filter((e) => e.draw).forEach(want);
+  drawAll();
 
   // ------------------------------------------------------------ one view, large
   const big = document.getElementById('big');
@@ -368,12 +429,14 @@
     document.getElementById('big-title').textContent = `${entry.group} · ${entry.name}`;
     document.getElementById('big-note').textContent = entry.note || '';
     document.getElementById('big-open').href = entry.url;
-    bigStage.innerHTML = '';
     const stage = document.createElement('div');
     stage.className = 'stage';
-    bigStage.appendChild(stage);
+    // The view drawn before stays on top until this one is ready.
+    bigStage.insertBefore(stage, bigStage.firstChild);
     fit();
     const frame = await load(entry, stage);
+    if (current !== entry || !stage.isConnected) return;
+    bigStage.querySelectorAll('.stage').forEach((s) => { if (s !== stage) s.remove(); });
     // The keyboard goes to the view: its own focused element, inside the frame.
     frame.contentWindow.focus();
     const P = frame.contentWindow.PioneerTV;
@@ -382,14 +445,48 @@
     stage.addEventListener('mousedown', () => frame.contentWindow.focus());
   }
   function route() {
-    const m = /#vy=([\d-]+)/.exec(location.hash);
-    const entry = m && all.find((e) => e.id === m[1]);
-    if (entry) openBig(entry);
+    const h = parse();
+    showGroup(h.grupp);
+    const entry = h.vy && all.find((e) => e.id === h.vy);
+    if (entry) { if (entry !== current) { bigStage.innerHTML = ''; openBig(entry); } }
     else { big.hidden = true; bigStage.innerHTML = ''; current = null; }
   }
   window.addEventListener('hashchange', route);
   window.addEventListener('resize', fit);
-  document.getElementById('big-close').addEventListener('click', () => { location.hash = ''; });
+  document.getElementById('big-close').addEventListener('click', () => { location.hash = hashOf({ grupp: parse().grupp }); });
   document.getElementById('big-again').addEventListener('click', () => current && openBig(current));
   route();
+
+  // ------------------------------------------------------------ a save redraws
+  // The preview server says when a file under extension/, the settings
+  // page or dev/ last changed (/__changes). The views in sight, and the one
+  // open large, are drawn again; the rest when they come into sight. A
+  // change to the catalogue itself reloads it.
+  let last = null;
+  async function watch() {
+    let now;
+    try {
+      const r = await fetch('/__changes', { cache: 'no-store' });
+      if (!r.ok) return;                   // an older server: no watching
+      now = await r.json();
+    } catch {
+      setTimeout(watch, 3000);             // the server restarting
+      return;
+    }
+    if (last && now.t !== last.t) {
+      if (/^dev\/katalog\./.test(now.path)) { location.reload(); return; }
+      version++;
+      near.forEach(want);
+      drawAll();
+      if (current) openBig(current);
+      const note = document.getElementById('changed');
+      note.textContent = `Ritar om · ${now.path}`;
+      note.hidden = false;
+      clearTimeout(watch.hide);
+      watch.hide = setTimeout(() => { note.hidden = true; }, 2500);
+    }
+    last = now;
+    setTimeout(watch, 1000);
+  }
+  watch();
 })();

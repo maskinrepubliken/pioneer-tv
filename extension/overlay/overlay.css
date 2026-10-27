@@ -7,18 +7,6 @@ html, body { margin: 0; height: 100%; background: transparent !important; overfl
    the field itself stays out of sight. */
 .pioneertv-search-field { position: fixed; left: -10000px; top: 0; width: 1px; height: 1px; overflow: hidden; }
 
-/* ---- toast ---- */
-.pioneertv-toast {
-  position: fixed; top: 24px; right: 24px; left: auto; bottom: auto; z-index: 2147483001;
-  display: flex; align-items: center; gap: 12px;
-  padding: 14px 24px 14px 18px;
-  font-size: 24px; line-height: 1.25;
-  background: var(--pioneertv-paper-raised); border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-m);
-  visibility: hidden; pointer-events: none;
-}
-.pioneertv-toast-show { visibility: visible; }
-.pioneertv-toast-icon { display: inline-flex; font-size: 26px; color: var(--pioneertv-ink-muted); }
-
 /* ---- menu: a paper card at the right, over whatever window is below; the
    main menu, its submenus and the pause panels are the same card. The title in Rubik capitals,
    the choices as pill buttons with the focus ring, and the box's status at

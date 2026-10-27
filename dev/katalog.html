@@ -7,6 +7,8 @@
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="/ext/fonts/fonts.css">
   <link rel="stylesheet" href="/ext/content/tokens.css">
+  <link rel="stylesheet" href="/ext/content/paper.css">
+  <link rel="stylesheet" href="/ext/overlay/toast.css">
   <link rel="stylesheet" href="katalog.css">
 </head>
 <body>
@@ -16,7 +18,8 @@
       och var koden finns, sedan sidorna. Varje vy i de lägen den kan stå i,
       ritad med låtsasdata (dev/mock.py) i 1280×720 som på TV:n. Klicka på en vy
       för att se den stor och styra den med tangentbordet: piltangenterna är
-      styrkorset, Enter är A, Escape är B, mellanslag är X.</p>
+      styrkorset, Enter är A, Escape är B, mellanslag är X. Välj en grupp nedan
+      för att bara rita den; när en fil sparas ritas det som syns om.</p>
     <nav class="toc" id="toc"></nav>
   </header>
   <main id="sections"></main>
@@ -33,6 +36,11 @@
     <div class="big-stage" id="big-stage"></div>
   </section>
 
+  <p class="changed" id="changed" hidden></p>
+
+  <!-- Toasts are drawn here, small, with the overlay's own code. -->
+  <script src="/ext/content/icons.js"></script>
+  <script src="/ext/overlay/toast.js"></script>
   <script src="katalog.js"></script>
 </body>
 </html>

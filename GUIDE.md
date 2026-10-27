@@ -390,6 +390,15 @@ with `?mockerror=no_key`, `auth` or `down` gets that error from the
 stand-ins. When `ROMM_URL` or `JELLYFIN_URL` is set, the real server
 answers instead.
 
+For working on a view: pick its group (`#grupp=huvudmenyn`, a link at the
+top), so only that group's views are drawn, and keep the one you change
+open large. A save under `extension/`, the settings page or `dev/` draws
+the views in sight and the open one again within a second (the preview
+server's `/__changes`); a change to the catalogue itself reloads it, a
+change to `dev/mock.py` needs the preview server restarted. The toasts are
+drawn small in the catalogue page itself, with the overlay's `toast.js`
+and `toast.css`, so their group shows at once.
+
 The Film & serier page (http://localhost:5178/film) runs against Jellyfin as
 the Musik pages do; Spela needs the box.
 
