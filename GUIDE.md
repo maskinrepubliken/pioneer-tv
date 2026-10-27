@@ -374,6 +374,19 @@ of the Maskinrepubliken design system in its three themes. The design system
 is vendored in `design/maskinrepubliken/`; after pulling a new `tokens.json`,
 run `python3 dev/tokens-css.py` to regenerate `tokens.css`.
 
+**The catalogue of every view** is at http://localhost:5178/katalog
+(`dev/katalog.html`, `katalog.js`): every screen, menu, panel and toast,
+each in the states it can be in (loading, starting, playing, paused, the
+errors), drawn at 1280x720 from stand-in data (`dev/mock.py`: a small
+library of films, series, music and games with drawn covers, and the
+daemon's API), so it needs no server and no Pi. Click a view to see it
+large and drive it with the keyboard (arrows, Enter for A, Escape for B,
+space for X). The overlay's panels are drawn over a page or a picture, as
+on the TV. A new view is one entry in `VIEWS` in `katalog.js`; a page opened
+with `?mockerror=no_key`, `auth` or `down` gets that error from the
+stand-ins. When `ROMM_URL` or `JELLYFIN_URL` is set, the real server
+answers instead.
+
 The Film & serier page (http://localhost:5178/film) runs against Jellyfin as
 the Musik pages do; Spela needs the box.
 

@@ -1,0 +1,53 @@
+/* The catalogue of every view (dev/katalog.html): paper, ink and the box's
+   own type, for a laptop screen rather than the TV. */
+* { box-sizing: border-box; }
+body {
+  margin: 0; font-family: var(--pioneertv-font-ui); color: var(--pioneertv-ink);
+  background: var(--pioneertv-paper);
+}
+.head { padding: 32px 40px 8px; max-width: 1100px; }
+.head h1 { margin: 0 0 8px; font: 900 34px/1 var(--pioneertv-font-display); text-transform: uppercase; letter-spacing: -0.01em; }
+.head p { margin: 0 0 16px; font: 17px/1.5 var(--pioneertv-font-prose); color: var(--pioneertv-ink-muted); }
+.toc { display: flex; flex-wrap: wrap; gap: 8px; }
+.toc a {
+  font: 600 14px/1 var(--pioneertv-font-ui); color: var(--pioneertv-ink); text-decoration: none;
+  padding: 8px 14px; border: 1px solid var(--pioneertv-line-strong); border-radius: 999px;
+}
+.toc a:hover { background: var(--pioneertv-paper-raised); }
+
+section.group { padding: 24px 40px 8px; }
+section.group h2 {
+  margin: 0 0 14px; font: 13px/1 var(--pioneertv-font-mono); letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--pioneertv-ink-faint);
+}
+.grid { display: grid; grid-template-columns: repeat(auto-fill, 384px); gap: 22px 20px; }
+
+/* A view at 0.3 of its size: the frame is 1280x720, scaled into 384x216. */
+.card { display: block; width: 384px; text-decoration: none; color: inherit; cursor: pointer; }
+.thumb {
+  position: relative; width: 384px; height: 216px; overflow: hidden; border-radius: 10px;
+  border: 1px solid var(--pioneertv-line-strong); background: var(--pioneertv-paper-sunken);
+}
+.thumb iframe, .stage iframe { position: absolute; left: 0; top: 0; width: 1280px; height: 720px; border: 0; transform-origin: 0 0; background: transparent; }
+.thumb iframe { transform: scale(0.3); pointer-events: none; }
+.thumb .wait { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: italic 15px var(--pioneertv-font-prose); color: var(--pioneertv-ink-faint); }
+.card:hover .thumb { outline: 3px solid var(--pioneertv-ink); outline-offset: 3px; }
+.card b { display: block; margin-top: 10px; font: 600 15px/1.3 var(--pioneertv-font-ui); }
+.card span { display: block; margin-top: 3px; font: 14px/1.35 var(--pioneertv-font-prose); color: var(--pioneertv-ink-muted); }
+.card code { font: 12px var(--pioneertv-font-mono); color: var(--pioneertv-ink-faint); }
+
+/* One view, large. */
+.big { position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column; background: var(--pioneertv-surface-ink); }
+.big[hidden] { display: none; }
+.big-bar {
+  display: flex; align-items: center; gap: 16px; padding: 10px 16px; flex: none;
+  background: var(--pioneertv-paper); border-bottom: 1px solid var(--pioneertv-line-strong);
+}
+.big-bar button, .big-bar a {
+  font: 600 14px/1 var(--pioneertv-font-ui); color: var(--pioneertv-ink); background: none; text-decoration: none;
+  padding: 8px 14px; border: 1px solid var(--pioneertv-line-strong); border-radius: 999px; cursor: pointer;
+}
+.big-title { font: 600 16px var(--pioneertv-font-ui); }
+.big-note { flex: 1; font: italic 14px var(--pioneertv-font-prose); color: var(--pioneertv-ink-muted); }
+.big-stage { flex: 1; position: relative; overflow: hidden; }
+.stage { position: absolute; left: 50%; top: 50%; width: 1280px; height: 720px; transform-origin: 50% 50%; background: var(--pioneertv-paper); }

@@ -12,7 +12,12 @@ uncached, so a reload always shows the file on disk.
 against a real server. It reads ROMM_URL and ROMM_API_KEY from the
 environment, or from ~/.config/pioneer-tv/romm.env (KEY=value lines).
 /jellyfin/ and /api/jellyfin do the same for the Musik and Film & serier pages, with
-JELLYFIN_URL, JELLYFIN_API_KEY and JELLYFIN_USER (or jellyfin.env)."""
+JELLYFIN_URL, JELLYFIN_API_KEY and JELLYFIN_USER (or jellyfin.env).
+
+Without those settings, stand-ins answer instead (dev/mock.py): a small
+library of films, series, music and games with drawn covers, and the
+daemon's API. That is what the catalogue of every view uses
+(http://localhost:5178/katalog, dev/katalog.html)."""
 import http.server
 import json
 import os
@@ -24,10 +29,13 @@ import urllib.request
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "daemon"))
 from pioneertv import jellyfin, romm  # noqa: E402  (stdlib only)
+sys.path.insert(0, str(ROOT / "dev"))
+import mock  # noqa: E402
 ROUTES = {                      # URL prefix -> folder
     "/ext/": ROOT / "extension",
     "/static/": ROOT / "daemon" / "pioneertv" / "web",
     "/design/": ROOT / "design",
+    "/dev/": ROOT / "dev",
 }
 REDIRECTS = {
     "/launcher": "/ext/launcher/index.html?tv=1",
@@ -35,6 +43,7 @@ REDIRECTS = {
     "/spel": "/ext/launcher/spel.html?tv=1",
     "/musik": "/ext/launcher/musik.html?tv=1",
     "/film": "/ext/launcher/film.html?tv=1",
+    "/katalog": "/dev/katalog.html",
 }
 
 
@@ -67,6 +76,8 @@ INDEX = """<!doctype html><html lang="sv"><meta charset="utf-8">
 <h1>Pioneer TV – förhandsvisning</h1>
 <p>Sidorna läses direkt från repot. Spara en fil och ladda om.
 Piltangenter navigerar, Enter väljer, Escape stänger. Layouten är ritad för 1280×720.</p>
+<h2>Katalog</h2>
+<ul><li><a href="/katalog">Alla vyer</a>: varje skärm, meny, panel och notis i sina lägen, med låtsasdata</li></ul>
 <h2>Startsidan</h2>
 <ul>
   <li><a href="/launcher">Startsidan i TV-läge</a></li>
@@ -109,7 +120,41 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def send_mock(self, answer: tuple[int, str, bytes]) -> None:
+        status, ctype, body = answer
+        self.send_response(status)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        if self.command != "HEAD":
+            self.wfile.write(body)
+
+    def mocked(self) -> bool:
+        """Answered by the stand-ins (dev/mock.py) when no real server is set."""
+        path, _, query = self.path.partition("?")
+        jf = path.startswith("/jellyfin/") and not jellyfin_settings()[0]
+        rm = path.startswith("/romm/") and not romm_settings()[0]
+        api = path.startswith("/api/") and not (path == "/api/jellyfin" and jellyfin_settings()[0])
+        if not (jf or rm or api):
+            return False
+        err = mock.error_for(self.headers.get("Referer"))
+        if err and path == "/api/jellyfin":
+            return self.send_json(200, {"ok": False, "error": "no_key" if err[0] == 503 else "auth" if err[0] == 401 else "down"}) or True
+        if err and (jf or rm):
+            self.send_mock(err)
+            return True
+        if jf:
+            answer = mock.jellyfin(path[len("/jellyfin/"):], query, self.command)
+        elif rm:
+            answer = mock.romm(path[len("/romm/"):], query, self.command)
+        else:
+            answer = mock.daemon(path, query, self.command) or (404, "application/json", b'{"error": "not_found"}')
+        self.send_mock(answer)
+        return True
+
     def proxy(self) -> None:
+        if self.mocked():
+            return
         if self.path.startswith("/jellyfin/"):
             url, key, _ = jellyfin_settings()
             path, _, query = self.path[len("/jellyfin/"):].partition("?")
@@ -166,6 +211,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         return self.path.startswith(("/romm/", "/jellyfin/"))
 
     def do_POST(self):
+        if self.path.startswith("/api/") and self.mocked():
+            return
         self.proxy() if self.proxied() else self.send_error(405)
 
     do_PUT = do_DELETE = do_POST
@@ -177,6 +224,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         clean = self.path.split("?", 1)[0]
         if self.proxied():
             return self.proxy()
+        if clean.startswith("/api/") and self.mocked():
+            return
         if clean == "/api/jellyfin":
             return self.jellyfin_user()
         if clean in ("/", "/index.html"):

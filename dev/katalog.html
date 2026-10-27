@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pioneer TV – katalog över vyerna</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/ext/fonts/fonts.css">
+  <link rel="stylesheet" href="/ext/content/tokens.css">
+  <link rel="stylesheet" href="katalog.css">
+</head>
+<body>
+  <header class="head">
+    <h1>Pioneer TV · alla vyer</h1>
+    <p>Varje skärm, meny, panel och notis i systemet, i de lägen den kan stå i,
+      ritad med låtsasdata (dev/mock.py) i 1280×720 som på TV:n. Klicka på en vy
+      för att se den stor och styra den med tangentbordet: piltangenterna är
+      styrkorset, Enter är A, Escape är B, mellanslag är X.</p>
+    <nav class="toc" id="toc"></nav>
+  </header>
+  <main id="sections"></main>
+
+  <!-- One view, large and live. -->
+  <section class="big" id="big" hidden>
+    <div class="big-bar">
+      <button type="button" id="big-close">← Alla vyer</button>
+      <span class="big-title" id="big-title"></span>
+      <span class="big-note" id="big-note"></span>
+      <a id="big-open" target="_blank" rel="noopener">Öppna sidan i en egen flik</a>
+      <button type="button" id="big-again">Ladda om vyn</button>
+    </div>
+    <div class="big-stage" id="big-stage"></div>
+  </section>
+
+  <script src="katalog.js"></script>
+</body>
+</html>
