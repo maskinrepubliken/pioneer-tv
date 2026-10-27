@@ -1,7 +1,7 @@
 // Pioneer TV virtual pointer.
 //
-// There is no Wayland pointer on the box (Weston 14 aborts the moment a
-// client cursor reaches the hardware cursor plane, see README). The daemon
+// There is no Wayland pointer on the box (Weston, the display before labwc,
+// aborted the moment a client cursor reached the hardware cursor plane). The daemon
 // streams right-stick motion as "pointer" events instead, and this script
 // draws a paper arrow, moves it, and delivers hover, clicks and
 // edge-scrolling to whatever is under it. While the arrow is on screen A

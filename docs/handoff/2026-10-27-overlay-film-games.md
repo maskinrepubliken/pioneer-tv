@@ -89,8 +89,9 @@ in `/tmp`, and are gone):
   /run/systemd/transient/pioneer-tv-update.service" a few times after the
   unit has finished. Harmless as far as seen.
 - Spike packages still on the box: grim (used for screenshots). Weston is
-  still installed and disabled; the user has not yet said labwc may stay
-  for good.
+  removed from the repo (the user agreed labwc stays); the installer takes
+  it off the box at the next update. **No updates to the box until the
+  user says so** (asked on the 27th, while they use the TV).
 - From the 26th, still open: Musik's slow starts (moov atom at the end),
   locking Wi-Fi to 5 GHz (better not, now
   that the box may stand behind the sofa: 2.4 GHz reaches further).

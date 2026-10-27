@@ -203,8 +203,8 @@ def dos_bundle(path: Path) -> Path:
 
 
 def wayland_socket(runtime_dir: str) -> str:
-    """The compositor's socket in runtime_dir: labwc's is wayland-0, Weston's
-    was wayland-1. The newest, should a stale one be left behind."""
+    """The compositor's socket in runtime_dir (labwc's is wayland-0). The
+    newest, should a stale one be left behind."""
     socks = [p for p in Path(runtime_dir).glob("wayland-[0-9]*") if p.is_socket()]
     return max(socks, key=lambda p: p.stat().st_mtime).name if socks else "wayland-0"
 
@@ -690,7 +690,7 @@ history_list_enable = "false"
     # pauses and stays on screen, and the overlay draws the pause panel over
     # it. Nothing is written or restarted, so carrying on is instant; Spara
     # läge, Ladda läge and Starta om are RetroArch's own commands. Without the
-    # overlay (Weston, or the overlay down) Home pauses as before.
+    # overlay (should it be down) Home pauses as before.
     async def hold(self) -> None:
         if self.state != "running" or not (self.proc and self.proc.returncode is None):
             return

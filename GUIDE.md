@@ -228,8 +228,8 @@ itself: no menu, notices or logo, only the game. The design is in
   right step the TV's volume, A mutes) and Avsluta. Each is one of
   RetroArch's own commands (`PAUSE_TOGGLE`, `SAVE_STATE`, `LOAD_STATE`,
   `RESET`), so carrying on is instant; B or Guide carries on, holding B
-  quits. While the panel is open the pads drive it, not the game. Without
-  the overlay (on Weston, or with it down) Guide pauses the old way:
+  quits. While the panel is open the pads drive it, not the game. Should
+  the overlay be down, Guide pauses the old way:
   RetroArch takes a picture and quits, saving where the game was, the
   player page shows the panel over the picture, and everything but Avsluta
   starts RetroArch again, which takes a second or two. Holding Guide goes
@@ -476,15 +476,13 @@ game do nothing. `session.sh` sets the TV to 1280x720 with `wlr-randr`,
 starts the overlay and then Chromium; when Chromium exits the session ends,
 labwc with it, and systemd restarts the display.
 
-labwc replaced Weston in October because Weston has no way to draw one
+labwc replaced Weston in October 2026 because Weston has no way to draw one
 client over another, which the overlay needs. Chromium also plays cleaner on
 it: SVT1 at 720p dropped no frames after warming up, against about 4 % on
-Weston. Weston (`pioneer-tv-weston.service`) stays installed but switched
-off until labwc has proved itself; enabling it again and disabling
-`pioneer-tv-display` goes back, and the box then works as before without the
-overlay. Weston's two quirks no longer apply on labwc: the abort on the first
-mouse cursor ([The pointer](#the-pointer)) and its atomic modesetting, which
-failed on the Pi 4 and had to be switched off (`WESTON_DISABLE_ATOMIC=1`).
+Weston. Weston is gone: the installer moves a box still on it over to
+labwc and removes its unit, its config and its packages. (Its two quirks,
+an abort on the first mouse cursor and atomic modesetting that failed on
+the Pi 4, went with it.)
 
 To look at the screen from SSH, as `pi`:
 
@@ -514,8 +512,8 @@ of the time every key goes to the window below and the overlay is only seen.
 What the menu cannot do itself (home, back, reload, the keyboard, settings)
 it asks the page to do through the daemon. Opening the menu broadcasts
 `media: pause`, and the page pauses its video and audio; closing it resumes
-them. Without the overlay (on Weston, or with it down) the pages draw their
-own menu and toasts as before.
+them. Should the overlay be down, the pages draw their own menu and toasts
+as before.
 
 The login session gives every process the ambient capability
 `CAP_WAKE_ALARM`, and with it bubblewrap refuses to set up WebKit's sandbox
@@ -556,9 +554,9 @@ cursor theme (`system/blank-cursors.py`, every cursor name as one
 transparent pixel, in `/usr/share/icons/pioneer-tv-blank`) and labwc's
 environment names it, so nothing of the compositor's shows.
 
-Weston 14 aborted (an assertion in backend-drm/state-propose.c) the first time
-any client showed a mouse cursor, and none of Weston's switches avoided it. So
-the box has no pointer device at all, and still has none on labwc: the daemon streams right-stick motion to the extension, which draws its
+The box has no pointer device at all (Weston, the display before labwc,
+aborted the first time any client showed a mouse cursor): the daemon
+streams right-stick motion to the extension, which draws its
 own pointer (`cursor.js`), delivers hover and clicks to what is under it, and
 scrolls when pushed against the top or bottom edge. A clicks at the pointer
 for a few seconds after it last moved, and is the normal "select" otherwise.

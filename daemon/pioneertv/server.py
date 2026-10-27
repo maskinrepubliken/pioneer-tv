@@ -410,7 +410,7 @@ class Server:
                 return web.Response(text="\n".join(lines) or "(tom)", content_type="text/plain")
             except OSError as exc:
                 return web.Response(text=f"Ingen Chromium-logg: {exc}", content_type="text/plain")
-        if unit not in ("pioneer-tv-daemon", "pioneer-tv-display", "pioneer-tv-weston", "pioneer-tv-update", "bluetooth", "NetworkManager", "tailscaled"):
+        if unit not in ("pioneer-tv-daemon", "pioneer-tv-display", "pioneer-tv-update", "bluetooth", "NetworkManager", "tailscaled"):
             raise web.HTTPBadRequest(text="unknown unit")
         lines = max(10, min(int(request.query.get("lines", "120")), 1000))
         _, out = await sysinfo.run("journalctl", "-u", unit, "-n", str(lines), "--no-pager", "-o", "short-iso", timeout=10)

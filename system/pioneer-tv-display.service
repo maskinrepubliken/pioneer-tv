@@ -2,6 +2,7 @@
 Description=Pioneer TV display (labwc + Chromium + overlay)
 After=systemd-user-sessions.service plymouth-quit-wait.service pioneer-tv-daemon.service user@1000.service
 Wants=pioneer-tv-daemon.service user@1000.service
+# pioneer-tv-weston: the display before labwc, stopped on a box changing over.
 Conflicts=getty@tty1.service pioneer-tv-weston.service
 RequiresMountsFor=/run
 

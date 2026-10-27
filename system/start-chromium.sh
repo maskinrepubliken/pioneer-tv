@@ -1,7 +1,6 @@
 #!/bin/bash
 # Launches Chromium in kiosk mode with the Pioneer TV extension.
-# Started last by session.sh, labwc's session (weston.ini's autolaunch under
-# Weston). Edit /etc/pioneer-tv/chromium.env
+# Started last by session.sh, labwc's session. Edit /etc/pioneer-tv/chromium.env
 # to add flags or change the profile location.
 #
 # Built for a Raspberry Pi 4 (4 GB): Chromium composites and rasterises on the
@@ -47,7 +46,7 @@ EXTRA_FLAGS=${PIONEER_TV_CHROMIUM_FLAGS:-}
 
 LOG=${PIONEER_TV_CHROMIUM_LOG:-$HOME/.pioneer-tv/chromium.log}
 mkdir -p "$PROFILE" "$CACHE" "$(dirname "$LOG")"
-# Weston does not pass our output to the journal; keep the last run's log.
+# The last run's output in a file of its own (the Logs sheet and tail -f read it).
 exec > "$LOG" 2>&1
 
 # Chromium leaves a 4 MB metrics file in the profile per run and a crash dump

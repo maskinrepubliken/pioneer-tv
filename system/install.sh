@@ -27,7 +27,7 @@ echo "== board: $MODEL ($MODE)"
 # on every update that touches this script, and pulling a new Chromium (about
 # 170 MB) over the box's Wi-Fi made a one-line change take most of an hour.
 # Upgrades happen at night instead (pioneer-tv-upgrade.timer, upgrade.sh).
-REQUIRED="labwc wlr-randr mpv python3-gi gir1.2-gtk-4.0 gir1.2-webkit-6.0 gir1.2-gtk4layershell-1.0 weston seatd v4l-utils bluez python3 python3-evdev python3-aiohttp rsync git curl pipewire pipewire-pulse wireplumber pipewire-alsa fonts-noto-core"
+REQUIRED="labwc wlr-randr mpv python3-gi gir1.2-gtk-4.0 gir1.2-webkit-6.0 gir1.2-gtk4layershell-1.0 seatd v4l-utils bluez python3 python3-evdev python3-aiohttp rsync git curl pipewire pipewire-pulse wireplumber pipewire-alsa fonts-noto-core"
 missing_required() { for p in $REQUIRED; do dpkg -s "$p" >/dev/null 2>&1 || return 0; done; return 1; }
 
 echo "== preflight"
@@ -93,7 +93,7 @@ fi
 echo "== verify"
 # Sound too: in October a damaged module in libpipewire-0.3-modules made
 # PipeWire crash at every start, and the TV had picture but no sound.
-VERIFY="chromium chromium-common libwidevinecdm0 labwc libwlroots-0.20 weston libweston-14-0 libgbm1 mesa-libgallium libegl-mesa0 libegl1 libgles2 libdrm2 libwayland-client0 libwayland-server0 python3-aiohttp python3-evdev pipewire pipewire-bin pipewire-pulse libpipewire-0.3-0t64 libpipewire-0.3-modules libspa-0.2-modules wireplumber libwireplumber-0.5-0 libasound2t64 retroarch openssh-server openssh-sftp-server openssh-client"
+VERIFY="chromium chromium-common libwidevinecdm0 labwc libwlroots-0.20 libgbm1 mesa-libgallium libegl-mesa0 libegl1 libgles2 libdrm2 libwayland-client0 libwayland-server0 python3-aiohttp python3-evdev pipewire pipewire-bin pipewire-pulse libpipewire-0.3-0t64 libpipewire-0.3-modules libspa-0.2-modules wireplumber libwireplumber-0.5-0 libasound2t64 retroarch openssh-server openssh-sftp-server openssh-client"
 BROKEN=""
 for p in $VERIFY; do
   dpkg -s "$p" >/dev/null 2>&1 || continue
@@ -197,7 +197,6 @@ if ov and isinstance(ov.get("services"), list):
             print("  settings.json: Film & serier opens film.html")
 PYEOF
 
-sed "s/@MODE@/$MODE/" "$REPO/system/weston.ini" > "$HOME_DIR/.config/weston.ini"
 cat > /etc/pioneer-tv/board.env <<EOF
 # Written by install.sh; start-chromium.sh reads the window size from it.
 PIONEER_TV_WIDTH=${MODE%%x*}
@@ -213,7 +212,7 @@ cp "$REPO/system/wireplumber-pioneer-tv.conf" "$HOME_DIR/.config/wireplumber/wir
 # Chromium policies: no translate bubble, password prompts, notifications, sign-in.
 mkdir -p /etc/chromium/policies/managed
 cp "$REPO/system/chromium-policies.json" /etc/chromium/policies/managed/pioneer-tv.json
-cp "$REPO/system/pioneer-tv-daemon.service" "$REPO/system/pioneer-tv-display.service" "$REPO/system/pioneer-tv-weston.service" \
+cp "$REPO/system/pioneer-tv-daemon.service" "$REPO/system/pioneer-tv-display.service" \
    "$REPO/system/pioneer-tv-governor.service" \
    "$REPO/system/pioneer-tv-upgrade.service" "$REPO/system/pioneer-tv-upgrade.timer" \
    "$REPO/system/pioneer-tv-cores.service" /etc/systemd/system/
@@ -346,9 +345,19 @@ systemctl enable --now ssh 2>/dev/null || true
 systemctl disable hciuart 2>/dev/null || true   # legacy; fails on Bookworm's kernel-attached Bluetooth
 rfkill unblock bluetooth 2>/dev/null || true
 # The display is labwc (pioneer-tv-display.service), which lets the overlay
-# draw over games and video; Weston (pioneer-tv-weston.service) stays
-# installed, switched off, until labwc has proved itself.
-systemctl disable pioneer-tv-weston.service 2>/dev/null || true
+# draw over games and video. Weston, the display before it, is gone: a box
+# still on it changes over (starting labwc stops it: Conflicts=), and its
+# unit, its config and its packages are taken away.
+if systemctl is-active -q pioneer-tv-weston.service; then systemctl start pioneer-tv-display.service || true; fi
+if [ -f /etc/systemd/system/pioneer-tv-weston.service ]; then
+  systemctl disable --now pioneer-tv-weston.service 2>/dev/null || true
+  rm -f /etc/systemd/system/pioneer-tv-weston.service
+  systemctl daemon-reload
+fi
+rm -f "$HOME_DIR/.config/weston.ini"
+for p in weston libweston-14-0; do
+  if dpkg -s "$p" >/dev/null 2>&1; then apt-get purge -y "$p" || echo "warning: could not remove $p" >&2; fi
+done
 systemctl enable pioneer-tv-daemon.service pioneer-tv-display.service
 systemctl enable --now pioneer-tv-upgrade.timer
 # The user's service manager (and with it PipeWire) must be up before the display starts.
@@ -361,8 +370,6 @@ if systemctl --user --machine="$USER_NAME@.host" is-active pipewire >/dev/null 2
 fi
 # Pick up new code if the box is already running (no-op on first install).
 systemctl try-restart pioneer-tv-daemon.service pioneer-tv-display.service || true
-# A box still on Weston changes over now (starting labwc stops it: Conflicts=).
-if systemctl is-active -q pioneer-tv-weston.service; then systemctl start pioneer-tv-display.service || true; fi
 # RetroArch and the game cores: long (downloads and builds), so in the
 # background; it returns at once when they are already there.
 systemctl start --no-block pioneer-tv-cores.service || true

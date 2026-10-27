@@ -1,7 +1,6 @@
-/* Pioneer TV: no system cursor anywhere. Weston 14 aborts the first time a
-   client cursor lands on the hardware cursor plane (backend-drm/state-propose.c
-   assertion, see README), so no client may ever set one. The pointer still
-   exists; cursor.js draws it. Injected at document_start. */
+/* Pioneer TV: no system cursor anywhere; the box has no mouse, and the
+   pointer is cursor.js's own (Weston, the display before labwc, aborted the
+   first time a client set a cursor). Injected at document_start. */
 *, *::before, *::after { cursor: none !important; }
 
 /* No scrollbars anywhere: the d-pad and the pointer's edge scrolling move the

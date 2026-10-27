@@ -95,7 +95,7 @@
         note: 'Står kvar under RetroArchs fönster tills spelet täcker skärmen.' },
       { name: 'Pausmenyn utan overlay', url: `${L}spela.html?rom=101`, wait: 1500,
         setup: async ({ P }) => { P.bridge.emit('games', { state: 'running' }); await sleep(100); P.bridge.emit('games', { state: 'paused' }); },
-        note: 'Bara när overlayn inte kör (Weston). Bilden bakom är RetroArchs skärmdump.' },
+        note: 'Bara om overlayn inte kör. Bilden bakom är RetroArchs skärmdump.' },
       { name: 'Fel: spelet kunde inte startas', url: `${L}spela.html?rom=101`, wait: 1500,
         setup: ({ P }) => P.bridge.emit('games', { state: 'error', message: 'Spelet kunde inte startas: core not found' }) },
     ] },
