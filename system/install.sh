@@ -204,6 +204,8 @@ PIONEER_TV_WIDTH=${MODE%%x*}
 PIONEER_TV_HEIGHT=$(echo "$MODE" | sed 's/^[0-9]*x//; s/@.*//')
 EOF
 chown -R "$USER_NAME:$USER_NAME" "$HOME_DIR/.config"
+# labwc's pointer, invisible (system/labwc/environment names the theme).
+python3 "$REPO/system/blank-cursors.py" /usr/share/icons/pioneer-tv-blank
 cp "$REPO/system/99-pioneer-tv.rules" /etc/udev/rules.d/
 # Sound: PipeWire runs as the kiosk user; WirePlumber sends everything to HDMI.
 mkdir -p "$HOME_DIR/.config/wireplumber/wireplumber.conf.d"

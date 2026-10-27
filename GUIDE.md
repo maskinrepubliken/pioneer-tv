@@ -527,6 +527,12 @@ the overlay, and at `vcgencmd get_throttled`.
 
 ## The pointer
 
+labwc draws its own pointer, Adwaita's arrow, even with no mouse at all;
+it stood in the picture all the time. The installer writes an invisible
+cursor theme (`system/blank-cursors.py`, every cursor name as one
+transparent pixel, in `/usr/share/icons/pioneer-tv-blank`) and labwc's
+environment names it, so nothing of the compositor's shows.
+
 Weston 14 aborted (an assertion in backend-drm/state-propose.c) the first time
 any client showed a mouse cursor, and none of Weston's switches avoided it. So
 the box has no pointer device at all, and still has none on labwc: the daemon streams right-stick motion to the extension, which draws its

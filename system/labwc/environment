@@ -1,2 +1,8 @@
 # Pioneer TV: labwc's environment (pioneer-tv-display.service).
 XKB_DEFAULT_LAYOUT=se
+# No pointer on screen: the box has no mouse, but labwc drew Adwaita's arrow
+# in the middle of the picture all the same. An invisible cursor theme,
+# written by install.sh (system/blank-cursors.py); the extension draws its
+# own pointer.
+XCURSOR_THEME=pioneer-tv-blank
+XCURSOR_SIZE=24
