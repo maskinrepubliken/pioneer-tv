@@ -1,6 +1,6 @@
 // Pioneer TV: tells the top frame whether a video or audio plays in this
-// frame (a site's player is often in an iframe), so the screensaver never
-// comes over it (main.js passes it on to the daemon, idle.py). Every frame
+// frame (a site's player is often in an iframe), so the box never goes
+// home from under it (main.js passes it on to the daemon, idle.py). Every frame
 // but the top one, which looks for itself.
 (function () {
   if (window.top === window) return;

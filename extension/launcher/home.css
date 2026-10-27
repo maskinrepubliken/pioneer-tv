@@ -1,0 +1,21 @@
+/* Pioneer TV home: the Mandelbrot set over the whole screen, a line of the
+   Tao Te Ching on it, and black while the box rests. */
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--pioneertv-surface-ink); }
+.fractal { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
+
+/* The line: Fraunces' italic on a band of ink, so it reads over any colour
+   of the set. It moves to another place with each new line. */
+.tao {
+  position: fixed; margin: 0; max-width: 34vw; padding: 1.6vw 2vw 1.3vw;
+  background: var(--pioneertv-surface-ink); color: var(--pioneertv-on-dark);
+  border-radius: var(--pioneertv-radius-m);
+}
+.tao blockquote { margin: 0; font: italic 400 2vw/1.3 var(--pioneertv-font-prose); }
+.tao figcaption {
+  margin-top: 0.8vw; font: 0.85vw/1 var(--pioneertv-font-mono); letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--pioneertv-ochre);
+}
+
+/* Resting (the TV off): nothing drawn but black. */
+html.resting .fractal, html.resting .tao { display: none; }
+html.resting, html.resting body { background: #000; }

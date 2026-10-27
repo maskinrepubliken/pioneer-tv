@@ -41,7 +41,7 @@ what was learned on the way.
 | Right stick | Mouse pointer; click on the stick to left-click |
 | Start | Main menu (also: hold Y) |
 | Select | Status toast |
-| Guide / Home / PS / Xbox | Main menu, over whatever is on screen (press again to close it); in a game or a film, the pause panel instead. Hold: home (the clock) with the main menu open. Also wakes the TV and switches input when the pad connects |
+| Guide / Home / PS / Xbox | Main menu, over whatever is on screen (press again to close it); in a game or a film, the pause panel instead. Hold: home (the screensaver) with the main menu open. Also wakes the TV and switches input when the pad connects |
 
 In a film or an episode playing in mpv, A, B and X pause it and open its
 pause panel, left and right seek ten seconds, L1 and R1 a minute, and
@@ -56,11 +56,11 @@ The TV remote works too: keys the TV forwards over CEC are mapped in `[cec.remot
  gamepad ──evdev──▶ daemon ──uinput──▶ labwc ──▶ Chromium (kiosk, --load-extension)
                       │                   │          ├─ content scripts: spatial nav, keyboard, HUD
                       │                   │          ├─ background: single tab, home, dev shortcuts
-                      │◀── ws://127.0.0.1:8765/ws ───┤  home page: the clock
+                      │◀── ws://127.0.0.1:8765/ws ───┤  home page: the screensaver
                       │                   │             settings page: status, Wi-Fi, Bluetooth, services
                       │                   ├────▶ RetroArch (a game, started by the daemon)
                       │                   ├────▶ mpv (a film from Jellyfin, started by the daemon)
-                      │◀── ws ────────────┴────▶ overlay (WebKit, top layer): main menu, pause panels, toasts, screensaver
+                      │◀── ws ────────────┴────▶ overlay (WebKit, top layer): main menu, pause panels, toasts
                       └──cec-ctl──▶ /dev/cec0 ──▶ TV
 ```
 
@@ -175,20 +175,33 @@ Both behaviours are toggles on the TV page in settings. The daemon also polls
 the TV's power state every 30 seconds, because a set switched off with its own
 remote does not always announce it.
 
-Left alone, the box shows a screensaver after three minutes (ink, the
-time and the date, jumping to a new place once a minute so nothing burns
-in) and turns the TV off after ten, on any page you browse: the start
-page, Spel, Musik, Film & serier, settings, or a website. Never while
-something plays: a game in RetroArch or a film in mpv (paused or on its
-pause panel included), or a page whose video or audio plays, in any of its
-frames, or that is in game mode; the count starts again when it ends. The
-daemon decides (`daemon/pioneertv/idle.py`): it sees every button and the
-pointer, and the pages tell it what plays and when a real keyboard or
-mouse is used (`main.js`, `playing.js`). The overlay draws the screensaver
-over every window, a page only without the overlay. Any button takes it
-away and does nothing else; with the TV off the first button wakes it, as
-above. Both times are on the TV page in settings (`ui.screensaver_minutes`,
-`ui.tv_off_minutes`; 0 is never).
+Left alone, the box goes home, and home is the screensaver: the
+Mandelbrot set, generated without end (`launcher/mandelbrot.js`, on the GPU
+at a third of the screen's width and fifteen frames a second), zooming in
+on one place along the set's edge, out, and on to the next, in the design
+system's colours, with a line of the Tao Te Ching on it (`launcher/tao.js`,
+our own Swedish renderings) that changes, and moves, every three minutes.
+No clock, no date.
+
+- **Anywhere but home**, after ten minutes without a button, the box goes
+  home. A game held on its pause panel is quit on the way (its state is
+  saved, as Avsluta does) and a film held on its panel is stopped (its
+  position is saved); every menu in the overlay closes.
+- **At home**, after five minutes without a button (counted from the last
+  press or from arriving, whichever is later), the TV is turned off over
+  CEC and the home page rests: black, nothing drawn, nothing moving, until
+  a button wakes the TV. The TV turned off with its own remote does the same.
+- **Never while something plays**: a game running in RetroArch, a film
+  running in mpv, or a page whose video or audio plays, in any of its
+  frames, or that is in game mode; the count starts again when it ends. A
+  game or a film held on its pause panel is not playing.
+
+The daemon decides (`daemon/pioneertv/idle.py`): it sees every button and
+the pointer, the pages tell it what plays and when a real keyboard or mouse
+is used (`main.js`, `playing.js`), and the extension tells it which page is
+on screen (`loaded`). A press on the home page opens the main menu. Both
+times are on the TV page in settings (`ui.home_minutes`, `ui.tv_off_minutes`;
+0 is never).
 
 ## Games
 
@@ -508,7 +521,7 @@ wlr-randr --output HDMI-A-1 --off      # black until --on or the display restart
 layer (wlr-layer-shell, through gtk4-layer-shell), above every other window:
 Chromium, RetroArch and mpv. It shows the daemon's `/ext/overlay/index.html`
 (`extension/overlay/`), and it draws everything of the box's own over the
-picture: every menu, every toast and the screensaver. The pages draw none of
+picture: every menu and every toast. The pages draw none of
 them; a page's toast is sent to the daemon and on to the overlay
 (`content/hud.js`). A page that does not load (the daemon not up yet) is
 tried again every three seconds.
@@ -530,8 +543,9 @@ tried again every three seconds.
   panels of a game and a film are the same card. The d-pad moves to the
   nearest choice that way on screen, so tiles, buttons and lists are walked
   alike.
-- **The home page** (`launcher/index.html`) is only the clock the
-  screensaver draws (`overlay/clock.js`); a press there opens the main menu.
+- **The home page** (`launcher/index.html`) is the screensaver, the
+  Mandelbrot set ([The TV (HDMI-CEC)](#the-tv-hdmi-cec) above); a
+  press there opens the main menu.
 
 Who gets Home, Y and B is decided in the daemon (`daemon/pioneertv/overlay.py`):
 Home, toasts and the screensaver always go to the overlay; Y and B go to the

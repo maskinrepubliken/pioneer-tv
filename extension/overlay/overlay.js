@@ -1,5 +1,4 @@
-// Pioneer TV overlay page: every menu, every toast and the screensaver,
-// over every window.
+// Pioneer TV overlay page: every menu and every toast, over every window.
 //
 // Loaded by system/overlay.py, a WebKit view on labwc's top layer, from the
 // daemon (/ext/overlay/). It talks to the daemon over the WebSocket like the
@@ -53,15 +52,17 @@ window.PioneerTV = window.PioneerTV || {};
 
   // Home: the main menu, or away with it. Held, the page goes home and the
   // main menu opens over it; a press on the home page opens it too (open).
+  // Home the daemon sends after a while alone (quiet) closes everything.
   b.on('menu', (e) => (e && e.open ? (menu.isOpen() || menu.open(M.mainMenu.spec())) : menu.toggle()));
-  b.on('home', () => { if (!held) menu.open(M.mainMenu.spec()); });
+  b.on('home', (e) => {
+    if (e && e.quiet) { if (M.keyboard.isOpen()) M.keyboard.close(); menu.close(); }
+    else if (!held) menu.open(M.mainMenu.spec());
+  });
   // Y: away with the keyboard, else with the menu (as on the pages).
   b.on('keyboard', () => (M.keyboard.isOpen() ? M.keyboard.close() : menu.close()));
   b.on('escape', () => (M.keyboard.isOpen() ? M.keyboard.close() : menu.back()));
   // The page a choice opened has loaded: the menu waiting on it goes.
   b.on('loaded', () => { if (menu.punching) menu.close(); });
-  // Nothing of a menu stays under the screensaver.
-  b.on('saver', (e) => { if (e.show && !held) { if (M.keyboard.isOpen()) M.keyboard.close(); menu.close(); } });
 
   // The window has the keyboard while the menu or the keyboard is open, and
   // the daemon is told (it routes Y and B here then, and pauses what plays).
@@ -86,7 +87,7 @@ window.PioneerTV = window.PioneerTV || {};
   // Sök's keyboard over the menu: the menu has the pad again when it goes.
   b.on('keyboard:close', () => { if (menu.isOpen() && !M.nav.captured) M.nav.captured = menu; });
 
-  // The toasts, the screensaver and the pad's colours (overlay/hud.js).
+  // The toasts and the pad's colours (overlay/hud.js).
   M.hud.listen(b);
 
   // ------------------------------------------------------------ pause panels

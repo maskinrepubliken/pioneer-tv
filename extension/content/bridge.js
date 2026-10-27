@@ -13,7 +13,7 @@ window.PioneerTV = window.PioneerTV || {};
   // talk to the daemon over its WebSocket instead of through the extension.
   const LAUNCHER_EXT_URL = 'chrome-extension://dpigdefepjjejbkidlabpjlnleidgjaf/launcher/index.html';
   // The overlay (extension/overlay/, in its own WebKit over every window on
-  // labwc) draws every menu, toast and the screensaver; every other page is
+  // labwc) draws every menu and toast; every other page is
   // a page.
   // The daemon addresses some events to one or the other ("target").
   const role = location.pathname.startsWith('/ext/overlay/') ? 'overlay' : 'page';

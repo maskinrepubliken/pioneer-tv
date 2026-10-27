@@ -1,6 +1,5 @@
-/* Pioneer TV overlay: nothing of its own shows; what is drawn is the menus,
-   the toasts and the screensaver (content.css), over whatever window is
-   below. */
+/* Pioneer TV overlay: nothing of its own shows; what is drawn is the menus
+   and the toasts (toast.css), over whatever window is below. */
 html, body { margin: 0; height: 100%; background: transparent !important; overflow: hidden; }
 
 /* Sök types into this through the on-screen keyboard, which shows the text;

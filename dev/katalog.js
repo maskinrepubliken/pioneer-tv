@@ -34,13 +34,6 @@
     b.emit('state', b.state);
   }
 
-  // The screensaver, and a key takes it away as the daemon does on the box
-  // (there the press does nothing else).
-  const tryTheSaver = ({ P }) => {
-    P.bridge.emit('saver', { show: true });
-    // The spatial navigation hands every key to a captured layer first.
-    P.nav.captured = { onKeyDown() { P.nav.captured = null; P.bridge.emit('saver', { show: false }); } };
-  };
   // The main menu, and a submenu of it (by its label).
   const mainMenu = (P) => { daemonUp(P); P.hud.menu.open(P.mainMenu.spec()); };
   const submenu = (label) => ({ P }) => {
@@ -132,12 +125,6 @@
             audio: [{ id: 1, label: 'Engelska', selected: true }, { id: 2, label: 'Svenska · Kommentar' }],
             subtitles: [{ id: 1, label: 'Svenska' }, { id: 2, label: 'Engelska' }] }) },
       ] },
-    { part: 'Komponenter', group: 'Skärmsläckaren', files: 'overlay/clock.js · overlay/clock.css · overlay/hud.js (hud.saver) · daemon idle.py',
-      used: 'Alla bläddringsvyer efter en stund utan knapptryck, aldrig medan något spelas; ritad av overlayn. Samma klocka är hemsidan.',
-      items: [
-        { name: 'Skärmsläckaren', under: FILM, url: OVERLAY, setup: tryTheSaver,
-          note: 'Hoppar till ett nytt ställe varje minut. En knapp tar bort den (på TV:n tar daemonen emot knappen, och den gör inget annat).' },
-      ] },
     { part: 'Komponenter', group: 'Skärmtangentbordet', files: 'content/keyboard.js', used: 'Y på alla sidor, i sidans textfält; Sök i huvudmenyn (i overlayn).',
       items: [
         { name: 'På en sida', url: FILM, ready: '.film-card', setup: ({ P, doc }) => P.keyboard.open(doc.getElementById('search')) },
@@ -161,9 +148,16 @@
         { name: 'Tjänsten svarar inte (Jellyfin)', url: `${L}film.html?tv=1&mockerror=down`, ready: '.spel-message', note: 'Försöker igen två gånger först, några sekunder.' },
       ] },
 
-    { part: 'Sidor', group: 'Hem', files: 'launcher/index.html · launcher.js · overlay/clock.js', used: 'Håll Hem. Bara klockan; en knapp öppnar huvudmenyn.',
+    { part: 'Sidor', group: 'Hem', files: 'launcher/index.html · launcher.js · mandelbrot.js · tao.js · home.css · daemon idle.py',
+      used: 'Håll Hem; boxen går hit av sig själv efter 10 min utan knapptryck. Den är skärmsläckaren; en knapp öppnar huvudmenyn.',
       items: [
-        { name: 'Hem', url: HOME, ready: '.pioneertv-saver' },
+        { name: 'Mandelbrot och ett citat', url: HOME, ready: '#tao-text:not(:empty)',
+          note: 'Zoomar in mot en plats längs mängdens kant, ut och vidare. Nytt citat på ett nytt ställe var tredje minut.' },
+        { name: 'Djupt inne', url: HOME, ready: '#tao-text:not(:empty)',
+          setup: ({ P }) => P.home.fractal.jump(0.5),
+          note: 'Nära det djupaste av en zoom, där bredden är en tjugotusendel av början.' },
+        { name: 'Vilar (TV:n av)', url: HOME, ready: '#tao-text:not(:empty)', setup: ({ P }) => P.home.rest(true),
+          note: 'Efter 5 min hemma utan knapptryck stängs TV:n av; sidan ritar inget, svart, tills TV:n är på igen.' },
       ] },
     { part: 'Sidor', group: 'Spel', files: 'launcher/spel.html · spel.js · spel.css · romm.js', used: 'Rutan Spel.',
       items: [

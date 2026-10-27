@@ -1,6 +1,5 @@
-// Pioneer TV HUD, the overlay's part: every toast, every menu and the
-// screensaver, drawn over whatever window is below (Chromium, RetroArch,
-// mpv). The pages send their toasts here (content/hud.js).
+// Pioneer TV HUD, the overlay's part: every toast and every menu, drawn
+// over whatever window is below (Chromium, RetroArch, mpv). The pages send their toasts here (content/hud.js).
 //
 // The menu is one panel with a stack: the main menu (overlay/main-menu.js),
 // its submenus (Live, Sök, Inställningar) and the pause panels of a game or
@@ -238,30 +237,11 @@ window.PioneerTV = window.PioneerTV || {};
     },
   };
 
-  // ------------------------------------------------------------ screensaver
-  // The daemon decides when (idle.py) and takes it away at the next button.
-  hud.saver = {
-    clock: null,
-    isOpen() { return !!(this.clock && this.clock.root.isConnected); },
-    show() {
-      if (this.isOpen()) return;
-      this.clock = M.clock(new URL('../launcher/ordbild-en-rad-papper.svg', location.href).href);
-      M.bridge.mount(this.clock.root);
-    },
-    hide() {
-      if (!this.clock) return;
-      this.clock.stop();
-      M.bridge.unmount(this.clock.root);
-      this.clock = null;
-    },
-  };
-
   // ------------------------------------------------------------ the daemon's notes
   // Toasts from the daemon and the pages, a pad or a keyboard coming and
-  // going, the volume, the screensaver and the pad's colours.
+  // going, the volume and the pad's colours.
   hud.listen = function (b) {
     b.on('toast', (e) => hud.toast(e.text, e.icon || '', e.ms || 1800));
-    b.on('saver', (e) => (e.show ? hud.saver.show() : hud.saver.hide()));
     b.on('gamepad', (e) => hud.toast(`${e.label || 'Handkontroll'} ${e.connected ? 'ansluten' : 'frånkopplad'}`, 'gamepad'));
     b.on('keyboard_present', (e) => hud.toast(e.present ? 'Tangentbord anslutet' : 'Tangentbord frånkopplat', 'keyboard'));
     // Off by default: the TV draws its own volume bar (Settings → TV).

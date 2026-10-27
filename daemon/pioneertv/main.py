@@ -39,7 +39,7 @@ async def amain(cfg: dict) -> None:
             idle.tv_on()
         if msg.get("name") == "tv" and msg.get("power") == "standby" and cfg["cec"].get("home_on_standby", True):
             log.info("TV went to standby: back to the launcher")
-            await emit({"type": "event", "name": "home"})
+            await emit({"type": "event", "name": "home", "quiet": True})
 
     vinput = VirtualInput(with_mouse=cfg["mouse"].get("mode", "virtual") == "uinput")
     cec = Cec(cfg, on_cec_event)
@@ -227,9 +227,26 @@ async def amain(cfg: dict) -> None:
     server.hooks["video"] = video
     await video.reap_strays()
 
-    # The screensaver and the TV off when left alone (idle.py).
-    idle = Idle(cfg, emit, tv_off=lambda: dispatcher.cec_command("tv_off"),
-                busy=lambda: games.state != "idle" or video.state != "idle")
+    # Left alone: home, then the TV off (idle.py). A game or a film held on
+    # its pause panel is not playing; left there, it is put away first.
+    def playing() -> bool:
+        game = games.state in ("loading", "running", "quitting")
+        film = video.state in ("starting", "running", "stopping") and not video.held and not video.menu_paused
+        return game or film
+
+    async def put_away() -> bool:
+        """Quit a held game (state saved) and stop a held film (position saved)."""
+        did = False
+        if games.state == "held":
+            await games.quit()
+            did = True
+        if video.state != "idle":
+            await video.stop()
+            did = True
+        return did
+
+    idle = Idle(cfg, emit, tv_off=lambda: dispatcher.cec_command("tv_off"), busy=playing,
+                at_home=lambda: "/launcher/index.html" in (server.current_url or ""), put_away=put_away)
     server.hooks["idle"] = idle
     dispatcher.on_input = idle.input
     mouse.on_move = idle.input

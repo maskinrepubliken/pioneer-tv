@@ -10,10 +10,15 @@
   <link rel="stylesheet" href="../content/cursor.css">
   <link rel="stylesheet" href="../content/paper.css">
   <link rel="stylesheet" href="../content/content.css">
-  <link rel="stylesheet" href="../overlay/clock.css">
-  <style>html, body { margin: 0; height: 100%; overflow: hidden; background: var(--pioneertv-surface-ink); }</style>
+  <link rel="stylesheet" href="home.css">
 </head>
 <body>
+  <canvas class="fractal" id="fractal" aria-hidden="true"></canvas>
+  <figure class="tao" id="tao">
+    <blockquote id="tao-text"></blockquote>
+    <figcaption id="tao-where"></figcaption>
+  </figure>
+
   <script src="../content/icons.js"></script>
   <script src="../content/bridge.js"></script>
   <script src="../content/spatial-nav.js"></script>
@@ -25,7 +30,8 @@
   <script src="../content/bigscreen.js"></script>
   <script src="../content/game.js"></script>
   <script src="../content/main.js"></script>
-  <script src="../overlay/clock.js"></script>
+  <script src="mandelbrot.js"></script>
+  <script src="tao.js"></script>
   <script src="launcher.js"></script>
 </body>
 </html>

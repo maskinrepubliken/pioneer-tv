@@ -2,7 +2,7 @@
 // draws it), a sheet over nearly the whole screen: the services as big
 // tiles, Live (a submenu), and at the top Tillbaka, Ladda om, Tangentbord,
 // Sök, Inställningar (a submenu) and the TV's off button. The home page
-// itself is only the clock (launcher/index.html).
+// itself is the screensaver: the Mandelbrot set (launcher/index.html).
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const b = M.bridge;

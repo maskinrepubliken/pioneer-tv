@@ -1,8 +1,8 @@
 """Who gets which events: the overlay or the page.
 
 The overlay (system/overlay.py, a WebKit page on labwc's top layer) draws
-every menu (the main menu, the pause panels), every toast and the
-screensaver, over any window: Chromium, RetroArch or mpv. The pages draw
+every menu (the main menu, the pause panels) and every toast, over any
+window: Chromium, RetroArch or mpv. The pages draw
 none of them; a page's toast is sent here and goes on to the overlay.
 
 Events the daemon broadcasts get a "target" ("overlay" or "page") here;
@@ -20,7 +20,7 @@ log = logging.getLogger("pioneertv.overlay")
 # Pad buttons whose meaning depends on whether the overlay's menu is open.
 ROUTED = ("keyboard", "escape")
 # Always the overlay's.
-OVERLAY = ("menu", "toast", "saver")
+OVERLAY = ("menu", "toast")
 # What the overlay may ask the page (through the extension) to do, and what
 # a page may ask of the overlay (a press on the home page opens the menu).
 RELAYS = ("home", "back", "reload", "settings", "keyboard", "navigate")

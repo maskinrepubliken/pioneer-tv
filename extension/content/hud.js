@@ -1,5 +1,5 @@
-// Pioneer TV HUD, the pages' part: a page draws no toast, menu or
-// screensaver of its own. Those are the overlay's (overlay/hud.js, over every
+// Pioneer TV HUD, the pages' part: a page draws no toast or menu of its
+// own. Those are the overlay's (overlay/hud.js, over every
 // window); a page's toast is sent there through the daemon. What stays here
 // is the pad's colours, which a page's own focus ring wears.
 window.PioneerTV = window.PioneerTV || {};

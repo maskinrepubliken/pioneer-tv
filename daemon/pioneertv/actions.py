@@ -42,9 +42,8 @@ class Dispatcher:
         self._swallowed: set[int] = set()
         self._last_input = 0.0
         self._wake_until = 0.0
-        # Someone pressed something: the screensaver's count starts again
-        # (idle.py). True when the screensaver was up and the press only
-        # takes it away.
+        # Someone pressed something: the count to home and to the TV off
+        # starts again (idle.py). True would swallow the press.
         self.on_input: Callable[[], bool] | None = None
         # While a game runs in RetroArch (games.py), its handler gets
         # the box's own buttons (menu, home) first; True means it took them.
@@ -84,7 +83,7 @@ class Dispatcher:
         idle, self._last_input = now - self._last_input, now
         await self._refresh_tv_power(idle)
         self._pressed_at[aid] = time.monotonic()
-        saver_was_up = bool(self.on_input and self.on_input())
+        swallow = bool(self.on_input and self.on_input())
         # With the TV off, the first button press only turns it back on: what
         # it would otherwise do happens on a screen nobody can see. The presses
         # that follow while the picture comes up are dropped for the same reason.
@@ -99,8 +98,7 @@ class Dispatcher:
             else:
                 log.debug("TV is still waking: dropped %s", action)
             return
-        if saver_was_up and "cec" not in action:
-            # The press that takes the screensaver away does nothing else.
+        if swallow and "cec" not in action:
             self._swallowed.add(aid)
             return
         if "long" in action:

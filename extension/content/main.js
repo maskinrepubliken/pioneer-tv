@@ -14,7 +14,7 @@
   M.game.init();
 
   const b = M.bridge;
-  // Y: the keyboard. The menus, the toasts and the screensaver are the
+  // Y: the keyboard. The menus and the toasts are the
   // overlay's (overlay/), never the page's: Home goes there.
   b.on('keyboard', () => M.keyboard.toggle());
   b.on('logs', () => M.logs.toggle());
@@ -34,6 +34,14 @@
   b.on('keyboard_present', (e) => { b.state.physicalKeyboard = !!e.present; });
 
   b.on('state', (s) => document.documentElement.classList.toggle('pioneertv-tv', !!s.tvMode));
+  // Which page is on screen, said once the daemon is there (the extension
+  // says it at every load, but not to a daemon that was not up yet): at
+  // home, being left alone turns the TV off (idle.py).
+  let told = false;
+  b.on('state', (s) => {
+    if (s.daemonConnected && !told) b.daemon({ type: 'loaded', url: location.href });
+    told = s.daemonConnected;
+  });
 
   // The overlay's menu pauses what plays here, and carries it on when
   // it closes: only what it paused, so a video paused before stays paused.
