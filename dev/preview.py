@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """Local preview of the Pioneer TV screens, no Pi needed.
 
-    python3 dev/preview.py [port]      # default 5178
+    python3 dev/preview.py [port] [address]      # default 5178, 127.0.0.1
+
+An address of another interface shares it, e.g. a Tailscale address so the
+catalogue can be opened from other devices on the tailnet (it serves the
+stand-in data only, never a key).
 
 Serves the repo the way the box does: the extension at /ext/, the settings
 page's own files at /static/, the settings page itself at /settings (with its
@@ -253,6 +257,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 5178
-    server = http.server.ThreadingHTTPServer(("127.0.0.1", port), Handler)
-    print(f"Pioneer TV preview on http://localhost:{port}/", flush=True)
+    host = sys.argv[2] if len(sys.argv) > 2 else "127.0.0.1"
+    server = http.server.ThreadingHTTPServer((host, port), Handler)
+    print(f"Pioneer TV preview on http://{host}:{port}/", flush=True)
     server.serve_forever()
