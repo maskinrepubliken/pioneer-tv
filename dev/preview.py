@@ -65,9 +65,9 @@ def newest() -> dict:
 REDIRECTS = {
     "/launcher": "/ext/launcher/index.html?tv=1",
     "/settings": "/static/settings.html?mock=1",
-    "/spel": "/ext/launcher/spel.html?tv=1",
-    "/musik": "/ext/launcher/musik.html?tv=1",
-    "/film": "/ext/launcher/film.html?tv=1",
+    "/spel": "/ext/launcher/browse.html?library=spel&tv=1",
+    "/musik": "/ext/launcher/browse.html?library=musik&tv=1",
+    "/film": "/ext/launcher/browse.html?library=film&tv=1",
     "/katalog": "/dev/katalog.html",
 }
 

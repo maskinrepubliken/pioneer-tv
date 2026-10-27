@@ -51,7 +51,12 @@
   // selector to wait for), setup (puts the page in its state), note, zoom.
   const OVERLAY = '/ext/overlay/index.html';
   const HOME = `${L}index.html?tv=1`;
-  const FILM = `${L}film.html?tv=1`;
+  const SPEL = `${L}browse.html?library=spel&tv=1`;
+  const MUSIK = `${L}browse.html?library=musik&tv=1`;
+  const FILM = `${L}browse.html?library=film&tv=1`;
+  const GAME = `${L}game.html?rom=101`;
+  // A song playing, muted (the catalogue makes no sound).
+  const playSong = async ({ doc }) => { doc.querySelector('.row').click(); doc.getElementById('audio').muted = true; await sleep(500); };
   const GAME_PICTURE = '/romm/assets/cover/101.svg';
   const FILM_PICTURE = '/jellyfin/Items/serie1-s1e3/Images/Primary?tag=p';
   const LONG = 600000;
@@ -127,42 +132,52 @@
       ] },
     { part: 'Komponenter', group: 'Skärmtangentbordet', files: 'content/keyboard.js', used: 'Y på alla sidor, i sidans textfält; Sök i huvudmenyn (i overlayn).',
       items: [
-        { name: 'På en sida', url: FILM, ready: '.film-card', setup: ({ P, doc }) => P.keyboard.open(doc.getElementById('search')) },
+        { name: 'På en sida', url: FILM, ready: '.card', setup: ({ P, doc }) => P.keyboard.open(doc.getElementById('search')) },
       ] },
     { part: 'Komponenter', group: 'Loggar', files: 'content/logs.js', used: 'Inställningar → System.',
       items: [
-        { name: 'Loggar', url: FILM, ready: '.film-card', setup: ({ P }) => P.logs.open(0) },
+        { name: 'Loggar', url: FILM, ready: '.card', setup: ({ P }) => P.logs.open(0) },
       ] },
     { part: 'Komponenter', group: 'Pekaren', files: 'content/cursor.js', used: 'Högra spaken, på alla sidor.',
       items: [
-        { name: 'Pekaren på en sida', url: FILM, ready: '.film-card',
+        { name: 'Pekaren på en sida', url: FILM, ready: '.card',
           setup: ({ P }) => { for (let i = 0; i < 12; i++) P.bridge.emit('pointer', { dx: 14, dy: 7 }); } },
       ] },
-    { part: 'Komponenter', group: 'Sidornas meddelanden', files: 'launcher/views.js (M.views) · launcher/spel.css (.spel-message)',
-      used: 'Spel, Musik och Film & serier: samma ord och samma ruta för alla.',
+    { part: 'Komponenter', group: 'Vyns meddelanden', files: 'launcher/shared/views.js (M.views) · launcher/shared/base.css (.view-message)',
+      used: 'Bläddringssidan, för alla bibliotek: samma ord och samma ruta, för RomM och Jellyfin.',
       items: [
-        { name: 'Laddar…', url: `${L}spel.html?tv=1`, ready: '.spel-card', setup: ({ doc, P }) => P.views.loading(doc.getElementById('view')),
-          note: 'Visas tills tjänsten svarat.' },
-        { name: 'Ingen API-nyckel (RomM)', url: `${L}spel.html?tv=1&mockerror=no_key`, ready: '.spel-message' },
-        { name: 'Nyckeln godtas inte (Jellyfin)', url: `${L}musik.html?tv=1&mockerror=auth`, ready: '.spel-message' },
-        { name: 'Tjänsten svarar inte (Jellyfin)', url: `${L}film.html?tv=1&mockerror=down`, ready: '.spel-message', note: 'Försöker igen två gånger först, några sekunder.' },
+        { name: 'Laddar…', url: SPEL, ready: '.card', setup: ({ doc, P }) => P.views.loading(doc.getElementById('view')),
+          note: 'Visas tills källan svarat.' },
+        { name: 'Ingen API-nyckel (RomM)', url: `${SPEL}&mockerror=no_key`, ready: '.view-message' },
+        { name: 'Nyckeln godtas inte (Jellyfin)', url: `${MUSIK}&mockerror=auth`, ready: '.view-message' },
+        { name: 'Källan svarar inte (Jellyfin)', url: `${FILM}&mockerror=down`, ready: '.view-message', note: 'Försöker igen två gånger först, några sekunder.' },
       ] },
-
-    { part: 'Komponenter', group: 'Helskärmsmeddelande', files: 'launcher/screen.js (M.screen) · launcher/screen.css (.pioneertv-screen)',
-      used: 'Allt som tar hela skärmen för en mening: spelet på väg (spela.js), filmen (film.js) och hem när boxen vilar (launcher.js). Samma design överallt.',
+    { part: 'Komponenter', group: 'Helskärmsmeddelande', files: 'launcher/shared/screen.js (M.screen) · launcher/shared/screen.css (.pioneertv-screen)',
+      used: 'Allt som tar hela skärmen för en mening: spelet på väg (game/game.js), filmen (players/video.js) och hem när boxen vilar (home/home.js). Samma design överallt.',
       items: [
-        { name: 'Spelet laddas', url: `${L}spela.html?rom=101`, ready: '.pioneertv-screen',
+        { name: 'Spelet laddas', url: GAME, ready: '.pioneertv-screen',
           setup: ({ P }) => P.bridge.emit('games', { state: 'loading', got: 12.4e6, total: 31.5e6 }) },
-        { name: 'Filmen startar', url: `${L}film.html?tv=1#/item/film1`, ready: '.knapp.primar',
-          setup: ({ P }) => { P.film.player.state = 'starting'; P.film.player.show('Startar…', 'Fyren'); } },
-        { name: 'Filmen är slut', url: `${L}film.html?tv=1#/item/film1`, ready: '.knapp.primar',
-          setup: ({ P }) => { P.film.player.state = 'running'; P.bridge.emit('video', { state: 'ended' }); } },
-        { name: 'Något gick fel', url: `${L}spela.html?rom=101`, ready: '.pioneertv-screen',
+        { name: 'Spelet startar', url: GAME, ready: '.pioneertv-screen', setup: ({ P }) => P.bridge.emit('games', { state: 'running' }),
+          note: 'Står kvar under RetroArchs fönster tills spelet täcker skärmen.' },
+        { name: 'Filmen startar', url: `${FILM}#/item/film1`, ready: '.knapp.primar',
+          setup: ({ P }) => { P.players.video.state = 'starting'; P.players.video.show('Startar…', 'Fyren'); }, note: 'Står kvar under mpv:s fönster tills filmen täcker skärmen.' },
+        { name: 'Filmen är slut', url: `${FILM}#/item/film1`, ready: '.knapp.primar',
+          setup: ({ P }) => { P.players.video.state = 'running'; P.bridge.emit('video', { state: 'ended' }); } },
+        { name: 'Spelet kunde inte startas', url: GAME, ready: '.pioneertv-screen',
           setup: ({ P }) => P.bridge.emit('games', { state: 'error', message: 'Spelet kunde inte startas: core not found' }) },
+        { name: 'Videon kunde inte spelas', url: `${FILM}#/item/film1`, ready: '.knapp.primar',
+          setup: ({ P }) => P.players.video.failed('Videon kunde inte spelas') },
         { name: 'Vilar', url: HOME, ready: '#tao-text:not(:empty)', setup: ({ P }) => P.home.rest(true) },
       ] },
+    { part: 'Komponenter', group: 'Spelas nu', files: 'launcher/players/audio.js · launcher/players/audio.css',
+      used: 'Musik: en låt spelar i sidan; Spelas nu täcker den, och i rubriken medan man bläddrar.',
+      items: [
+        { name: 'Spelas nu', url: `${MUSIK}#/album/album1`, ready: '.row', setup: playSong },
+        { name: 'I rubriken medan man bläddrar', url: `${MUSIK}#/album/album1`, ready: '.row',
+          setup: async (ctx) => { await playSong(ctx); ctx.P.players.audio.nowPlaying.close(); } },
+      ] },
 
-    { part: 'Sidor', group: 'Hem', files: 'launcher/index.html · launcher.js · mandelbrot.js · tao.js · home.css · daemon idle.py',
+    { part: 'Sidor', group: 'Hem', files: 'launcher/index.html · home/home.js · home/mandelbrot.js · home/tao.js · home/home.css · daemon idle.py',
       used: 'Håll Hem; boxen går hit av sig själv efter 10 min utan knapptryck. Den är skärmsläckaren; en knapp öppnar huvudmenyn.',
       items: [
         { name: 'Mandelbrot och ett citat', url: HOME, ready: '#tao-text:not(:empty)',
@@ -173,56 +188,43 @@
         { name: 'Vilar (TV:n av)', url: HOME, ready: '#tao-text:not(:empty)', setup: ({ P }) => P.home.rest(true),
           note: 'Efter 5 min hemma utan knapptryck stängs TV:n av; elden slocknar och ett helskärmsmeddelande säger Vilar, stilla, tills TV:n är på igen.' },
       ] },
-    { part: 'Sidor', group: 'Spel', files: 'launcher/spel.html · spel.js · spel.css · romm.js', used: 'Rutan Spel.',
+    { part: 'Sidor', group: 'Bläddra: hylla', files: 'launcher/browse.html · browse/page.js · browse/shelf.js · browse/cards.js · libraries/*.js',
+      used: 'Ett biblioteks början, en artist, ett filmbibliotek, en mapp, sök: sektioner med rader, rutnät och kort, för alla bibliotek.',
       items: [
-        { name: 'Start: senast spelade, konsoler, samlingar', url: `${L}spel.html?tv=1`, ready: '.spel-card' },
-        { name: 'En konsol', url: `${L}spel.html?tv=1#/platform/1`, ready: '.spel-card--grid' },
-        { name: 'En samling', url: `${L}spel.html?tv=1#/collection/own/1`, ready: '.spel-card--grid' },
-        { name: 'Sök', url: `${L}spel.html?tv=1#/search/mario`, ready: '.spel-card' },
+        { name: 'Spel: senast spelade, konsoler, samlingar', url: SPEL, ready: '.card' },
+        { name: 'Musik: blanda allt, album, artister, spellistor', url: MUSIK, ready: '.card' },
+        { name: 'Musik: en artist', url: `${MUSIK}#/artist/artist2`, ready: '.card' },
+        { name: 'Musik: sök', url: `${MUSIK}#/search/kom`, ready: '.card, .row' },
+        { name: 'Film: fortsätt titta och alla filmer', url: FILM, ready: '.card' },
+        { name: 'Film: serier', url: `${FILM}#/lib/lib-serier`, ready: '.card' },
+        { name: 'Film: hemvideor, mappar och klipp', url: `${FILM}#/lib/lib-hem`, ready: '.card' },
+        { name: 'Film: en mapp', url: `${FILM}#/folder/mapp1`, ready: '.card' },
+        { name: 'Film: sök', url: `${FILM}#/search/s`, ready: '.card' },
       ] },
-    { part: 'Sidor', group: 'Spela ett spel', files: 'launcher/spela.html · spela.js · spela.css', used: 'Innan RetroArchs fönster täcker skärmen.',
+    { part: 'Sidor', group: 'Bläddra: rutnät', files: 'launcher/browse.html · browse/grid.js · browse/cards.js · libraries/*.js',
+      used: 'Långa samlingar: bara raderna runt fokus i sidan, L1/R1 hoppar en bokstav, sökfältet filtrerar. Infopanelen när biblioteket har en.',
       items: [
-        { name: 'Laddar (innan spelet hämtats)', url: `${L}spela.html?rom=101`, ready: '.pioneertv-screen' },
-        { name: 'Laddar, med megabyte', url: `${L}spela.html?rom=101`, ready: '.pioneertv-screen',
-          setup: ({ P }) => P.bridge.emit('games', { state: 'loading', got: 12.4e6, total: 31.5e6 }) },
-        { name: 'Startar', url: `${L}spela.html?rom=101`, ready: '.pioneertv-screen', setup: ({ P }) => P.bridge.emit('games', { state: 'running' }),
-          note: 'Står kvar under RetroArchs fönster tills spelet täcker skärmen.' },
-        { name: 'Fel: spelet kunde inte startas', url: `${L}spela.html?rom=101`, ready: '.pioneertv-screen',
-          setup: ({ P }) => P.bridge.emit('games', { state: 'error', message: 'Spelet kunde inte startas: core not found' }) },
+        { name: 'Spel: en konsol', url: `${SPEL}#/platform/1`, ready: '.grid .card' },
+        { name: 'Spel: en samling', url: `${SPEL}#/collection/own/1`, ready: '.grid .card' },
+        { name: 'Spel: sök', url: `${SPEL}#/search/mario`, ready: '.grid .card' },
+        { name: 'Musik: album', url: `${MUSIK}#/albums`, ready: '.grid .card' },
+        { name: 'Musik: artister', url: `${MUSIK}#/artists`, ready: '.grid .card' },
       ] },
-    { part: 'Sidor', group: 'Musik', files: 'launcher/musik.html · musik.js · musik.css · jellyfin.js', used: 'Rutan Musik.',
+    { part: 'Sidor', group: 'Bläddra: detalj', files: 'launcher/browse.html · browse/detail.js · browse/cards.js · libraries/*.js',
+      used: 'En sak: bilden till vänster, namn, text, knappar, val, flikar och en lista bredvid.',
       items: [
-        { name: 'Start: blanda allt, album, artister, spellistor', url: `${L}musik.html?tv=1`, ready: '.musik-card' },
-        { name: 'Album', url: `${L}musik.html?tv=1#/albums`, ready: '.musik-card' },
-        { name: 'Artister', url: `${L}musik.html?tv=1#/artists`, ready: '.musik-card' },
-        { name: 'Ett album', url: `${L}musik.html?tv=1#/album/album1`, ready: '.musik-song' },
-        { name: 'En spellista', url: `${L}musik.html?tv=1#/playlist/lista1`, ready: '.musik-song' },
-        { name: 'En artist', url: `${L}musik.html?tv=1#/artist/artist2`, ready: '.musik-card' },
-        { name: 'Sök', url: `${L}musik.html?tv=1#/search/kom`, ready: '.musik-card, .musik-song' },
-        { name: 'Spelas nu', url: `${L}musik.html?tv=1#/album/album1`, ready: '.musik-song',
-          setup: async ({ doc }) => { doc.getElementById('audio').muted = true; doc.querySelector('.musik-song').click(); await sleep(600); } },
-        { name: 'Spelas nu, i rubriken medan man bläddrar', url: `${L}musik.html?tv=1#/album/album1`, ready: '.musik-song',
-          setup: async ({ doc, P }) => { doc.getElementById('audio').muted = true; doc.querySelector('.musik-song').click(); await sleep(400); P.musik.np.close(); } },
+        { name: 'Film: en film', url: `${FILM}#/item/film1`, ready: '.knapp.primar' },
+        { name: 'Film: ett avsnitt, påbörjat', url: `${FILM}#/item/serie1-s1e3`, ready: '.knapp.primar' },
+        { name: 'Film: ett klipp (inga undertexter)', url: `${FILM}#/item/klipp1`, ready: '.knapp.primar' },
+        { name: 'Film: en serie, säsonger och avsnitt', url: `${FILM}#/series/serie1`, ready: '.row' },
+        { name: 'Musik: ett album', url: `${MUSIK}#/album/album1`, ready: '.row' },
+        { name: 'Musik: en spellista', url: `${MUSIK}#/playlist/lista1`, ready: '.row' },
       ] },
-    { part: 'Sidor', group: 'Film & serier', files: 'launcher/film.html · film.js · film.css · jellyfin.js', used: 'Rutan Film & serier.',
+    { part: 'Sidor', group: 'Spela ett spel', files: 'launcher/game.html · game/game.js · game/game.css', used: 'Innan RetroArchs fönster täcker skärmen.',
       items: [
-        { name: 'Filmer: fortsätt titta och alla filmer', url: `${L}film.html?tv=1`, ready: '.film-card' },
-        { name: 'Serier', url: `${L}film.html?tv=1#/lib/lib-serier`, ready: '.film-card' },
-        { name: 'Hemvideor: mappar och klipp', url: `${L}film.html?tv=1#/lib/lib-hem`, ready: '.film-card' },
-        { name: 'En mapp', url: `${L}film.html?tv=1#/folder/mapp1`, ready: '.film-card' },
-        { name: 'En serie: säsonger och avsnitt', url: `${L}film.html?tv=1#/series/serie1`, ready: '.film-episode' },
-        { name: 'En film', url: `${L}film.html?tv=1#/item/film1`, ready: '.knapp.primar' },
-        { name: 'Ett avsnitt, påbörjat', url: `${L}film.html?tv=1#/item/serie1-s1e3`, ready: '.knapp.primar' },
-        { name: 'Ett klipp (inga undertexter)', url: `${L}film.html?tv=1#/item/klipp1`, ready: '.knapp.primar' },
-        { name: 'Sök', url: `${L}film.html?tv=1#/search/s`, ready: '.film-card' },
-        { name: 'Startar (innan mpv täcker)', url: `${L}film.html?tv=1#/item/film1`, ready: '.knapp.primar',
-          setup: ({ P }) => { P.film.player.state = 'starting'; P.film.player.show('Startar…', 'Fyren'); } },
-        { name: 'Slut', url: `${L}film.html?tv=1#/item/film1`, ready: '.knapp.primar',
-          setup: ({ P }) => { P.film.player.state = 'running'; P.bridge.emit('video', { state: 'ended' }); } },
-        { name: 'Fel: videon kunde inte spelas', url: `${L}film.html?tv=1#/item/film1`, ready: '.knapp.primar',
-          setup: ({ P }) => { P.film.player.state = 'starting'; P.bridge.emit('video', { state: 'error', message: 'Videon kunde inte spelas' }); } },
+        { name: 'Laddar (innan spelet hämtats)', url: GAME, ready: '.pioneertv-screen' },
       ] },
-    { part: 'Sidor', group: 'Radio', files: 'launcher/radio.html · radio.js', used: 'Huvudmenyn → Live → P1–P4.',
+    { part: 'Sidor', group: 'Radio', files: 'launcher/radio.html · radio/radio.js · radio/radio.css', used: 'Huvudmenyn → Live → P1–P4.',
       items: [
         { name: 'Radio', url: `${L}radio.html?channel=132&name=P1`, ready: (doc) => doc.getElementById('now-title').textContent !== '…', note: 'Hämtar tablån från Sveriges Radio på riktigt.' },
       ] },
@@ -257,7 +259,7 @@
     // Cards are skipped while off screen (content-visibility); in a small
     // frame that loaded off screen they would stay blank.
     const style = doc.createElement('style');
-    style.textContent = '.film-card, .musik-card { content-visibility: visible !important; }';
+    style.textContent = '.card { content-visibility: visible !important; }';
     doc.head.appendChild(style);
     if (entry.ready) await waitFor(doc, entry.ready);
     await sleep(60);

@@ -1,4 +1,5 @@
-// Pioneer TV: the Musik and Film & serier pages' client for Jellyfin.
+// Pioneer TV: the client for Jellyfin, the source of the Musik and Film &
+// serier libraries (libraries/musik.js, libraries/film.js).
 //
 // Every request goes to /jellyfin/ on the page's own origin, where the daemon
 // (or dev/preview.py) adds the API key and forwards to Jellyfin; the key never

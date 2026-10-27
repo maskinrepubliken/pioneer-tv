@@ -157,7 +157,7 @@ window.PioneerTV = window.PioneerTV || {};
     add(['HEM'], 'stäng · håll: hem');
     const credit = el('span', 'credit');
     const img = el('img');
-    img.src = new URL('../launcher/ordbild-en-rad-black.svg', location.href).href;
+    img.src = new URL('../launcher/shared/ordbild-en-rad-black.svg', location.href).href;
     img.alt = 'Maskinrepubliken';
     credit.appendChild(img);
     foot.appendChild(credit);

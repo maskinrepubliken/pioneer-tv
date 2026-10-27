@@ -172,7 +172,7 @@ PYEOF
 python3 - /etc/pioneer-tv/config.toml /etc/pioneer-tv/settings.json <<'PYEOF'
 import json, re, sys
 config, overlay = sys.argv[1:3]
-FILM = "http://127.0.0.1:8765/ext/launcher/film.html?tv=1"
+FILM = "http://127.0.0.1:8765/ext/launcher/browse.html?library=film&tv=1"
 text = open(config).read()
 # Split at every table, not only at [[services]]: a service block that is
 # the last one before [jellyfin] must not reach into it (its url = ...).
@@ -183,7 +183,7 @@ for i, b in enumerate(blocks):
         b = re.sub(r'^search_url = .*$', f'search_url = "{FILM}#/search/{{query}}"', b, flags=re.M)
         b = re.sub(r"^# The server's Tailscale address.*\n", "", b, flags=re.M)
         blocks[i] = b
-        print("  config.toml: Film & serier opens film.html")
+        print("  config.toml: Film & serier opens our own page")
 open(config, "w").write("".join(blocks))
 try:
     ov = json.load(open(overlay))
@@ -194,7 +194,29 @@ if ov and isinstance(ov.get("services"), list):
         if s.get("id") == "jellyfin" and str(s.get("url", "")).rstrip("/").endswith("/web"):
             s["url"], s["search_url"] = FILM, FILM + "#/search/{query}"
             open(overlay, "w").write(json.dumps(ov, ensure_ascii=False, indent=2))
-            print("  settings.json: Film & serier opens film.html")
+            print("  settings.json: Film & serier opens our own page")
+PYEOF
+
+# Spel, Musik and Film & serier became one page (browse.html?library=...):
+# the services' addresses follow, once. The old pages only send on there.
+python3 - /etc/pioneer-tv/config.toml /etc/pioneer-tv/settings.json <<'PYEOF'
+import json, re, sys
+config, overlay = sys.argv[1:3]
+OLD = re.compile(r"/ext/launcher/(spel|musik|film)\.html\?")
+def new(s):
+    return OLD.sub(lambda m: f"/ext/launcher/browse.html?library={m.group(1)}&", s)
+text = open(config).read()
+if OLD.search(text):
+    open(config, "w").write(new(text))
+    print("  config.toml: the libraries open browse.html")
+try:
+    raw = open(overlay).read()
+except OSError:
+    raw = ""
+if OLD.search(raw):
+    ov = json.loads(new(raw))
+    open(overlay, "w").write(json.dumps(ov, ensure_ascii=False, indent=2))
+    print("  settings.json: the libraries open browse.html")
 PYEOF
 
 cat > /etc/pioneer-tv/board.env <<EOF

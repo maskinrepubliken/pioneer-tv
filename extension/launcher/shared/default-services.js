@@ -29,8 +29,8 @@ window.PioneerTV.defaultServices = [
     "id": "jellyfin",
     "name": "Film & serier",
     "tagline": "Jellyfin",
-    "url": "film.html?tv=1",
-    "search_url": "film.html?tv=1#/search/{query}",
+    "url": "browse.html?library=film&tv=1",
+    "search_url": "browse.html?library=film&tv=1#/search/{query}",
     "color": "#7b5ea7",
     "glyph": "J"
   },
@@ -38,7 +38,7 @@ window.PioneerTV.defaultServices = [
     "id": "musik",
     "name": "Musik",
     "tagline": "Jellyfin",
-    "url": "musik.html?tv=1",
+    "url": "browse.html?library=musik&tv=1",
     "color": "#a8533a",
     "glyph": "M"
   },
@@ -46,8 +46,8 @@ window.PioneerTV.defaultServices = [
     "id": "spel",
     "name": "Spel",
     "tagline": "RomM",
-    "url": "spel.html?tv=1",
-    "search_url": "spel.html?tv=1#/search/{query}",
+    "url": "browse.html?library=spel&tv=1",
+    "search_url": "browse.html?library=spel&tv=1#/search/{query}",
     "color": "#3b6ea5",
     "glyph": "S"
   },

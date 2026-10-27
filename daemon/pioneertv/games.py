@@ -8,7 +8,7 @@ built for the Pi does not have that wall (Super Mario 64 at 81 frames a
 second, unthrottled). See docs/superpowers/specs/2026-10-15-retroarch-games-design.md.
 
 RetroArch is only ever the game picture: no menu, no notices, no logo. The
-player page (extension/launcher/spela.js) asks for a game; this module
+player page (extension/launcher/game/game.js) asks for a game; this module
 fetches it from RomM into a cache, writes RetroArch's config and starts it
 as the kiosk user; its window covers Chromium's. Home pauses RetroArch where
 it is and the overlay draws the pause panel over it (hold(), below).

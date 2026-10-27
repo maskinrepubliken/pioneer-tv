@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pioneer TV</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="../fonts/fonts.css">
+  <link rel="stylesheet" href="../content/tokens.css">
+  <link rel="stylesheet" href="../content/cursor.css">
+  <link rel="stylesheet" href="../content/paper.css">
+  <link rel="stylesheet" href="../content/content.css">
+  <link rel="stylesheet" href="shared/base.css">
+  <link rel="stylesheet" href="shared/screen.css">
+  <link rel="stylesheet" href="browse/browse.css">
+  <link rel="stylesheet" href="players/audio.css">
+</head>
+<body>
+  <!-- One page for every library (?library=spel, musik, film): browse/page.js. -->
+  <div class="page">
+    <header class="head" id="head">
+      <h1 class="head-title" id="title"></h1>
+      <span class="head-count" id="count"></span>
+      <div class="head-tabs" id="tabs" hidden></div>
+      <input class="head-search" id="search" type="search" autocomplete="off">
+    </header>
+    <main class="view" id="view" aria-live="polite"></main>
+    <footer class="legend" id="legend"></footer>
+  </div>
+
+  <script src="../content/icons.js"></script>
+  <script src="../content/bridge.js"></script>
+  <script src="../content/spatial-nav.js"></script>
+  <script src="../content/keyboard.js"></script>
+  <script src="../content/hud.js"></script>
+  <script src="../content/logs.js"></script>
+  <script src="../content/cursor.js"></script>
+  <script src="../content/video.js"></script>
+  <script src="../content/bigscreen.js"></script>
+  <script src="../content/game.js"></script>
+  <script src="../content/main.js"></script>
+  <script src="shared/views.js"></script>
+  <script src="shared/screen.js"></script>
+  <script src="sources/romm.js"></script>
+  <script src="sources/jellyfin.js"></script>
+  <script src="browse/cards.js"></script>
+  <script src="browse/shelf.js"></script>
+  <script src="browse/grid.js"></script>
+  <script src="browse/detail.js"></script>
+  <script src="players/video.js"></script>
+  <script src="players/audio.js"></script>
+  <script src="libraries/spel.js"></script>
+  <script src="libraries/musik.js"></script>
+  <script src="libraries/film.js"></script>
+  <script src="browse/page.js"></script>
+</body>
+</html>

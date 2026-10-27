@@ -1,0 +1,48 @@
+/* Pioneer TV audio player (audio.js): what plays, small in the heading,
+   and "Spelas nu" over the whole page. */
+
+.np-mini {
+  flex: none; max-width: 20rem; display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.35rem 0.9rem 0.35rem 0.35rem;
+  font: 0.95rem/1.15 var(--pioneertv-font-prose); color: var(--pioneertv-ink); text-align: left; cursor: pointer;
+  background: var(--pioneertv-paper-raised); border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-pill);
+}
+.np-mini[hidden] { display: none; }
+.np-mini img { width: 1.9rem; height: 1.9rem; border-radius: 50%; object-fit: cover; flex: none; }
+.np-mini span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.np-mini.pioneertv-focus {
+  outline: 0.2rem solid var(--pioneertv-focus) !important; outline-offset: 0.25rem !important;
+  box-shadow: none !important; border-radius: var(--pioneertv-radius-pill) !important;
+}
+
+.np {
+  position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column; padding: 5vh 5vw 2vh;
+  background: var(--pioneertv-paper);
+}
+.np[hidden] { display: none; }
+.np-main { flex: 1; min-height: 0; display: flex; align-items: center; gap: 3rem; }
+.np-cover {
+  width: 24rem; height: 24rem; flex: none; border-radius: var(--pioneertv-radius-l); overflow: hidden;
+  background: var(--pioneertv-paper-sunken); box-shadow: 0 0.8rem 2.4rem rgba(40, 30, 20, 0.18);
+}
+.np-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.np-text { flex: 1; min-width: 0; }
+.np-title {
+  margin: 0 0 0.6rem; font-family: var(--pioneertv-font-display); font-weight: 900; font-size: 2.6rem; line-height: 1.02;
+  letter-spacing: -0.01em; text-transform: uppercase;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.np-artist { margin: 0 0 0.3rem; font: 1.5rem/1.25 var(--pioneertv-font-prose); }
+.np-album { margin: 0 0 2rem; font: italic 1.15rem/1.25 var(--pioneertv-font-prose); color: var(--pioneertv-ink-muted); }
+.np-progress { height: 0.45rem; border-radius: 0.3rem; background: var(--pioneertv-paper-sunken); overflow: hidden; }
+.np-bar { height: 100%; width: 0; background: var(--pioneertv-ochre); }
+.np-times {
+  display: flex; justify-content: space-between; margin: 0.6rem 0 0;
+  font-family: var(--pioneertv-font-mono); font-size: 0.95rem; color: var(--pioneertv-ink-faint); font-variant-numeric: tabular-nums;
+}
+.np-state { font-family: var(--pioneertv-font-ui); font-weight: 600; color: var(--pioneertv-ink); }
+.np-state.fel { color: var(--pioneertv-alarm); }
+.np-queue { width: 17rem; flex: none; align-self: stretch; padding-left: 1.8rem; border-left: 1px solid var(--pioneertv-line); overflow: hidden; }
+.np-queue ol { list-style: none; margin: 0; padding: 0; }
+.np-queue li { padding: 0.5rem 0; border-bottom: 1px solid var(--pioneertv-line); }
+.np-queue li b { display: block; font: 400 1.05rem/1.2 var(--pioneertv-font-prose); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.np-queue li span { display: block; font-size: 0.85rem; color: var(--pioneertv-ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

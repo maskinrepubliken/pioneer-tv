@@ -1,0 +1,73 @@
+/* Pioneer TV pages, what they all share, on Maskinrepubliken's design
+   system: the 1280x720 canvas (1rem = 1/80 of the width, so a laptop window
+   and the TV look the same), the page's frame, the capsule buttons, the
+   legend at the foot, a picture or the paper standing in for it, a
+   section's label, and a view's messages (views.js). Tokens in tokens.css,
+   primitives in paper.css. Each page adds its own: browse/, radio/, home/,
+   game/. */
+
+html { font-size: 1.45vw; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  font-family: var(--pioneertv-font-ui);
+  color: var(--pioneertv-ink);
+  background-color: var(--pioneertv-paper);
+  overflow: hidden;
+}
+.page { height: 100%; display: flex; flex-direction: column; padding: 3.4vh 5vw 2vh; }
+
+/* ---- buttons: the system's capsules. Primary ochre, secondary paper with
+   a line-strong edge; focus is a solid ink ring with air around it. ---- */
+.knapp {
+  font: 600 1.15rem/1 var(--pioneertv-font-ui); padding: 1rem 1.8rem; margin: 0; cursor: pointer; text-align: left;
+  color: var(--pioneertv-ink); background: var(--pioneertv-paper);
+  border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-pill);
+}
+.knapp:hover { background: var(--pioneertv-paper-hover); }
+.knapp.primar { background: var(--pioneertv-ochre); border-color: var(--pioneertv-ochre); color: var(--pioneertv-on-ochre); }
+.knapp.pioneertv-focus {
+  outline: 0.2rem solid var(--pioneertv-focus) !important; outline-offset: 0.25rem !important;
+  box-shadow: none !important; border-radius: var(--pioneertv-radius-pill) !important;
+}
+
+/* ---- the legend: the pad's buttons and what they do here ---- */
+.legend {
+  display: flex; align-items: center; gap: 1.8rem; height: 2.6rem; margin-top: 1vh; flex: none;
+  border-top: 1px solid var(--pioneertv-line); font-size: 0.95rem; color: var(--pioneertv-ink-muted);
+}
+.legend span { display: inline-flex; align-items: center; gap: 0.45rem; }
+.legend .pioneertv-kbd { font-size: 0.75rem; }
+.legend .credit { margin-left: auto; display: inline-flex; }
+.legend .credit img { display: block; width: 8.5rem; min-width: 120px; height: auto; }
+
+/* ---- a picture keeps its own shape inside its box; without one, paper
+   with the name on it in Fraunces (or, for a name that runs long, its
+   first letter, big) ---- */
+.cover {
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+  border-radius: var(--pioneertv-radius-s);
+}
+.cover img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.cover-paper {
+  background: var(--pioneertv-paper-sunken); padding: 0.6rem; text-align: center;
+  font-family: var(--pioneertv-font-prose); font-size: 1rem; line-height: 1.2; color: var(--pioneertv-ink-muted);
+}
+.cover-initial { padding: 0; font: 900 4rem/1 var(--pioneertv-font-display); color: var(--pioneertv-ink-faint); }
+
+/* ---- a section's label: mono capitals, faint ---- */
+.section-label {
+  margin: 0 0 0.55rem; font-family: var(--pioneertv-font-mono); font-size: 0.8rem;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--pioneertv-ink-faint);
+}
+
+/* ---- a view's messages (views.js): "Laddar…", and a sentence with a hint
+   and Försök igen in its place; "nothing here" in a section ---- */
+.view-loading {
+  flex: 1; margin: 0; display: flex; align-items: center; justify-content: center;
+  font: italic 400 1.8rem/1.2 var(--pioneertv-font-prose); color: var(--pioneertv-ink-muted);
+}
+.view-message { flex: 1; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 1.2rem; max-width: 46rem; }
+.view-message p { margin: 0; font-family: var(--pioneertv-font-prose); font-size: 1.6rem; line-height: 1.3; }
+.view-message .hint { font-size: 1.1rem; color: var(--pioneertv-ink-muted); }
+.empty { margin: 0.4rem 0 1.2rem; font: italic 1.1rem var(--pioneertv-font-prose); color: var(--pioneertv-ink-muted); }

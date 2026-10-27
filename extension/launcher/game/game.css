@@ -1,0 +1,6 @@
+/* Pioneer TV game on its way (game.js). The game itself is RetroArch's
+   window over this page (games.py); here is the ink before it, and what it
+   says: a full-screen message (shared/screen.css), as the film's. The pause
+   panel is the overlay's. The canvas is base.css's. */
+
+body { color: var(--pioneertv-on-dark); background-color: var(--pioneertv-surface-ink); }

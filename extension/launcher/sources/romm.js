@@ -1,4 +1,5 @@
-// Pioneer TV: the Spel pages' client for RomM.
+// Pioneer TV: the client for RomM, the source of the Spel library
+// (libraries/spel.js) and of the game page (game/game.js).
 //
 // Every request goes to /romm/ on the page's own origin, where the daemon (or
 // dev/preview.py) adds the API key and forwards to RomM; RomM itself sends no
@@ -79,7 +80,7 @@ window.PioneerTV = window.PioneerTV || {};
       sortKey: r.name_sort_key || '',   // RomM's order: lower case, no leading "The", numbers padded
       platform: r.platform_slug,
       // The small cover (204 px) shows at once; the cards swap in the big one
-      // (512 px, five times the bytes) once it has loaded (spel.js, cover()).
+      // (512 px, five times the bytes) once it has loaded (shared/views.js, cover()).
       cover: r.path_cover_small ? '/romm' + r.path_cover_small : (r.path_cover_large ? '/romm' + r.path_cover_large : null),
       coverLarge: r.path_cover_large ? '/romm' + r.path_cover_large : null,
       year: released ? new Date(released).getFullYear() : null,
@@ -103,21 +104,6 @@ window.PioneerTV = window.PioneerTV || {};
   async function list(query) {
     const d = await json(`api/roms?limit=1000&order_by=name&order_dir=asc&${query}`);
     return { games: d.items.map(toGame), letters: d.char_index || {} };
-  }
-
-  // The newest of a ROM's states or save files, or null.
-  async function latest(kind, romId) {
-    const items = await json(`api/${kind}?rom_id=${romId}`);
-    if (!items.length) return null;
-    const newest = items.reduce((a, b) => (a.updated_at > b.updated_at ? a : b));
-    return { id: newest.id, url: `${BASE}api/${kind}/${newest.id}/content`, updatedAt: newest.updated_at };
-  }
-
-  async function upload(kind, field, romId, bytes, png, core) {
-    const form = new FormData();
-    form.append(field, new Blob([bytes]), `${romId}-${Date.now()}.${kind === 'states' ? 'state' : 'srm'}`);
-    if (png) form.append('screenshotFile', png, `${romId}-${Date.now()}.png`);
-    return json(`api/${kind}?rom_id=${romId}&emulator=${encodeURIComponent(core)}`, { method: 'POST', body: form });
   }
 
   const props = (id, flag, keepalive) => request(`api/roms/${id}/props?${flag}=true`, {
@@ -151,10 +137,5 @@ window.PioneerTV = window.PioneerTV || {};
     async game(id) { return toGame(await json(`api/roms/${id}`)); },
     markPlayed(id) { return props(id, 'update_last_played'); },
     removeRecent(id, opts = {}) { return props(id, 'remove_last_played', opts.keepalive); },
-    latestState(romId) { return latest('states', romId); },
-    latestSave(romId) { return latest('saves', romId); },
-    uploadState(romId, bytes, png, core) { return upload('states', 'stateFile', romId, bytes, png, core); },
-    uploadSave(romId, bytes, png, core) { return upload('saves', 'saveFile', romId, bytes, png, core); },
-    romUrl(game) { return `${BASE}api/roms/${game.id}/content/${encodeURIComponent(game.fileName)}`; },
   };
 })(window.PioneerTV);

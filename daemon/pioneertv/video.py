@@ -1,6 +1,6 @@
 """Films, series and clips from Jellyfin, played in mpv on the TV's display.
 
-The Film & serier page (extension/launcher/film.js) browses Jellyfin in
+The Film & serier library (extension/launcher/libraries/film.js) browses Jellyfin in
 Chromium; playing happens here, as games do in RetroArch (games.py). Chromium
 cannot decode HEVC or 10-bit video on the Pi; mpv can, in hardware: 1080p
 HEVC 10-bit with --hwdec=drm --vo=gpu --profile=fast dropped no frames at

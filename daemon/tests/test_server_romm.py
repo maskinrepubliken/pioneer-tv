@@ -99,8 +99,8 @@ class RommProxy(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(resp.status, 405)
 
     async def test_pages_revalidated(self):
-        # Without it Chromium kept an old spela.js after an update.
-        resp = await self.client.get("/ext/launcher/spela.js")
+        # Without it Chromium kept an old page script after an update.
+        resp = await self.client.get("/ext/launcher/game/game.js")
         self.assertEqual(resp.headers.get("Cache-Control"), "no-cache")
 
 

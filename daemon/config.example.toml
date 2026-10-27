@@ -94,27 +94,27 @@ glyph = "S"
 id = "jellyfin"
 name = "Film & serier"
 tagline = "Jellyfin"
-# Our own Film & serier page on top of Jellyfin (extension/launcher/film.html),
+# Our own Film & serier page on top of Jellyfin (extension/launcher/browse.html?library=film),
 # opened from the daemon like Musik; videos play in mpv. Jellyfin's own web UI
 # (http://<server>:8096/web/) works here too.
-url = "http://127.0.0.1:8765/ext/launcher/film.html?tv=1"
-search_url = "http://127.0.0.1:8765/ext/launcher/film.html?tv=1#/search/{query}"
+url = "http://127.0.0.1:8765/ext/launcher/browse.html?library=film&tv=1"
+search_url = "http://127.0.0.1:8765/ext/launcher/browse.html?library=film&tv=1#/search/{query}"
 color = "#7b5ea7"
 glyph = "J"
 
-# Music: our own Musik pages on top of Jellyfin (extension/launcher/musik.html),
+# Music: our own Musik pages on top of Jellyfin (extension/launcher/browse.html?library=musik),
 # opened from the daemon so that /jellyfin/ is on the same origin. Set the
 # server and an API key under [jellyfin] below or on the settings page.
 [[services]]
 id = "musik"
 name = "Musik"
 tagline = "Jellyfin"
-url = "http://127.0.0.1:8765/ext/launcher/musik.html?tv=1"
-search_url = "http://127.0.0.1:8765/ext/launcher/musik.html?tv=1#/search/{query}"
+url = "http://127.0.0.1:8765/ext/launcher/browse.html?library=musik&tv=1"
+search_url = "http://127.0.0.1:8765/ext/launcher/browse.html?library=musik&tv=1#/search/{query}"
 color = "#a8533a"
 glyph = "M"
 
-# Games: our own Spel pages on top of RomM (extension/launcher/spel.html).
+# Games: our own Spel pages on top of RomM (extension/launcher/browse.html?library=spel).
 # They are opened from the daemon so that /romm/ is on the same origin; set
 # RomM's address and a client API token under [romm] below or on the settings
 # page. The old way, RomM's own web UI with mode = "game", still works too.
@@ -122,8 +122,8 @@ glyph = "M"
 id = "spel"
 name = "Spel"
 tagline = "RomM"
-url = "http://127.0.0.1:8765/ext/launcher/spel.html?tv=1"
-search_url = "http://127.0.0.1:8765/ext/launcher/spel.html?tv=1#/search/{query}"
+url = "http://127.0.0.1:8765/ext/launcher/browse.html?library=spel&tv=1"
+search_url = "http://127.0.0.1:8765/ext/launcher/browse.html?library=spel&tv=1#/search/{query}"
 color = "#3b6ea5"
 glyph = "S"
 

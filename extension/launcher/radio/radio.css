@@ -3,16 +3,9 @@
    ink block like the system's hero: Rubik capitals, what is on in Fraunces,
    times in mono, a sparse perforation along the bottom. */
 
-html { font-size: 1.45vw; }
-* { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; }
-body {
-  font-family: var(--pioneertv-font-ui);
-  color: var(--pioneertv-ink);
-  background-color: var(--pioneertv-paper);
-  overflow: hidden;
-}
-.page { height: 100%; display: flex; flex-direction: column; gap: 3vh; padding: 5vh 5vw 2vh; }
+/* The canvas, the buttons and the legend are base.css's. */
+.page { gap: 3vh; padding: 5vh 5vw 2vh; }
+.legend { margin-top: 0; }
 
 .panel {
   flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;
@@ -42,27 +35,6 @@ body {
 .perf { display: block; width: 100%; height: 5.5rem; object-fit: cover; object-position: center; }
 
 .controls { display: flex; align-items: center; gap: 1rem; }
-/* Buttons: the system's capsules. Primary ochre, secondary paper with a
-   line-strong edge; focus is a solid ink ring with air around it. */
-.knapp {
-  font: 600 1.15rem/1 var(--pioneertv-font-ui); padding: 1rem 1.8rem; margin: 0; cursor: pointer;
-  color: var(--pioneertv-ink); background: var(--pioneertv-paper);
-  border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-pill);
-}
-.knapp:hover { background: var(--pioneertv-paper-hover); }
-.knapp.primar { background: var(--pioneertv-ochre); border-color: var(--pioneertv-ochre); color: var(--pioneertv-on-ochre); }
-.knapp.pioneertv-focus {
-  outline: 0.2rem solid var(--pioneertv-focus) !important; outline-offset: 0.25rem !important;
-  box-shadow: none !important; border-radius: var(--pioneertv-radius-pill) !important;
-}
 .state { font-family: var(--pioneertv-font-mono); font-size: 0.95rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--pioneertv-ink-muted); }
 .state.fel { color: var(--pioneertv-alarm); }
 
-.legend {
-  display: flex; align-items: center; gap: 1.8rem; height: 2.6rem;
-  border-top: 1px solid var(--pioneertv-line); font-size: 0.95rem; color: var(--pioneertv-ink-muted);
-}
-.legend span { display: inline-flex; align-items: center; gap: 0.45rem; }
-.legend .pioneertv-kbd { font-size: 0.75rem; }
-.legend .credit { margin-left: auto; }
-.legend .credit img { display: block; width: 8.5rem; min-width: 120px; height: auto; }

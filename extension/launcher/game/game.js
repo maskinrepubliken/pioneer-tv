@@ -13,7 +13,7 @@ window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const params = new URLSearchParams(location.search);
   const romId = Number(params.get('rom'));
-  M.launcherUrl = new URL('spel.html?tv=1', location.href).href;
+  M.launcherUrl = new URL('browse.html?library=spel&tv=1', location.href).href;
 
   // What is said here is a full-screen message (screen.js), the same as
   // the film's and the resting home page's.

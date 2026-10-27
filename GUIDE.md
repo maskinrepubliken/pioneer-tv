@@ -7,6 +7,7 @@ what was learned on the way.
 
 - [Gamepad mapping](#gamepad-mapping)
 - [How it fits together](#how-it-fits-together)
+- [The pages](#the-pages)
 - [Installing in detail](#installing-in-detail)
 - [Settings and status](#settings-and-status)
 - [The TV (HDMI-CEC)](#the-tv-hdmi-cec)
@@ -70,6 +71,41 @@ itself, sees ordinary key presses. Buttons that mean something to the shell
 overlay, Y to the page unless the overlay's menu is open
 ([The overlay](#the-overlay)). CEC is only
 ever touched by the daemon.
+
+## The pages
+
+The box's own pages live in `extension/launcher/`, one HTML file per kind of
+page, each with a folder of its own code; what several of them use is in
+`shared/`, where the data comes from in `sources/`.
+
+| Page | Code | What it is |
+| --- | --- | --- |
+| `index.html` | `home/` | Home and the screensaver: the fire, a line of the Tao Te Ching, resting |
+| `browse.html` | `browse/`, `libraries/`, `players/` | One page for every library: `?library=spel`, `musik` or `film` |
+| `game.html` | `game/` | A game on its way, before RetroArch covers the screen |
+| `radio.html` | `radio/` | A Sveriges Radio channel |
+
+The browse page draws every library the same way. A library
+(`libraries/spel.js`, `musik.js`, `film.js`) only says what there is, from
+its source (`sources/romm.js`, `sources/jellyfin.js`), as views of a few
+kinds, made of items of one shape (`browse/cards.js`):
+
+- **the shelf** (`browse/shelf.js`): sections one under the other, of rows,
+  grids and type-only cards; a library's start, an artist, a search;
+- **the grid** (`browse/grid.js`): a long collection, only the rows around
+  the focus in the page, L1/R1 a letter, the search field filtering it, an
+  info panel when the library has one; a console's games, every album;
+- **the detail** (`browse/detail.js`): one thing, its picture, text,
+  buttons, choices, tabs and a list; a film, a series, an album.
+
+`browse/page.js` does the rest for all of them: the hash, the heading, the
+search field, the legend, where the focus was, B. What plays is a player's:
+`players/video.js` (mpv, through the daemon) and `players/audio.js` (in the
+page, with "Spelas nu"). `shared/` has the canvas, the buttons and the
+legend (`base.css`), a view's messages (`views.js`), the full-screen
+message (`screen.js`) and the services' illustrations (`art.js`). The old
+addresses `spel.html`, `musik.html` and `film.html` go on to the browse
+page.
 
 ## Installing in detail
 
@@ -210,15 +246,16 @@ times are on the TV page in settings (`ui.home_minutes`, `ui.tv_off_minutes`;
 
 ## Games
 
-The Spel tile opens our own pages on top of [RomM](https://github.com/rommapp/romm):
-`extension/launcher/spel.html` to browse (recently played, consoles, collections,
-each console's games with covers) and `spela.html` to play. On the start page X
-removes a game from Senast spelade; X again within five seconds puts it back.
+The Spel tile opens the browse page on top of [RomM](https://github.com/rommapp/romm)
+(`browse.html?library=spel`, [The pages](#the-pages)): recently played,
+consoles, collections, each console's games with covers; a game opens
+`game.html`, which has it played. On the first view X removes a game from
+Senast spelade; X again within five seconds puts it back.
 
 The pages never talk to RomM directly. They call `/romm/...` on their own
 origin, and the daemon forwards that to RomM with the API key added; only
 RomM's `/api/` and `/assets/` are reachable that way. That is why the tile
-opens the pages from the daemon (`http://127.0.0.1:8765/ext/launcher/spel.html`)
+opens the pages from the daemon (`http://127.0.0.1:8765/ext/launcher/browse.html?library=spel`)
 rather than from the extension. Set RomM's address and a client API token
 (RomM: Settings → Client API Tokens, read scopes plus `roms.user.write` and
 `assets.write`) under Inställningar → RomM.
@@ -277,10 +314,11 @@ drives it as usual. Game mode ends when the page goes away or stops sending hear
 
 ## Music
 
-The Musik tile opens our own pages on top of [Jellyfin](https://jellyfin.org/)'s
-music library, `extension/launcher/musik.html`: Blanda allt, Album and
+The Musik tile opens the browse page on top of [Jellyfin](https://jellyfin.org/)'s
+music library (`browse.html?library=musik`): Blanda allt, Album and
 Artister, then your playlists; a playlist or an album lists its songs beside
-its cover, with Spela and Blanda. Typing in the search field (Y opens the
+its cover, with Spela and Blanda. Album and Artister are grids like a
+console's games: L1/R1 jump a letter, the search field filters them. Typing in the search field (Y opens the
 keyboard) searches songs, albums and artists. Films, series and clips have
 their own page ([Film and series](#film-and-series)).
 
@@ -305,9 +343,9 @@ administrator, the user whose playlists to show under Inställningar → Jellyfi
 
 ## Film and series
 
-The Film & serier tile opens `extension/launcher/film.html`, our own page on
-top of Jellyfin, served by the daemon like Musik
-(`http://127.0.0.1:8765/ext/launcher/film.html`); the installer moved a tile
+The Film & serier tile opens the browse page on top of Jellyfin
+(`browse.html?library=film`), served by the daemon like Musik
+(`http://127.0.0.1:8765/ext/launcher/browse.html?library=film`); the installer moved a tile
 that still opened Jellyfin's web UI over to it once. Its tabs are Jellyfin's
 own libraries (`UserViews`), music, photos and books left out, so a library
 added in Jellyfin appears by itself. Each tab starts with "Fortsätt titta"
@@ -432,11 +470,10 @@ extension/launcher/index.html?tv=1
 ```
 
 in Chrome. Arrow keys navigate, Enter selects, Escape goes back. `?tv=1` turns
-on TV mode so Enter on the search field opens the on-screen keyboard. Edit
-`launcher.css` (tokens at the top), `launcher.js` and `default-services.js`;
-reload. The page is laid out on a 1280x720 canvas in `vw` units, so a laptop
-window looks like the TV. Drop logos in `extension/launcher/logos/` and set
-`logo` on a service to use them instead of the letter glyph.
+on TV mode so Enter on the search field opens the on-screen keyboard. The
+pages are laid out on a 1280x720 canvas in `vw` units, so a laptop window
+looks like the TV ([The pages](#the-pages)). Set `logo` on a service to show a
+picture instead of its illustration in the main menu.
 
 To try the extension parts on real sites, load `extension/` as an unpacked
 extension at `chrome://extensions` (developer mode). Then any page gets the
@@ -471,7 +508,7 @@ system's 2 px so it reads across a room, plus an ochre marker on the focused
 launcher tile. A status is never colour alone: each one carries a filled or
 empty hole and a word.
 
-The service illustrations in `extension/launcher/art.js` predate the system
+The service illustrations in `extension/launcher/shared/art.js` predate the system
 and are not yet redrawn to it.
 
 ## Board and video mode

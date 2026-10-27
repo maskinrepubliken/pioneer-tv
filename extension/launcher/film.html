@@ -2,45 +2,9 @@
 <html lang="sv">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Film &amp; serier – Pioneer TV</title>
+  <title>Pioneer TV</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="../fonts/fonts.css">
-  <link rel="stylesheet" href="../content/tokens.css">
-  <link rel="stylesheet" href="../content/cursor.css">
-  <link rel="stylesheet" href="../content/paper.css">
-  <link rel="stylesheet" href="../content/content.css">
-  <link rel="stylesheet" href="spel.css">
-  <link rel="stylesheet" href="film.css">
-  <link rel="stylesheet" href="screen.css">
+  <!-- The film library is browse.html?library=film now; this address goes on there. -->
+  <script src="shared/redirect.js" data-library="film"></script>
 </head>
-<body>
-  <div class="page">
-    <header class="spel-head film-head">
-      <h1 class="spel-title" id="title">Film &amp; serier</h1>
-      <nav class="film-tabs" id="tabs"></nav>
-      <input class="spel-search film-search" id="search" type="search" placeholder="Sök film eller serie…" autocomplete="off">
-    </header>
-    <main class="view" id="view" aria-live="polite"></main>
-    <footer class="legend" id="legend"></footer>
-  </div>
-
-  <!-- While mpv plays: black behind its window, and what comes before and after. -->
-
-  <script src="../content/icons.js"></script>
-  <script src="../content/bridge.js"></script>
-  <script src="../content/spatial-nav.js"></script>
-  <script src="../content/keyboard.js"></script>
-  <script src="../content/hud.js"></script>
-  <script src="../content/logs.js"></script>
-  <script src="../content/cursor.js"></script>
-  <script src="../content/video.js"></script>
-  <script src="../content/bigscreen.js"></script>
-  <script src="../content/game.js"></script>
-  <script src="../content/main.js"></script>
-  <script src="views.js"></script>
-  <script src="screen.js"></script>
-  <script src="jellyfin.js"></script>
-  <script src="film.js"></script>
-</body>
 </html>
