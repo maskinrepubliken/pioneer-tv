@@ -3,19 +3,21 @@
 html, body { margin: 0; height: 100%; overflow: hidden; background: var(--pioneertv-surface-ink); }
 .fractal { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
 
-/* The line fills the screen, large and muted: Fraunces' italic in a warm
-   grey between ink and paper, straight on the fire, no box behind it. Its
-   size is fitted to the screen (launcher.js). */
+/* The line fills the screen, large: Fraunces' italic straight on the
+   fire, no box behind it, its size fitted to the screen (launcher.js). It
+   is blended in (color-dodge): where the fire glows the letters glow with
+   it, over the ink they all but vanish, and they flicker as it does. */
 .tao {
   position: fixed; inset: 8vh 7vw; margin: 0;
   display: flex; flex-direction: column; justify-content: center;
-  color: color-mix(in srgb, var(--pioneertv-paper) 34%, var(--pioneertv-surface-ink));
+  color: color-mix(in srgb, var(--pioneertv-ochre) 75%, var(--pioneertv-surface-ink));
+  mix-blend-mode: color-dodge;
   pointer-events: none;
 }
 .tao blockquote { margin: 0; font: italic 400 6vw/1.12 var(--pioneertv-font-prose); text-wrap: balance; }
 .tao figcaption {
   margin-top: 0.7em; font: 1.1vw/1 var(--pioneertv-font-mono); letter-spacing: 0.14em; text-transform: uppercase;
-  color: color-mix(in srgb, var(--pioneertv-ochre) 30%, var(--pioneertv-surface-ink));
+  color: color-mix(in srgb, var(--pioneertv-ochre) 60%, var(--pioneertv-surface-ink));
 }
 
 /* Resting (the TV off): nothing drawn but black. */

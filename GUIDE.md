@@ -184,8 +184,9 @@ ink; near the set's edge it glows as embers do, through rust to a dimmed
 ochre, brightest at the foot of the screen, flickering gently (a few slow
 waves out of step) while the edges waver upwards like the air over a
 flame. On it, with no box behind it, a line of the Tao Te Ching
-(`launcher/tao.js`, our own Swedish renderings) fills the screen, large and
-muted, and changes every three minutes. No clock, no date.
+(`launcher/tao.js`, our own Swedish renderings) fills the screen, blended
+into the fire (color-dodge: the letters glow where it glows and all but
+vanish over the ink), and changes every three minutes. No clock, no date.
 
 - **Anywhere but home**, after ten minutes without a button, the box goes
   home. A game held on its pause panel is quit on the way (its state is
