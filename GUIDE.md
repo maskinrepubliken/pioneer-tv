@@ -235,9 +235,8 @@ The Musik tile opens our own pages on top of [Jellyfin](https://jellyfin.org/)'s
 music library, `extension/launcher/musik.html`: Blanda allt, Album and
 Artister, then your playlists; a playlist or an album lists its songs beside
 its cover, with Spela and Blanda. Typing in the search field (Y opens the
-keyboard) searches songs, albums and artists. Films, series and clips are
-Jellyfin's own web UI behind the Film & serier tile until our own pages
-([Film and series](#film-and-series)) have been tried on the box.
+keyboard) searches songs, albums and artists. Films, series and clips have
+their own page ([Film and series](#film-and-series)).
 
 A song plays in the page itself and "Spelas nu" covers the screen: A or X
 pauses, L1/R1 go to the previous and next song, left and right seek ten
@@ -258,9 +257,10 @@ administrator, the user whose playlists to show under Inställningar → Jellyfi
 
 ## Film and series
 
-`extension/launcher/film.html` is our own Film & serier page on top of
-Jellyfin, served by the daemon like Musik
-(`http://127.0.0.1:8765/ext/launcher/film.html`). Its tabs are Jellyfin's
+The Film & serier tile opens `extension/launcher/film.html`, our own page on
+top of Jellyfin, served by the daemon like Musik
+(`http://127.0.0.1:8765/ext/launcher/film.html`); the installer moved a tile
+that still opened Jellyfin's web UI over to it once. Its tabs are Jellyfin's
 own libraries (`UserViews`), music, photos and books left out, so a library
 added in Jellyfin appears by itself. Each tab starts with "Fortsätt titta"
 (what was begun) and then holds the library's films or series as posters, or
@@ -270,6 +270,8 @@ från …" and "Spela från början", and, when there is a choice, Ljud and
 Undertexter (A steps through them). Which sound and subtitles are chosen
 first is Jellyfin's call, from the user's own settings. A series opens on
 the first season not finished, its seasons as buttons above the episodes.
+The search field (Y opens the keyboard) and the start page's search find
+films, series, episodes and clips by name.
 
 Videos play in **mpv**, not Chromium, started by the daemon
 (`daemon/pioneertv/video.py`) as games are: Chromium on the Pi cannot decode
@@ -284,17 +286,20 @@ readable by the kiosk user alone), never on its command line.
 
 While a video plays: A, B or X pauses and resumes, with the timeline shown;
 left and right seek ten seconds, L1 and R1 a minute; holding B stops; Home
-pauses and opens the quick menu over the video; holding Home stops and goes
-home. Nothing plays on by itself, not even the next episode: at the end the
-screen goes black and says "Tryck B för att fortsätta". Jellyfin hears what
-plays every ten seconds and where it stopped, so "Fortsätt titta" follows
-the box. The panel planned for pausing (Fortsätt, Ljud, Undertexter) will be
-drawn by the overlay; until then mpv's own timeline shows.
+opens the overlay's quick menu over the video, which pauses it until the
+menu closes; holding Home stops and goes home. Nothing plays on by itself,
+not even the next episode: at the end the screen goes black and says "Tryck
+B för att fortsätta". Jellyfin hears what plays every ten seconds, and when
+mpv stops the position is written to the user's own data (the reports come
+from the API key, which is no user, and move nobody's "Fortsätt titta"):
+past 90 % the video counts as seen, before 5 % nothing is kept, as in
+Jellyfin itself. The panel planned for pausing (Fortsätt, Ljud,
+Undertexter) will be drawn by the overlay; until then mpv's own timeline
+shows.
 
-**Status, October 2026.** Built and tried in the preview against a stand-in
-Jellyfin, and `video.py` against a stand-in mpv; not yet on the box, so the
-Film & serier tile still opens Jellyfin's web UI. To try it there, open the
-page above from the box (or point the tile at it).
+Measured on the box in October: a 1080p HEVC episode decoded in hardware
+(`hevc-drm`), no dropped frames, mpv at about 18 % CPU, a cache about 40
+seconds ahead.
 
 ## Updating the box
 

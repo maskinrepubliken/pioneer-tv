@@ -11,6 +11,8 @@
 .film-tabs { display: flex; flex: 0 1 auto; min-width: 0; gap: 0.5rem; margin-left: auto; overflow-x: auto; scrollbar-width: none; padding: 0.4rem; margin-right: -0.4rem; }
 .film-tabs::-webkit-scrollbar { display: none; }
 .film-tabs[hidden] { display: none; }
+.film-search { flex: 0 1 16rem; min-width: 10rem; margin-left: 0; }
+.film-tabs[hidden] + .film-search { margin-left: auto; }
 .film-tab, .film-season {
   flex: none; padding: 0.55rem 1.1rem; white-space: nowrap; text-decoration: none;
   font: 600 1rem/1 var(--pioneertv-font-ui); color: var(--pioneertv-ink-muted);

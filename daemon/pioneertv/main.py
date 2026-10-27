@@ -78,7 +78,13 @@ async def amain(cfg: dict) -> None:
     status_at = 0.0
 
     def media_server() -> tuple[str | None, str | None]:
-        """The service that lives on the tailnet (Jellyfin, Plex, ...): its URL and name."""
+        """The service that lives on the tailnet (Jellyfin, Plex, ...): its URL and name.
+        Jellyfin's own address when it is set: the Film & serier tile opens
+        our page on the box, not the server."""
+        jellyfin_url = (cfg.get("jellyfin") or {}).get("url")
+        if jellyfin_url:
+            tile = next((s for s in cfg.get("services", []) if s.get("id") == "jellyfin"), {})
+            return jellyfin_url, tile.get("name") or "Jellyfin"
         for s in cfg.get("services", []):
             url = s.get("url") or ""
             host = (urlparse(url).hostname or "").lower()

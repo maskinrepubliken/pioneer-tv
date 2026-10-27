@@ -29,8 +29,8 @@ window.PioneerTV.defaultServices = [
     "id": "jellyfin",
     "name": "Film & serier",
     "tagline": "Jellyfin",
-    "url": "http://100.123.142.8:8096/web/",
-    "search_url": "http://100.123.142.8:8096/web/#/search.html?query={query}",
+    "url": "film.html?tv=1",
+    "search_url": "film.html?tv=1#/search/{query}",
     "color": "#7b5ea7",
     "glyph": "J"
   },

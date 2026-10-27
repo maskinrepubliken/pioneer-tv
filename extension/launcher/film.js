@@ -5,7 +5,7 @@
 // #/ (the first library), #/lib/<id> (a library: "Fortsätt titta", then its
 // films, series or clips), #/folder/<id>, #/series/<id>[/<season id>] and
 // #/item/<id> (a film, an episode or a clip: picture, overview, Spela, sound
-// and subtitles). The tabs are Jellyfin's own libraries, music left out, so a
+// and subtitles) and #/search/<words>. The tabs are Jellyfin's own libraries, music left out, so a
 // new one appears by itself; switching tabs replaces the hash, so B leaves
 // the page from any of them.
 //
@@ -21,6 +21,7 @@
   const legend = $('legend');
   const titleEl = $('title');
   const tabsEl = $('tabs');
+  const search = $('search');
   M.launcherUrl = new URL('index.html?tv=1', location.href).href;
 
   // ------------------------------------------------------------ helpers
@@ -260,6 +261,38 @@
     return box;
   }
 
+  async function searchView(term, token) {
+    const found = await J.searchVideos(term);
+    if (!isCurrent(token)) return;
+    titleEl.textContent = 'Sök';
+    renderTabs(null);
+    setLegend([['A', 'öppna'], ['Y', 'sök']]);
+    view.innerHTML = '';
+    const scroll = el('div', 'film-scroll');
+    scroll.appendChild(el('h2', 'spel-label', `Träffar för ”${term}”`));
+    scroll.appendChild(grid(found));
+    view.appendChild(scroll);
+    // The focus stays in the field while typing; from the start page's
+    // search it lands on the first thing found.
+    if (document.activeElement !== search) restoreFocus(scroll.querySelector('.film-card, .film-folder'));
+  }
+
+  // Typing searches after a pause, in place: the hash follows without a new
+  // history entry for every letter, so B leaves the search in one step.
+  let typing = null;
+  search.addEventListener('input', () => {
+    clearTimeout(typing);
+    typing = setTimeout(() => {
+      const term = search.value.trim();
+      const inSearch = (location.hash || '').startsWith('#/search/');
+      if (!term) { if (inSearch) history.back(); return; }
+      const hash = `#/search/${encodeURIComponent(term)}`;
+      if (inSearch) history.replaceState(null, '', hash);
+      else history.pushState(null, '', hash);
+      route();
+    }, 450);
+  });
+
   async function folder(id, token) {
     const [what, found] = await Promise.all([J.video(id), J.browse({ id, type: 'mixed' })]);
     if (!isCurrent(token)) return;
@@ -471,12 +504,15 @@
     const token = ++routeToken;
     const hash = location.hash || '#/';
     const [what, arg, arg2] = hash.slice(2).split('/').map(decodeURIComponent);
+    if (what === 'search' && arg && search.value.trim() !== arg) search.value = arg;
+    if (what !== 'search' && document.activeElement !== search) search.value = '';
     let settled = false;
     const slow = setTimeout(() => { if (!settled && isCurrent(token)) loadingView(); }, 300);
     try {
       if (what === 'item' && arg) await item(arg, token);
       else if (what === 'series' && arg) await series(arg, arg2 || null, token);
       else if (what === 'folder' && arg) await folder(arg, token);
+      else if (what === 'search' && arg) await searchView(arg, token);
       else await library(what === 'lib' ? arg : null, token);
     } catch (err) {
       if (isCurrent(token)) renderError(err);
@@ -490,6 +526,15 @@
   // B: one view back, and from a library out to the start page.
   window.addEventListener('keydown', (e) => {
     if (M.nav.captured || e.key !== 'Escape') return;
+    // In the search field B clears it first, then leaves it.
+    if (M.nav.isTextField(document.activeElement)) {
+      if (document.activeElement !== search || !search.value) return;
+      e.preventDefault();
+      e.stopPropagation();
+      search.value = '';
+      if ((location.hash || '').startsWith('#/search/')) history.back();
+      return;
+    }
     e.preventDefault();
     const hash = location.hash || '#/';
     if (hash === '#/' || hash.startsWith('#/lib/')) b.home();

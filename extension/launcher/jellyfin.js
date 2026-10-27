@@ -241,6 +241,11 @@ window.PioneerTV = window.PioneerTV || {};
     async video(id) {
       return toVideo(await json(`Items/${id}?${q({ userId: await user(), Fields: `${VIDEO_FIELDS},MediaSources,Genres` })}`));
     },
+    // Films, series, episodes and clips whose name holds the words.
+    searchVideos(term) {
+      return items({ searchTerm: term, IncludeItemTypes: 'Movie,Series,Episode,Video', Limit: 60,
+        Fields: VIDEO_FIELDS, EnableImageTypes: 'Primary,Thumb,Backdrop' }, toVideo);
+    },
     async seasons(seriesId) {
       const d = await json(`Shows/${seriesId}/Seasons?${q({ userId: await user(), Fields: VIDEO_FIELDS })}`);
       return (d.Items || []).map(toVideo);

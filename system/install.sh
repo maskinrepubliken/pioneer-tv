@@ -166,6 +166,35 @@ if ov and isinstance(ov.get("services"), list) and not any(s.get("row") == "live
     print("  settings.json: added the live row")
 PYEOF
 
+# The Film & serier tile opens our own page (film.html, videos in mpv)
+# instead of Jellyfin's web UI, once: in config.toml and in the settings
+# page's services, wherever it still points at Jellyfin's /web/.
+python3 - /etc/pioneer-tv/config.toml /etc/pioneer-tv/settings.json <<'PYEOF'
+import json, re, sys
+config, overlay = sys.argv[1:3]
+FILM = "http://127.0.0.1:8765/ext/launcher/film.html?tv=1"
+text = open(config).read()
+blocks = re.split(r"(?m)^(?=\[\[services\]\])", text)
+for i, b in enumerate(blocks):
+    if re.search(r'^id = "jellyfin"', b, re.M) and re.search(r'^url = "[^"]*/web/"', b, re.M):
+        b = re.sub(r'^url = .*$', f'url = "{FILM}"', b, flags=re.M)
+        b = re.sub(r'^search_url = .*$', f'search_url = "{FILM}#/search/{{query}}"', b, flags=re.M)
+        b = re.sub(r"^# The server's Tailscale address.*\n", "", b, flags=re.M)
+        blocks[i] = b
+        print("  config.toml: Film & serier opens film.html")
+open(config, "w").write("".join(blocks))
+try:
+    ov = json.load(open(overlay))
+except (OSError, ValueError):
+    ov = None
+if ov and isinstance(ov.get("services"), list):
+    for s in ov["services"]:
+        if s.get("id") == "jellyfin" and str(s.get("url", "")).rstrip("/").endswith("/web"):
+            s["url"], s["search_url"] = FILM, FILM + "#/search/{query}"
+            open(overlay, "w").write(json.dumps(ov, ensure_ascii=False, indent=2))
+            print("  settings.json: Film & serier opens film.html")
+PYEOF
+
 sed "s/@MODE@/$MODE/" "$REPO/system/weston.ini" > "$HOME_DIR/.config/weston.ini"
 cat > /etc/pioneer-tv/board.env <<EOF
 # Written by install.sh; start-chromium.sh reads the window size from it.
@@ -258,16 +287,21 @@ echo "== hangs and power cuts"
 # reboots after 10 s) instead of waiting for someone to pull the plug, and
 # the journal is kept on the card, so the boot before a reset or a power cut
 # can be read (journalctl -b -1).
+# Each takes effect at once, and only when it changed: re-executing systemd
+# under a running update leaves it complaining about the update's own unit.
 mkdir -p /etc/systemd/system.conf.d /etc/systemd/journald.conf.d /var/log/journal
-cp "$REPO/system/watchdog.conf" /etc/systemd/system.conf.d/pioneer-tv-watchdog.conf
-cp "$REPO/system/journald.conf" /etc/systemd/journald.conf.d/pioneer-tv.conf
-systemd-tmpfiles --create --prefix /var/log/journal 2>/dev/null || true
-systemctl restart systemd-journald 2>/dev/null || true
-journalctl --flush 2>/dev/null || true
+if ! cmp -s "$REPO/system/watchdog.conf" /etc/systemd/system.conf.d/pioneer-tv-watchdog.conf; then
+  cp "$REPO/system/watchdog.conf" /etc/systemd/system.conf.d/pioneer-tv-watchdog.conf
+  systemctl daemon-reexec 2>/dev/null || true
+fi
+if ! cmp -s "$REPO/system/journald.conf" /etc/systemd/journald.conf.d/pioneer-tv.conf; then
+  cp "$REPO/system/journald.conf" /etc/systemd/journald.conf.d/pioneer-tv.conf
+  systemd-tmpfiles --create --prefix /var/log/journal 2>/dev/null || true
+  systemctl restart systemd-journald 2>/dev/null || true
+  journalctl --flush 2>/dev/null || true
+fi
 echo 'kernel.panic = 10' > /etc/sysctl.d/91-pioneer-tv-panic.conf
 sysctl -q -p /etc/sysctl.d/91-pioneer-tv-panic.conf 2>/dev/null || true
-# The watchdog setting takes effect now, without a reboot.
-systemctl daemon-reexec 2>/dev/null || true
 
 echo "== ssh keys"
 # A fresh card knows no keys but the one it was set up with; the keys in
