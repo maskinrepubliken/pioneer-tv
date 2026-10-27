@@ -35,14 +35,15 @@
 
   // The screensaver, and a key takes it away as the daemon does on the box
   // (there the press does nothing else; here it reaches the page below).
-  const tryTheSaver = (overlay) => ({ P, win }) => {
+  const tryTheSaver = (overlay) => ({ P }) => {
     if (overlay) P.bridge.emit('saver', { show: true }); else P.hud.saver.show();
-    win.addEventListener('keydown', (e) => {
-      if (!P.hud.saver.isOpen()) return;
-      e.stopImmediatePropagation();
-      e.preventDefault();
-      if (overlay) P.bridge.emit('saver', { show: false }); else P.hud.saver.hide();
-    }, true);
+    // The spatial navigation hands every key to a captured layer first.
+    P.nav.captured = {
+      onKeyDown() {
+        P.nav.captured = null;
+        if (overlay) P.bridge.emit('saver', { show: false }); else P.hud.saver.hide();
+      },
+    };
   };
 
   // ------------------------------------------------------------ the views
