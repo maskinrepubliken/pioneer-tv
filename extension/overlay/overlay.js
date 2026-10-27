@@ -15,6 +15,20 @@ window.PioneerTV = window.PioneerTV || {};
     try { window.webkit.messageHandlers.pioneertv.postMessage(JSON.stringify(msg)); } catch {}
   };
 
+  // The keyboard goes back to the window below only once every key is up.
+  // The menu closes on a key's press (B, or A on Tillbaka); a window that
+  // gets the keyboard while that key is still down is told it is held, and
+  // Chromium took the B that closed the menu as its own Escape and left
+  // fullscreen (seen on the box over SVT1). Registered before the spatial
+  // navigation, which stops the keys the menu handles.
+  const held = new Set();
+  let letGo = null;
+  window.addEventListener('keydown', (e) => held.add(e.code), true);
+  window.addEventListener('keyup', (e) => {
+    held.delete(e.code);
+    if (!held.size && letGo) letGo();
+  }, true);
+
   b.init();
   M.nav.init();
   b.state.tvMode = true;
@@ -31,8 +45,15 @@ window.PioneerTV = window.PioneerTV || {};
   b.on('menu', () => M.hud.menu.toggle());
   b.on('keyboard', () => M.hud.menu.close());     // Y closes the menu, as on the pages
   b.on('escape', () => M.hud.menu.close());
-  b.on('menu:open', () => { host({ keyboard: true }); b.daemon({ type: 'overlay_menu', open: true }); });
-  b.on('menu:close', () => { host({ keyboard: false }); b.daemon({ type: 'overlay_menu', open: false }); });
+  function releaseKeyboard() {
+    const done = () => { clearTimeout(timer); letGo = null; if (!M.hud.menu.isOpen()) host({ keyboard: false }); };
+    const timer = setTimeout(() => { held.clear(); done(); }, 1500);   // a key up that never came
+    letGo = done;
+    if (!held.size) done();
+  }
+
+  b.on('menu:open', () => { letGo = null; host({ keyboard: true }); b.daemon({ type: 'overlay_menu', open: true }); });
+  b.on('menu:close', () => { releaseKeyboard(); b.daemon({ type: 'overlay_menu', open: false }); });
 
   b.on('toast', (e) => M.hud.toast(e.text, e.icon || ''));
   b.on('gamepad', (e) => M.hud.toast(`${e.label || 'Handkontroll'} ${e.connected ? 'ansluten' : 'frånkopplad'}`, 'gamepad'));
