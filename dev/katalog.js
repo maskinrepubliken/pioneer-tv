@@ -155,6 +155,8 @@
           setup: ({ P }) => P.bridge.emit('games', { state: 'loading', got: 12.4e6, total: 31.5e6 }) },
         { name: 'Filmen startar', url: `${L}film.html?tv=1#/item/film1`, ready: '.knapp.primar',
           setup: ({ P }) => { P.film.player.state = 'starting'; P.film.player.show('Startar…', 'Fyren'); } },
+        { name: 'Filmen är slut', url: `${L}film.html?tv=1#/item/film1`, ready: '.knapp.primar',
+          setup: ({ P }) => { P.film.player.state = 'running'; P.bridge.emit('video', { state: 'ended' }); } },
         { name: 'Något gick fel', url: `${L}spela.html?rom=101`, ready: '.pioneertv-screen',
           setup: ({ P }) => P.bridge.emit('games', { state: 'error', message: 'Spelet kunde inte startas: core not found' }) },
         { name: 'Vilar', url: HOME, ready: '#tao-text:not(:empty)', setup: ({ P }) => P.home.rest(true) },
