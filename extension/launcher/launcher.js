@@ -13,8 +13,7 @@
 
   const fractal = M.mandelbrot($('fractal'));
 
-  // A new line every few minutes, somewhere else on the screen, so nothing
-  // stays burnt into the panel.
+  // A new line every few minutes, as large as the screen takes it.
   const LINE_MS = 3 * 60 * 1000;
   let order = [];
   let lineTimer = null;
@@ -23,11 +22,22 @@
     const [text, chapter] = M.tao[order.pop()];
     $('tao-text').textContent = `”${text}”`;
     $('tao-where').textContent = `Tao Te Ching · ${chapter}`;
-    const box = $('tao');
-    box.style.left = `${Math.round(5 + Math.random() * 55)}vw`;
-    box.style.top = `${Math.round(8 + Math.random() * 60)}vh`;
-    box.style.right = 'auto';
+    fitLine();
   }
+  // The largest size at which the line and its chapter fit the screen.
+  function fitLine() {
+    const box = $('tao');
+    const quote = $('tao-text');
+    let lo = 2, hi = 16;                       // vw
+    for (let i = 0; i < 12; i++) {
+      const mid = (lo + hi) / 2;
+      quote.style.fontSize = `${mid}vw`;
+      if (box.scrollHeight <= box.clientHeight && quote.scrollWidth <= quote.clientWidth) lo = mid; else hi = mid;
+    }
+    quote.style.fontSize = `${lo}vw`;
+  }
+  window.addEventListener('resize', fitLine);
+  if (document.fonts) document.fonts.ready.then(fitLine);
   function lines(on) {
     clearInterval(lineTimer);
     lineTimer = null;

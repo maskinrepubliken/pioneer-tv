@@ -152,7 +152,7 @@
       used: 'Håll Hem; boxen går hit av sig själv efter 10 min utan knapptryck. Den är skärmsläckaren; en knapp öppnar huvudmenyn.',
       items: [
         { name: 'Mandelbrot och ett citat', url: HOME, ready: '#tao-text:not(:empty)',
-          note: 'Zoomar in mot en plats längs mängdens kant, ut och vidare. Nytt citat på ett nytt ställe var tredje minut.' },
+          note: 'Som en öppen eld: glöd i rost och ockra, starkast nertill, som fladdrar och dallrar uppåt. En zoom tar en kvart. Ett nytt citat, så stort som skärmen tar, var tredje minut.' },
         { name: 'Djupt inne', url: HOME, ready: '#tao-text:not(:empty)',
           setup: ({ P }) => P.home.fractal.jump(0.5),
           note: 'Nära det djupaste av en zoom, där bredden är en tjugotusendel av början.' },

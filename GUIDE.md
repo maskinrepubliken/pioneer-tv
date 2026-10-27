@@ -176,13 +176,16 @@ the TV's power state every 30 seconds, because a set switched off with its own
 remote does not always announce it.
 
 Left alone, the box goes home, and home is the screensaver: the
-Mandelbrot set, generated without end (`launcher/mandelbrot.js`, on the GPU
-at a third of the screen's width and fifteen frames a second), zooming in
-on one place along the set's edge, out, and on to the next, six minutes a
-round. Kept calm: mostly ink, with a dimmed glow of forest, rust and ochre
-only near the set's edge, and a line of the Tao Te Ching on it (`launcher/tao.js`,
-our own Swedish renderings) that changes, and moves, every three minutes.
-No clock, no date.
+Mandelbrot set, generated without end, like an open fire
+(`launcher/mandelbrot.js`, on the GPU at a third of the screen's width and
+fifteen frames a second). It zooms in on one place along the set's edge,
+out, and on to the next, a quarter of an hour a round. Nearly all of it is
+ink; near the set's edge it glows as embers do, through rust to a dimmed
+ochre, brightest at the foot of the screen, flickering gently (a few slow
+waves out of step) while the edges waver upwards like the air over a
+flame. On it, with no box behind it, a line of the Tao Te Ching
+(`launcher/tao.js`, our own Swedish renderings) fills the screen, large and
+muted, and changes every three minutes. No clock, no date.
 
 - **Anywhere but home**, after ten minutes without a button, the box goes
   home. A game held on its pause panel is quit on the way (its state is

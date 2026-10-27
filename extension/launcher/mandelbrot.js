@@ -1,8 +1,10 @@
-// Pioneer TV home: the Mandelbrot set, generated without end. It zooms in
-// on one of a few places along the set's edge, out again, and on to the
-// next, slowly. Calm on purpose: nearly all of it is ink, and only close to
-// the set's edge does it glow, through forest and rust to a dimmed ochre;
-// no bands of colour repeat.
+// Pioneer TV home: the Mandelbrot set, generated without end, like an open
+// fire. It zooms in on one of a few places along the set's edge, out again
+// and on to the next, very slowly (a quarter of an hour a round). Nearly
+// all of it is ink; near the set's edge it glows as embers do, through rust
+// to a dimmed ochre, brightest at the foot of the screen. The glow flickers
+// gently (a few slow waves out of step, never a blink), and the edges
+// waver upwards like the air over a flame.
 //
 // Drawn by the GPU (WebGL) at a third of the screen's width and fifteen
 // frames a second, scaled up: the zoom is slow, so it looks smooth, and
@@ -25,7 +27,7 @@ window.PioneerTV = window.PioneerTV || {};
   ];
   const WIDE = 3.2;                  // the set's width on screen at the widest
   const DEEP = 1e-3;
-  const CYCLE_S = 360;               // in, out and on to the next place
+  const CYCLE_S = 900;               // in, out and on to the next place
   const FPS = 15;
 
   const smooth = (t) => t * t * (3 - 2 * t);
@@ -40,7 +42,15 @@ window.PioneerTV = window.PioneerTV || {};
     const depth = f < 0.55 ? smooth(f / 0.55) : 1 - smooth((f - 0.55) / 0.45);
     const width = Math.exp(Math.log(WIDE) + (Math.log(DEEP) - Math.log(WIDE)) * depth);
     const move = f < 0.75 ? 0 : smooth((f - 0.75) / 0.25);
-    return { x: here[0] + (next[0] - here[0]) * move, y: here[1] + (next[1] - here[1]) * move, width, depth };
+    // The fire's own clock, kept small for the GPU's floats (it starts over
+    // once an hour, a step too small to see in the waver).
+    return { x: here[0] + (next[0] - here[0]) * move, y: here[1] + (next[1] - here[1]) * move, width, depth, t: t % 3600 };
+  }
+
+  // How bright the fire burns at time t: around 1, a few slow waves out of
+  // step with each other, so it never repeats and never blinks.
+  function flicker(t) {
+    return 1 + 0.06 * Math.sin(t * 0.83) + 0.04 * Math.sin(t * 1.37 + 1.3) + 0.025 * Math.sin(t * 2.71 + 2.1);
   }
 
   // The design system's colours, read from tokens.css.
@@ -55,13 +65,10 @@ window.PioneerTV = window.PioneerTV || {};
       pixel.fillRect(0, 0, 1, 1);
       return [...pixel.getImageData(0, 0, 1, 1).data.slice(0, 3)].map((x) => x / 255);
     };
-    return [
-      rgb('--pioneertv-surface-ink', '#1c1613'),
-      rgb('--pioneertv-surface-forest', '#2e4633'),
-      rgb('--pioneertv-surface-rust', '#a8533a'),
-      rgb('--pioneertv-ochre', '#f5cf5a'),
-      rgb('--pioneertv-paper', '#f4efe4'),
-    ];
+    // Ink, an ember (ink and rust), rust, ochre.
+    const ink = rgb('--pioneertv-surface-ink', '#1c1613');
+    const rust = rgb('--pioneertv-surface-rust', '#7a4e33');
+    return [ink, ink.map((x, i) => (x + rust[i]) / 2), rust, rgb('--pioneertv-ochre', '#f5cf5a')];
   }
 
   const FRAGMENT = `
@@ -69,19 +76,31 @@ window.PioneerTV = window.PioneerTV || {};
     uniform vec2 size;
     uniform vec2 centre;
     uniform float width;
+    uniform float time;
+    uniform float bright;
     uniform int steps;
-    uniform vec3 c0, c1, c2, c3, c4;
-    // Far from the set: ink. Nearer: forest, then rust, then a dimmed
-    // ochre right at the edge. t is how near, 0 to 1.
+    uniform vec3 c0, c1, c2, c3;
+    // Smooth noise, for the air over the flame.
+    float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+    float noise(vec2 p) {
+      vec2 i = floor(p), f = fract(p);
+      f = f * f * (3.0 - 2.0 * f);
+      return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+    }
+    // Far from the set: ink. Nearer: an ember, rust, then a dimmed ochre
+    // right at the edge. t is how near, 0 to 1.
     vec3 shade(float t) {
       float g = pow(clamp(t, 0.0, 1.0), 2.2);
-      vec3 c = g < 0.5 ? mix(c0, c1, g / 0.5)
-             : g < 0.8 ? mix(c1, c2, (g - 0.5) / 0.3)
-             : mix(c2, c3, (g - 0.8) / 0.2);
-      return mix(c0, c, 0.8);
+      return g < 0.5 ? mix(c0, c1, g / 0.5)
+           : g < 0.8 ? mix(c1, c2, (g - 0.5) / 0.3)
+           : mix(c2, c3, (g - 0.8) / 0.2);
     }
     void main() {
-      vec2 p = (gl_FragCoord.xy - size * 0.5) / size.x * width + centre;
+      vec2 uv = gl_FragCoord.xy / size;
+      // The air over a flame: the picture wavers a little, the waves rising.
+      vec2 rise = vec2(uv.x * 3.0, uv.y * 2.0 - time * 0.12);
+      vec2 waver = vec2(noise(rise) - 0.5, noise(rise + 17.0) - 0.5) * width * 0.008;
+      vec2 p = (gl_FragCoord.xy - size * 0.5) / size.x * width + centre + waver;
       vec2 z = vec2(0.0);
       float n = 0.0;
       for (int i = 0; i < 600; i++) {
@@ -93,7 +112,12 @@ window.PioneerTV = window.PioneerTV || {};
       if (n >= float(steps)) { gl_FragColor = vec4(c0, 1.0); return; }
       // Smooth count: no bands between the steps.
       float nu = n + 1.0 - log2(log2(dot(z, z)) * 0.5);
-      gl_FragColor = vec4(shade(log(max(nu, 1.0)) / log(float(steps))), 1.0);
+      // Brightest at the foot, as a fire is; the flicker, and slow patches
+      // of brighter and darker drifting up through it.
+      float foot = mix(1.0, 0.5, smoothstep(0.0, 1.0, uv.y));
+      float drift = 0.85 + 0.3 * noise(vec2(uv.x * 2.0, uv.y * 1.5 - time * 0.07));
+      vec3 c = mix(c0, shade(log(max(nu, 1.0)) / log(float(steps))), clamp(0.8 * foot * drift * bright, 0.0, 1.0));
+      gl_FragColor = vec4(c, 1.0);
     }`;
   const VERTEX = 'attribute vec2 a; void main() { gl_Position = vec4(a, 0.0, 1.0); }';
 
@@ -127,6 +151,8 @@ window.PioneerTV = window.PioneerTV || {};
       gl.uniform2f(u('centre'), v.x, v.y);
       gl.uniform1f(u('width'), v.width);
       gl.uniform1i(u('steps'), Math.round(120 + 240 * v.depth));
+      gl.uniform1f(u('time'), v.t);
+      gl.uniform1f(u('bright'), flicker(v.t));
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     };
   }
@@ -142,6 +168,7 @@ window.PioneerTV = window.PioneerTV || {};
       if (row === 0) v = next;
       const { width: w, height: h } = canvas;
       const steps = Math.round(80 + 120 * v.depth);
+      const bright = flicker(v.t);
       const band = Math.ceil(h / 6);
       for (let y = row; y < Math.min(h, row + band); y++) {
         for (let x = 0; x < w; x++) {
@@ -155,7 +182,8 @@ window.PioneerTV = window.PioneerTV || {};
             const nu = n + 1 - Math.log2(Math.log2(zx * zx + zy * zy) / 2);
             const g = Math.min(1, Math.max(0, Math.log(Math.max(nu, 1)) / Math.log(steps))) ** 2.2;
             const [from, to, f] = g < 0.5 ? [0, 1, g / 0.5] : g < 0.8 ? [1, 2, (g - 0.5) / 0.3] : [2, 3, (g - 0.8) / 0.2];
-            c = colours[from].map((a, k) => colours[0][k] + (a + (colours[to][k] - a) * f - colours[0][k]) * 0.8);
+            const glow = Math.min(1, 0.8 * (1 - 0.5 * (y / h)) * bright);     // brightest at the foot
+            c = colours[from].map((a, k) => colours[0][k] + (a + (colours[to][k] - a) * f - colours[0][k]) * glow);
           }
           const o = (y * w + x) * 4;
           img.data[o] = c[0]; img.data[o + 1] = c[1]; img.data[o + 2] = c[2]; img.data[o + 3] = 255;
