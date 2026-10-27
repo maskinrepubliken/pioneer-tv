@@ -25,12 +25,8 @@
   M.launcherUrl = new URL('index.html?tv=1', location.href).href;
 
   // ------------------------------------------------------------ helpers
-  function el(tag, cls, text) {
-    const e = document.createElement(tag);
-    if (cls) e.className = cls;
-    if (text != null) e.textContent = text;
-    return e;
-  }
+  const V = M.views;
+  const el = V.el;
 
   const clock = (s) => {
     if (s == null || !isFinite(s)) return '';
@@ -71,26 +67,9 @@
     return bar;
   }
 
-  function setLegend(items) {
-    legend.innerHTML = '';
-    for (const [key, text] of [...items, ['B', 'tillbaka']]) {
-      const s = el('span');
-      if (key) { s.appendChild(el('kbd', 'pioneertv-kbd', key)); s.append(' '); }
-      s.append(text);
-      legend.appendChild(s);
-    }
-    const credit = el('span', 'credit');
-    const img = el('img'); img.src = 'ordbild-en-rad-black.svg'; img.alt = 'Maskinrepubliken';
-    credit.appendChild(img);
-    legend.appendChild(credit);
-  }
+  const setLegend = (items) => V.legend(legend, [...items, ['B', 'tillbaka']]);
 
-  function button(text, primary, onClick) {
-    const btn = el('button', `knapp${primary ? ' primar' : ''}`, text);
-    btn.type = 'button';
-    btn.addEventListener('click', onClick);
-    return btn;
-  }
+  const button = V.button;
 
   // Where the focus was in each view, so B lands back on the same card.
   const lastFocus = {};
@@ -157,33 +136,11 @@
   }
 
   // ------------------------------------------------------------ messages
-  function message(text, hint, retry) {
-    view.innerHTML = '';
-    const box = el('section', 'spel-message');
-    box.appendChild(el('p', '', text));
-    if (hint) box.appendChild(el('p', 'hint', hint));
-    if (retry) {
-      const btn = button('Försök igen', true, retry);
-      box.appendChild(btn);
-      M.nav.focus(btn);
-    }
-    view.appendChild(box);
-  }
+  const message = (text, hint, retry) => V.message(view, text, hint, retry);
 
-  function loadingView() {
-    view.innerHTML = '';
-    view.appendChild(el('p', 'spel-loading', 'Laddar…'));
-  }
+  const loadingView = () => V.loading(view);
 
-  function renderError(err) {
-    const code = err && err.code;
-    const where = 'Inställningar → Jellyfin';
-    if (code === 'no_key') return message('Lägg in en API-nyckel för Jellyfin', `Under ${where}.`, route);
-    if (code === 'no_user') return message('Användaren finns inte i Jellyfin', `Ändra namnet under ${where}.`, route);
-    if (code === 'auth') return message('API-nyckeln godtas inte', `Lägg in en ny under ${where}.`, route);
-    console.error(err);
-    return message('Jellyfin svarar inte', 'Kontrollera att servern är igång.', route);
-  }
+  const renderError = (err) => V.error(view, 'Jellyfin', err, route);
 
   // ------------------------------------------------------------ tabs
   let libraries = null;

@@ -224,6 +224,26 @@ window.PioneerTV = window.PioneerTV || {};
     },
   };
 
+  // The notes the daemon's events give, wired once for the overlay and the
+  // pages alike. Toasts and the screensaver come addressed (the daemon's
+  // router sends them to the overlay while it is up, else to the page);
+  // a pad or a keyboard coming and going and the volume do not, so a page
+  // shows those only when there is no overlay (unaddressed()).
+  hud.listen = function (b, unaddressed) {
+    const ours = (f) => (e) => { if (unaddressed()) f(e); };
+    b.on('toast', (e) => hud.toast(e.text, e.icon || ''));
+    b.on('saver', (e) => (e.show ? hud.saver.show() : hud.saver.hide()));
+    b.on('gamepad', ours((e) => hud.toast(`${e.label || 'Handkontroll'} ${e.connected ? 'ansluten' : 'frånkopplad'}`, 'gamepad')));
+    b.on('keyboard_present', ours((e) => hud.toast(e.present ? 'Tangentbord anslutet' : 'Tangentbord frånkopplat', 'keyboard')));
+    // Off by default: the TV draws its own volume bar (Settings → TV).
+    b.on('volume', ours((e) => {
+      const ui = (b.state.config && b.state.config.ui) || {};
+      if (!ui.volume_toast) return;
+      hud.toast(e.direction === 'up' ? 'Volym +' : e.direction === 'down' ? 'Volym −' : 'Ljud av', e.direction === 'mute' ? 'mute' : 'volume');
+    }));
+    b.on('active_pad', (e) => hud.applyPad(e.pad));
+  };
+
   hud.applyPad = function (pad) {
     const root = document.documentElement;
     if (!root) return;

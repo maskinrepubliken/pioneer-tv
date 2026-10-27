@@ -63,16 +63,8 @@ window.PioneerTV = window.PioneerTV || {};
   b.on('menu:open', () => { letGo = null; clearTimeout(giveUp); host({ keyboard: true }); b.daemon({ type: 'overlay_menu', open: true }); });
   b.on('menu:close', () => { releaseKeyboard(); b.daemon({ type: 'overlay_menu', open: false }); });
 
-  b.on('toast', (e) => M.hud.toast(e.text, e.icon || ''));
-  b.on('saver', (e) => (e.show ? M.hud.saver.show() : M.hud.saver.hide()));
-  b.on('gamepad', (e) => M.hud.toast(`${e.label || 'Handkontroll'} ${e.connected ? 'ansluten' : 'frånkopplad'}`, 'gamepad'));
-  b.on('keyboard_present', (e) => M.hud.toast(e.present ? 'Tangentbord anslutet' : 'Tangentbord frånkopplat', 'keyboard'));
-  b.on('volume', (e) => {
-    const ui = (b.state.config && b.state.config.ui) || {};
-    if (!ui.volume_toast) return;
-    M.hud.toast(e.direction === 'up' ? 'Volym +' : e.direction === 'down' ? 'Volym −' : 'Ljud av', e.direction === 'mute' ? 'mute' : 'volume');
-  });
-  b.on('active_pad', (e) => M.hud.applyPad(e.pad));
+  // The notes, the screensaver and the pad's colours, as on the pages (hud.listen).
+  M.hud.listen(b, () => true);
 
   // ------------------------------------------------------------ pause panels
   // A game or a video, held where it is by the daemon ("held"), with its

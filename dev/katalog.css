@@ -16,10 +16,15 @@ body {
 .toc a:hover { background: var(--pioneertv-paper-raised); }
 
 section.group { padding: 24px 40px 8px; }
-section.group h2 {
-  margin: 0 0 14px; font: 13px/1 var(--pioneertv-font-mono); letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--pioneertv-ink-faint);
+h2.part {
+  margin: 40px 40px 0; padding-top: 18px; border-top: 2px solid var(--pioneertv-ink);
+  font: 900 26px/1 var(--pioneertv-font-display); text-transform: uppercase; letter-spacing: -0.01em;
 }
+section.group h3 { margin: 0 0 6px; font: 600 20px/1.2 var(--pioneertv-font-ui); }
+.meta { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 0 0 16px; max-width: 900px; }
+.meta dt { font: 12px/1.5 var(--pioneertv-font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--pioneertv-ink-faint); }
+.meta dd { margin: 0; font: 15px/1.4 var(--pioneertv-font-prose); color: var(--pioneertv-ink-muted); }
+.toc-part { width: 100%; margin-top: 6px; font: 12px/1 var(--pioneertv-font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--pioneertv-ink-faint); }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, 384px); gap: 22px 20px; }
 
 /* A view at 0.3 of its size: the frame is 1280x720, scaled into 384x216. */

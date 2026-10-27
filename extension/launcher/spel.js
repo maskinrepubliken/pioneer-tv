@@ -17,12 +17,8 @@
   const playUrl = (id) => `spela.html?rom=${id}${tv}`;
 
   // ------------------------------------------------------------ helpers
-  function el(tag, cls, text) {
-    const e = document.createElement(tag);
-    if (cls) e.className = cls;
-    if (text != null) e.textContent = text;
-    return e;
-  }
+  const V = M.views;
+  const el = V.el;
 
   function when(iso) {
     if (!iso) return '';
@@ -110,19 +106,7 @@
     return a;
   }
 
-  function setLegend(items) {
-    legend.innerHTML = '';
-    for (const [key, text] of items) {
-      const s = el('span');
-      if (key) { const k = el('kbd', 'pioneertv-kbd', key); s.appendChild(k); s.append(' '); }
-      s.append(text);
-      legend.appendChild(s);
-    }
-    const credit = el('span', 'credit');
-    const img = el('img'); img.src = 'ordbild-en-rad-black.svg'; img.alt = 'Maskinrepubliken';
-    credit.appendChild(img);
-    legend.appendChild(credit);
-  }
+  const setLegend = (items) => V.legend(legend, items);
 
   // Where the focus was in each view, so B lands back on the same card.
   const lastFocus = {};
@@ -143,35 +127,13 @@
   });
 
   // ------------------------------------------------------------ messages
-  function message(text, hint, retry) {
-    view.innerHTML = '';
-    const box = el('section', 'spel-message');
-    box.appendChild(el('p', '', text));
-    if (hint) box.appendChild(el('p', 'hint', hint));
-    if (retry) {
-      const btn = el('button', 'knapp primar', 'Försök igen');
-      btn.type = 'button';
-      btn.addEventListener('click', retry);
-      box.appendChild(btn);
-      M.nav.focus(btn);
-    }
-    view.appendChild(box);
-  }
+  const message = (text, hint, retry) => V.message(view, text, hint, retry);
 
   // While a view loads: "Laddar…" in the middle, in italics, as the player
   // says it while a game loads.
-  function loadingView() {
-    view.innerHTML = '';
-    view.appendChild(el('p', 'spel-loading', 'Laddar…'));
-  }
+  const loadingView = () => V.loading(view);
 
-  function renderError(err) {
-    const code = err && err.code;
-    if (code === 'no_key') return message('Lägg in en API-nyckel för RomM under Inställningar → RomM', null, route);
-    if (code === 'auth') return message('API-nyckeln godtas inte', 'Lägg in en ny under Inställningar → RomM.', route);
-    console.error(err);
-    return message('RomM svarar inte', 'Kontrollera att servern är igång.', route);
-  }
+  const renderError = (err) => V.error(view, 'RomM', err, route);
 
   // ------------------------------------------------------------ start view
   async function start(token) {

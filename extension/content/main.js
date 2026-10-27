@@ -25,20 +25,12 @@
     else if (M.logs.isOpen()) M.logs.close();
     else if (M.keyboard.isOpen()) M.keyboard.close();
   });
-  // Our own volume note is off by default: the TV draws its own volume bar.
-  // Settings → TV → "Visa en notis vid volymändring" turns it back on.
-  // With the overlay up (labwc) it shows the toasts over everything; the
-  // page keeps only its own (overlay.py in the daemon).
+  // The notes (hud.listen): with the overlay up (labwc) it shows them over
+  // everything, and the page keeps only what is addressed to it. Every page
+  // starts in the design system's own colours (ochre); the pad's colours
+  // come with its first press there.
   const overlay = () => !!(b.state.config && b.state.config.overlay);
-  b.on('volume', (e) => {
-    const ui = (b.state.config && b.state.config.ui) || {};
-    if (!ui.volume_toast || overlay()) return;
-    M.hud.toast(e.direction === 'up' ? 'Volym +' : e.direction === 'down' ? 'Volym −' : 'Ljud av', e.direction === 'mute' ? 'mute' : 'volume');
-  });
-  b.on('gamepad', (e) => overlay() || M.hud.toast(`${e.label || 'Handkontroll'} ${e.connected ? 'ansluten' : 'frånkopplad'}`, 'gamepad'));
-  // Every page starts in the design system's own colours (ochre); the pad's
-  // colours come with its first press there.
-  b.on('active_pad', (e) => M.hud.applyPad(e.pad));
+  M.hud.listen(b, () => !overlay());
   b.on('tv', (e) => {
     if (e.power === 'standby') document.querySelectorAll('video').forEach((v) => { try { v.pause(); } catch {} });
   });
@@ -46,11 +38,7 @@
     const s = b.state;
     M.hud.toast(`${s.daemonConnected ? 'Daemon ansluten' : 'Ingen daemon'} · ${location.hostname || 'launcher'}`, 'info');
   });
-  b.on('toast', (e) => M.hud.toast(e.text, e.icon || ''));
-  b.on('keyboard_present', (e) => {
-    b.state.physicalKeyboard = !!e.present;
-    if (!overlay()) M.hud.toast(e.present ? 'Tangentbord anslutet' : 'Tangentbord frånkopplat', 'keyboard');
-  });
+  b.on('keyboard_present', (e) => { b.state.physicalKeyboard = !!e.present; });
 
   b.on('state', (s) => document.documentElement.classList.toggle('pioneertv-tv', !!s.tvMode));
 
@@ -73,9 +61,6 @@
       held = [];
     }
   });
-
-  // The screensaver (idle.py decides): drawn here only without the overlay.
-  b.on('saver', (e) => (e.show ? M.hud.saver.show() : M.hud.saver.hide()));
 
   // What the daemon cannot see for itself: whether something plays here (a
   // video or audio element in this page or any of its frames, or a game in
