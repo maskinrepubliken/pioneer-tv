@@ -528,9 +528,8 @@
       else if (e.key === 'Escape') this.close();
     },
   };
-  // The quick menu and the keyboard take the pad while open; it comes back here.
+  // The keyboard takes the pad while open; it comes back here.
   const recapture = () => { if (np.isOpen() && !M.nav.captured) M.nav.captured = np; };
-  b.on('menu:close', recapture);
   b.on('keyboard:close', recapture);
 
   // ------------------------------------------------------------ router

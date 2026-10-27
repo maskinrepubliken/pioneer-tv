@@ -35,13 +35,13 @@ what was learned on the way.
 | A / Cross | Select (Enter) |
 | B / Circle | Escape: closes an overlay, releases an engaged slider, leaves a text field. Hold: one page back |
 | X / Square | Play, pause (Space) |
-| Y / Triangle | On-screen keyboard. Hold: quick menu |
+| Y / Triangle | On-screen keyboard. Hold: main menu |
 | L1, R1 | Shift+Tab, Tab (previous, next focusable) |
 | L2, R2 | TV volume down, up (CEC, repeats while held) |
 | Right stick | Mouse pointer; click on the stick to left-click |
-| Start | Quick menu (also: hold Y) |
+| Start | Main menu (also: hold Y) |
 | Select | Status toast |
-| Guide / Home / PS / Xbox | Quick menu (press again to close it); in a game or a film, the pause panel instead. Hold: home. Also wakes the TV and switches input when the pad connects |
+| Guide / Home / PS / Xbox | Main menu, over whatever is on screen (press again to close it); in a game or a film, the pause panel instead. Hold: home (the clock) with the main menu open. Also wakes the TV and switches input when the pad connects |
 
 In a film or an episode playing in mpv, A, B and X pause it and open its
 pause panel, left and right seek ten seconds, L1 and R1 a minute, and
@@ -56,18 +56,19 @@ The TV remote works too: keys the TV forwards over CEC are mapped in `[cec.remot
  gamepad ──evdev──▶ daemon ──uinput──▶ labwc ──▶ Chromium (kiosk, --load-extension)
                       │                   │          ├─ content scripts: spatial nav, keyboard, HUD
                       │                   │          ├─ background: single tab, home, dev shortcuts
-                      │◀── ws://127.0.0.1:8765/ws ───┤  launcher page: services from config
+                      │◀── ws://127.0.0.1:8765/ws ───┤  home page: the clock
                       │                   │             settings page: status, Wi-Fi, Bluetooth, services
                       │                   ├────▶ RetroArch (a game, started by the daemon)
                       │                   ├────▶ mpv (a film from Jellyfin, started by the daemon)
-                      │◀── ws ────────────┴────▶ overlay (WebKit, top layer): quick menu, pause panels, toasts
+                      │◀── ws ────────────┴────▶ overlay (WebKit, top layer): main menu, pause panels, toasts, screensaver
                       └──cec-ctl──▶ /dev/cec0 ──▶ TV
 ```
 
 Navigation keys go through a virtual keyboard so every page, and Chromium
 itself, sees ordinary key presses. Buttons that mean something to the shell
-(home, menu, keyboard) go over the WebSocket as events, to the overlay while
-it is up and to the page otherwise ([The overlay](#the-overlay)). CEC is only
+(home, menu, keyboard) go over the WebSocket as events: the menu to the
+overlay, Y to the page unless the overlay's menu is open
+([The overlay](#the-overlay)). CEC is only
 ever touched by the daemon.
 
 ## Installing in detail
@@ -127,11 +128,12 @@ vcgencmd get_throttled                # 0x0 means the TV's USB port is enough
 ## Settings and status
 
 The daemon serves a settings page at `http://127.0.0.1:8765/`. On the TV it is
-reached from the quick menu (Start → Inställningar), where the spatial
+reached from the main menu (Home → Inställningar → a tab), where the spatial
 navigation and on-screen keyboard work like on any other page; a USB keyboard
 works too, and while one is plugged in the on-screen keyboard stays out of the
-way. The quick menu itself shows Wi-Fi, Tailscale (and whether the Jellyfin peer is
-online), connected gamepads with battery, and temperature.
+way. The menu's Inställningar shows Wi-Fi, Tailscale (and whether the Jellyfin
+peer is online), connected gamepads with battery, and temperature at its foot.
+Its toasts are the overlay's, like every other (`POST /api/toast`).
 
 The page has: status (network, Tailscale, CEC, gamepads, thermals and power
 throttling), Wi-Fi networks with connect and forget plus saving a network that
@@ -251,8 +253,8 @@ on screen, and so does any full-screen page with a large canvas. In game mode th
 pad buttons into arrows, Enter and Escape, so the emulator reads the pad itself through the browser's
 Gamepad API and its own button mapping applies. The extension leaves the page's keys alone too.
 
-A few buttons still belong to the box: Guide opens the quick menu and holding it goes home, holding
-Start opens the quick menu too and the triggers set the TV volume. While an overlay is open the pad
+A few buttons still belong to the box: Guide opens the main menu and holding it goes home, holding
+Start opens the main menu too and the triggers set the TV volume. While an overlay is open the pad
 drives it as usual. Game mode ends when the page goes away or stops sending heartbeats.
 
 ## Music
@@ -300,7 +302,7 @@ first is the language chosen last time in the same series (or film), on
 the detail page or in the pause panel (`/var/lib/pioneer-tv/video/choices.json`),
 and otherwise Jellyfin's call, from the user's own settings. A series opens on
 the first season not finished, its seasons as buttons above the episodes.
-The search field (Y opens the keyboard) and the start page's search find
+The search field (Y opens the keyboard) and the main menu's Sök find
 films, series, episodes and clips by name.
 
 Videos play in **mpv**, not Chromium, started by the daemon
@@ -319,7 +321,7 @@ panel over the picture, with the time at the top left: Fortsätt, Ljud and
 Undertexter (A steps to the next track, at once; mpv's own list, named by
 language), TV-volym and Sluta titta. B, X or Home carries on. Left and
 right seek ten seconds, L1 and R1 a minute; holding B stops; Home opens the
-pause panel too, as in a game (the quick menu's choices would act on the
+pause panel too, as in a game (the main menu's choices would act on the
 page hidden below); holding Home stops and goes home. Without the overlay, A, B and X only pause and
 resume, with mpv's timeline. Nothing plays on by itself, not even the next
 episode: at the end the screen goes black and says "Tryck B för att
@@ -417,7 +419,7 @@ spatial navigation and the overlays, and these shortcuts work:
 | --- | --- |
 | Alt+Shift+H | Launcher (home) |
 | Alt+Shift+K | Toggle on-screen keyboard |
-| Alt+Shift+M | Toggle quick menu |
+| Alt+Shift+M | Open the main menu (in the overlay) |
 
 The launcher is at `chrome-extension://dpigdefepjjejbkidlabpjlnleidgjaf/launcher/index.html`
 (the ID is fixed by the key in the manifest).
@@ -495,23 +497,39 @@ wlr-randr --output HDMI-A-1 --off      # black until --on or the display restart
 
 `system/overlay.py` is a transparent WebKitGTK window on labwc's overlay
 layer (wlr-layer-shell, through gtk4-layer-shell), above every other window:
-Chromium, RetroArch and, later, mpv. It shows the daemon's
-`/ext/overlay/index.html` (`extension/overlay/`), which uses the same `hud.js`
-as the pages for the quick menu and the toasts, so they look the same over a
-game as over a web page. A page that does not load (the daemon not up yet) is
+Chromium, RetroArch and mpv. It shows the daemon's `/ext/overlay/index.html`
+(`extension/overlay/`), and it draws everything of the box's own over the
+picture: every menu, every toast and the screensaver. The pages draw none of
+them; a page's toast is sent to the daemon and on to the overlay
+(`content/hud.js`). A page that does not load (the daemon not up yet) is
 tried again every three seconds.
 
+- **The main menu** (`overlay/main-menu.js`): Home opens it over anything,
+  holding Home goes to the home page and opens it there. The services are
+  cards with their pictures (config `services`), then Live and Sök
+  (submenus), what concerns the page below (Tillbaka, Ladda om,
+  Tangentbord), Stäng av TV:n, TV-volym and Inställningar (a submenu: each
+  row opens its tab of the settings page, the box's status at the foot). B
+  goes one step back, the last step closes it. A choice that opens a page
+  punches its row of holes until the page has loaded (the extension says
+  `loaded`). Sök types on the on-screen keyboard here in the overlay.
+- **The menu system** (`overlay/hud.js`): one paper card with a stack of
+  menus; the pause panels of a game and a film are the same card. The d-pad
+  moves to the nearest choice that way on screen, so grids and lists are
+  walked alike.
+- **The home page** (`launcher/index.html`) is only the clock the
+  screensaver draws (`overlay/clock.js`); a press there opens the main menu.
+
 Who gets Home, Y and B is decided in the daemon (`daemon/pioneertv/overlay.py`):
-the overlay while it is connected, a page's own menu while one is open (the
-start page's Live list), the page otherwise.
-Toasts go to the overlay whenever it is there. The overlay's window takes the
-keyboard (layer-shell `EXCLUSIVE`) only while its menu is open, so the rest
-of the time every key goes to the window below and the overlay is only seen.
-What the menu cannot do itself (home, back, reload, the keyboard, settings)
-it asks the page to do through the daemon. Opening the menu broadcasts
-`media: pause`, and the page pauses its video and audio; closing it resumes
-them. Should the overlay be down, the pages draw their own menu and toasts
-as before.
+Home, toasts and the screensaver always go to the overlay; Y and B go to the
+overlay while its menu is open and to the page otherwise. The overlay's
+window takes the keyboard (layer-shell `EXCLUSIVE`) only while its menu or
+its keyboard is open, so the rest of the time every key goes to the window
+below and the overlay is only seen. What the menu cannot do itself (home,
+back, reload, the keyboard, settings, opening a page) it asks the page to do
+through the daemon (`relay`). Opening the menu broadcasts `media: pause`,
+and the page pauses its video and audio; closing it resumes them. Without
+the overlay there is no menu and no toast.
 
 The login session gives every process the ambient capability
 `CAP_WAKE_ALARM`, and with it bubblewrap refuses to set up WebKit's sandbox
@@ -525,6 +543,10 @@ fullscreen) and over mpv; the toasts; and the game pause panel over a
 paused RetroArch. The overlay hands the keyboard back only once every key
 is up: Chromium given the keyboard while the B that closed the menu was
 still down took it as its own Escape and left fullscreen.
+
+**Not yet tried on the box (27 October):** the main menu in the overlay
+with its submenus, Sök on the overlay's keyboard, the toasts sent from the
+pages and the settings page, and the clock as the home page.
 
 ## When the box hangs
 

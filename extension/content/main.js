@@ -14,23 +14,16 @@
   M.game.init();
 
   const b = M.bridge;
-  // Y: the keyboard, except that with the quick menu open it closes the menu
-  // (the menu is what Y's long press opened, so Y is the way out of it too).
-  b.on('keyboard', () => (M.hud.menu.isOpen() ? M.hud.menu.close() : M.keyboard.toggle()));
-  // A page with its own menu (M.pageMenu) takes Guide.
-  b.on('menu', () => (M.pageMenu ? M.pageMenu.toggle() : M.hud.menu.toggle()));
+  // Y: the keyboard. The menus, the toasts and the screensaver are the
+  // overlay's (overlay/), never the page's: Home goes there.
+  b.on('keyboard', () => M.keyboard.toggle());
   b.on('logs', () => M.logs.toggle());
   b.on('escape', () => {
-    if (M.hud.menu.isOpen()) M.hud.menu.close();
-    else if (M.logs.isOpen()) M.logs.close();
+    if (M.logs.isOpen()) M.logs.close();
     else if (M.keyboard.isOpen()) M.keyboard.close();
   });
-  // The notes (hud.listen): with the overlay up (labwc) it shows them over
-  // everything, and the page keeps only what is addressed to it. Every page
-  // starts in the design system's own colours (ochre); the pad's colours
-  // come with its first press there.
-  const overlay = () => !!(b.state.config && b.state.config.overlay);
-  M.hud.listen(b, () => !overlay());
+  // The pad's colours (hud.js).
+  M.hud.listen(b);
   b.on('tv', (e) => {
     if (e.power === 'standby') document.querySelectorAll('video').forEach((v) => { try { v.pause(); } catch {} });
   });
@@ -42,14 +35,7 @@
 
   b.on('state', (s) => document.documentElement.classList.toggle('pioneertv-tv', !!s.tvMode));
 
-  // A menu of the page's own (the quick menu without the overlay, the start
-  // page's Live list) keeps Home, Y and B
-  // while it is open: the daemon is told, and sends them here.
-  b.on('menu:open', () => b.daemon({ type: 'page_menu', open: true }));
-  b.on('menu:close', () => b.daemon({ type: 'page_menu', open: false }));
-  window.addEventListener('pagehide', () => { if (M.hud.menu.isOpen() || (M.pageMenu && M.pageMenu.isOpen())) b.daemon({ type: 'page_menu', open: false }); });
-
-  // The overlay's quick menu pauses what plays here, and carries it on when
+  // The overlay's menu pauses what plays here, and carries it on when
   // it closes: only what it paused, so a video paused before stays paused.
   let held = [];
   b.on('media', (e) => {
@@ -96,10 +82,4 @@
   };
   window.addEventListener('keydown', tellInput, true);
   window.addEventListener('mousemove', tellInput, { capture: true, passive: true });
-
-  // Escape closes overlays before it reaches the page.
-  window.addEventListener('keydown', (e) => {
-    if (e.key !== 'Escape') return;
-    if (M.hud.menu.isOpen() || M.keyboard.isOpen()) return; // captured layers handle it
-  }, true);
 })(window.PioneerTV);

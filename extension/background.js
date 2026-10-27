@@ -70,7 +70,8 @@ async function handleDaemonMessage(msg) {
     if (msg.name === 'home') return goHome();
     if (msg.name === 'reload') return reloadActive();
     if (msg.name === 'back') return goBack();
-    if (msg.name === 'settings') return openSettings();
+    if (msg.name === 'settings') return openSettings(msg.section);
+    if (msg.name === 'navigate') return navigateActive(msg.url);
     return forwardToActiveTab(msg);
   }
 }
@@ -96,10 +97,28 @@ async function reloadActive() {
   if (tab) chrome.tabs.reload(tab.id);
 }
 
-async function openSettings() {
+async function openSettings(section) {
   const tab = await activeTab();
-  if (tab) chrome.tabs.update(tab.id, { url: (config && config.settings_url) || 'http://127.0.0.1:8765/' });
+  const url = (config && config.settings_url) || 'http://127.0.0.1:8765/';
+  if (tab) chrome.tabs.update(tab.id, { url: section ? `${url}#${encodeURIComponent(section)}` : url });
 }
+
+// A service chosen in the overlay's main menu (the daemon checked the scheme).
+async function navigateActive(url) {
+  if (!/^(https?:\/\/|chrome-extension:\/\/)/.test(url || '')) return;
+  const tab = await activeTab();
+  if (tab) chrome.tabs.update(tab.id, { url });
+  else chrome.tabs.create({ url });
+  send({ type: 'navigate', url });
+}
+
+// A page has loaded: the overlay's menu, waiting with its row of holes on
+// the choice that opened it, closes now.
+chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
+  // A change of the hash alone (a search on the page already open) loads nothing.
+  const done = info.status === 'complete' || (info.url && tab.status === 'complete');
+  if (done && tab.active) send({ type: 'loaded', url: tab.url });
+});
 
 async function goBack() {
   const tab = await activeTab();
@@ -158,7 +177,7 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
       goBack();
       break;
     case 'settings':
-      openSettings();
+      openSettings(msg.section);
       break;
     case 'navigate':
       if (sender.tab) chrome.tabs.update(sender.tab.id, { url: msg.url });
@@ -197,7 +216,7 @@ async function apiProxy(msg) {
 chrome.commands.onCommand.addListener((command) => {
   if (command === 'go-home') return goHome();
   if (command === 'toggle-keyboard') return forwardToActiveTab({ type: 'event', name: 'keyboard' });
-  if (command === 'toggle-menu') return forwardToActiveTab({ type: 'event', name: 'menu' });
+  if (command === 'toggle-menu') return send({ type: 'relay', name: 'menu' });
 });
 
 // ---------------------------------------------------------------- startup

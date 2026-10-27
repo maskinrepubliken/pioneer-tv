@@ -22,7 +22,6 @@ window.PioneerTV = window.PioneerTV || {};
 
     open(unitIndex = this.index) {
       if (this.isOpen()) this.close();
-      if (M.hud && M.hud.menu.isOpen()) M.hud.menu.close();
       this.index = unitIndex;
       const root = document.createElement('div');
       root.className = 'pioneertv-logs';

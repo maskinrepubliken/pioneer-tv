@@ -76,7 +76,7 @@ html.pioneertv-bigscreen, html.pioneertv-bigscreen body { overflow: hidden !impo
 .pioneertv-bigscreen-target video { width: 100% !important; height: 100% !important; object-fit: contain !important; }
 
 /* ---- keyboard ---- */
-/* A card clear of the screen's edges, like the quick menu: the TV crops the
+/* A card clear of the screen's edges, like the menu: the TV crops the
    edges of the picture, and keys flush with them were cut off. */
 .pioneertv-keyboard {
   position: fixed; left: 48px; right: 48px; bottom: 26px; top: auto; z-index: 2147483000;
@@ -123,18 +123,6 @@ html.pioneertv-pointer .pioneertv-key.pioneertv-key-accent.pioneertv-key-active 
   color: var(--pioneertv-ink-faint); text-align: right; white-space: nowrap;
 }
 
-/* ---- toast ---- */
-.pioneertv-toast {
-  position: fixed; top: 24px; right: 24px; left: auto; bottom: auto; z-index: 2147483001;
-  display: flex; align-items: center; gap: 12px;
-  padding: 14px 24px 14px 18px;
-  font-size: 24px; line-height: 1.25;
-  background: var(--pioneertv-paper-raised); border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-m);
-  visibility: hidden; pointer-events: none;
-}
-.pioneertv-toast-show { visibility: visible; }
-.pioneertv-toast-icon { display: inline-flex; font-size: 26px; color: var(--pioneertv-ink-muted); }
-
 /* ---- log viewer: a full sheet of paper, no dimmed page behind ---- */
 .pioneertv-logs {
   position: fixed; inset: 0; z-index: 2147483002;
@@ -160,76 +148,3 @@ html.pioneertv-pointer .pioneertv-key.pioneertv-key-accent.pioneertv-key-active 
   font: 15px/1.55 var(--pioneertv-font-mono); color: var(--pioneertv-ink); white-space: pre-wrap; word-break: break-word;
 }
 .pioneertv-logs .pioneertv-keyhint .pioneertv-icon { font-size: 13px; }
-
-/* ---- quick menu: a paper card at the right, over the page as it is; the
-   overlay's pause panels are the same card. The title in Rubik capitals,
-   the choices as pill buttons with the focus ring, and the box's status at
-   the foot. In px, since the pages under it set their own rem. ---- */
-.pioneertv-menu {
-  position: fixed; inset: 0; z-index: 2147483002;
-  background: transparent;
-  display: flex; align-items: stretch; justify-content: flex-end;
-}
-.pioneertv-menu-panel {
-  width: 445px; margin: 29px 38px; padding: 30px 30px 22px;
-  background: var(--pioneertv-paper); color: var(--pioneertv-ink);
-  /* the pause panel stands out against a dark game; on a paper page the
-     edge does that */
-  border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-panel);
-  display: flex; flex-direction: column; gap: 13px; overflow: hidden;
-}
-.pioneertv-menu-title {
-  margin: 0 0 6px; font: 900 30px/1.05 var(--pioneertv-font-display);
-  letter-spacing: -0.01em; text-transform: uppercase; overflow-wrap: anywhere;
-}
-/* The start page's row of holes, punched while a choice opens another page. */
-.pioneertv-menu-opening { margin-left: auto; width: 98px; height: auto; flex: none; overflow: visible; }
-.pioneertv-menu-opening circle { fill: transparent; stroke: var(--pioneertv-line-strong); stroke-width: 2; }
-.pioneertv-menu-opening circle.punched { fill: var(--pioneertv-ochre); stroke: var(--pioneertv-ochre); }
-.pioneertv-menu-primary .pioneertv-menu-opening circle { stroke: var(--pioneertv-on-ochre); }
-.pioneertv-menu-primary .pioneertv-menu-opening circle.punched { fill: var(--pioneertv-on-ochre); }
-.pioneertv-menu-note { margin: -6px 0 4px; font: 400 21px/1.3 var(--pioneertv-font-prose); color: var(--pioneertv-ink-muted); }
-.pioneertv-menu-note em { font-style: italic; color: var(--pioneertv-ink); }
-.pioneertv-menu-items { display: flex; flex-direction: column; gap: 11px; }
-.pioneertv-menu-item {
-  display: flex; align-items: center; gap: 12px;
-  padding: 14px 26px 14px 20px; font: 600 21px/1 var(--pioneertv-font-ui); cursor: pointer;
-  color: var(--pioneertv-ink); background: var(--pioneertv-paper);
-  border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-pill);
-}
-.pioneertv-menu-item:hover { background: var(--pioneertv-paper-hover); }
-.pioneertv-menu-primary, .pioneertv-menu-primary:hover, .pioneertv-menu-primary.pioneertv-hover {
-  background: var(--pioneertv-ochre); border-color: var(--pioneertv-ochre); color: var(--pioneertv-on-ochre);
-}
-.pioneertv-menu-primary .pioneertv-menu-icon, .pioneertv-menu-primary .pioneertv-menu-detail { color: var(--pioneertv-on-ochre); }
-.pioneertv-menu-icon { width: 24px; font-size: 22px; display: inline-flex; justify-content: center; flex: none; color: var(--pioneertv-ink-muted); }
-.pioneertv-menu-detail { margin-left: auto; font: 400 15px/1 var(--pioneertv-font-mono); color: var(--pioneertv-ink-faint); white-space: nowrap; }
-html:not(.pioneertv-pointer) .pioneertv-menu-active { outline: 4px solid var(--pioneertv-focus); outline-offset: 5px; }
-.pioneertv-menu-disabled, .pioneertv-menu-disabled .pioneertv-menu-icon { color: var(--pioneertv-ink-faint); border-color: var(--pioneertv-line); }
-.pioneertv-menu-status {
-  margin-top: auto; padding-top: 13px; border-top: 1px solid var(--pioneertv-line);
-  display: flex; flex-direction: column; gap: 2px;
-  font: 400 15px/1.35 var(--pioneertv-font-mono); color: var(--pioneertv-ink-muted);
-}
-.pioneertv-menu-statusrow { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.pioneertv-menu-statusrow > span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* Status holes: filled when up, empty when unknown, and never colour alone:
-   each row also says it in words. */
-.pioneertv-menu-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; border: 2px solid var(--pioneertv-line-strong); background: transparent; }
-.pioneertv-menu-dot.ok { background: var(--pioneertv-surface-forest); border-color: var(--pioneertv-surface-forest); }
-.pioneertv-menu-dot.warn { background: var(--pioneertv-ochre); border-color: var(--pioneertv-surface-rust); }
-.pioneertv-menu-dot.bad { background: var(--pioneertv-alarm); border-color: var(--pioneertv-alarm); }
-
-/* ---- the screensaver (hud.js): ink, the time and the date ---- */
-.pioneertv-saver {
-  position: fixed; inset: 0; z-index: 2147483646; margin: 0; padding: 0; border: 0;
-  width: 100vw; height: 100vh; max-width: none; max-height: none;
-  background: var(--pioneertv-surface-ink, #1c1613);
-}
-.pioneertv-saver-box { position: absolute; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
-.pioneertv-saver-time {
-  margin: 0; font: 400 112px/1 var(--pioneertv-font-mono, monospace);
-  color: var(--pioneertv-on-dark, #f4efe4); font-variant-numeric: tabular-nums;
-}
-.pioneertv-saver-date { margin: 0 0 24px; font: italic 400 30px/1.2 var(--pioneertv-font-prose, serif); color: var(--pioneertv-on-dark, #f4efe4); }
-.pioneertv-saver-mark { width: 168px; height: auto; display: block; }

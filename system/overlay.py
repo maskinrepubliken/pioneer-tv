@@ -2,8 +2,9 @@
 """Pioneer TV overlay: the box's own panels over every window.
 
 A WebKit view, transparent, on labwc's overlay layer (wlr-layer-shell, via
-gtk4-layer-shell), showing the daemon's /ext/overlay/ page: the quick menu
-and the toasts, drawn over Chromium, RetroArch and mpv alike. Started by
+gtk4-layer-shell), showing the daemon's /ext/overlay/ page: every menu (the
+main menu with Inställningar, the pause panels), every toast and the
+screensaver, drawn over Chromium, RetroArch and mpv alike. Started by
 session.sh. The page says when its menu opens and closes; the window takes
 the keyboard only then, so the rest of the time every key goes to the window
 below and the overlay is only seen. A page that fails to load (the daemon

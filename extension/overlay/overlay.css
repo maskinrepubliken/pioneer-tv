@@ -1,3 +1,94 @@
-/* Pioneer TV overlay: nothing of its own shows; what is drawn is the quick
-   menu and the toasts (content.css), over whatever window is below. */
+/* Pioneer TV overlay: nothing of its own shows; what is drawn is the menus,
+   the toasts and the screensaver (content.css), over whatever window is
+   below. */
 html, body { margin: 0; height: 100%; background: transparent !important; overflow: hidden; }
+
+/* Sök types into this through the on-screen keyboard, which shows the text;
+   the field itself stays out of sight. */
+.pioneertv-search-field { position: fixed; left: -10000px; top: 0; width: 1px; height: 1px; overflow: hidden; }
+
+/* ---- toast ---- */
+.pioneertv-toast {
+  position: fixed; top: 24px; right: 24px; left: auto; bottom: auto; z-index: 2147483001;
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 24px 14px 18px;
+  font-size: 24px; line-height: 1.25;
+  background: var(--pioneertv-paper-raised); border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-m);
+  visibility: hidden; pointer-events: none;
+}
+.pioneertv-toast-show { visibility: visible; }
+.pioneertv-toast-icon { display: inline-flex; font-size: 26px; color: var(--pioneertv-ink-muted); }
+
+/* ---- menu: a paper card at the right, over whatever window is below; the
+   main menu, its submenus and the pause panels are the same card. The title in Rubik capitals,
+   the choices as pill buttons with the focus ring, and the box's status at
+   the foot. In px, since the pages under it set their own rem. ---- */
+.pioneertv-menu {
+  position: fixed; inset: 0; z-index: 2147483002;
+  background: transparent;
+  display: flex; align-items: stretch; justify-content: flex-end;
+}
+.pioneertv-menu-panel {
+  width: 445px; margin: 29px 38px; padding: 30px 30px 22px;
+  background: var(--pioneertv-paper); color: var(--pioneertv-ink);
+  /* the pause panel stands out against a dark game; on a paper page the
+     edge does that */
+  border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-panel);
+  display: flex; flex-direction: column; gap: 13px; overflow: hidden;
+}
+.pioneertv-menu-title {
+  margin: 0 0 6px; font: 900 30px/1.05 var(--pioneertv-font-display);
+  letter-spacing: -0.01em; text-transform: uppercase; overflow-wrap: anywhere;
+}
+/* The start page's row of holes, punched while a choice opens another page. */
+.pioneertv-menu-opening { margin-left: auto; width: 98px; height: auto; flex: none; overflow: visible; }
+.pioneertv-menu-opening circle { fill: transparent; stroke: var(--pioneertv-line-strong); stroke-width: 2; }
+.pioneertv-menu-opening circle.punched { fill: var(--pioneertv-ochre); stroke: var(--pioneertv-ochre); }
+.pioneertv-menu-primary .pioneertv-menu-opening circle { stroke: var(--pioneertv-on-ochre); }
+.pioneertv-menu-primary .pioneertv-menu-opening circle.punched { fill: var(--pioneertv-on-ochre); }
+.pioneertv-menu-note { margin: -6px 0 4px; font: 400 21px/1.3 var(--pioneertv-font-prose); color: var(--pioneertv-ink-muted); }
+.pioneertv-menu-note em { font-style: italic; color: var(--pioneertv-ink); }
+.pioneertv-menu-items { display: flex; flex-direction: column; gap: 11px; }
+.pioneertv-menu-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 26px 14px 20px; font: 600 21px/1 var(--pioneertv-font-ui); cursor: pointer;
+  color: var(--pioneertv-ink); background: var(--pioneertv-paper);
+  border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-pill);
+}
+.pioneertv-menu-item:hover { background: var(--pioneertv-paper-hover); }
+.pioneertv-menu-primary, .pioneertv-menu-primary:hover, .pioneertv-menu-primary.pioneertv-hover {
+  background: var(--pioneertv-ochre); border-color: var(--pioneertv-ochre); color: var(--pioneertv-on-ochre);
+}
+.pioneertv-menu-primary .pioneertv-menu-icon, .pioneertv-menu-primary .pioneertv-menu-detail { color: var(--pioneertv-on-ochre); }
+.pioneertv-menu-icon { width: 24px; font-size: 22px; display: inline-flex; justify-content: center; flex: none; color: var(--pioneertv-ink-muted); }
+.pioneertv-menu-detail { margin-left: auto; font: 400 15px/1 var(--pioneertv-font-mono); color: var(--pioneertv-ink-faint); white-space: nowrap; }
+html:not(.pioneertv-pointer) .pioneertv-menu-active { outline: 4px solid var(--pioneertv-focus); outline-offset: 5px; }
+.pioneertv-menu-disabled, .pioneertv-menu-disabled .pioneertv-menu-icon { color: var(--pioneertv-ink-faint); border-color: var(--pioneertv-line); }
+.pioneertv-menu-status {
+  margin-top: auto; padding-top: 13px; border-top: 1px solid var(--pioneertv-line);
+  display: flex; flex-direction: column; gap: 2px;
+  font: 400 15px/1.35 var(--pioneertv-font-mono); color: var(--pioneertv-ink-muted);
+}
+.pioneertv-menu-statusrow { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.pioneertv-menu-statusrow > span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Status holes: filled when up, empty when unknown, and never colour alone:
+   each row also says it in words. */
+.pioneertv-menu-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; border: 2px solid var(--pioneertv-line-strong); background: transparent; }
+.pioneertv-menu-dot.ok { background: var(--pioneertv-surface-forest); border-color: var(--pioneertv-surface-forest); }
+.pioneertv-menu-dot.warn { background: var(--pioneertv-ochre); border-color: var(--pioneertv-surface-rust); }
+.pioneertv-menu-dot.bad { background: var(--pioneertv-alarm); border-color: var(--pioneertv-alarm); }
+
+/* ---- the main menu: wider, the services as cards two to a row ---- */
+.pioneertv-menu-panel.pioneertv-menu-wide { width: 640px; gap: 0; }
+.pioneertv-menu-wide .pioneertv-menu-items + .pioneertv-menu-items { margin-top: 11px; }
+.pioneertv-menu-cards, .pioneertv-menu-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pioneertv-menu-cards { padding-bottom: 14px; margin-bottom: 3px; border-bottom: 1px solid var(--pioneertv-line); }
+.pioneertv-menu-card {
+  border-radius: var(--pioneertv-radius-m); padding: 6px 16px 6px 8px; gap: 10px; min-height: 58px;
+  font: 900 19px/1.05 var(--pioneertv-font-display); text-transform: uppercase; letter-spacing: -0.01em;
+}
+.pioneertv-menu-art { width: 64px; height: 44px; flex: none; display: inline-flex; align-items: center; justify-content: center; }
+.pioneertv-menu-art svg, .pioneertv-menu-art img { width: 100%; height: 100%; object-fit: contain; }
+.pioneertv-menu-card .pioneertv-menu-icon { width: 64px; font-size: 30px; }
+.pioneertv-menu-pair .pioneertv-menu-item { padding: 12px 18px 12px 16px; font-size: 19px; }
+.pioneertv-menu-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

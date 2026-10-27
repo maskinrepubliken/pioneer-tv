@@ -112,7 +112,7 @@
       "suggested_key": {
         "default": "Alt+Shift+M"
       },
-      "description": "Toggle the quick menu"
+      "description": "Open the main menu"
     }
   },
   "web_accessible_resources": [

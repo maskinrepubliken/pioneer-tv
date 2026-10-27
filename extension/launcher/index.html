@@ -10,46 +10,10 @@
   <link rel="stylesheet" href="../content/cursor.css">
   <link rel="stylesheet" href="../content/paper.css">
   <link rel="stylesheet" href="../content/content.css">
-  <link rel="stylesheet" href="launcher.css">
+  <link rel="stylesheet" href="../overlay/clock.css">
+  <style>html, body { margin: 0; height: 100%; overflow: hidden; background: var(--pioneertv-surface-ink); }</style>
 </head>
 <body>
-  <div class="page">
-    <header class="masthead">
-      <div class="masthead-right">
-        <span class="pill" id="pill-wifi" title="Nätverk"></span>
-        <span class="pill" id="pill-tailscale" title="Tailscale"></span>
-        <span class="pill" id="pill-gamepad" title="Handkontroll"></span>
-        <span class="pill" id="pill-daemon" title="Daemon"></span>
-        <button class="head-btn" id="search-btn" type="button" title="Sök" aria-label="Sök"></button>
-        <button class="head-btn" id="menu-btn" type="button" title="Meny" aria-label="Meny"></button>
-        <button class="head-btn" id="tv-off" type="button" title="Stäng av TV:n" aria-label="Stäng av TV:n"></button>
-      </div>
-    </header>
-
-    <main class="content">
-      <section class="tiles" id="tiles" aria-label="Tjänster"></section>
-      <section class="tiles tiles-second" id="second" aria-label="Bilder och live"></section>
-
-      <!-- The search button types into this through the on-screen keyboard,
-           which shows the text; the field itself stays out of sight. -->
-      <form class="search-field" id="search-form" role="search">
-        <input id="search" type="search" placeholder="Sök film, serie eller spel…" autocomplete="off" aria-label="Sök">
-      </form>
-
-    </main>
-
-    <footer class="legend">
-      <span><i data-icon="arrowLeft"></i><i data-icon="arrowRight"></i><i data-icon="arrowUp"></i><i data-icon="arrowDown"></i> navigera</span>
-      <span><kbd class="pioneertv-kbd">A</kbd> välj</span>
-      <span><kbd class="pioneertv-kbd">B</kbd> stäng · håll: tillbaka</span>
-      <span><kbd class="pioneertv-kbd">Y</kbd> tangentbord · håll: meny</span>
-      <span><kbd class="pioneertv-kbd">HEM</kbd> meny · håll: hem</span>
-      <span class="credit"><img src="ordbild-en-rad-black.svg" alt="Maskinrepubliken"></span>
-    </footer>
-  </div>
-
-  <script src="default-services.js"></script>
-  <script src="art.js"></script>
   <script src="../content/icons.js"></script>
   <script src="../content/bridge.js"></script>
   <script src="../content/spatial-nav.js"></script>
@@ -61,6 +25,7 @@
   <script src="../content/bigscreen.js"></script>
   <script src="../content/game.js"></script>
   <script src="../content/main.js"></script>
+  <script src="../overlay/clock.js"></script>
   <script src="launcher.js"></script>
 </body>
 </html>

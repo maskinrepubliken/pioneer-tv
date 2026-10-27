@@ -1,15 +1,17 @@
-// Pioneer TV overlay page: the quick menu and the toasts, over every window.
+// Pioneer TV overlay page: every menu, every toast and the screensaver,
+// over every window.
 //
 // Loaded by system/overlay.py, a WebKit view on labwc's top layer, from the
 // daemon (/ext/overlay/). It talks to the daemon over the WebSocket like the
-// Spel pages; the daemon sends it Home, Y and B while its menu is the one
-// that should have them, and every toast (daemon/pioneertv/overlay.py). The
-// window takes the keyboard only while the menu is open, so the pad drives
-// the page below the rest of the time; what the menu cannot do here (home,
-// back, the keyboard, reload) it asks the page to do (bridge.relay).
+// Spel pages; the daemon sends it Home, and Y and B while its menu is open,
+// and every toast (daemon/pioneertv/overlay.py). The window takes the
+// keyboard only while a menu or its keyboard (Sök) is open, so the pad
+// drives the page below the rest of the time; what the menu cannot do here
+// (go home, back, reload, open a page) it asks the page to do (bridge.relay).
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const b = M.bridge;
+  const menu = M.hud.menu;
   // overlay.py listens here; in a browser (designing) there is nobody.
   const host = (msg) => {
     try { window.webkit.messageHandlers.pioneertv.postMessage(JSON.stringify(msg)); } catch {}
@@ -33,7 +35,7 @@ window.PioneerTV = window.PioneerTV || {};
   // X on a pause panel carries on, as B does (before the spatial
   // navigation, which keeps every key while a menu is open).
   window.addEventListener('keydown', (e) => {
-    if (e.key === ' ' && held && M.hud.menu.isOpen()) { e.preventDefault(); M.hud.menu.close(); }
+    if (e.key === ' ' && held && menu.isOpen()) { e.preventDefault(); menu.close(); }
   }, true);
 
   b.init();
@@ -46,25 +48,44 @@ window.PioneerTV = window.PioneerTV || {};
   b.on('state', (s) => {
     if (s.daemonConnected && !greeted) b.daemon({ type: 'hello', client: 'overlay' });
     greeted = s.daemonConnected;
-    if (!s.daemonConnected && M.hud.menu.isOpen()) M.hud.menu.close();
+    if (!s.daemonConnected && menu.isOpen()) menu.close();
   });
 
-  b.on('menu', () => M.hud.menu.toggle());
-  b.on('keyboard', () => M.hud.menu.close());     // Y closes the menu, as on the pages
-  b.on('escape', () => M.hud.menu.close());
+  // Home: the main menu, or away with it. Held, the page goes home and the
+  // main menu opens over it; a press on the home page opens it too (open).
+  b.on('menu', (e) => (e && e.open ? (menu.isOpen() || menu.open(M.mainMenu.spec())) : menu.toggle()));
+  b.on('home', () => { if (!held) menu.open(M.mainMenu.spec()); });
+  // Y: away with the keyboard, else with the menu (as on the pages).
+  b.on('keyboard', () => (M.keyboard.isOpen() ? M.keyboard.close() : menu.close()));
+  b.on('escape', () => (M.keyboard.isOpen() ? M.keyboard.close() : menu.back()));
+  // The page a choice opened has loaded: the menu waiting on it goes.
+  b.on('loaded', () => { if (menu.punching) menu.close(); });
+  // Nothing of a menu stays under the screensaver.
+  b.on('saver', (e) => { if (e.show && !held) { if (M.keyboard.isOpen()) M.keyboard.close(); menu.close(); } });
+
+  // The window has the keyboard while the menu or the keyboard is open, and
+  // the daemon is told (it routes Y and B here then, and pauses what plays).
+  // Going from one to the other (Sök) is not a close and an open.
+  let mine = false;
+  function sync() {
+    const now = menu.isOpen() || M.keyboard.isOpen();
+    if (now === mine) return;
+    mine = now;
+    if (now) { letGo = null; clearTimeout(giveUp); host({ keyboard: true }); }
+    else releaseKeyboard();
+    b.daemon({ type: 'overlay_menu', open: now });
+  }
   function releaseKeyboard() {
-    const done = () => { clearTimeout(giveUp); letGo = null; if (!M.hud.menu.isOpen()) host({ keyboard: false }); };
+    const done = () => { clearTimeout(giveUp); letGo = null; if (!mine) host({ keyboard: false }); };
     clearTimeout(giveUp);
     giveUp = setTimeout(() => { down.clear(); done(); }, 1500);   // a key up that never came
     letGo = done;
     if (!down.size) done();
   }
+  for (const ev of ['menu:open', 'menu:close', 'keyboard:open', 'keyboard:close']) b.on(ev, () => queueMicrotask(sync));
 
-  b.on('menu:open', () => { letGo = null; clearTimeout(giveUp); host({ keyboard: true }); b.daemon({ type: 'overlay_menu', open: true }); });
-  b.on('menu:close', () => { releaseKeyboard(); b.daemon({ type: 'overlay_menu', open: false }); });
-
-  // The notes, the screensaver and the pad's colours, as on the pages (hud.listen).
-  M.hud.listen(b, () => true);
+  // The toasts, the screensaver and the pad's colours (overlay/hud.js).
+  M.hud.listen(b);
 
   // ------------------------------------------------------------ pause panels
   // A game or a video, held where it is by the daemon ("held"), with its
@@ -85,20 +106,20 @@ window.PioneerTV = window.PioneerTV || {};
   function panel(kind, e, title, items, note, at, resume) {
     held = { kind, resume, e };
     chose = false;
-    M.hud.menu.open({ title: title || 'Pausat', note, items });
-    M.hud.menu.index = at || 0;
-    M.hud.menu.highlight();
+    menu.open({ title: title || 'Pausat', note, items });
+    menu.index = at || 0;
+    menu.highlight();
   }
   const pick = (f) => () => { chose = true; f(); };
   b.on('menu:close', () => {
     if (!held) return;
     queueMicrotask(() => {
-      if (!chose && held && !M.hud.menu.isOpen()) held.resume();
-      if (!M.hud.menu.isOpen()) held = null;
+      if (!chose && held && !menu.isOpen()) held.resume();
+      if (!menu.isOpen()) held = null;
     });
   });
   function closePanel(kind) {
-    if (held && held.kind === kind && M.hud.menu.isOpen()) { chose = true; held = null; M.hud.menu.close(); }
+    if (held && held.kind === kind && menu.isOpen()) { chose = true; held = null; menu.close(); }
   }
 
   // A game (games.py): Fortsätt spela, Spara läge, Ladda läge, Starta om,

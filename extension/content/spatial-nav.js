@@ -170,7 +170,7 @@ window.PioneerTV = window.PioneerTV || {};
     onKeyDown(e) {
       if (!e.isTrusted) return;            // synthetic events come from our own keyboard
       // In a game the page gets the keys (enabled is off), but an overlay
-      // opened over it (Home: the quick menu) still needs the d-pad.
+      // opened over it (the keyboard, the logs) still needs the d-pad.
       if (!this.enabled && !this.captured) return;
       // Navigating with the d-pad or the left stick (both arrive as arrow keys)
       // hides the pointer straight away, in the page and in the overlays alike.

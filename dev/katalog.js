@@ -34,16 +34,19 @@
   }
 
   // The screensaver, and a key takes it away as the daemon does on the box
-  // (there the press does nothing else; here it reaches the page below).
-  const tryTheSaver = (overlay) => ({ P }) => {
-    if (overlay) P.bridge.emit('saver', { show: true }); else P.hud.saver.show();
+  // (there the press does nothing else).
+  const tryTheSaver = ({ P }) => {
+    P.bridge.emit('saver', { show: true });
     // The spatial navigation hands every key to a captured layer first.
-    P.nav.captured = {
-      onKeyDown() {
-        P.nav.captured = null;
-        if (overlay) P.bridge.emit('saver', { show: false }); else P.hud.saver.hide();
-      },
-    };
+    P.nav.captured = { onKeyDown() { P.nav.captured = null; P.bridge.emit('saver', { show: false }); } };
+  };
+  // The main menu, and a submenu of it (by its label).
+  const mainMenu = (P) => { daemonUp(P); P.hud.menu.open(P.mainMenu.spec()); };
+  const submenu = (label) => ({ P }) => {
+    mainMenu(P);
+    const m = P.hud.menu;
+    m.index = m.items.findIndex((it) => it.label === label);
+    m.activate();
   };
 
   // ------------------------------------------------------------ the views
@@ -54,6 +57,7 @@
   // selector to wait for), setup (puts the page in its state), note, zoom.
   const OVERLAY = '/ext/overlay/index.html';
   const HOME = `${L}index.html?tv=1`;
+  const FILM = `${L}film.html?tv=1`;
   const GAME_PICTURE = '/romm/assets/cover/101.svg';
   const FILM_PICTURE = '/jellyfin/Items/serie1-s1e3/Images/Primary?tag=p';
   const LONG = 600000;
@@ -65,8 +69,8 @@
     setup: ({ P }) => P.hud.toast(text, icon, LONG),
   });
   const VIEWS = [
-    { part: 'Komponenter', group: 'Notis', files: 'content/hud.js (hud.toast) · content/content.css (.pioneertv-toast)',
-      used: 'Allt på skärmen. Overlayn ritar den; sidan själv bara när overlayn är nere (hud.listen). Daemonen skickar sina via händelsen toast.',
+    { part: 'Komponenter', group: 'Notis', files: 'overlay/hud.js (hud.toast) · overlay/overlay.css (.pioneertv-toast)',
+      used: 'Över allt på skärmen, ritad av overlayn. Sidorna skickar sina dit (content/hud.js), inställningssidan via /api/toast och daemonen med händelsen toast.',
       items: [
         toast('Rosa handkontroll ansluten', 'gamepad', 'hud.listen · gamepad'),
         toast('Rosa handkontroll frånkopplad', 'gamepad', 'hud.listen · gamepad'),
@@ -92,53 +96,50 @@
         toast('Inga låtar i biblioteket', 'info', 'launcher/musik.js · Blanda allt'),
         toast('Borttaget · X ångra', 'gamepad', 'launcher/spel.js · X på ett senast spelat'),
         toast('M', '', 'launcher/spel.js · hopp till en bokstav'),
-        { name: 'Utan overlay: sidan ritar den', url: HOME, ready: '.tile',
-          setup: ({ P }) => P.hud.toast('Rosa handkontroll ansluten', 'gamepad', LONG),
-          note: 'Samma kod och stil, i sidans eget lager.' },
-        { name: 'Inställningssidans egen notis', url: '/static/settings.html?mock=1', wait: 1500, zoom: TOAST_CORNER,
-          setup: ({ doc }) => { const t = doc.getElementById('toast'); if (t) { t.textContent = 'Sparat'; t.classList.add('show'); } },
-          note: 'En annan, enklare: daemon/pioneertv/web/settings.js (toast). Sparat, Klart, Misslyckades: …' },
+        toast('Sparat', '', 'settings.js · Spara'),
+        toast('Ansluten till Småhusbyn', '', 'settings.js · Wi-Fi'),
+        toast('Misslyckades: nätverket svarar inte', '', 'settings.js · ett fel'),
       ] },
-    { part: 'Komponenter', group: 'Snabbmenyn', files: 'content/hud.js (hud.menu) · content/content.css (.pioneertv-menu)',
-      used: 'Hem-knappen överallt. Overlayn ritar den; sidan själv när overlayn är nere.',
+    { part: 'Komponenter', group: 'Huvudmenyn', files: 'overlay/main-menu.js · overlay/hud.js (hud.menu) · overlay/overlay.css (.pioneertv-menu)',
+      used: 'Hem öppnar den över allt; håll Hem går till klockan och öppnar den. En knapp på hemsidan öppnar den också. B tar ett steg tillbaka.',
       items: [
-        { name: 'I overlayn', under: HOME, url: OVERLAY, setup: ({ P }) => { daemonUp(P); P.hud.menu.open(); } },
-        { name: 'Utan overlay: sidan ritar den', url: HOME, ready: '.tile', setup: ({ P }) => { daemonUp(P); P.hud.menu.open(); } },
+        { name: 'Över hemsidan', under: HOME, url: OVERLAY, setup: ({ P }) => mainMenu(P) },
+        { name: 'Över en sida', under: FILM, url: OVERLAY, setup: ({ P }) => mainMenu(P) },
+        { name: 'Live', under: HOME, url: OVERLAY, setup: submenu('Live') },
+        { name: 'Sök: tangentbordet', under: HOME, url: OVERLAY, setup: submenu('Sök') },
+        { name: 'Sök: var', under: HOME, url: OVERLAY,
+          setup: ({ P, doc }) => { submenu('Sök')({ P }); const f = doc.querySelector('.pioneertv-search-field input'); f.value = 'mario'; P.keyboard.done(); } },
+        { name: 'Inställningar', under: HOME, url: OVERLAY, setup: submenu('Inställningar'), note: 'Varje rad öppnar sin flik på inställningssidan; boxens status längst ner.' },
       ] },
-    { part: 'Komponenter', group: 'Panel', files: 'content/hud.js (hud.menu.open({ title, note, items }))',
-      used: 'Snabbmenyns ram med egna val: startsidan och overlayns pausmenyer.',
+    { part: 'Komponenter', group: 'Pausmenyer', files: 'overlay/overlay.js · overlay/hud.js (hud.menu)',
+      used: 'Hem i ett spel (RetroArch) eller en film (mpv): samma kort som huvudmenyn.',
       items: [
-        { name: 'Live-listan (startsidan)', url: HOME, ready: '.tile', setup: ({ doc }) => doc.querySelector('[data-service="live"]').click() },
-        { name: 'Sök: var (startsidan)', url: HOME, ready: '.tile',
-          setup: ({ doc }) => { const f = doc.getElementById('search-form'); f.querySelector('input').value = 'mario'; f.requestSubmit(); } },
-        { name: 'Spelets pausmeny', under: GAME_PICTURE, url: OVERLAY, note: 'overlay/overlay.js',
+        { name: 'Spelets pausmeny', under: GAME_PICTURE, url: OVERLAY,
           setup: ({ P }) => P.bridge.emit('games', { state: 'held', title: 'Tetris & Dr. Mario', point: Date.now() / 1000 - 3600, players: ['Rosa handkontroll', 'Grön handkontroll'] }) },
-        { name: 'Spelets pausmeny, inget sparat läge', under: GAME_PICTURE, url: OVERLAY, note: 'overlay/overlay.js',
+        { name: 'Spelets pausmeny, inget sparat läge', under: GAME_PICTURE, url: OVERLAY,
           setup: ({ P }) => P.bridge.emit('games', { state: 'held', title: 'Super Mario World', point: null, players: ['Rosa handkontroll'] }) },
-        { name: 'Filmens pausmeny', under: FILM_PICTURE, url: OVERLAY, note: 'overlay/overlay.js',
+        { name: 'Filmens pausmeny', under: FILM_PICTURE, url: OVERLAY,
           setup: ({ P }) => P.bridge.emit('video', { state: 'held', title: 'Avsnitt 3',
             audio: [{ id: 1, label: 'Engelska', selected: true }, { id: 2, label: 'Svenska · Kommentar' }],
             subtitles: [{ id: 1, label: 'Svenska' }, { id: 2, label: 'Engelska' }] }) },
       ] },
-    { part: 'Komponenter', group: 'Skärmsläckaren', files: 'content/hud.js (hud.saver) · content/content.css (.pioneertv-saver) · daemon idle.py',
-      used: 'Alla bläddringsvyer efter en stund utan knapptryck, aldrig medan något spelas. Overlayn ritar den; sidan när overlayn är nere.',
+    { part: 'Komponenter', group: 'Skärmsläckaren', files: 'overlay/clock.js · overlay/clock.css · overlay/hud.js (hud.saver) · daemon idle.py',
+      used: 'Alla bläddringsvyer efter en stund utan knapptryck, aldrig medan något spelas; ritad av overlayn. Samma klocka är hemsidan.',
       items: [
-        { name: 'I overlayn', under: HOME, url: OVERLAY, setup: tryTheSaver(true),
-          note: 'En knapp tar bort den (på TV:n tar daemonen emot knappen, och den gör inget annat).' },
-        { name: 'Utan overlay: sidan ritar den', url: HOME, ready: '.tile', setup: tryTheSaver(false),
-          note: 'Hoppar till ett nytt ställe varje minut.' },
+        { name: 'Skärmsläckaren', under: FILM, url: OVERLAY, setup: tryTheSaver,
+          note: 'Hoppar till ett nytt ställe varje minut. En knapp tar bort den (på TV:n tar daemonen emot knappen, och den gör inget annat).' },
       ] },
-    { part: 'Komponenter', group: 'Skärmtangentbordet', files: 'content/keyboard.js', used: 'Y på alla sidor; sökfälten.',
+    { part: 'Komponenter', group: 'Skärmtangentbordet', files: 'content/keyboard.js', used: 'Y på alla sidor, i sidans textfält; Sök i huvudmenyn (i overlayn).',
       items: [
-        { name: 'Sök på startsidan', url: `${HOME}&demo=keyboard`, ready: '.tile', wait: 1200 },
+        { name: 'På en sida', url: FILM, ready: '.film-card', setup: ({ P, doc }) => P.keyboard.open(doc.getElementById('search')) },
       ] },
-    { part: 'Komponenter', group: 'Loggar', files: 'content/logs.js', used: 'Inställningar → System, och snabbmenyn.',
+    { part: 'Komponenter', group: 'Loggar', files: 'content/logs.js', used: 'Inställningar → System.',
       items: [
-        { name: 'Loggar', url: `${HOME}&demo=logs`, ready: '.tile', wait: 1200 },
+        { name: 'Loggar', url: FILM, ready: '.film-card', setup: ({ P }) => P.logs.open(0) },
       ] },
     { part: 'Komponenter', group: 'Pekaren', files: 'content/cursor.js', used: 'Högra spaken, på alla sidor.',
       items: [
-        { name: 'Pekaren på startsidan', url: HOME, ready: '.tile',
+        { name: 'Pekaren på en sida', url: FILM, ready: '.film-card',
           setup: ({ P }) => { for (let i = 0; i < 12; i++) P.bridge.emit('pointer', { dx: 14, dy: 7 }); } },
       ] },
     { part: 'Komponenter', group: 'Sidornas meddelanden', files: 'launcher/views.js (M.views) · launcher/spel.css (.spel-message)',
@@ -151,9 +152,9 @@
         { name: 'Tjänsten svarar inte (Jellyfin)', url: `${L}film.html?tv=1&mockerror=down`, ready: '.spel-message', note: 'Försöker igen två gånger först, några sekunder.' },
       ] },
 
-    { part: 'Sidor', group: 'Startsidan', files: 'launcher/index.html · launcher.js · launcher.css', used: 'Hem.',
+    { part: 'Sidor', group: 'Hem', files: 'launcher/index.html · launcher.js · overlay/clock.js', used: 'Håll Hem. Bara klockan; en knapp öppnar huvudmenyn.',
       items: [
-        { name: 'Startsidan', url: HOME, ready: '.tile' },
+        { name: 'Hem', url: HOME, wait: 600 },
       ] },
     { part: 'Sidor', group: 'Spel', files: 'launcher/spel.html · spel.js · spel.css · romm.js', used: 'Rutan Spel.',
       items: [
@@ -204,11 +205,11 @@
         { name: 'Fel: videon kunde inte spelas', url: `${L}film.html?tv=1#/item/film1`, ready: '.knapp.primar',
           setup: ({ P }) => { P.film.player.state = 'starting'; P.bridge.emit('video', { state: 'error', message: 'Videon kunde inte spelas' }); } },
       ] },
-    { part: 'Sidor', group: 'Radio', files: 'launcher/radio.html · radio.js', used: 'Live-listan → en kanal i P1–P4.',
+    { part: 'Sidor', group: 'Radio', files: 'launcher/radio.html · radio.js', used: 'Huvudmenyn → Live → P1–P4.',
       items: [
         { name: 'Radio', url: `${L}radio.html?channel=132&name=P1`, wait: 2000, note: 'Hämtar tablån från Sveriges Radio på riktigt.' },
       ] },
-    { part: 'Sidor', group: 'Inställningar', files: 'daemon/pioneertv/web/settings.html · settings.js', used: 'Snabbmenyn → Inställningar.',
+    { part: 'Sidor', group: 'Inställningar', files: 'daemon/pioneertv/web/settings.html · settings.js', used: 'Huvudmenyn → Inställningar → en flik.',
       items: [
         { name: 'Inställningar', url: '/static/settings.html?mock=1', wait: 1500, note: 'Med inställningssidans egen exempeldata.' },
       ] },

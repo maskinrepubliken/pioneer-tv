@@ -123,8 +123,6 @@ pre.log {
   background: var(--pioneertv-paper-sunken); border: 1px solid var(--pioneertv-line); border-radius: var(--pioneertv-radius-m);
   padding: 14px 16px; font: 14px/1.6 var(--pioneertv-font-mono); max-height: 50vh; overflow: auto; white-space: pre-wrap; margin-top: 12px;
 }
-.toast { position: fixed; top: 20px; right: 20px; padding: 12px 22px; font-size: 20px; visibility: hidden; pointer-events: none; z-index: 10; border-radius: var(--pioneertv-radius-m); }
-.toast.show { visibility: visible; }
 .inline-form { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
 .spin::before { content: "· "; }
 @media (max-width: 800px) {

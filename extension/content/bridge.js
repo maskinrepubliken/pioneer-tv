@@ -13,7 +13,8 @@ window.PioneerTV = window.PioneerTV || {};
   // talk to the daemon over its WebSocket instead of through the extension.
   const LAUNCHER_EXT_URL = 'chrome-extension://dpigdefepjjejbkidlabpjlnleidgjaf/launcher/index.html';
   // The overlay (extension/overlay/, in its own WebKit over every window on
-  // labwc) draws the quick menu and the toasts; every other page is a page.
+  // labwc) draws every menu, toast and the screensaver; every other page is
+  // a page.
   // The daemon addresses some events to one or the other ("target").
   const role = location.pathname.startsWith('/ext/overlay/') ? 'overlay' : 'page';
   const forMe = (msg) => !msg.target || msg.target === role;
@@ -123,11 +124,14 @@ window.PioneerTV = window.PioneerTV || {};
     cec(command) { this.daemon({ type: 'cec', command }); },
     navigate(url) {
       if (hasExt) this.send({ type: 'navigate', url });
+      else if (this.overlay) this.relay('navigate', { url });
       else location.href = url;
     },
+    // The home page, where a relative service url (the radio player) is read from.
+    launcherUrl: LAUNCHER_EXT_URL,
     // What the overlay cannot do itself it asks the page to do, through the
     // daemon and the extension (overlay.py in the daemon: relay).
-    relay(name) { this.daemon({ type: 'relay', name }); },
+    relay(name, extra) { this.daemon({ type: 'relay', name, ...(extra || {}) }); },
     home() {
       if (hasExt) this.send({ type: 'home' });
       else if (this.overlay) this.relay('home');
@@ -148,10 +152,11 @@ window.PioneerTV = window.PioneerTV || {};
       if (this.overlay) this.relay('keyboard');
       else if (M.keyboard) M.keyboard.toggle();
     },
-    settings() {
-      if (hasExt) this.send({ type: 'settings' });
-      else if (this.overlay) this.relay('settings');
-      else location.href = 'http://127.0.0.1:8765/';
+    // section: one of the settings page's tabs (wifi, tv, system, ...).
+    settings(section) {
+      if (hasExt) this.send({ type: 'settings', section });
+      else if (this.overlay) this.relay('settings', section ? { section } : null);
+      else location.href = `http://127.0.0.1:8765/${section ? '#' + section : ''}`;
     },
     // Call the daemon's HTTP API. Pages on https cannot fetch localhost
     // themselves, so the background worker does it for them.
@@ -210,8 +215,9 @@ window.PioneerTV = window.PioneerTV || {};
         if (msg.type === 'config') { state.config = msg; this._applyState(state); }
         else if (msg.type === 'status') { state.status = msg; this._applyState(state); }
         // home, back and reload are the extension background's to carry out
-        // for the tab; doing them here as well would do them twice.
-        else if (msg.type === 'event' && forMe(msg) && !['home', 'back', 'reload', 'settings'].includes(msg.name)) this.emit(msg.name, msg);
+        // for the tab; doing them here as well would do them twice. The
+        // overlay hears home (it opens the main menu over the home page).
+        else if (msg.type === 'event' && forMe(msg) && (role === 'overlay' || !['home', 'back', 'reload', 'settings', 'navigate'].includes(msg.name))) this.emit(msg.name, msg);
       };
       ws.onerror = () => {};
       ws.onclose = () => {

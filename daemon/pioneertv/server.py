@@ -61,6 +61,7 @@ class Server:
             ("POST", "/api/bluetooth/pair", self.api_bt_pair),
             ("POST", "/api/bluetooth/{action}", self.api_bt_action),
             ("POST", "/api/cec", self.api_cec),
+            ("POST", "/api/toast", self.api_toast),
             ("GET", "/api/cec/trace", self.api_cec_trace),
             ("GET", "/api/input/events", self.api_input_events),
             ("GET", "/api/cec/topology", self.api_cec_topology),
@@ -165,12 +166,14 @@ class Server:
                     if data.get("client") == "overlay":
                         self.router.connected(ws)
                         await self.broadcast(self.config_message())
-                elif t in ("overlay_menu", "page_menu", "relay"):
+                elif t in ("overlay_menu", "relay", "toast"):
                     for event in self.router.handle(data):
                         await self.broadcast(event)
                         # mpv is no page: the quick menu pauses it here.
                         if event.get("name") == "media" and self.hooks.get("video"):
                             await self.hooks["video"].media(event["action"])
+                elif t == "loaded":
+                    await self.broadcast({"type": "event", "name": "loaded", "target": "overlay"})
                 elif t == "activity" and self.hooks.get("idle"):
                     self.hooks["idle"].page(data)
                 elif t == "debug":
@@ -371,6 +374,13 @@ class Server:
             await self.hooks["cec"](str(data.get("command", "")))
         except Exception as exc:
             return web.json_response({"ok": False, "message": str(exc)}, status=400)
+        return web.json_response({"ok": True})
+
+    async def api_toast(self, request: web.Request) -> web.Response:
+        """A toast from the settings page, drawn by the overlay like every other."""
+        data = await self._json(request)
+        for event in self.router.handle({**data, "type": "toast"}):
+            await self.broadcast(event)
         return web.json_response({"ok": True})
 
     async def api_input_events(self, request: web.Request) -> web.Response:

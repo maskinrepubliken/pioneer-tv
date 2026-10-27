@@ -9,9 +9,9 @@ or a page that says its video or audio plays (main.js, every page, every
 frame) or that is in game mode. So browsing anywhere counts down, and a
 film, a song or a game never does; the count starts again when it ends.
 
-The screensaver is drawn by the overlay over every window, or by the page
-when there is no overlay (the router's target, like a toast). Any button
-takes it away and does nothing else (the dispatcher asks here first).
+The screensaver is drawn by the overlay over every window (the same clock
+is the home page). Any button takes it away and does nothing else (the
+dispatcher asks here first).
 """
 from __future__ import annotations
 

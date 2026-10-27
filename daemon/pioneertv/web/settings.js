@@ -5,14 +5,11 @@
   const mainHost = $('#main');
   let generation = 0;
   const MOCK = new URLSearchParams(location.search).has('mock');
-  let toastTimer;
 
+  // A toast is the overlay's, over every window, as everywhere else.
   function toast(text) {
-    const t = $('#toast');
-    t.textContent = text;
-    t.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+    if (MOCK) return;
+    fetch('/api/toast', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text, ms: 2200 }) }).catch(() => {});
   }
 
   function h(tag, attrs = {}, ...children) {

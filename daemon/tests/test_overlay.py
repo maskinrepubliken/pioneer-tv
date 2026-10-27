@@ -1,4 +1,4 @@
-"""Who gets the quick menu and the toasts: the overlay or the page (overlay.py,
+"""Who gets the menus and the toasts: the overlay or the page (overlay.py,
 and the daemon's WebSocket). Needs aiohttp for the WebSocket part:
 `python -m unittest tests.test_overlay` from daemon/."""
 import asyncio
@@ -12,23 +12,12 @@ from pioneertv.server import Server
 
 
 class Routing(unittest.TestCase):
-    def test_without_overlay_everything_is_the_pages(self):
+    def test_menus_toasts_and_the_saver_are_the_overlays(self):
         r = Router()
-        for name in ("menu", "keyboard", "escape", "toast"):
-            self.assertEqual(r.target(name), "page", name)
-
-    def test_with_overlay(self):
-        r = Router()
-        r.connected(object())
-        self.assertEqual(r.target("menu"), "overlay")
-        self.assertEqual(r.target("toast"), "overlay")
+        for name in ("menu", "toast", "saver"):
+            self.assertEqual(r.target(name), "overlay", name)
         self.assertEqual(r.target("keyboard"), "page")      # Y types into the page
-
-    def test_a_pages_own_menu_keeps_home(self):
-        r = Router()
-        r.connected(object())
-        r.handle({"type": "page_menu", "open": True})
-        self.assertEqual(r.target("menu"), "page")
+        self.assertEqual(r.target("escape"), "page")
 
     def test_overlay_menu_open_takes_every_button_and_pauses(self):
         r = Router()
@@ -41,18 +30,30 @@ class Routing(unittest.TestCase):
                          [{"type": "event", "name": "media", "action": "resume"}])
         self.assertEqual(r.handle({"type": "overlay_menu", "open": False}), [])   # no second resume
 
+    def test_a_pages_toast_goes_on(self):
+        r = Router()
+        self.assertEqual(r.handle({"type": "toast", "text": "Hej", "icon": "info", "ms": 99999}),
+                         [{"type": "event", "name": "toast", "text": "Hej", "icon": "info", "ms": 15000}])
+        self.assertEqual(r.handle({"type": "toast", "text": ""}), [])
+
     def test_relays(self):
         r = Router()
-        r.page_open = True
         self.assertEqual(r.handle({"type": "relay", "name": "home"}), [{"type": "event", "name": "home", "target": "page"}])
-        self.assertFalse(r.page_open)
         self.assertEqual(r.handle({"type": "relay", "name": "reboot"}), [])
+        self.assertEqual(r.handle({"type": "relay", "name": "navigate", "url": "https://www.svtplay.se/"}),
+                         [{"type": "event", "name": "navigate", "target": "page", "url": "https://www.svtplay.se/"}])
+        self.assertEqual(r.handle({"type": "relay", "name": "navigate", "url": "javascript:alert(1)"}), [])
+        self.assertEqual(r.handle({"type": "relay", "name": "settings", "section": "wifi"}),
+                         [{"type": "event", "name": "settings", "target": "page", "section": "wifi"}])
+        # A press on the home page opens the overlay's main menu.
+        self.assertEqual(r.handle({"type": "relay", "name": "menu"}),
+                         [{"type": "event", "name": "menu", "open": True, "target": "overlay"}])
 
     def test_tag_leaves_other_events_alone(self):
         r = Router()
         self.assertEqual(r.tag({"type": "event", "name": "gamepad"}), {"type": "event", "name": "gamepad"})
         self.assertEqual(r.tag({"type": "status"}), {"type": "status"})
-        self.assertEqual(r.tag({"type": "event", "name": "menu"})["target"], "page")
+        self.assertEqual(r.tag({"type": "event", "name": "menu"})["target"], "overlay")
 
 
 async def nothing(_msg: dict) -> None:
@@ -85,6 +86,10 @@ class OverlaySocket(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((await self.next_of(page, "event"))["target"], "overlay")
         await overlay.send_json({"type": "overlay_menu", "open": True})
         self.assertEqual(await self.next_of(page, "event"), {"type": "event", "name": "media", "action": "pause"})
+        await page.send_json({"type": "toast", "text": "Sparat", "icon": "check"})
+        while (event := await self.next_of(overlay, "event"))["name"] != "toast":
+            pass
+        self.assertEqual(event["text"], "Sparat")
         await overlay.close()
         self.assertFalse((await self.next_of(page, "config"))["overlay"])
         await page.close()
