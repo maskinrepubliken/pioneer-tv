@@ -94,7 +94,7 @@ window.PioneerTV = window.PioneerTV || {};
       year: i.ProductionYear || null,
       count: i.ChildCount ?? i.SongCount ?? null,
       seconds: i.RunTimeTicks ? i.RunTimeTicks / TICKS : null,
-      cover: image(i.Id, i.ImageTags && i.ImageTags.Primary, 400),
+      cover: image(i.Id, i.ImageTags && i.ImageTags.Primary, 280),     // a card, or a list's 17rem head
     };
   }
 
@@ -123,8 +123,11 @@ window.PioneerTV = window.PioneerTV || {};
     const src = (i.MediaSources || [])[0];
     const streams = (src && src.MediaStreams) || [];
     const portrait = ['movie', 'series', 'season'].includes(kind);
-    const backdrop = picture(i.Id, 'Backdrop', (i.BackdropImageTags || [])[0], 1280)
-      || picture(i.ParentBackdropItemId, 'Backdrop', (i.ParentBackdropImageTags || [])[0], 1280);
+    // Sized for the 1280x720 screen: a poster is at most 16rem wide (256 px,
+    // on the detail page), a still 24rem (384 px). Larger only costs the
+    // Pi decoding time while the grid scrolls.
+    const backdrop = picture(i.Id, 'Backdrop', (i.BackdropImageTags || [])[0], 480)
+      || picture(i.ParentBackdropItemId, 'Backdrop', (i.ParentBackdropImageTags || [])[0], 480);
     return {
       id: i.Id,
       kind,
@@ -144,8 +147,8 @@ window.PioneerTV = window.PioneerTV || {};
       episode: i.IndexNumber ?? null,
       // Portrait for films, series and seasons; a 16:9 still for the rest
       // (a film's or a series' Primary is its poster, so not that).
-      poster: picture(i.Id, 'Primary', tags.Primary, 400) || picture(i.SeriesId, 'Primary', i.SeriesPrimaryImageTag, 400),
-      still: (portrait ? null : picture(i.Id, 'Primary', tags.Primary, 640)) || picture(i.Id, 'Thumb', tags.Thumb, 640) || backdrop,
+      poster: picture(i.Id, 'Primary', tags.Primary, 280) || picture(i.SeriesId, 'Primary', i.SeriesPrimaryImageTag, 280),
+      still: (portrait ? null : picture(i.Id, 'Primary', tags.Primary, 480)) || picture(i.Id, 'Thumb', tags.Thumb, 480) || backdrop,
       backdrop,
       sourceId: src ? src.Id : null,
       audio: streams.filter((s) => s.Type === 'Audio').map(toTrack),
