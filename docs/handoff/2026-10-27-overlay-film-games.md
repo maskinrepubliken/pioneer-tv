@@ -58,12 +58,19 @@ in `/tmp`, and are gone):
 - **Musik**: a song played to its end is marked played for the user
   (`UserPlayedItems`); before, nothing was ever counted.
 
+- **Long presses** after ten seconds idle came out short (the TV's power
+  is asked over CEC first, and the pad's release waited behind it):
+  holding B to stop a film paused it instead. Now judged by the input
+  events' own times (4e00c0b); four of four held B stopped the film.
+
 ## Loose ends
 
-- Once, the first long B (1.2 s) after a daemon restart came out as a short
-  B (mpv paused instead of stopping); the next one worked. Not reproduced.
-  Possibly the TV wake logic swallowing the first press (the log said "TV
-  power: None -> on" just before). Watch for it with a real pad.
+- Musik's album grid (1,707 albums): 1.3 s to show, then about 80 ms from
+  a press to the next picture sideways and about 150 ms down. The spatial
+  navigation looks at every card on each press; with the cheap checks
+  first it costs about 70 ms of script a press instead of 110 (the rest is
+  layout and painting). A grid that only keeps the rows near the focus in
+  the page, as the Spel grid does, would do more.
 - Every update ends with systemd logging "Failed to open
   /run/systemd/transient/pioneer-tv-update.service" a few times after the
   unit has finished. Harmless as far as seen.

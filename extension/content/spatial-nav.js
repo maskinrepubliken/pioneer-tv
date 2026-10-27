@@ -39,11 +39,14 @@ window.PioneerTV = window.PioneerTV || {};
       if (!el.isConnected) return false;
       const r = el.getBoundingClientRect();
       if (r.width < 2 || r.height < 2) return false;
+      // Where it is first: it is cheap, and on a long grid (Musik's 1,707
+      // albums) nearly everything is far off screen. The style and the
+      // ancestors after, for the few left (they took most of each press).
+      if (r.bottom < -window.innerHeight || r.top > window.innerHeight * 2) return false; // far off screen
+      if (r.right < 0 || r.left > window.innerWidth) return false;
       const st = getComputedStyle(el);
       if (st.visibility === 'hidden' || st.display === 'none' || parseFloat(st.opacity) === 0) return false;
       if (el.closest('[aria-hidden="true"], [inert], [data-pioneertv-overlay]')) return false;
-      if (r.bottom < -window.innerHeight || r.top > window.innerHeight * 2) return false; // far off screen
-      if (r.right < 0 || r.left > window.innerWidth) return false;
       return true;
     },
 
