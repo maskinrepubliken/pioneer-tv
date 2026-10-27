@@ -289,18 +289,20 @@ need about 4.5 Mbit/s and Jellyfin delivered about 5.3 to the box. The API
 key goes to mpv in its config file (`/var/lib/pioneer-tv/video/mpv/`,
 readable by the kiosk user alone), never on its command line.
 
-While a video plays: A, B or X pauses and resumes, with the timeline shown;
-left and right seek ten seconds, L1 and R1 a minute; holding B stops; Home
-opens the overlay's quick menu over the video, which pauses it until the
-menu closes; holding Home stops and goes home. Nothing plays on by itself,
-not even the next episode: at the end the screen goes black and says "Tryck
-B för att fortsätta". Jellyfin hears what plays every ten seconds, and when
+While a video plays: A, B or X pauses it and the overlay shows the pause
+panel over the picture, with the time at the top left: Fortsätt, Ljud and
+Undertexter (A steps to the next track, at once; mpv's own list, named by
+language), TV-volym and Sluta titta. B, X or Home carries on. Left and
+right seek ten seconds, L1 and R1 a minute; holding B stops; Home opens the
+quick menu over the video, which pauses it until the menu closes; holding
+Home stops and goes home. Without the overlay, A, B and X only pause and
+resume, with mpv's timeline. Nothing plays on by itself, not even the next
+episode: at the end the screen goes black and says "Tryck B för att
+fortsätta". Jellyfin hears what plays every ten seconds, and when
 mpv stops the position is written to the user's own data (the reports come
 from the API key, which is no user, and move nobody's "Fortsätt titta"):
 past 90 % the video counts as seen, before 5 % nothing is kept, as in
-Jellyfin itself. The panel planned for pausing (Fortsätt, Ljud,
-Undertexter) will be drawn by the overlay; until then mpv's own timeline
-shows.
+Jellyfin itself.
 
 Measured on the box in October: a 1080p HEVC episode decoded in hardware
 (`hevc-drm`), no dropped frames, mpv at about 18 % CPU, a cache about 40

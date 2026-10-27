@@ -11,7 +11,7 @@ from pathlib import Path
 from aiohttp import web
 
 from pioneertv import config
-from pioneertv.video import Video, tracks
+from pioneertv.video import Video, panel_tracks, track_label, tracks
 
 SOURCE = {"Id": "src1", "RunTimeTicks": 100 * 10_000_000, "MediaStreams": [
     {"Index": 0, "Type": "Video"},
@@ -33,11 +33,18 @@ conn, _ = srv.accept(); f = conn.makefile("rw")
 f.readline(); f.readline()                      # the two observe_property commands
 send = lambda m: (f.write(json.dumps(m) + "\n"), f.flush())
 send({"event": "playback-restart"})
+send({"event": "property-change", "name": "track-list", "data": [
+    {"id": 1, "type": "video"}, {"id": 1, "type": "audio", "lang": "eng", "selected": True},
+    {"id": 2, "type": "audio", "lang": "swe", "title": "Kommentar"}, {"id": 1, "type": "sub", "lang": "swe"}]})
+if os.environ.get("PANEL"):
+    send({"event": "client-message", "args": ["pioneer-panel"]})
 for t in (12.0, 13.0):
     send({"event": "property-change", "name": "time-pos", "data": t})
 if os.environ.get("TO_END"):
     send({"event": "end-file", "reason": "eof"}); sys.exit(0)
 for line in f:
+    with open(os.environ["ARGS_OUT"] + ".commands", "a") as log:
+        log.write(line)
     if json.loads(line)["command"] == ["quit"]:
         send({"event": "end-file", "reason": "quit"}); sys.exit(0)
 '''
@@ -63,6 +70,20 @@ class Tracks(unittest.TestCase):
 
     def test_nothing_asked_nothing_chosen(self):
         self.assertEqual(tracks(SOURCE, None, None), {})
+
+
+class Panel(unittest.TestCase):
+    def test_labels(self):
+        self.assertEqual(track_label({"id": 1, "lang": "swe"}), "Svenska")
+        self.assertEqual(track_label({"id": 2, "lang": "eng", "title": "Commentary"}), "Engelska · Commentary")
+        self.assertEqual(track_label({"id": 3, "title": "English"}), "English")
+        self.assertEqual(track_label({"id": 4}), "Spår 4")
+
+    def test_tracks_by_kind(self):
+        t = panel_tracks([{"id": 1, "type": "video"}, {"id": 1, "type": "audio", "lang": "eng", "selected": True},
+                          {"id": 1, "type": "sub", "lang": "swe"}])
+        self.assertEqual(t["audio"], [{"id": 1, "label": "Engelska", "selected": True}])
+        self.assertEqual(t["subtitles"], [{"id": 1, "label": "Svenska", "selected": False}])
 
 
 class Base(unittest.IsolatedAsyncioTestCase):
@@ -186,6 +207,28 @@ class Playing(Base):
         await self.video.media("resume")
         self.assertEqual(sent, [])
         self.video._command = orig
+        await self.video.stop()
+
+    async def test_a_b_x_open_the_panel_with_the_overlay(self):
+        os.environ["PANEL"] = "1"
+        self.video.overlay = lambda: True
+        try:
+            await self.video.play("abc")
+            await self.wait_for("held")
+        finally:
+            os.environ.pop("PANEL", None)
+        self.assertIn("script-message pioneer-panel", (self.dir / "video" / "mpv" / "input.conf").read_text())
+        held = next(e for e in self.events if e["state"] == "held")
+        self.assertEqual(held["title"], "Fyren")
+        self.assertEqual([a["label"] for a in held["audio"]], ["Engelska", "Svenska · Kommentar"])
+        self.assertEqual(await self.video.track("subtitles", "no"), (True, ""))
+        self.assertEqual((await self.video.track("audio", "x"))[0], False)
+        self.assertTrue(await self.video.on_system("menu"))          # Home on the panel: carry on
+        await asyncio.sleep(0.1)
+        sent = (self.dir / "args.json.commands").read_text()
+        self.assertIn('["set_property", "sid", "no"]', sent)
+        self.assertIn('["set_property", "pause", false]', sent)
+        self.assertFalse(self.video.held)
         await self.video.stop()
 
     async def test_one_at_a_time(self):

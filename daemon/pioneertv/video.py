@@ -12,10 +12,12 @@ so Jellyfin never transcodes.
 mpv is only ever the picture: no on-screen controller, our own key map
 (input.conf, written here) and the API key in a config file only the kiosk
 user can read, never on its command line. The pad drives it through the
-virtual keyboard: A, B and X pause and resume (with the timeline shown),
-left and right seek ten seconds, L1 and R1 a minute. Holding B stops; Home
-opens the overlay's quick menu over it, which pauses it while open (media),
-holding Home stops and goes home. Nothing plays on by itself: at the end mpv quits and the page says
+virtual keyboard: A, B and X pause it and the overlay shows the pause panel
+(Fortsätt, Ljud, Undertexter; B, X or Home carry on), or without the
+overlay only pause and resume, with the timeline; left and right seek ten
+seconds, L1 and R1 a minute. Holding B stops; Home opens the overlay's quick
+menu over it, which pauses it while open (media), holding Home stops and
+goes home. Nothing plays on by itself: at the end mpv quits and the page says
 "Tryck B för att fortsätta".
 
 Jellyfin hears what plays (Sessions/Playing, every ten seconds while it
@@ -72,11 +74,20 @@ sub-auto=no
 """
 
 # The pad arrives as keys (actions.py): A is Enter, B Escape, X Space,
-# left and right the arrows, L1 and R1 Shift+Tab and Tab.
-INPUT_CONF = """\
+# left and right the arrows, L1 and R1 Shift+Tab and Tab. A, B and X ask for
+# the pause panel, which the overlay draws (PANEL_KEYS); without the overlay
+# they only pause, with the timeline.
+PAUSE_KEYS = """\
 ENTER cycle pause; show-progress
 SPACE cycle pause; show-progress
 ESC cycle pause; show-progress
+"""
+PANEL_KEYS = """\
+ENTER script-message pioneer-panel
+SPACE script-message pioneer-panel
+ESC script-message pioneer-panel
+"""
+INPUT_CONF = """\
 LEFT seek -10; show-progress
 RIGHT seek 10; show-progress
 TAB seek 60; show-progress
@@ -84,6 +95,32 @@ Shift+TAB seek -60; show-progress
 UP show-progress
 DOWN show-progress
 """
+
+# Languages as the panel names them (mpv gives ISO 639 codes).
+LANGUAGES = {"swe": "Svenska", "sv": "Svenska", "eng": "Engelska", "en": "Engelska", "nor": "Norska", "no": "Norska",
+             "nob": "Norska", "dan": "Danska", "da": "Danska", "fin": "Finska", "fi": "Finska", "ger": "Tyska",
+             "deu": "Tyska", "de": "Tyska", "fre": "Franska", "fra": "Franska", "fr": "Franska", "spa": "Spanska",
+             "es": "Spanska", "ita": "Italienska", "it": "Italienska", "jpn": "Japanska", "ja": "Japanska"}
+
+
+def track_label(t: dict) -> str:
+    """A track as the panel shows it: its language, and its title when it says more."""
+    lang = LANGUAGES.get((t.get("lang") or "").lower(), t.get("lang") or "")
+    title = t.get("title") or ""
+    if lang and title and title.lower() not in lang.lower():
+        return f"{lang} · {title}"
+    return lang or title or f"Spår {t.get('id')}"
+
+
+def panel_tracks(track_list: list) -> dict:
+    """The audio and subtitle tracks mpv has, for the pause panel."""
+    out: dict = {"audio": [], "subtitles": []}
+    for t in track_list or []:
+        kind = {"audio": "audio", "sub": "subtitles"}.get(t.get("type"))
+        if kind:
+            out[kind].append({"id": t.get("id"), "label": track_label(t), "selected": bool(t.get("selected"))})
+    return out
+
 
 # Jellyfin's subtitle codecs and the file ending it serves them as.
 SUBTITLE_FORMAT = {"subrip": "srt", "srt": "srt", "ass": "ass", "ssa": "ssa", "webvtt": "vtt", "vtt": "vtt"}
@@ -114,8 +151,10 @@ def tracks(source: dict, audio: int | None, subtitle: int | None) -> dict:
 
 
 class Video:
-    def __init__(self, cfg: dict, emit: Callable[[dict], Coroutine], dispatcher) -> None:
+    def __init__(self, cfg: dict, emit: Callable[[dict], Coroutine], dispatcher,
+                 overlay: Callable[[], bool] = lambda: False) -> None:
         self.cfg = cfg
+        self.overlay = overlay             # True while the overlay is up: it draws the pause panel
         self.emit = emit
         self.dispatcher = dispatcher
         self.proc: asyncio.subprocess.Process | None = None
@@ -128,6 +167,8 @@ class Video:
         self.writer: asyncio.StreamWriter | None = None
         self._user: tuple | None = None    # ((url, key, wanted), user id)
         self.menu_paused = False           # the quick menu paused it, and resumes it
+        self.held = False                  # the pause panel is open over it
+        self.track_list: list = []         # mpv's, as it last said
 
     # ------------------------------------------------------------ config
     @property
@@ -201,7 +242,7 @@ class Video:
         conf.mkdir(parents=True, exist_ok=True)
         os.chmod(conf, 0o700)
         (conf / "mpv.conf").write_text(MPV_CONF + f"http-header-fields=X-Emby-Token: {self.jcfg['api_key']}\n")
-        (conf / "input.conf").write_text(INPUT_CONF)
+        (conf / "input.conf").write_text((PANEL_KEYS if self.overlay() else PAUSE_KEYS) + INPUT_CONF)
         for f in (conf / "mpv.conf", conf / "input.conf"):
             os.chmod(f, 0o600)
         self._own(conf)
@@ -265,7 +306,7 @@ class Video:
                 self.ipc_task.cancel()
         log.info("mpv exited (%s) after %.0f s at %.0f s", rc, ran, self.position)
         item, ended, was = self.item, self.ended, self.state
-        self.proc, self.item, self.state, self.writer = None, None, "idle", None
+        self.proc, self.item, self.state, self.writer, self.held = None, None, "idle", None, False
         if item and was != "starting":
             await self._report("Stopped", item)
             await self._save_position(item, ended)
@@ -298,6 +339,7 @@ class Video:
             return
         await self._command(["observe_property", 1, "time-pos"])
         await self._command(["observe_property", 2, "pause"])
+        await self._command(["observe_property", 3, "track-list"])
         reported = 0.0
         try:
             while line := await reader.readline():
@@ -320,10 +362,41 @@ class Video:
                     self.paused = bool(msg.get("data"))
                     if self.state == "running":
                         await self._report("Progress")
+                elif event == "property-change" and msg.get("name") == "track-list":
+                    self.track_list = msg.get("data") or []
+                elif event == "client-message" and (msg.get("args") or [None])[0] == "pioneer-panel":
+                    await self.hold()
                 elif event == "end-file" and msg.get("reason") == "eof":
                     self.ended = True
         except (OSError, asyncio.IncompleteReadError):
             pass
+
+    # ------------------------------------------------------------ the pause panel
+    async def hold(self) -> None:
+        """A, B or X: pause, keep the timeline up, and have the overlay show
+        Fortsätt, Ljud and Undertexter."""
+        if self.state != "running" or self.held:
+            return
+        self.held = True
+        await self._command(["set_property", "pause", True])
+        await self._command(["set_property", "osd-level", 3])
+        await self._event("held", title=self.item["name"] if self.item else "", **panel_tracks(self.track_list))
+
+    async def resume(self) -> None:
+        if not self.held:
+            return
+        self.held = False
+        await self._command(["set_property", "osd-level", 1])
+        await self._command(["set_property", "pause", False])
+        await self._event("running")
+
+    async def track(self, kind: str, track_id) -> tuple[bool, str]:
+        """Ljud or Undertexter from the panel: an mpv track id, or "no" for no subtitles."""
+        prop = {"audio": "aid", "subtitles": "sid"}.get(kind)
+        if not prop or not (track_id == "no" and kind == "subtitles" or isinstance(track_id, int)):
+            return False, "okänt spår"
+        await self._command(["set_property", prop, track_id])
+        return True, ""
 
     async def media(self, action: str) -> None:
         """The quick menu opening (pause) and closing (resume): only what it
@@ -359,6 +432,9 @@ class Video:
         """The box's own buttons while mpv has the screen. True: handled here."""
         if name == "back":                                  # hold B
             asyncio.create_task(self.stop())
+            return True
+        if name == "menu" and self.held:                    # Home on the panel: carry on
+            await self.resume()
             return True
         if name == "menu":                                  # Home: the overlay's menu, which pauses it (media)
             return False

@@ -218,7 +218,7 @@ async def amain(cfg: dict) -> None:
     await games.reap_strays()
 
     # Films and series from Jellyfin, played in mpv (video.py).
-    video = Video(cfg, emit, dispatcher)
+    video = Video(cfg, emit, dispatcher, overlay=lambda: server.router.present)
     server.hooks["video"] = video
     await video.reap_strays()
 

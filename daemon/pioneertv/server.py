@@ -489,6 +489,11 @@ class Server:
         elif action == "stop":
             await video.stop()
             ok, msg = True, ""
+        elif action == "resume":
+            await video.resume()
+            ok, msg = True, ""
+        elif action == "track":
+            ok, msg = await video.track(str(data.get("kind") or ""), data.get("id"))
         else:
             return web.json_response({"ok": False, "message": "okänd åtgärd"}, status=404)
         return web.json_response({"ok": ok, "message": msg}, status=200 if ok else 409)
