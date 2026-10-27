@@ -77,6 +77,12 @@ in `/tmp`, and are gone):
   cases, two overlay timing slips. Left as is: evdev times are wall-clock,
   so an NTP step between a press and its release can misjudge one press.
 
+- **Screensaver** on the start page after 3 minutes, TV off after 10
+  (`ui.screensaver_minutes`, `ui.tv_off_minutes`, on the TV page in
+  settings). Tried on the box: it came up by itself after three minutes,
+  a button took it away without moving the focus, and with the TV turned
+  off from it a button woke the TV and the screensaver was gone.
+
 ## Loose ends
 
 - Every update ends with systemd logging "Failed to open
