@@ -54,7 +54,10 @@ REDIRECTS = {
 def env_settings(name: str, keys: tuple[str, ...]) -> list[str]:
     """Values from the environment, else from ~/.config/pioneer-tv/<name>.env."""
     values = [os.environ.get(k, "") for k in keys]
-    env_file = pathlib.Path.home() / ".config" / "pioneer-tv" / f"{name}.env"
+    try:
+        env_file = pathlib.Path.home() / ".config" / "pioneer-tv" / f"{name}.env"
+    except RuntimeError:            # no home directory (a service without one)
+        return values
     if not values[1] and env_file.is_file():
         found = dict(line.split("=", 1) for line in env_file.read_text().splitlines() if "=" in line)
         values = [v or found.get(k, "").strip() for k, v in zip(keys, values)]
