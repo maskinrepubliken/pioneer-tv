@@ -28,12 +28,13 @@ window.PioneerTV = window.PioneerTV || {};
   };
 
   // ------------------------------------------------------------ menu
-  // A menu: { title, note, items, wide, status }. An item: { label, icon,
+  // A menu: { title, note, items, wide, status }, or one that draws itself
+  // whole (build: the main menu's sheet, which gives each item its el; the
+  // submenus opened from it are drawn over it). An item: { label, icon,
   // detail, primary, disabled, run, keep (stays open after run), opens (a
   // page: holes are punched on it until that page has loaded), volume (left
   // and right step the TV's volume), sub (a function giving the submenu),
-  // art and color (a service's picture), grid ('cards' or 'pair': items
-  // side by side, two to a row) }.
+  // grid ('pair': items side by side, two to a row) }.
   hud.menu = {
     root: null, stack: [], index: 0, items: [],
     isOpen() { return !!(this.root && this.root.isConnected); },
@@ -66,11 +67,33 @@ window.PioneerTV = window.PioneerTV || {};
       if (this.punching) this.punching();
       const spec = this.stack[this.stack.length - 1];
       const was = this.isOpen();
-      const b = M.bridge;
-      this.items = spec.items;
       const root = document.createElement('div');
       root.className = 'pioneertv-menu';
       root.setAttribute('data-pioneertv-overlay', '');
+      // A sheet at the bottom of the stack stays under its submenus.
+      const base = this.stack[0];
+      if (base !== spec && base.build) {
+        const under = base.build();
+        under.classList.add('pioneertv-menu-under');
+        root.appendChild(under);
+      }
+      this.items = spec.items;
+      const panel = spec.build ? spec.build() : this.panel(spec);
+      this.items.forEach((it, i) => it.el.addEventListener('click', () => { this.index = i; this.highlight(); this.activate(); }));
+      root.appendChild(panel);
+      if (this.root) M.bridge.unmount(this.root);
+      M.bridge.mount(root, { modal: true });
+      this.root = root;
+      if (spec.mounted) spec.mounted(panel);
+      this.index = Math.min(spec.at || 0, this.items.length - 1);
+      if (this.items[this.index] && this.items[this.index].disabled) this.index = Math.max(0, this.items.findIndex((it) => !it.disabled));
+      this.highlight();
+      M.nav.captured = this;
+      if (!was) M.bridge.emit('menu:open');
+    },
+    // The card: a title, a note, the items in groups, the status.
+    panel(spec) {
+      const b = M.bridge;
       const panel = document.createElement('div');
       panel.className = 'pioneertv-menu-panel' + (spec.wide ? ' pioneertv-menu-wide' : '');
       const title = document.createElement('div');
@@ -80,7 +103,7 @@ window.PioneerTV = window.PioneerTV || {};
       if (spec.note) panel.appendChild(spec.note);
       let group = null;
       let groupKind = null;
-      this.items.forEach((it, i) => {
+      spec.items.forEach((it) => {
         const kind = it.grid || 'list';
         if (!group || kind !== groupKind) {
           group = document.createElement('div');
@@ -88,33 +111,21 @@ window.PioneerTV = window.PioneerTV || {};
           groupKind = kind;
           panel.appendChild(group);
         }
-        const el = document.createElement('div');
-        el.className = 'pioneertv-menu-item' + (it.grid === 'cards' ? ' pioneertv-menu-card' : '') + (it.primary ? ' pioneertv-menu-primary' : '') + (it.disabled ? ' pioneertv-menu-disabled' : '');
-        if (it.art) {
-          const art = document.createElement('span');
-          art.className = 'pioneertv-menu-art';
-          art.innerHTML = it.art;
-          el.appendChild(art);
-        } else {
-          el.innerHTML = `<span class="pioneertv-menu-icon">${M.icons.html(it.icon)}</span>`;
-        }
-        const name = document.createElement('span'); name.className = 'pioneertv-menu-label'; name.textContent = it.label; el.appendChild(name);
-        const detail = it.detail || (it.sub ? '›' : '');
-        if (detail) { const d = document.createElement('span'); d.className = 'pioneertv-menu-detail'; d.textContent = detail; el.appendChild(d); }
-        el.addEventListener('click', () => { this.index = i; this.highlight(); this.activate(); });
-        it.el = el;
-        group.appendChild(el);
+        group.appendChild(this.item(it));
       });
       if (spec.status) panel.appendChild(this.statusBlock(b.state.status, b.state.daemonConnected));
-      root.appendChild(panel);
-      if (this.root) M.bridge.unmount(this.root);
-      M.bridge.mount(root, { modal: true });
-      this.root = root;
-      this.index = Math.min(spec.at || 0, this.items.length - 1);
-      if (this.items[this.index] && this.items[this.index].disabled) this.index = Math.max(0, this.items.findIndex((it) => !it.disabled));
-      this.highlight();
-      M.nav.captured = this;
-      if (!was) M.bridge.emit('menu:open');
+      return panel;
+    },
+    // One choice as a row: its icon, its name and a detail at the right.
+    item(it) {
+      const el = document.createElement('div');
+      el.className = 'pioneertv-menu-item' + (it.primary ? ' pioneertv-menu-primary' : '') + (it.disabled ? ' pioneertv-menu-disabled' : '');
+      el.innerHTML = `<span class="pioneertv-menu-icon">${M.icons.html(it.icon)}</span>`;
+      const name = document.createElement('span'); name.className = 'pioneertv-menu-label'; name.textContent = it.label; el.appendChild(name);
+      const detail = it.detail || (it.sub ? '›' : '');
+      if (detail) { const d = document.createElement('span'); d.className = 'pioneertv-menu-detail'; d.textContent = detail; el.appendChild(d); }
+      it.el = el;
+      return el;
     },
     // Compact status rows at the foot: Wi-Fi, Tailscale, pads, temperature.
     statusBlock(s, connected) {
@@ -174,7 +185,9 @@ window.PioneerTV = window.PioneerTV || {};
       }
       const detail = el.querySelector('.pioneertv-menu-detail');
       if (detail) detail.hidden = true;
-      el.appendChild(svg);
+      // A tile has a place for the row, under its picture.
+      const slot = el.querySelector('[data-punch]');
+      if (slot) slot.prepend(svg); else el.appendChild(svg);
       el.setAttribute('aria-busy', 'true');
       let step = 0;
       const draw = () => { const lit = step++ % (N + 2); holes.forEach((h, i) => h.classList.toggle('punched', i < lit)); };

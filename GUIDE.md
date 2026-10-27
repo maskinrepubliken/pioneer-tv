@@ -505,18 +505,22 @@ them; a page's toast is sent to the daemon and on to the overlay
 tried again every three seconds.
 
 - **The main menu** (`overlay/main-menu.js`): Home opens it over anything,
-  holding Home goes to the home page and opens it there. The services are
-  cards with their pictures (config `services`), then Live and Sök
-  (submenus), what concerns the page below (Tillbaka, Ladda om,
-  Tangentbord), Stäng av TV:n, TV-volym and Inställningar (a submenu: each
-  row opens its tab of the settings page, the box's status at the foot). B
+  holding Home goes to the home page and opens it there. A sheet over nearly
+  the whole screen, laid out as the start page was: the status pills and
+  Tillbaka, Ladda om, Tangentbord, Sök, Inställningar and Stäng av TV:n at
+  the top, the services as big tiles in two rows (config `services`; Live
+  for the channels), the pad's legend at the foot. Live and Inställningar
+  (each row opens its tab of the settings page, the box's status at the
+  foot) are the card at the right, over the sheet; so are Sök's results. B
   goes one step back, the last step closes it. A choice that opens a page
   punches its row of holes until the page has loaded (the extension says
-  `loaded`). Sök types on the on-screen keyboard here in the overlay.
-- **The menu system** (`overlay/hud.js`): one paper card with a stack of
-  menus; the pause panels of a game and a film are the same card. The d-pad
-  moves to the nearest choice that way on screen, so grids and lists are
-  walked alike.
+  `loaded`). Sök types on the on-screen keyboard here in the overlay, over
+  the sheet. The TV's volume is L2 and R2 (and a row in the pause panels).
+- **The menu system** (`overlay/hud.js`): a stack of menus, each the paper
+  card at the right or (the main menu) a sheet that draws itself; the pause
+  panels of a game and a film are the same card. The d-pad moves to the
+  nearest choice that way on screen, so tiles, buttons and lists are walked
+  alike.
 - **The home page** (`launcher/index.html`) is only the clock the
   screensaver draws (`overlay/clock.js`); a press there opens the main menu.
 

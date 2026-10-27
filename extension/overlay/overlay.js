@@ -83,6 +83,8 @@ window.PioneerTV = window.PioneerTV || {};
     if (!down.size) done();
   }
   for (const ev of ['menu:open', 'menu:close', 'keyboard:open', 'keyboard:close']) b.on(ev, () => queueMicrotask(sync));
+  // Sök's keyboard over the menu: the menu has the pad again when it goes.
+  b.on('keyboard:close', () => { if (menu.isOpen() && !M.nav.captured) M.nav.captured = menu; });
 
   // The toasts, the screensaver and the pad's colours (overlay/hud.js).
   M.hud.listen(b);
