@@ -178,8 +178,9 @@ remote does not always announce it.
 Left alone, the box goes home, and home is the screensaver: the
 Mandelbrot set, generated without end (`launcher/mandelbrot.js`, on the GPU
 at a third of the screen's width and fifteen frames a second), zooming in
-on one place along the set's edge, out, and on to the next, in the design
-system's colours, with a line of the Tao Te Ching on it (`launcher/tao.js`,
+on one place along the set's edge, out, and on to the next, six minutes a
+round. Kept calm: mostly ink, with a dimmed glow of forest, rust and ochre
+only near the set's edge, and a line of the Tao Te Ching on it (`launcher/tao.js`,
 our own Swedish renderings) that changes, and moves, every three minutes.
 No clock, no date.
 

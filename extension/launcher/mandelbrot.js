@@ -1,6 +1,8 @@
 // Pioneer TV home: the Mandelbrot set, generated without end. It zooms in
 // on one of a few places along the set's edge, out again, and on to the
-// next, in the design system's colours (ink, forest, rust, ochre, paper).
+// next, slowly. Calm on purpose: nearly all of it is ink, and only close to
+// the set's edge does it glow, through forest and rust to a dimmed ochre;
+// no bands of colour repeat.
 //
 // Drawn by the GPU (WebGL) at a third of the screen's width and fifteen
 // frames a second, scaled up: the zoom is slow, so it looks smooth, and
@@ -22,8 +24,8 @@ window.PioneerTV = window.PioneerTV || {};
     [0.001643721971, 0.822467633],
   ];
   const WIDE = 3.2;                  // the set's width on screen at the widest
-  const DEEP = 1.5e-4;
-  const CYCLE_S = 210;               // in, out and on to the next place
+  const DEEP = 1e-3;
+  const CYCLE_S = 360;               // in, out and on to the next place
   const FPS = 15;
 
   const smooth = (t) => t * t * (3 - 2 * t);
@@ -69,13 +71,14 @@ window.PioneerTV = window.PioneerTV || {};
     uniform float width;
     uniform int steps;
     uniform vec3 c0, c1, c2, c3, c4;
-    // Ink to paper and back again, so the bands never jump.
+    // Far from the set: ink. Nearer: forest, then rust, then a dimmed
+    // ochre right at the edge. t is how near, 0 to 1.
     vec3 shade(float t) {
-      float s = (1.0 - abs(2.0 * fract(t) - 1.0)) * 4.0;
-      if (s < 1.0) return mix(c0, c1, s);
-      if (s < 2.0) return mix(c1, c2, s - 1.0);
-      if (s < 3.0) return mix(c2, c3, s - 2.0);
-      return mix(c3, c4, s - 3.0);
+      float g = pow(clamp(t, 0.0, 1.0), 2.2);
+      vec3 c = g < 0.5 ? mix(c0, c1, g / 0.5)
+             : g < 0.8 ? mix(c1, c2, (g - 0.5) / 0.3)
+             : mix(c2, c3, (g - 0.8) / 0.2);
+      return mix(c0, c, 0.8);
     }
     void main() {
       vec2 p = (gl_FragCoord.xy - size * 0.5) / size.x * width + centre;
@@ -90,7 +93,7 @@ window.PioneerTV = window.PioneerTV || {};
       if (n >= float(steps)) { gl_FragColor = vec4(c0, 1.0); return; }
       // Smooth count: no bands between the steps.
       float nu = n + 1.0 - log2(log2(dot(z, z)) * 0.5);
-      gl_FragColor = vec4(shade(nu / 48.0), 1.0);
+      gl_FragColor = vec4(shade(log(max(nu, 1.0)) / log(float(steps))), 1.0);
     }`;
   const VERTEX = 'attribute vec2 a; void main() { gl_Position = vec4(a, 0.0, 1.0); }';
 
@@ -123,7 +126,7 @@ window.PioneerTV = window.PioneerTV || {};
       gl.uniform2f(u('size'), canvas.width, canvas.height);
       gl.uniform2f(u('centre'), v.x, v.y);
       gl.uniform1f(u('width'), v.width);
-      gl.uniform1i(u('steps'), Math.round(120 + 360 * v.depth));
+      gl.uniform1i(u('steps'), Math.round(120 + 240 * v.depth));
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     };
   }
@@ -138,7 +141,7 @@ window.PioneerTV = window.PioneerTV || {};
     return (next) => {
       if (row === 0) v = next;
       const { width: w, height: h } = canvas;
-      const steps = Math.round(80 + 160 * v.depth);
+      const steps = Math.round(80 + 120 * v.depth);
       const band = Math.ceil(h / 6);
       for (let y = row; y < Math.min(h, row + band); y++) {
         for (let x = 0; x < w; x++) {
@@ -148,11 +151,11 @@ window.PioneerTV = window.PioneerTV || {};
           while (n < steps && zx * zx + zy * zy <= 256) { const t = zx * zx - zy * zy + px; zy = 2 * zx * zy + py; zx = t; n++; }
           let c = colours[0];
           if (n < steps) {
-            const f0 = ((n + 1 - Math.log2(Math.log2(zx * zx + zy * zy) / 2)) / 48) % 1;
-            const t = (1 - Math.abs(2 * f0 - 1)) * 4;
-            const i = Math.min(3, Math.floor(t));
-            const f = t - i;
-            c = colours[i].map((a, k) => a + (colours[i + 1][k] - a) * f);
+            // As the shader's shade(): ink far off, glowing near the edge.
+            const nu = n + 1 - Math.log2(Math.log2(zx * zx + zy * zy) / 2);
+            const g = Math.min(1, Math.max(0, Math.log(Math.max(nu, 1)) / Math.log(steps))) ** 2.2;
+            const [from, to, f] = g < 0.5 ? [0, 1, g / 0.5] : g < 0.8 ? [1, 2, (g - 0.5) / 0.3] : [2, 3, (g - 0.8) / 0.2];
+            c = colours[from].map((a, k) => colours[0][k] + (a + (colours[to][k] - a) * f - colours[0][k]) * 0.8);
           }
           const o = (y * w + x) * 4;
           img.data[o] = c[0]; img.data[o + 1] = c[1]; img.data[o + 2] = c[2]; img.data[o + 3] = 255;
