@@ -36,6 +36,7 @@ class Dispatcher:
         self._pressed_at: dict[int, float] = {}
         self._long_fired: set[int] = set()
         self._long_tasks: dict[int, asyncio.Task] = {}
+        self._down_at: dict[int, float] = {}     # when a long-press button went down, by the pad's own clock
         self._key_down_at: dict[int, float] = {}
         self._begun: set[int] = set()
         self._swallowed: set[int] = set()
@@ -69,8 +70,12 @@ class Dispatcher:
         finally:
             self._wake_until = max(self._wake_until, time.monotonic() + WAKE_SETTLE_SECONDS)
 
-    async def press(self, action: Action) -> None:
+    async def press(self, action: Action, at: float | None = None) -> None:
+        """at: when the button went down (the input event's own time, on the
+        wall clock). The pad's events wait while a press is handled, so a
+        long press is judged by these times, not by when they arrive here."""
         aid = id(action)
+        down_at = at if at is not None else time.time()
         now = time.monotonic()
         idle, self._last_input = now - self._last_input, now
         await self._refresh_tv_power(idle)
@@ -91,20 +96,24 @@ class Dispatcher:
             return
         if "long" in action:
             # Defer the short action until release; fire long after the delay.
-            self._long_tasks[aid] = asyncio.create_task(self._long_after(action))
+            self._down_at[aid] = down_at
+            self._long_tasks[aid] = asyncio.create_task(self._long_after(action, down_at))
             return
         self._begun.add(aid)
         await self._begin(action)
 
-    async def release(self, action: Action) -> None:
+    async def release(self, action: Action, at: float | None = None) -> None:
         aid = id(action)
         if aid in self._swallowed:
             self._swallowed.discard(aid)
             return
         if task := self._long_tasks.pop(aid, None):
             task.cancel()
+            held = (at if at is not None else time.time()) - self._down_at.pop(aid, time.time())
             if aid in self._long_fired:
                 self._long_fired.discard(aid)
+            elif held >= self.long_press_ms / 1000:
+                await self.fire(action["long"])  # held long enough, though its release came before the timer
             else:
                 await self.fire(action)  # short press
             return
@@ -119,9 +128,15 @@ class Dispatcher:
         await self._end(action)
 
     # ------------------------------------------------------------ internals
-    async def _long_after(self, action: Action) -> None:
+    async def _long_after(self, action: Action, down_at: float) -> None:
+        # Counted from when the button went down. A press handled late (the
+        # TV's power asked first, which takes a second or more over CEC) may
+        # have its release already waiting: give it a moment to arrive and
+        # decide by the times instead (seen on the box: holding B to stop a
+        # film after a while without input paused it instead).
+        late = time.time() - down_at
         try:
-            await asyncio.sleep(self.long_press_ms / 1000)
+            await asyncio.sleep(max(self.long_press_ms / 1000 - late, 0.15))
         except asyncio.CancelledError:
             return
         self._long_fired.add(id(action))

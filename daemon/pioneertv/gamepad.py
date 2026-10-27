@@ -160,7 +160,7 @@ class Gamepad:
         try:
             async for ev in self.dev.async_read_loop():
                 if ev.type == e.EV_KEY:
-                    await self.on_key(ev.code, ev.value)
+                    await self.on_key(ev.code, ev.value, ev.timestamp())
                 elif ev.type == e.EV_ABS:
                     await self.on_abs(ev.code, ev.value)
         except (OSError, asyncio.CancelledError):
@@ -203,7 +203,7 @@ class Gamepad:
         if notify:
             asyncio.get_running_loop().create_task(notify(self.identity()))
 
-    async def on_key(self, code: int, value: int) -> None:
+    async def on_key(self, code: int, value: int, at: float | None = None) -> None:
         if value == 1:
             self.mark_active()
         action = self.buttons.get(code)
@@ -220,9 +220,9 @@ class Gamepad:
             if code == e.BTN_START:
                 action = self._passthrough_start
         if value:
-            await self.dispatcher.press(action)
+            await self.dispatcher.press(action, at)
         else:
-            await self.dispatcher.release(action)
+            await self.dispatcher.release(action, at)
 
     # Stable objects: the dispatcher keys its long-press state on identity.
     _passthrough_start = {"long": {"system": "menu"}}

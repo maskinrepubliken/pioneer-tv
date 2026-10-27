@@ -41,7 +41,11 @@ what was learned on the way.
 | Right stick | Mouse pointer; click on the stick to left-click |
 | Start | Quick menu (also: hold Y) |
 | Select | Status toast |
-| Guide / Home / PS / Xbox | Quick menu (press again to close it); in a Spel game, the pause panel instead. Hold: home. Also wakes the TV and switches input when the pad connects |
+| Guide / Home / PS / Xbox | Quick menu (press again to close it); in a game or a film, the pause panel instead. Hold: home. Also wakes the TV and switches input when the pad connects |
+
+In a film or an episode playing in mpv, A, B and X pause it and open its
+pause panel, left and right seek ten seconds, L1 and R1 a minute, and
+holding B stops it ([Film and series](#film-and-series)).
 
 All of it is in `/etc/pioneer-tv/config.toml` (see `daemon/config.example.toml`).
 The TV remote works too: keys the TV forwards over CEC are mapped in `[cec.remote]`.

@@ -1,5 +1,6 @@
 """The dispatcher's repeats: a held volume trigger repeats, stops on
-release, never runs twice for one action, and gives up on its own.
+release, never runs twice for one action, and gives up on its own. And long
+presses judged by the pad's own times, however late they are handled.
 `python -m unittest tests.test_actions` from daemon/."""
 import asyncio
 import unittest
@@ -68,3 +69,39 @@ class Repeats(unittest.IsolatedAsyncioTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class LongPresses(unittest.IsolatedAsyncioTestCase):
+    """B: Escape, held: back. The pad's events wait while a press is handled
+    (the TV's power is asked first after a pause), so its release can arrive
+    at once, long after it happened."""
+    async def asyncSetUp(self):
+        cfg = config._merge(config.DEFAULTS, {"gamepad": {"long_press_ms": 300}})
+        self.fired = []
+        self.d = Dispatcher(cfg, vinput=None, cec=Cec(), emit=nothing)
+
+        async def fire(action):
+            self.fired.append(action.get("system") or action.get("key"))
+        self.d.fire = fire
+        self.action = {"key": "KEY_ESC", "long": {"system": "back"}}
+
+    async def test_held_and_handled_late_is_long(self):
+        t0 = actions.time.time() - 1.0                   # went down a second ago
+        await self.d.press(self.action, t0)
+        await self.d.release(self.action, t0 + 0.6)      # its release, waiting
+        self.assertEqual(self.fired, ["back"])
+
+    async def test_a_tap_handled_late_is_short(self):
+        t0 = actions.time.time() - 1.0
+        await self.d.press(self.action, t0)
+        await self.d.release(self.action, t0 + 0.1)
+        await asyncio.sleep(0.25)
+        self.assertEqual(self.fired, ["KEY_ESC"])
+
+    async def test_held_on_time_fires_once(self):
+        t0 = actions.time.time()
+        await self.d.press(self.action, t0)
+        await asyncio.sleep(0.4)
+        self.assertEqual(self.fired, ["back"])
+        await self.d.release(self.action, t0 + 0.5)
+        self.assertEqual(self.fired, ["back"])
