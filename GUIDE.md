@@ -59,6 +59,7 @@ The TV remote works too: keys the TV forwards over CEC are mapped in `[cec.remot
                       │◀── ws://127.0.0.1:8765/ws ───┤  launcher page: services from config
                       │                   │             settings page: status, Wi-Fi, Bluetooth, services
                       │                   ├────▶ RetroArch (a game, started by the daemon)
+                      │                   ├────▶ mpv (a film from Jellyfin, started by the daemon)
                       │◀── ws ────────────┴────▶ overlay (WebKit, top layer): quick menu, toasts
                       └──cec-ctl──▶ /dev/cec0 ──▶ TV
 ```
