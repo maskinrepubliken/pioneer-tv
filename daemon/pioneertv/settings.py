@@ -38,6 +38,8 @@ SCHEMA: list[dict] = [
             {"path": "cec.monitor", "type": "bool", "label": "Lyssna på TV:ns fjärrkontroll och standby"},
             {"path": "cec.osd_name", "type": "text", "label": "Namn som TV:n visar", "maxlength": 14},
             {"path": "ui.volume_toast", "type": "bool", "label": "Visa en notis vid volymändring (TV:n visar oftast volymen själv)"},
+            {"path": "ui.screensaver_minutes", "type": "number", "label": "Skärmsläckare på startsidan efter (0 = aldrig)", "min": 0, "max": 60, "step": 1, "unit": "min"},
+            {"path": "ui.tv_off_minutes", "type": "number", "label": "Stäng av TV:n från startsidan efter (0 = aldrig)", "min": 0, "max": 120, "step": 1, "unit": "min"},
         ],
     },
     {

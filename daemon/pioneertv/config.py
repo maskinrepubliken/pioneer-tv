@@ -81,7 +81,9 @@ DEFAULTS: dict[str, Any] = {
     # mode "uinput": a real virtual mouse device, for a compositor that can show a cursor.
     "mouse": {"mode": "virtual", "deadzone": 0.15, "max_speed": 1100.0, "curve": 2.0, "hz": 60},
     # volume_toast: our own "Volym +/−" note; off, since the TV shows its own volume.
-    "ui": {"auto_keyboard": True, "volume_toast": False},
+    # screensaver_minutes, tv_off_minutes: left alone on the start page, the
+    # screensaver after this long and the TV off after that (0: never).
+    "ui": {"auto_keyboard": True, "volume_toast": False, "screensaver_minutes": 3, "tv_off_minutes": 10},
     "chromium": {"log_file": "/home/pi/.pioneer-tv/chromium.log"},
     "remote": {"token": ""},
     # RomM for the Spel pages: base URL and a client API token (see /romm/ in server.py).

@@ -173,6 +173,14 @@ Both behaviours are toggles on the TV page in settings. The daemon also polls
 the TV's power state every 30 seconds, because a set switched off with its own
 remote does not always announce it.
 
+Left alone on the start page, the box shows a screensaver after three
+minutes (ink, the time and the date, jumping to a new place once a minute
+so nothing burns in) and turns the TV off after ten. Any button takes the
+screensaver away and does nothing else; with the TV off the first button
+wakes it, as above. Only the start page counts: a film, music or a game is
+never cut short. Both times are on the TV page in settings
+(`ui.screensaver_minutes`, `ui.tv_off_minutes`; 0 is never).
+
 ## Games
 
 The Spel tile opens our own pages on top of [RomM](https://github.com/rommapp/romm):
