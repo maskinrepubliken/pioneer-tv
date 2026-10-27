@@ -33,6 +33,18 @@
     b.emit('state', b.state);
   }
 
+  // The screensaver, and a key takes it away as the daemon does on the box
+  // (there the press does nothing else; here it reaches the page below).
+  const tryTheSaver = (overlay) => ({ P, win }) => {
+    if (overlay) P.bridge.emit('saver', { show: true }); else P.hud.saver.show();
+    win.addEventListener('keydown', (e) => {
+      if (!P.hud.saver.isOpen()) return;
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      if (overlay) P.bridge.emit('saver', { show: false }); else P.hud.saver.hide();
+    }, true);
+  };
+
   // ------------------------------------------------------------ the views
   // name, url (in the frame), under (a page behind a transparent overlay),
   // ready (a selector to wait for), setup (puts the page in its state),
@@ -48,8 +60,8 @@
       { name: 'Skärmtangentbordet (sök)', url: `${L}index.html?tv=1&demo=keyboard`, ready: '.tile', wait: 1200 },
       { name: 'Loggar', url: `${L}index.html?tv=1&demo=logs`, ready: '.tile', wait: 1200 },
       { name: 'Notis', url: `${L}index.html?tv=1`, ready: '.tile', setup: ({ P }) => P.hud.toast('Rosa handkontroll ansluten', 'gamepad', 600000) },
-      { name: 'Skärmsläckaren', url: `${L}index.html?tv=1`, ready: '.tile', setup: ({ P }) => P.hud.saver.show(),
-        note: 'Hoppar till ett nytt ställe varje minut. På TV:n ritar overlayn den.' },
+      { name: 'Skärmsläckaren', url: `${L}index.html?tv=1`, ready: '.tile', setup: tryTheSaver(false),
+        note: 'Hoppar till ett nytt ställe varje minut; en knapp tar bort den. På TV:n ritar overlayn den.' },
     ] },
     { group: 'Overlayn (ritas över alla fönster)', items: [
       { name: 'Snabbmenyn', under: `${L}index.html?tv=1`, url: OVERLAY, setup: ({ P }) => { daemonUp(P); P.hud.menu.open(); } },
@@ -62,7 +74,8 @@
           audio: [{ id: 1, label: 'Engelska', selected: true }, { id: 2, label: 'Svenska · Kommentar' }],
           subtitles: [{ id: 1, label: 'Svenska' }, { id: 2, label: 'Engelska' }] }) },
       { name: 'Notis', under: `${L}index.html?tv=1`, url: OVERLAY, setup: ({ P }) => P.hud.toast('Läget är sparat', 'check', 600000) },
-      { name: 'Skärmsläckaren', under: `${L}index.html?tv=1`, url: OVERLAY, setup: ({ P }) => P.bridge.emit('saver', { show: true }) },
+      { name: 'Skärmsläckaren', under: `${L}index.html?tv=1`, url: OVERLAY, setup: tryTheSaver(true),
+        note: 'En knapp tar bort den (på TV:n tar daemonen emot knappen, och den gör inget annat).' },
     ] },
     { group: 'Spel', items: [
       { name: 'Start: senast spelade, konsoler, samlingar', url: `${L}spel.html?tv=1`, ready: '.spel-card' },
