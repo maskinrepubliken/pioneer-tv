@@ -126,12 +126,3 @@ body {
 .tile.pioneertv-focus { box-shadow: none !important; }
 .tile.pioneertv-focus { border-radius: var(--pioneertv-radius-card) !important; }
 
-/* ---- screensaver: ink, the time and the date, a new place each minute ---- */
-.saver { position: fixed; inset: 0; z-index: 50; background: var(--pioneertv-surface-ink); cursor: none; }
-.saver-box { position: absolute; display: flex; flex-direction: column; align-items: flex-start; gap: 0.4rem; }
-.saver-time {
-  margin: 0; font-family: var(--pioneertv-font-mono); font-size: 6rem; line-height: 1;
-  color: var(--pioneertv-on-dark); font-variant-numeric: tabular-nums;
-}
-.saver-date { margin: 0 0 1.4rem; font: italic 400 1.6rem/1.2 var(--pioneertv-font-prose); color: var(--pioneertv-on-dark); }
-.saver-mark { width: 9rem; height: auto; display: block; }

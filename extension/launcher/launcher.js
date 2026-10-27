@@ -244,99 +244,6 @@
   b.on('state', (s) => applyStatus(s.status));
 
 
-  // ------------------------------------------------------------ screensaver
-  // Left alone on the start page, the box shows a quiet screen after a few
-  // minutes (ui.screensaver_minutes) and turns the TV off after more
-  // (ui.tv_off_minutes); 0 switches either off. Only here: a film, music or
-  // a game on another page is never cut short. The screensaver is ink with
-  // the time and the date, and it jumps to a new place once a minute so
-  // nothing stays burnt into the panel; nothing glides (the design moves
-  // only in answer to a button). Any button takes it away and does nothing
-  // else. With the TV off the daemon wakes it with the first button, and
-  // the start page is back.
-  const saver = {
-    root: null, idleTimer: null, offTimer: null, tick: null, held: false,
-    minutes(key, fallback) {
-      const ui = (b.state.config && b.state.config.ui) || {};
-      const v = Number(ui[key]);
-      return Number.isFinite(v) && ui[key] !== undefined && ui[key] !== '' ? v : fallback;
-    },
-    // Counting starts again from now (any input, or the TV coming on).
-    reset() {
-      clearTimeout(this.idleTimer);
-      clearTimeout(this.offTimer);
-      if (this.held || document.hidden) return;
-      const show = this.minutes('screensaver_minutes', 3);
-      const off = this.minutes('tv_off_minutes', 10);
-      if (show > 0) this.idleTimer = setTimeout(() => this.show(), show * 60000);
-      if (off > 0) this.offTimer = setTimeout(() => this.tvOff(), off * 60000);
-    },
-    isOpen() { return !!(this.root && this.root.isConnected); },
-    show() {
-      if (this.isOpen() || M.hud.menu.isOpen() || (M.keyboard && M.keyboard.isOpen())) return;
-      const root = document.createElement('div');
-      root.className = 'saver';
-      const box = document.createElement('div'); box.className = 'saver-box';
-      const time = document.createElement('p'); time.className = 'saver-time';
-      const date = document.createElement('p'); date.className = 'saver-date';
-      const mark = document.createElement('img'); mark.className = 'saver-mark'; mark.src = 'ordbild-en-rad-papper.svg'; mark.alt = 'Maskinrepubliken';
-      box.append(time, date, mark);
-      root.appendChild(box);
-      document.body.appendChild(root);
-      this.root = root;
-      M.nav.captured = this;
-      const draw = () => {
-        const now = new Date();
-        time.textContent = now.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
-        date.textContent = now.toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' });
-        // A new place each minute, anywhere the box fits.
-        box.style.left = `${Math.round(Math.random() * 60) + 5}%`;
-        box.style.top = `${Math.round(Math.random() * 55) + 8}%`;
-      };
-      draw();
-      // On the minute, so the clock is never a minute behind.
-      const next = () => { this.tick = setTimeout(() => { draw(); next(); }, 60000 - (Date.now() % 60000) + 50); };
-      next();
-    },
-    hide() {
-      clearTimeout(this.tick);
-      if (this.root) this.root.remove();
-      this.root = null;
-      if (M.nav.captured === this) M.nav.captured = null;
-    },
-    tvOff() {
-      if (!b.state.daemonConnected) return;
-      b.cec('tv_off');
-    },
-    // Any key while it shows: away with it, and nothing else.
-    onKeyDown() {
-      this.hide();
-      this.reset();
-    },
-  };
-  const wake = () => { if (saver.isOpen()) saver.hide(); saver.reset(); };
-  // Every key (input.js, which sees them before the spatial navigation).
-  M.onInput = () => { if (!saver.isOpen()) saver.reset(); };
-  b.on('pointer', wake);
-  b.on('pointer_button', wake);
-  b.on('gamepad', wake);
-  // The overlay's quick menu over the start page: no counting while it is open.
-  b.on('media', (e) => {
-    saver.held = e.action === 'pause';
-    if (saver.held) { saver.hide(); clearTimeout(saver.idleTimer); clearTimeout(saver.offTimer); } else saver.reset();
-  });
-  b.on('menu:open', () => { saver.held = true; saver.hide(); clearTimeout(saver.idleTimer); clearTimeout(saver.offTimer); });
-  b.on('menu:close', () => { saver.held = false; saver.reset(); });
-  b.on('tv', (e) => { if (e.power === 'on') wake(); });
-  document.addEventListener('visibilitychange', () => (document.hidden ? saver.hide() : wake()));
-  let saverConfig = '';
-  b.on('state', (s) => {
-    const ui = JSON.stringify(((s.config || {}).ui) || {});
-    if (ui !== saverConfig) { saverConfig = ui; if (!saver.isOpen()) saver.reset(); }
-  });
-  M.saver = saver;
-  saver.reset();
-
   // ?demo=keyboard|menu|logs opens an overlay after load, for design screenshots.
   const demo = new URLSearchParams(location.search).get('demo');
   if (demo) setTimeout(() => {
@@ -344,7 +251,7 @@
     else if (demo === 'menu') M.hud.menu.open();
     else if (demo === 'logs') M.logs.open(0);
     else if (demo === 'toast') M.hud.toast('Handkontroll ansluten', 'gamepad', 60000);
-    else if (demo === 'saver') saver.show();
+    else if (demo === 'saver') M.hud.saver.show();
   }, 900);
 
   render();

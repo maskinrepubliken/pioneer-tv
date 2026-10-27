@@ -83,6 +83,16 @@
         "http://127.0.0.1/ext/*",
         "http://localhost/ext/*"
       ]
+    },
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "all_frames": true,
+      "run_at": "document_idle",
+      "js": [
+        "content/playing.js"
+      ]
     }
   ],
   "commands": {

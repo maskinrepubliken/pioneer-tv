@@ -220,3 +220,17 @@ html:not(.pioneertv-pointer) .pioneertv-menu-active { outline: 4px solid var(--p
 .pioneertv-menu-dot.ok { background: var(--pioneertv-surface-forest); border-color: var(--pioneertv-surface-forest); }
 .pioneertv-menu-dot.warn { background: var(--pioneertv-ochre); border-color: var(--pioneertv-surface-rust); }
 .pioneertv-menu-dot.bad { background: var(--pioneertv-alarm); border-color: var(--pioneertv-alarm); }
+
+/* ---- the screensaver (hud.js): ink, the time and the date ---- */
+.pioneertv-saver {
+  position: fixed; inset: 0; z-index: 2147483646; margin: 0; padding: 0; border: 0;
+  width: 100vw; height: 100vh; max-width: none; max-height: none;
+  background: var(--pioneertv-surface-ink, #1c1613);
+}
+.pioneertv-saver-box { position: absolute; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.pioneertv-saver-time {
+  margin: 0; font: 400 112px/1 var(--pioneertv-font-mono, monospace);
+  color: var(--pioneertv-on-dark, #f4efe4); font-variant-numeric: tabular-nums;
+}
+.pioneertv-saver-date { margin: 0 0 24px; font: italic 400 30px/1.2 var(--pioneertv-font-prose, serif); color: var(--pioneertv-on-dark, #f4efe4); }
+.pioneertv-saver-mark { width: 168px; height: auto; display: block; }

@@ -172,6 +172,8 @@ class Server:
                         # mpv is no page: the quick menu pauses it here.
                         if event.get("name") == "media" and self.hooks.get("video"):
                             await self.hooks["video"].media(event["action"])
+                elif t == "activity" and self.hooks.get("idle"):
+                    self.hooks["idle"].page(data)
                 elif t == "debug":
                     log.info("extension: %s", str(data.get("text", ""))[:500])
                 else:

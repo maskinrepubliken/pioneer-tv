@@ -48,7 +48,7 @@ class Router:
         return True
 
     def target(self, name: str) -> str:
-        if name == "toast":
+        if name in ("toast", "saver"):
             return "overlay" if self.present else "page"
         if self.overlay_open:
             return "overlay"
@@ -57,7 +57,7 @@ class Router:
         return "page"
 
     def tag(self, msg: dict) -> dict:
-        if msg.get("type") == "event" and msg.get("name") in ROUTED + ("toast",) and "target" not in msg:
+        if msg.get("type") == "event" and msg.get("name") in ROUTED + ("toast", "saver") and "target" not in msg:
             return {**msg, "target": self.target(msg["name"])}
         return msg
 

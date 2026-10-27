@@ -64,6 +64,7 @@ window.PioneerTV = window.PioneerTV || {};
   b.on('menu:close', () => { releaseKeyboard(); b.daemon({ type: 'overlay_menu', open: false }); });
 
   b.on('toast', (e) => M.hud.toast(e.text, e.icon || ''));
+  b.on('saver', (e) => (e.show ? M.hud.saver.show() : M.hud.saver.hide()));
   b.on('gamepad', (e) => M.hud.toast(`${e.label || 'Handkontroll'} ${e.connected ? 'ansluten' : 'frånkopplad'}`, 'gamepad'));
   b.on('keyboard_present', (e) => M.hud.toast(e.present ? 'Tangentbord anslutet' : 'Tangentbord frånkopplat', 'keyboard'));
   b.on('volume', (e) => {

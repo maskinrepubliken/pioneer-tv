@@ -178,6 +178,52 @@ window.PioneerTV = window.PioneerTV || {};
   // and everything ochre its highlight (the pink and the green 8BitDo;
   // [pads] in the config). A pad without colours leaves the design system's.
   // The change fades (content.css registers these as colours).
+  // The screensaver: ink, the time and the date, and the wordmark, jumping
+  // to a new place once a minute so nothing stays burnt into the panel
+  // (nothing glides: the design moves only in answer to a button). The
+  // daemon decides when (idle.py) and takes it away at the next button;
+  // the overlay draws it over every window, a page only without one.
+  hud.saver = {
+    root: null, tick: null,
+    isOpen() { return !!(this.root && this.root.isConnected); },
+    asset(path) {
+      try { if (chrome.runtime.getURL) return chrome.runtime.getURL(path); } catch {}
+      return new URL(`/ext/${path}`, location.origin).href;
+    },
+    show() {
+      if (this.isOpen()) return;
+      const root = document.createElement('div');
+      root.className = 'pioneertv-saver';
+      root.setAttribute('data-pioneertv-overlay', '');
+      if (M.bridge.sealOverlay) M.bridge.sealOverlay(root);
+      const box = document.createElement('div'); box.className = 'pioneertv-saver-box';
+      const time = document.createElement('p'); time.className = 'pioneertv-saver-time';
+      const date = document.createElement('p'); date.className = 'pioneertv-saver-date';
+      const mark = document.createElement('img'); mark.className = 'pioneertv-saver-mark'; mark.alt = 'Maskinrepubliken';
+      mark.src = this.asset('launcher/ordbild-en-rad-papper.svg');
+      box.append(time, date, mark);
+      root.appendChild(box);
+      M.bridge.mount(root);
+      this.root = root;
+      const draw = () => {
+        const now = new Date();
+        time.textContent = now.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+        date.textContent = now.toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' });
+        box.style.left = `${Math.round(Math.random() * 60) + 5}%`;
+        box.style.top = `${Math.round(Math.random() * 55) + 8}%`;
+      };
+      draw();
+      // On the minute, so the clock is never a minute behind.
+      const next = () => { this.tick = setTimeout(() => { draw(); next(); }, 60000 - (Date.now() % 60000) + 50); };
+      next();
+    },
+    hide() {
+      clearTimeout(this.tick);
+      if (this.root) M.bridge.unmount(this.root);
+      this.root = null;
+    },
+  };
+
   hud.applyPad = function (pad) {
     const root = document.documentElement;
     if (!root) return;

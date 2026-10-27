@@ -14,6 +14,7 @@ from .cec import Cec
 from .gamepad import GamepadManager, MouseDriver
 from .games import Games
 from .video import Video
+from .idle import Idle
 from .server import Server
 from .virtual_input import VirtualInput
 
@@ -29,9 +30,13 @@ async def amain(cfg: dict) -> None:
     async def emit(msg: dict) -> None:
         await server.broadcast(msg)
 
+    idle: Idle | None = None          # made further down; CEC events may come first
+
     async def on_cec_event(msg: dict) -> None:
         """CEC events reach the extension; standby also sends the box home."""
         await emit(msg)
+        if msg.get("name") == "tv" and msg.get("power") == "on" and idle:
+            idle.tv_on()
         if msg.get("name") == "tv" and msg.get("power") == "standby" and cfg["cec"].get("home_on_standby", True):
             log.info("TV went to standby: back to the launcher")
             await emit({"type": "event", "name": "home"})
@@ -222,6 +227,13 @@ async def amain(cfg: dict) -> None:
     server.hooks["video"] = video
     await video.reap_strays()
 
+    # The screensaver and the TV off when left alone (idle.py).
+    idle = Idle(cfg, emit, tv_off=lambda: dispatcher.cec_command("tv_off"),
+                busy=lambda: games.state != "idle" or video.state != "idle")
+    server.hooks["idle"] = idle
+    dispatcher.on_input = idle.input
+    mouse.on_move = idle.input
+
     await cec.setup()
     # A USB adapter may come up powered off; paired pads only reconnect to a powered adapter.
     await sysinfo.run("bluetoothctl", "power", "on", timeout=10)
@@ -232,6 +244,7 @@ async def amain(cfg: dict) -> None:
         asyncio.create_task(cec.monitor(on_remote), name="cec-monitor"),
         asyncio.create_task(status_loop(), name="status"),
         asyncio.create_task(bluetooth.reconnect_loop(cfg), name="bt-reconnect"),
+        asyncio.create_task(idle.run(), name="idle"),
     ]
 
     stop = asyncio.Event()

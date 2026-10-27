@@ -173,13 +173,20 @@ Both behaviours are toggles on the TV page in settings. The daemon also polls
 the TV's power state every 30 seconds, because a set switched off with its own
 remote does not always announce it.
 
-Left alone on the start page, the box shows a screensaver after three
-minutes (ink, the time and the date, jumping to a new place once a minute
-so nothing burns in) and turns the TV off after ten. Any button takes the
-screensaver away and does nothing else; with the TV off the first button
-wakes it, as above. Only the start page counts: a film, music or a game is
-never cut short. Both times are on the TV page in settings
-(`ui.screensaver_minutes`, `ui.tv_off_minutes`; 0 is never).
+Left alone, the box shows a screensaver after three minutes (ink, the
+time and the date, jumping to a new place once a minute so nothing burns
+in) and turns the TV off after ten, on any page you browse: the start
+page, Spel, Musik, Film & serier, settings, or a website. Never while
+something plays: a game in RetroArch or a film in mpv (paused or on its
+pause panel included), or a page whose video or audio plays, in any of its
+frames, or that is in game mode; the count starts again when it ends. The
+daemon decides (`daemon/pioneertv/idle.py`): it sees every button and the
+pointer, and the pages tell it what plays and when a real keyboard or
+mouse is used (`main.js`, `playing.js`). The overlay draws the screensaver
+over every window, a page only without the overlay. Any button takes it
+away and does nothing else; with the TV off the first button wakes it, as
+above. Both times are on the TV page in settings (`ui.screensaver_minutes`,
+`ui.tv_off_minutes`; 0 is never).
 
 ## Games
 

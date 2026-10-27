@@ -276,6 +276,7 @@ class MouseDriver:
         self.cfg = cfg["mouse"]
         self.vinput = vinput
         self.emit = emit
+        self.on_move = None             # called while the pointer moves (idle.py)
         self.x = 0.0
         self.y = 0.0
         self._rx = 0.0
@@ -310,6 +311,8 @@ class MouseDriver:
             dx, dy = int(self._rx), int(self._ry)
             self._rx -= dx
             self._ry -= dy
+            if (dx or dy) and self.on_move:
+                self.on_move()                  # someone is here (idle.py)
             if self.cfg.get("mode", "virtual") == "virtual":
                 if self.emit and (dx or dy):
                     await self.emit({"type": "event", "name": "pointer", "dx": dx, "dy": dy})
