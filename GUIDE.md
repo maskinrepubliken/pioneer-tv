@@ -194,8 +194,8 @@ vanish over the ink), and changes every three minutes. No clock, no date.
   position is saved); every menu in the overlay closes.
 - **At home**, after five minutes without a button (counted from the last
   press or from arriving, whichever is later), the TV is turned off over
-  CEC and the home page rests: black, nothing drawn, nothing moving, until
-  a button wakes the TV. The TV turned off with its own remote does the same.
+  CEC and the home page rests: "Vilar – tryck en knapp för att väcka TV:n" in white on black, nothing moving,
+  until a button wakes the TV. The TV turned off with its own remote does the same.
 - **Never while something plays**: a game running in RetroArch, a film
   running in mpv, or a page whose video or audio plays, in any of its
   frames, or that is in game mode; the count starts again when it ends. A

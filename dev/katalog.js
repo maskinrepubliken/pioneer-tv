@@ -157,7 +157,7 @@
           setup: ({ P }) => P.home.fractal.jump(0.5),
           note: 'Nära det djupaste av en zoom, där bredden är en tjugotusendel av början.' },
         { name: 'Vilar (TV:n av)', url: HOME, ready: '#tao-text:not(:empty)', setup: ({ P }) => P.home.rest(true),
-          note: 'Efter 5 min hemma utan knapptryck stängs TV:n av; sidan ritar inget, svart, tills TV:n är på igen.' },
+          note: 'Efter 5 min hemma utan knapptryck stängs TV:n av; sidan visar bara ”Vilar – tryck en knapp för att väcka TV:n” i vitt på svart, stilla, tills TV:n är på igen.' },
       ] },
     { part: 'Sidor', group: 'Spel', files: 'launcher/spel.html · spel.js · spel.css · romm.js', used: 'Rutan Spel.',
       items: [

@@ -20,6 +20,13 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--pionee
   color: color-mix(in srgb, var(--pioneertv-ochre) 60%, var(--pioneertv-surface-ink));
 }
 
-/* Resting (the TV off): nothing drawn but black. */
+/* Resting (the TV off): black, and "Vilar" and how to wake it in white in
+   the middle; nothing
+   moves, so nothing is drawn again. */
+.resting-note { display: none; }
 html.resting .fractal, html.resting .tao { display: none; }
 html.resting, html.resting body { background: #000; }
+html.resting .resting-note {
+  display: flex; position: fixed; inset: 0; margin: 0; align-items: center; justify-content: center;
+  font: italic 400 3vw/1 var(--pioneertv-font-prose); color: #fff;
+}

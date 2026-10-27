@@ -5,7 +5,8 @@
 // (the daemon passes it on to the overlay).
 //
 // Left alone here, the daemon turns the TV off (idle.py) and says "rest":
-// the page then draws nothing, black, until the TV is on again.
+// the page then shows only "Vilar – tryck en knapp för att väcka TV:n" in
+// white on black, still, until the TV is on again.
 (function (M) {
   const b = M.bridge;
   M.launcherUrl = location.href;
