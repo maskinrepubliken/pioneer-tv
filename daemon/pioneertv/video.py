@@ -14,8 +14,8 @@ mpv is only ever the picture: no on-screen controller, our own key map
 user can read, never on its command line. The pad drives it through the
 virtual keyboard: A, B and X pause and resume (with the timeline shown),
 left and right seek ten seconds, L1 and R1 a minute. Holding B stops; Home
-pauses and leaves the quick menu to the overlay, holding Home stops and goes
-home. Nothing plays on by itself: at the end mpv quits and the page says
+opens the overlay's quick menu over it, which pauses it while open (media),
+holding Home stops and goes home. Nothing plays on by itself: at the end mpv quits and the page says
 "Tryck B för att fortsätta".
 
 Jellyfin hears what plays (Sessions/Playing, every ten seconds while it
@@ -126,6 +126,8 @@ class Video:
         self.ended = False
         self.ipc_task: asyncio.Task | None = None
         self.writer: asyncio.StreamWriter | None = None
+        self._user: tuple | None = None    # ((url, key, wanted), user id)
+        self.menu_paused = False           # the quick menu paused it, and resumes it
 
     # ------------------------------------------------------------ config
     @property
@@ -161,7 +163,8 @@ class Video:
             return False, "no_key"
         self.state = "starting"
         try:
-            item = await self._get(f"Items/{item_id}", {"Fields": "MediaSources"})
+            # Jellyfin answers 400 for an item without the user (10.11 on the server).
+            item = await self._get(f"Items/{item_id}", {"Fields": "MediaSources", "userId": await self._user_id()})
             sources = item.get("MediaSources") or []
             if not sources:
                 raise ValueError("no media source")
@@ -265,6 +268,7 @@ class Video:
         self.proc, self.item, self.state, self.writer = None, None, "idle", None
         if item and was != "starting":
             await self._report("Stopped", item)
+            await self._save_position(item, ended)
         if was == "starting":
             # It never played: say why instead of just going back.
             tail = ""
@@ -321,6 +325,18 @@ class Video:
         except (OSError, asyncio.IncompleteReadError):
             pass
 
+    async def media(self, action: str) -> None:
+        """The quick menu opening (pause) and closing (resume): only what it
+        paused carries on, so a video paused before stays paused."""
+        if self.state != "running":
+            return
+        if action == "pause" and not self.paused:
+            self.menu_paused = True
+            await self._command(["set_property", "pause", True])
+        elif action == "resume" and self.menu_paused:
+            self.menu_paused = False
+            await self._command(["set_property", "pause", False])
+
     async def _command(self, command: list) -> None:
         if not self.writer:
             return
@@ -344,8 +360,7 @@ class Video:
         if name == "back":                                  # hold B
             asyncio.create_task(self.stop())
             return True
-        if name == "menu":                                  # Home: pause, and the overlay's menu opens over it
-            await self._command(["set_property", "pause", True])
+        if name == "menu":                                  # Home: the overlay's menu, which pauses it (media)
             return False
         if name == "home":                                  # hold Home: stop, and the start page
             await self.stop()
@@ -353,6 +368,22 @@ class Video:
         return name == "keyboard"                           # nothing to type into
 
     # ------------------------------------------------------------ Jellyfin
+    async def _user_id(self) -> str:
+        """The user the box plays as, as for the pages (jellyfin.pick_user)."""
+        wanted = (self.jcfg.get("url"), self.jcfg.get("api_key"), self.jcfg.get("user", ""))
+        if self._user and self._user[0] == wanted:
+            return self._user[1]
+        url = self.jcfg["url"].rstrip("/") + "/Users"
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as s:
+            async with s.get(url, headers=self._headers()) as resp:
+                resp.raise_for_status()
+                users = await resp.json(content_type=None)
+        user = jellyfin.pick_user(users if isinstance(users, list) else [], wanted[2])
+        if not user:
+            raise ValueError("no such user")
+        self._user = (wanted, user["Id"])
+        return user["Id"]
+
     def _headers(self) -> dict:
         return {"Authorization": jellyfin.auth_header(self.jcfg["api_key"]), "Accept-Encoding": "identity"}
 
@@ -379,6 +410,25 @@ class Video:
                         log.warning("jellyfin report %s: %s", what, resp.status)
         except (aiohttp.ClientError, asyncio.TimeoutError) as exc:
             log.warning("jellyfin report %s: %s", what, exc)
+
+    async def _save_position(self, item: dict, ended: bool) -> None:
+        """Where the video was left, on the user: the reports above come from
+        the API key, which is no user, so they move nobody's "Fortsätt
+        titta" (seen on the box). Jellyfin's own rules: past 90 % it counts
+        as seen, before 5 % nothing is kept."""
+        runtime = (item["source"].get("RunTimeTicks") or 0) / TICKS
+        share = self.position / runtime if runtime else 0
+        played = ended or share >= 0.9
+        data = {"Played": played, "PlaybackPositionTicks": 0 if played or share < 0.05 else int(self.position * TICKS),
+                "LastPlayedDate": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+        try:
+            url = f"{self.jcfg['url'].rstrip('/')}/UserItems/{quote(item['id'])}/UserData"
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as s:
+                async with s.post(url, params={"userId": await self._user_id()}, json=data, headers=self._headers()) as resp:
+                    if resp.status >= 300:
+                        log.warning("jellyfin user data: %s", resp.status)
+        except (aiohttp.ClientError, asyncio.TimeoutError, ValueError) as exc:
+            log.warning("jellyfin user data: %s", exc)
 
     # ------------------------------------------------------------ the rest
     def _own(self, path: Path) -> None:

@@ -169,6 +169,9 @@ class Server:
                 elif t in ("overlay_menu", "page_menu", "relay"):
                     for event in self.router.handle(data):
                         await self.broadcast(event)
+                        # mpv is no page: the quick menu pauses it here.
+                        if event.get("name") == "media" and self.hooks.get("video"):
+                            await self.hooks["video"].media(event["action"])
                 elif t == "debug":
                     log.info("extension: %s", str(data.get("text", ""))[:500])
                 else:

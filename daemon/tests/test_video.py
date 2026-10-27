@@ -13,7 +13,7 @@ from aiohttp import web
 from pioneertv import config
 from pioneertv.video import Video, tracks
 
-SOURCE = {"Id": "src1", "MediaStreams": [
+SOURCE = {"Id": "src1", "RunTimeTicks": 100 * 10_000_000, "MediaStreams": [
     {"Index": 0, "Type": "Video"},
     {"Index": 1, "Type": "Audio", "Codec": "aac"},
     {"Index": 2, "Type": "Audio", "Codec": "ac3"},
@@ -70,18 +70,28 @@ class Base(unittest.IsolatedAsyncioTestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.dir = Path(self.tmp.name)
         self.reports = []
+        self.user_data = []
         app = web.Application()
 
         async def item(request):
             if request.headers.get("Authorization", "").find('Token="k3y"') < 0:
                 return web.json_response({}, status=401)
+            if request.query.get("userId") != "u1":
+                return web.json_response({}, status=400)
             return web.json_response({"Id": request.match_info["id"], "Name": "Fyren", "MediaSources": [SOURCE]})
 
         async def report(request):
             self.reports.append((request.path, await request.json()))
             return web.Response(status=204)
+        async def users(request):
+            return web.json_response([{"Id": "u1", "Name": "viktor", "Policy": {"IsAdministrator": True}}])
+        app.router.add_get("/Users", users)
         app.router.add_get("/Items/{id}", item)
+        async def user_data(request):
+            self.user_data.append((request.query.get("userId"), await request.json()))
+            return web.json_response({})
         app.router.add_post("/Sessions/Playing{rest:.*}", report)
+        app.router.add_post("/UserItems/{id}/UserData", user_data)
         self.runner = web.AppRunner(app)
         await self.runner.setup()
         site = web.TCPSite(self.runner, "127.0.0.1", 0)
@@ -142,6 +152,8 @@ class Playing(Base):
         self.assertEqual(paths[-1], "/Sessions/Playing/Stopped")
         self.assertEqual(self.reports[-1][1]["PositionTicks"], 13 * 10_000_000)
         self.assertIn("--start=42.0", (self.dir / "args.json").read_text())
+        self.assertEqual(self.user_data[-1][0], "u1")
+        self.assertTrue(self.user_data[-1][1]["Played"])
         self.assertIsNone(self.video.dispatcher.system_hook)
         self.assertEqual(self.video.state, "idle")
 
@@ -151,6 +163,30 @@ class Playing(Base):
         self.assertTrue(await self.video.dispatcher.system_hook("back"))
         await self.wait_for("stopped")
         self.assertNotIn("ended", [e["state"] for e in self.events])
+        # 13 s into a 100 s video: kept, not seen.
+        self.assertEqual(self.user_data[-1][1]["PlaybackPositionTicks"], 13 * 10_000_000)
+        self.assertFalse(self.user_data[-1][1]["Played"])
+
+    async def test_quick_menu_pauses_and_resumes(self):
+        await self.video.play("abc")
+        await self.wait_for("running")
+        sent = []
+        orig = self.video._command
+        async def spy(cmd):
+            sent.append(cmd)
+            await orig(cmd)
+        self.video._command = spy
+        await self.video.media("pause")
+        self.video.paused = True                       # mpv says so through the property
+        await self.video.media("resume")
+        self.assertEqual(sent, [["set_property", "pause", True], ["set_property", "pause", False]])
+        # Paused before the menu opened: stays paused.
+        sent.clear()
+        await self.video.media("pause")
+        await self.video.media("resume")
+        self.assertEqual(sent, [])
+        self.video._command = orig
+        await self.video.stop()
 
     async def test_one_at_a_time(self):
         await self.video.play("abc")
