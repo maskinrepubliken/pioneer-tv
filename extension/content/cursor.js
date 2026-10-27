@@ -180,8 +180,14 @@ window.PioneerTV = window.PioneerTV || {};
       if (!b) return;
       b.on('pointer', (e) => move(Number(e.dx) || 0, Number(e.dy) || 0));
       b.on('pointer_button', (e) => button(e.button || 'left', !!e.down));
-      // Also follow a real mouse, should one be attached (not on the Pi 3).
-      window.addEventListener('mousemove', (e) => { if (e.isTrusted) { state.x = e.clientX; state.y = e.clientY; state.lastMove = Date.now(); draw(); } }, { capture: true, passive: true });
+      // Also follow a real mouse, should one be attached, once it moves:
+      // labwc tells a window the pointer entered when it opens, and Chromium
+      // turns that into a mousemove that goes nowhere, which showed the
+      // arrow in the top corner after every start of the display.
+      window.addEventListener('mousemove', (e) => {
+        if (!e.isTrusted || (!e.movementX && !e.movementY)) return;
+        state.x = e.clientX; state.y = e.clientY; state.lastMove = Date.now(); draw();
+      }, { capture: true, passive: true });
     },
     // True exactly while the arrow is on screen.
     active() { return !!(state.el && state.el.classList.contains('pioneertv-cursor-show')); },
