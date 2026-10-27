@@ -255,8 +255,14 @@ window.PioneerTV = window.PioneerTV || {};
       return (d.Items || []).map(toVideo);
     },
 
-    // Tells Jellyfin what plays, so "played" and play counts follow the box.
-    // Failures are only logged: the music does not depend on them.
+    // A song played to its end, played for the user: the reports below come
+    // from the box's API key, which is no user, so they count for nobody.
+    async markPlayed(song) {
+      return request(`UserPlayedItems/${song.id}?${q({ userId: await user() })}`, { method: 'POST' })
+        .catch((e) => console.warn('jellyfin played', e));
+    },
+    // Tells Jellyfin what plays (its dashboard shows it). Failures are only
+    // logged: the music does not depend on them.
     report(what, song, seconds) {
       const path = { start: 'Sessions/Playing', progress: 'Sessions/Playing/Progress', stop: 'Sessions/Playing/Stopped' }[what];
       const body = JSON.stringify({ ItemId: song.id, PositionTicks: Math.round((seconds || 0) * TICKS), PlayMethod: 'DirectStream', CanSeek: true });

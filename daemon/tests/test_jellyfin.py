@@ -24,6 +24,7 @@ class TargetUrl(unittest.TestCase):
     def test_writes_only_for_reports(self):
         self.assertEqual(jellyfin.target_url(B, "Sessions/Playing", method="POST"), B + "/Sessions/Playing")
         self.assertEqual(jellyfin.target_url(B, "Sessions/Playing/Stopped", method="POST"), B + "/Sessions/Playing/Stopped")
+        self.assertEqual(jellyfin.target_url(B, "UserPlayedItems/s1", method="POST"), B + "/UserPlayedItems/s1")
         for p in ["Items/abc", "Users/u1/Policy", "Playlists/p1/Items"]:
             self.assertIsNone(jellyfin.target_url(B, p, method="POST"), p)
         self.assertIsNone(jellyfin.target_url(B, "Items/abc", method="DELETE"))

@@ -15,9 +15,9 @@ user can read, never on its command line. The pad drives it through the
 virtual keyboard: A, B and X pause it and the overlay shows the pause panel
 (Fortsätt, Ljud, Undertexter; B, X or Home carry on), or without the
 overlay only pause and resume, with the timeline; left and right seek ten
-seconds, L1 and R1 a minute. Holding B stops; Home opens the overlay's quick
-menu over it, which pauses it while open (media), holding Home stops and
-goes home. Nothing plays on by itself: at the end mpv quits and the page says
+seconds, L1 and R1 a minute. Holding B stops; Home opens the pause panel
+too (the quick menu's choices act on the page hidden below), holding Home
+stops and goes home. Nothing plays on by itself: at the end mpv quits and the page says
 "Tryck B för att fortsätta".
 
 Jellyfin hears what plays (Sessions/Playing, every ten seconds while it
@@ -436,7 +436,10 @@ class Video:
         if name == "menu" and self.held:                    # Home on the panel: carry on
             await self.resume()
             return True
-        if name == "menu":                                  # Home: the overlay's menu, which pauses it (media)
+        if name == "menu" and self.overlay():               # Home: the pause panel, as in a game
+            await self.hold()
+            return True
+        if name == "menu":                                  # without the overlay: the page's menu, which pauses it (media)
             return False
         if name == "home":                                  # hold Home: stop, and the start page
             await self.stop()

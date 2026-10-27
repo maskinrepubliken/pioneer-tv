@@ -225,6 +225,11 @@ class Playing(Base):
         self.assertEqual((await self.video.track("audio", "x"))[0], False)
         self.assertTrue(await self.video.on_system("menu"))          # Home on the panel: carry on
         await asyncio.sleep(0.1)
+        self.assertFalse(self.video.held)
+        self.assertTrue(await self.video.on_system("menu"))          # Home playing: the panel
+        self.assertTrue(self.video.held)
+        self.assertTrue(await self.video.on_system("menu"))
+        await asyncio.sleep(0.1)
         sent = (self.dir / "args.json.commands").read_text()
         self.assertIn('["set_property", "sid", "no"]', sent)
         self.assertIn('["set_property", "pause", false]', sent)

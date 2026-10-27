@@ -20,7 +20,10 @@ from urllib.parse import unquote
 # userviews, useritems/ and shows/ are for the Film & serier pages: the
 # libraries, what was begun, and a series' seasons and episodes.
 READ_PREFIXES = ("items", "users/", "playlists/", "artists", "search/hints", "audio/", "userviews", "useritems/", "shows/")
-REPORT_PREFIXES = ("sessions/playing",)
+# The reports come from the API key, which is no user: a song played to its
+# end is marked played for the user too (userplayeditems/), so play counts
+# follow the box.
+REPORT_PREFIXES = ("sessions/playing", "userplayeditems/")
 REQUEST_HEADERS = ("Content-Type", "Content-Length", "Accept", "Range", "If-None-Match", "If-Modified-Since")
 RESPONSE_HEADERS = frozenset({
     "content-type", "content-length", "content-encoding", "content-range", "accept-ranges", "etag", "last-modified",

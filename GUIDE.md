@@ -249,8 +249,10 @@ seconds, B goes back to browsing while the music plays on, and X brings
 "Spelas nu" back. The music lives only as long as the page: leaving it (Home
 included) stops it. A song that cannot be played is skipped after a few
 seconds; a stream that stalls for ten seconds is picked up again where it was.
-Jellyfin hears what plays (`Sessions/Playing`), so "played" and play counts
-follow the box.
+Jellyfin hears what plays (`Sessions/Playing`, shown on its dashboard), and
+a song played to its end is marked played for the user
+(`UserPlayedItems`), so play counts follow the box: the reports come from
+the box's API key, which is no user, and count for nobody.
 
 As with RomM the pages never talk to Jellyfin directly: `/jellyfin/...` on
 their own origin is forwarded by the daemon with the API key added, and only
@@ -294,8 +296,8 @@ panel over the picture, with the time at the top left: Fortsätt, Ljud and
 Undertexter (A steps to the next track, at once; mpv's own list, named by
 language), TV-volym and Sluta titta. B, X or Home carries on. Left and
 right seek ten seconds, L1 and R1 a minute; holding B stops; Home opens the
-quick menu over the video, which pauses it until the menu closes; holding
-Home stops and goes home. Without the overlay, A, B and X only pause and
+pause panel too, as in a game (the quick menu's choices would act on the
+page hidden below); holding Home stops and goes home. Without the overlay, A, B and X only pause and
 resume, with mpv's timeline. Nothing plays on by itself, not even the next
 episode: at the end the screen goes black and says "Tryck B för att
 fortsätta". Jellyfin hears what plays every ten seconds, and when

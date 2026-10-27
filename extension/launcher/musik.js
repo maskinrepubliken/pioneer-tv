@@ -416,7 +416,10 @@
     }
   });
   audio.addEventListener('pause', () => { if (!audio.ended && player.song()) setState('Pausad'); });
-  audio.addEventListener('ended', () => player.next());
+  audio.addEventListener('ended', () => {
+    if (player.song()) J.markPlayed(player.song());
+    player.next();
+  });
   audio.addEventListener('timeupdate', () => {
     np.progress();
     const s = player.song();
