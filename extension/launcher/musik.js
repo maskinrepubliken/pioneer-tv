@@ -246,7 +246,9 @@
       nodes.set(i, c);
       return c;
     };
-    // The height of a row, from a card with every line (the first one).
+    // The height of a row, from a card with every line (the first one),
+    // measured at its own height before the rows are fixed.
+    g.style.setProperty('--row-h', 'auto');
     const probe = place(0);
     g.style.setProperty('--row-h', `${probe.getBoundingClientRect().height}px`);
     g.style.setProperty('--rows', String(Math.ceil(groups.length / COLS)));

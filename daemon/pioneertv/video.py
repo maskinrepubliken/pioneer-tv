@@ -127,6 +127,12 @@ def languages(source: dict, audio: int | None, subtitle: int | None) -> dict:
     {"audio": "swe", "subtitles": "eng" or "no"}, what is known of them."""
     streams = {s.get("Index"): s for s in source.get("MediaStreams") or []}
     out = {}
+    # Only where there was a choice: one with no subtitles at all says
+    # nothing about the next episode, which may have them.
+    if not any(s.get("Type") == "Subtitle" for s in streams.values()):
+        subtitle = None
+    if sum(s.get("Type") == "Audio" for s in streams.values()) < 2:
+        audio = None
     if audio is not None and (streams.get(audio) or {}).get("Language"):
         out["audio"] = streams[audio]["Language"]
     if subtitle is not None and subtitle < 0:
@@ -206,7 +212,9 @@ class Video:
                 "position": self.position, "paused": self.paused}
 
     def _busy(self) -> bool:
-        return bool(self.proc and self.proc.returncode is None) or self.state == "starting"
+        # Until _watch has reported where it stopped: a new play() before
+        # that would have its position saved as the old video's.
+        return self.state != "idle"
 
     # ------------------------------------------------------------ the API
     async def play(self, item_id: str, start: float = 0, audio: int | None = None, subtitle: int | None = None) -> tuple[bool, str]:
@@ -231,6 +239,7 @@ class Video:
                      "key": item.get("SeriesId") or item_id}
         self.remember(self.item["key"], **languages(sources[0], audio, subtitle))
         self.position, self.paused, self.ended = max(0.0, float(start or 0)), False, False
+        self.menu_paused = False
         try:
             await self._launch(audio, subtitle)
         except OSError as exc:
@@ -321,11 +330,12 @@ class Video:
             except asyncio.TimeoutError:
                 self.ipc_task.cancel()
         log.info("mpv exited (%s) after %.0f s at %.0f s", rc, ran, self.position)
-        item, ended, was = self.item, self.ended, self.state
-        self.proc, self.item, self.state, self.writer, self.held = None, None, "idle", None, False
+        item, ended, was, position, paused = self.item, self.ended, self.state, self.position, self.paused
+        self.proc, self.writer, self.held = None, None, False
         if item and was != "starting":
-            await self._report("Stopped", item)
-            await self._save_position(item, ended)
+            await self._report("Stopped", item, position, paused)
+            await self._save_position(item, ended, position)
+        self.item, self.state = None, "idle"
         if was == "starting":
             # It never played: say why instead of just going back.
             tail = ""
@@ -459,7 +469,7 @@ class Video:
     async def media(self, action: str) -> None:
         """The quick menu opening (pause) and closing (resume): only what it
         paused carries on, so a video paused before stays paused."""
-        if self.state != "running":
+        if self.state != "running" or self.held:            # the panel pauses and resumes it itself
             return
         if action == "pause" and not self.paused:
             self.menu_paused = True
@@ -531,15 +541,17 @@ class Video:
                 resp.raise_for_status()
                 return await resp.json(content_type=None)
 
-    async def _report(self, what: str, item: dict | None = None) -> None:
+    async def _report(self, what: str, item: dict | None = None, position: float | None = None,
+                      paused: bool | None = None) -> None:
         """Sessions/Playing (Start), /Progress or /Stopped. Only logged when it
         fails: the video does not depend on it."""
         item = item or self.item
         if not item:
             return
         path = {"Start": "Sessions/Playing", "Progress": "Sessions/Playing/Progress", "Stopped": "Sessions/Playing/Stopped"}[what]
-        body = {"ItemId": item["id"], "MediaSourceId": item["source"].get("Id"), "PositionTicks": int(self.position * TICKS),
-                "IsPaused": self.paused, "PlayMethod": "DirectPlay", "CanSeek": True}
+        position = self.position if position is None else position
+        body = {"ItemId": item["id"], "MediaSourceId": item["source"].get("Id"), "PositionTicks": int(position * TICKS),
+                "IsPaused": self.paused if paused is None else paused, "PlayMethod": "DirectPlay", "CanSeek": True}
         try:
             async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as s:
                 async with s.post(self.jcfg["url"].rstrip("/") + "/" + path, json=body, headers=self._headers()) as resp:
@@ -548,16 +560,20 @@ class Video:
         except (aiohttp.ClientError, asyncio.TimeoutError) as exc:
             log.warning("jellyfin report %s: %s", what, exc)
 
-    async def _save_position(self, item: dict, ended: bool) -> None:
+    async def _save_position(self, item: dict, ended: bool, position: float) -> None:
         """Where the video was left, on the user: the reports above come from
         the API key, which is no user, so they move nobody's "Fortsätt
         titta" (seen on the box). Jellyfin's own rules: past 90 % it counts
         as seen, before 5 % nothing is kept."""
         runtime = (item["source"].get("RunTimeTicks") or 0) / TICKS
-        share = self.position / runtime if runtime else 0
+        share = position / runtime if runtime else 0
         played = ended or share >= 0.9
-        data = {"Played": played, "PlaybackPositionTicks": 0 if played or share < 0.05 else int(self.position * TICKS),
+        data = {"PlaybackPositionTicks": 0 if played or share < 0.05 else int(position * TICKS),
                 "LastPlayedDate": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+        # Only ever marked seen here, never unmarked: watching a seen film
+        # again and stopping halfway keeps it seen, as in Jellyfin.
+        if played:
+            data["Played"] = True
         try:
             url = f"{self.jcfg['url'].rstrip('/')}/UserItems/{quote(item['id'])}/UserData"
             async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as s:

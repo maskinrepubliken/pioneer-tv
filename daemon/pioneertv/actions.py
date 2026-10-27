@@ -108,11 +108,14 @@ class Dispatcher:
             self._swallowed.discard(aid)
             return
         if task := self._long_tasks.pop(aid, None):
-            task.cancel()
             held = (at if at is not None else time.time()) - self._down_at.pop(aid, time.time())
             if aid in self._long_fired:
+                # It fired and may still be at work (holding Home stops a
+                # film first): letting go must not cut it short.
                 self._long_fired.discard(aid)
-            elif held >= self.long_press_ms / 1000:
+                return
+            task.cancel()
+            if held >= self.long_press_ms / 1000:
                 await self.fire(action["long"])  # held long enough, though its release came before the timer
             else:
                 await self.fire(action)  # short press

@@ -77,6 +77,9 @@ class Languages(unittest.TestCase):
         self.assertEqual(languages(SOURCE, 2, 3), {"audio": "swe", "subtitles": "swe"})
         self.assertEqual(languages(SOURCE, 1, -1), {"audio": "eng", "subtitles": "no"})
         self.assertEqual(languages(SOURCE, None, 4), {})          # no language on that one
+        # No subtitles at all, one sound: no choice was made, nothing to keep.
+        bare = {"MediaStreams": [{"Index": 0, "Type": "Video"}, {"Index": 1, "Type": "Audio", "Language": "eng"}]}
+        self.assertEqual(languages(bare, 1, -1), {})
 
 
 class Panel(unittest.TestCase):
@@ -191,9 +194,9 @@ class Playing(Base):
         self.assertTrue(await self.video.dispatcher.system_hook("back"))
         await self.wait_for("stopped")
         self.assertNotIn("ended", [e["state"] for e in self.events])
-        # 13 s into a 100 s video: kept, not seen.
+        # 13 s into a 100 s video: kept, and "seen" left as it was.
         self.assertEqual(self.user_data[-1][1]["PlaybackPositionTicks"], 13 * 10_000_000)
-        self.assertFalse(self.user_data[-1][1]["Played"])
+        self.assertNotIn("Played", self.user_data[-1][1])
 
     async def test_quick_menu_pauses_and_resumes(self):
         await self.video.play("abc")
@@ -255,6 +258,25 @@ class Playing(Base):
         await self.video.track("subtitles", 1)                   # the panel: Svenska subtitles (mpv's track 1)
         self.assertEqual(self.video.choice("ser1"), {"audio": "swe", "subtitles": "swe"})
         await self.video.stop()
+
+    async def test_busy_until_the_last_one_is_reported(self):
+        await self.video.play("abc")
+        await self.wait_for("running")
+        saving = asyncio.Event()
+        orig = self.video._save_position
+
+        async def slow_save(item, ended, position):
+            saving.set()
+            await asyncio.sleep(0.3)
+            await orig(item, ended, position)
+        self.video._save_position = slow_save
+        await self.video.stop()
+        await asyncio.wait_for(saving.wait(), 5)
+        # mpv is gone but the old one's position is not saved yet: no new one.
+        self.assertEqual(await self.video.play("abc"), (False, "en video spelas redan"))
+        await self.wait_for("stopped")
+        self.assertEqual(self.video.state, "idle")
+        self.assertEqual(self.user_data[-1][1]["PlaybackPositionTicks"], 13 * 10_000_000)
 
     async def test_one_at_a_time(self):
         await self.video.play("abc")

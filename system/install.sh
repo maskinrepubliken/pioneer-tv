@@ -174,9 +174,11 @@ import json, re, sys
 config, overlay = sys.argv[1:3]
 FILM = "http://127.0.0.1:8765/ext/launcher/film.html?tv=1"
 text = open(config).read()
-blocks = re.split(r"(?m)^(?=\[\[services\]\])", text)
+# Split at every table, not only at [[services]]: a service block that is
+# the last one before [jellyfin] must not reach into it (its url = ...).
+blocks = re.split(r"(?m)^(?=\[)", text)
 for i, b in enumerate(blocks):
-    if re.search(r'^id = "jellyfin"', b, re.M) and re.search(r'^url = "[^"]*/web/"', b, re.M):
+    if b.startswith("[[services]]") and re.search(r'^id = "jellyfin"', b, re.M) and re.search(r'^url = "[^"]*/web/"', b, re.M):
         b = re.sub(r'^url = .*$', f'url = "{FILM}"', b, flags=re.M)
         b = re.sub(r'^search_url = .*$', f'search_url = "{FILM}#/search/{{query}}"', b, flags=re.M)
         b = re.sub(r"^# The server's Tailscale address.*\n", "", b, flags=re.M)
@@ -309,7 +311,11 @@ echo "== ssh keys"
 # reach a reinstalled box.
 mkdir -p "$HOME_DIR/.ssh"
 touch "$HOME_DIR/.ssh/authorized_keys"
-grep -v '^\(#\|$\)' "$REPO/system/authorized_keys" | while read -r key; do
+# A last line without its newline would have the first key glued onto it.
+if [ -s "$HOME_DIR/.ssh/authorized_keys" ] && [ -n "$(tail -c1 "$HOME_DIR/.ssh/authorized_keys")" ]; then
+  echo >> "$HOME_DIR/.ssh/authorized_keys"
+fi
+{ grep -v '^\(#\|$\)' "$REPO/system/authorized_keys" || true; } | while read -r key; do
   grep -qxF "$key" "$HOME_DIR/.ssh/authorized_keys" || echo "$key" >> "$HOME_DIR/.ssh/authorized_keys"
 done
 chown -R "$USER_NAME:$USER_NAME" "$HOME_DIR/.ssh"

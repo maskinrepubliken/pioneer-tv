@@ -23,6 +23,7 @@ window.PioneerTV = window.PioneerTV || {};
   // navigation, which stops the keys the menu handles.
   const down = new Set();
   let letGo = null;
+  let giveUp = null;             // the fallback for a key up that never comes
   window.addEventListener('keydown', (e) => down.add(e.code), true);
   window.addEventListener('keyup', (e) => {
     down.delete(e.code);
@@ -52,13 +53,14 @@ window.PioneerTV = window.PioneerTV || {};
   b.on('keyboard', () => M.hud.menu.close());     // Y closes the menu, as on the pages
   b.on('escape', () => M.hud.menu.close());
   function releaseKeyboard() {
-    const done = () => { clearTimeout(timer); letGo = null; if (!M.hud.menu.isOpen()) host({ keyboard: false }); };
-    const timer = setTimeout(() => { down.clear(); done(); }, 1500);   // a key up that never came
+    const done = () => { clearTimeout(giveUp); letGo = null; if (!M.hud.menu.isOpen()) host({ keyboard: false }); };
+    clearTimeout(giveUp);
+    giveUp = setTimeout(() => { down.clear(); done(); }, 1500);   // a key up that never came
     letGo = done;
     if (!down.size) done();
   }
 
-  b.on('menu:open', () => { letGo = null; host({ keyboard: true }); b.daemon({ type: 'overlay_menu', open: true }); });
+  b.on('menu:open', () => { letGo = null; clearTimeout(giveUp); host({ keyboard: true }); b.daemon({ type: 'overlay_menu', open: true }); });
   b.on('menu:close', () => { releaseKeyboard(); b.daemon({ type: 'overlay_menu', open: false }); });
 
   b.on('toast', (e) => M.hud.toast(e.text, e.icon || ''));
@@ -144,7 +146,7 @@ window.PioneerTV = window.PioneerTV || {};
       const now = list.indexOf(current(list));
       const next = list[(now + 1) % list.length];
       const r = await video('/track', { kind, id: next.id });
-      if (r.ok === false) return;
+      if (r.ok === false || !held || held.kind !== 'video') return;     // B closed the panel meanwhile
       const mark = (l) => l.map((t) => ({ ...t, selected: t === next }));
       const changed = kind === 'audio' ? { ...e, audio: mark(audio) } : { ...e, subtitles: mark(subs).filter((t) => t.id !== 'no') };
       videoPanel(changed, kind === 'audio' ? 1 : (audio.length > 1 ? 2 : 1));

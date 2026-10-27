@@ -105,3 +105,19 @@ class LongPresses(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.fired, ["back"])
         await self.d.release(self.action, t0 + 0.5)
         self.assertEqual(self.fired, ["back"])
+
+    async def test_letting_go_does_not_cut_a_long_action_short(self):
+        """Holding Home over a film stops mpv first, which takes a moment:
+        the button let go meanwhile must not cancel it halfway."""
+        done = []
+
+        async def slow(action):
+            await asyncio.sleep(0.3)
+            done.append(action.get("system"))
+        self.d.fire = slow
+        t0 = actions.time.time()
+        await self.d.press(self.action, t0)
+        await asyncio.sleep(0.4)                         # the long action is under way
+        await self.d.release(self.action, t0 + 0.4)
+        await asyncio.sleep(0.4)
+        self.assertEqual(done, ["back"])
