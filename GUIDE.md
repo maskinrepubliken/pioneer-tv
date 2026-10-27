@@ -202,13 +202,18 @@ itself: no menu, notices or logo, only the game. The design is in
   (800 MB at most; the games played longest ago go first) and starts
   RetroArch as the kiosk user on the TV's display, over Chromium. A game
   resumes where it was left.
-- **Pausing.** Guide in a game: RetroArch takes a picture and quits, saving
-  where the game was, and the player shows the pause panel over the
-  picture: Fortsätt spela, Spara läge (a save point of its own), Ladda läge,
-  Starta om, TV-volym (left and right step the TV's volume, A mutes) and
-  Avsluta. Everything but Avsluta starts RetroArch again, which takes a
-  second or two; B carries on. Holding Guide goes home; the game is saved as
-  RetroArch quits.
+- **Pausing.** Guide in a game: RetroArch pauses where it is and the
+  overlay draws the pause panel over the paused game: Fortsätt spela, Spara
+  läge (a save point of its own), Ladda läge, Starta om, TV-volym (left and
+  right step the TV's volume, A mutes) and Avsluta. Each is one of
+  RetroArch's own commands (`PAUSE_TOGGLE`, `SAVE_STATE`, `LOAD_STATE`,
+  `RESET`), so carrying on is instant; B or Guide carries on, holding B
+  quits. While the panel is open the pads drive it, not the game. Without
+  the overlay (on Weston, or with it down) Guide pauses the old way:
+  RetroArch takes a picture and quits, saving where the game was, the
+  player page shows the panel over the picture, and everything but Avsluta
+  starts RetroArch again, which takes a second or two. Holding Guide goes
+  home; the game is saved as RetroArch quits.
 - **Pads.** While a game runs the pads are RetroArch's (with an autoconfig
   for the 8BitDo Ultimate 2C); player 1 is the pad last used. A real
   keyboard plugged in goes to DOS games; RetroArch's own hotkeys are off.
@@ -476,10 +481,12 @@ The login session gives every process the ambient capability
 `session.sh` therefore starts the overlay through `setpriv --inh-caps=-all
 --ambient-caps=-all`. Do not switch WebKit's sandbox off instead.
 
-**Status, October 2026.** The overlay starts and connects. The menu, keys
-reaching it, the relays, pausing and resuming media, and the toasts are not
-yet verified on the box. (The box went dark during the first test of the
-menu; that was a power cut, not the overlay.)
+**Tried on the box, October 2026:** the quick menu over the start page,
+over SVT1 in fullscreen (the video pauses and carries on, and stays in
+fullscreen) and over mpv; the toasts; and the game pause panel over a
+paused RetroArch. The overlay hands the keyboard back only once every key
+is up: Chromium given the keyboard while the B that closed the menu was
+still down took it as its own Escape and left fullscreen.
 
 ## When the box hangs
 

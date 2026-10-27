@@ -50,10 +50,14 @@ class Pads:
 FAKE_RA = r'''
 import socket, sys, pathlib
 port, shot, state = int(sys.argv[1]), sys.argv[2], sys.argv[3]
+heard = sys.argv[4] if len(sys.argv) > 4 else None
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 s.bind(("127.0.0.1", port))
 while True:
     msg = s.recv(64).decode()
+    if heard:
+        with open(heard, "a") as f:
+            f.write(msg + "\n")
     if msg == "SCREENSHOT":
         pathlib.Path(shot).write_bytes(b"png")
     elif msg == "SAVE_STATE":
@@ -172,10 +176,11 @@ class GamesTests(unittest.IsolatedAsyncioTestCase):
 
     async def start_fake(self, game_path):
         g = self.games
+        self.heard = Path(self.dir.name) / "heard.txt"
         g.game = {"id": 7, "name": "Testspel", "platform": "snes", "path": str(game_path)}
         g.write_config("snes9x")
         g.proc = await asyncio.create_subprocess_exec(sys.executable, "-c", FAKE_RA, str(self.cfg["games"]["port"]),
-                                                      str(g.screen_path()), str(g._auto_state()))
+                                                      str(g.screen_path()), str(g._auto_state()), str(self.heard))
         await asyncio.sleep(0.3)
         g.state = "running"
         g.pads.shared["games"] = True
@@ -193,11 +198,55 @@ class GamesTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(g._auto_state().is_file())
         self.assertFalse(g.pads.shared["games"])                 # the pads are Chromium's again
         self.assertIn("paused", [e.get("state") for e in self.events])
-        self.assertEqual(g.save_point(), (True, ""))
+        self.assertEqual(await g.save_point(), (True, ""))
         self.assertIsNotNone(g.status()["point"])
         await g.quit()
         self.assertEqual(g.state, "idle")
         self.assertIsNone(g.game)
+
+    async def test_with_the_overlay_home_holds_the_game(self):
+        g = self.games
+        g.overlay = lambda: True
+        g.dispatcher.system_hook = g.on_system
+        rom = Path(self.dir.name) / "Testspel (U).smc"
+        rom.write_bytes(b"rom")
+        await self.start_fake(rom)
+        heard = lambda: self.heard.read_text().split() if self.heard.is_file() else []
+        await g.on_system("menu")
+        await asyncio.sleep(0.2)
+        self.assertEqual(g.state, "held")
+        self.assertEqual(heard(), ["PAUSE_TOGGLE"])              # no picture, no quitting
+        self.assertFalse(g.pads.shared["games"])                 # the pads drive the panel
+        held = [e for e in self.events if e.get("state") == "held"][0]
+        self.assertEqual(held["name"], "games")
+        self.assertEqual(held["title"], "Testspel")
+        self.assertEqual(await g.save_point(), (True, ""))       # SAVE_STATE, and it becomes the point
+        self.assertTrue(g._point_path().is_file())
+        self.assertEqual(await g.resume("point"), (True, ""))
+        self.assertEqual(g.state, "running")
+        self.assertTrue(g.pads.shared["games"])
+        await asyncio.sleep(0.1)                                 # the stand-in hears it
+        self.assertEqual(heard()[-2:], ["LOAD_STATE", "PAUSE_TOGGLE"])
+        await g.on_system("menu")
+        await asyncio.sleep(0.1)
+        await g.on_system("menu")                                # Home again: carry on
+        await asyncio.sleep(0.1)
+        self.assertEqual(g.state, "running")
+        await g.on_system("menu")
+        await asyncio.sleep(0.1)
+        self.assertEqual(await g.resume("none"), (True, ""))
+        await asyncio.sleep(0.1)                                 # the stand-in hears it
+        self.assertEqual(heard()[-2:], ["RESET", "PAUSE_TOGGLE"])
+        await g.on_system("menu")
+        await asyncio.sleep(0.1)
+        await g.on_system("back")                                # hold B on the panel: Avsluta
+        for _ in range(50):
+            if g.state == "idle":
+                break
+            await asyncio.sleep(0.05)
+        self.assertEqual(g.state, "idle")
+        self.assertIn("SAVE_STATE", heard())
+        self.assertIn("exited", [e.get("state") for e in self.events])
 
     async def test_resume_from_the_point_restores_it(self):
         g = self.games
@@ -206,7 +255,7 @@ class GamesTests(unittest.IsolatedAsyncioTestCase):
         await self.start_fake(rom)
         await g.pause()
         await asyncio.sleep(0.2)
-        g.save_point()
+        await g.save_point()
         g._auto_state().write_bytes(b"later")
         launched = []
 

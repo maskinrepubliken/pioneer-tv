@@ -191,14 +191,16 @@ def wayland_socket(runtime_dir: str) -> str:
     return max(socks, key=lambda p: p.stat().st_mtime).name if socks else "wayland-0"
 
 class Games:
-    def __init__(self, cfg: dict, emit: Callable[[dict], Coroutine], pads, dispatcher) -> None:
+    def __init__(self, cfg: dict, emit: Callable[[dict], Coroutine], pads, dispatcher,
+                 overlay: Callable[[], bool] = lambda: False) -> None:
         self.cfg = cfg
+        self.overlay = overlay          # True while the overlay is up: it draws the pause panel over the game
         self.emit = emit
         self.pads = pads                # the pad manager: its shared["games"] leaves the pads to RetroArch
         self.dispatcher = dispatcher
         self.proc: asyncio.subprocess.Process | None = None
         self.game: dict | None = None   # the game being played or paused
-        self.state = "idle"             # idle | loading | running | pausing | paused
+        self.state = "idle"             # idle | loading | running | held | pausing | paused | quitting
         self.task: asyncio.Task | None = None
         self.screen_at = 0.0
 
@@ -261,6 +263,8 @@ class Games:
 
     async def resume(self, load: str = "auto") -> tuple[bool, str]:
         """The paused game again: load "auto" (where it was), "point" (Spara läge's) or "none" (from the start)."""
+        if self.state == "held":
+            return await self._unhold(load)
         if self._busy():
             return False, "ett spel körs redan"
         if not self.game or self.state != "paused":
@@ -274,9 +278,11 @@ class Games:
         self.task = asyncio.create_task(self._launch(autoload=load != "none"))
         return True, ""
 
-    def save_point(self) -> tuple[bool, str]:
+    async def save_point(self) -> tuple[bool, str]:
         """Spara läge: the state the game was paused with becomes its save point."""
-        if not self.game or self.state != "paused" or not self._auto_state().is_file():
+        if self.state == "held" and not await self._save_state():
+            return False, "inget att spara"
+        if not self.game or self.state not in ("paused", "held") or not self._auto_state().is_file():
             return False, "inget att spara"
         point = self._point_path()
         point.parent.mkdir(parents=True, exist_ok=True)
@@ -341,7 +347,7 @@ class Games:
     async def quit(self) -> None:
         """Leave the game for good: its state saved, RetroArch quits and the page goes back."""
         running = bool(self.proc and self.proc.returncode is None)
-        if running and self.state == "running":
+        if running and self.state in ("running", "held"):
             await self._save_state()
         self.state = "quitting" if running else "idle"
         await self._quit_process()
@@ -660,10 +666,55 @@ history_list_enable = "false"
             except ProcessLookupError:
                 pass
 
+    # ------------------------------------------------------------ held
+    # With the overlay up, Home holds the game where it is instead: RetroArch
+    # pauses and stays on screen, and the overlay draws the pause panel over
+    # it. Nothing is written or restarted, so carrying on is instant; Spara
+    # läge, Ladda läge and Starta om are RetroArch's own commands. Without the
+    # overlay (Weston, or the overlay down) Home pauses as before.
+    async def hold(self) -> None:
+        if self.state != "running" or not (self.proc and self.proc.returncode is None):
+            return
+        self.command("PAUSE_TOGGLE")
+        self.state = "held"
+        # The pads drive the panel (keys to the overlay) until the game goes on.
+        self.pads.shared["games"] = False
+        for pad in self.pads.pads():
+            await pad.release_everything()
+        point = self._point_path()
+        await self._event("held", title=self.game["name"] if self.game else "",
+                          point=point.stat().st_mtime if point and point.is_file() else None,
+                          players=self._players()[1])
+
+    async def _unhold(self, load: str) -> tuple[bool, str]:
+        if load == "point":
+            point = self._point_path()
+            if not point or not point.is_file():
+                return False, "inget sparat läge"
+            shutil.copyfile(point, self._auto_state())
+            self._own(self._auto_state())
+            self.command("LOAD_STATE")
+        elif load == "none":
+            self.command("RESET")
+        self.dispatcher.vinput.release_all()
+        self.pads.shared["games"] = True
+        for pad in self.pads.pads():
+            await pad.release_everything()
+        self.command("PAUSE_TOGGLE")
+        self.state = "running"
+        await self._event("running")
+        return True, ""
+
     async def on_system(self, name: str) -> bool:
         """The box's own buttons while RetroArch has the screen. True: handled here."""
-        if name == "menu":
+        if name == "menu" and self.state == "held":
+            asyncio.create_task(self._unhold("auto"))           # Home again: carry on
+        elif name == "menu" and self.overlay():
+            asyncio.create_task(self.hold())
+        elif name == "menu":
             asyncio.create_task(self.pause())
+        elif name == "back" and self.state == "held":            # hold B on the panel: Avsluta
+            asyncio.create_task(self.quit())
         elif name == "home":
             async def home() -> None:
                 await self.quit()

@@ -453,7 +453,7 @@ class Server:
         elif action == "resume":
             ok, msg = await games.resume(str(data.get("load", "auto")))
         elif action == "save_point":
-            ok, msg = games.save_point()
+            ok, msg = await games.save_point()
         elif action == "pause":
             await games.pause()
             ok, msg = True, ""

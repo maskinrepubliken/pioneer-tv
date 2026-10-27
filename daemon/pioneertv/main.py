@@ -213,7 +213,7 @@ async def amain(cfg: dict) -> None:
     pads_mgr = GamepadManager(cfg, dispatcher, mouse, on_gamepad_change, on_keyboard_change, on_active_pad)
 
     # Games, played in RetroArch out of sight (games.py).
-    games = Games(cfg, emit, pads_mgr, dispatcher)
+    games = Games(cfg, emit, pads_mgr, dispatcher, overlay=lambda: server.router.present)
     server.hooks["games"] = games
     await games.reap_strays()
 
