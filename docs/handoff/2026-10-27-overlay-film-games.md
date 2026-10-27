@@ -57,20 +57,17 @@ in `/tmp`, and are gone):
   TV-volym, Sluta titta. B or X carries on, holding B quits.
 - **Musik**: a song played to its end is marked played for the user
   (`UserPlayedItems`); before, nothing was ever counted.
-
 - **Long presses** after ten seconds idle came out short (the TV's power
   is asked over CEC first, and the pad's release waited behind it):
   holding B to stop a film paused it instead. Now judged by the input
   events' own times (4e00c0b); four of four held B stopped the film.
+- **Musik's album and artist grids** keep only the rows around the focus
+  (as Spel's grid does): a press down on the 1,707 albums went from 110 to
+  160 ms to the next picture to about 80. Pictures from Jellyfin are now
+  sized for the screen (Film & serier down: 130 to 95 ms).
 
 ## Loose ends
 
-- Musik's album grid (1,707 albums): 1.3 s to show, then about 80 ms from
-  a press to the next picture sideways and about 150 ms down. The spatial
-  navigation looks at every card on each press; with the cheap checks
-  first it costs about 70 ms of script a press instead of 110 (the rest is
-  layout and painting). A grid that only keeps the rows near the focus in
-  the page, as the Spel grid does, would do more.
 - Every update ends with systemd logging "Failed to open
   /run/systemd/transient/pioneer-tv-update.service" a few times after the
   unit has finished. Harmless as far as seen.
@@ -80,5 +77,5 @@ in `/tmp`, and are gone):
   still installed and disabled; the user has not yet said labwc may stay
   for good.
 - From the 26th, still open: Musik's slow starts (moov atom at the end),
-  the album grid's smoothness, locking Wi-Fi to 5 GHz (better not, now
+  locking Wi-Fi to 5 GHz (better not, now
   that the box may stand behind the sofa: 2.4 GHz reaches further).

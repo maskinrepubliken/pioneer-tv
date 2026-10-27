@@ -213,13 +213,62 @@
     browseLegend([['A', 'öppna']]);
     view.innerHTML = '';
     const scroll = el('div', 'musik-scroll');
-    if (groups.length) {
-      const g = el('div', 'musik-grid');
-      groups.forEach((x) => g.appendChild(card(x)));
-      scroll.appendChild(g);
-    } else scroll.appendChild(el('p', 'musik-empty', kind === 'albums' ? 'Inga album.' : 'Inga artister.'));
     view.appendChild(scroll);
-    restoreFocus(scroll.querySelector('.musik-card'));
+    if (!groups.length) {
+      scroll.appendChild(el('p', 'musik-empty', kind === 'albums' ? 'Inga album.' : 'Inga artister.'));
+      return;
+    }
+    const w = windowed(groups, scroll);
+    const key = lastFocus[location.hash || '#/'];
+    const at = key ? groups.findIndex((g) => `${g.kind}:${g.id}` === key) : -1;
+    w.focusIndex(Math.max(at, 0));
+  }
+
+  // A long grid (1,707 albums on the box) keeps only the rows around the
+  // focus in the page, as the Spel grid does: with every card there, the
+  // spatial navigation looked at each one on every press and a press down
+  // took 110 to 160 ms to show. The rows have one height, measured from the
+  // first card; the navigation moves into the row just outside the window
+  // by geometry, and focusin moves the window around it.
+  const COLS = 5;
+  const WINDOW_ROWS = 3;           // rows kept either side of the focused row
+  function windowed(groups, scroll) {
+    const g = el('div', 'musik-grid musik-grid--windowed');
+    scroll.appendChild(g);
+    const nodes = new Map();       // index in groups -> card
+    let start = -1;
+    const place = (i) => {
+      const c = card(groups[i]);
+      c.dataset.index = String(i);
+      c.style.gridRow = String(Math.floor(i / COLS) + 1);
+      c.style.gridColumn = String((i % COLS) + 1);
+      g.appendChild(c);
+      nodes.set(i, c);
+      return c;
+    };
+    // The height of a row, from a card with every line (the first one).
+    const probe = place(0);
+    g.style.setProperty('--row-h', `${probe.getBoundingClientRect().height}px`);
+    g.style.setProperty('--rows', String(Math.ceil(groups.length / COLS)));
+    function render(center) {
+      const row = Math.floor(center / COLS);
+      const first = Math.max(0, row - WINDOW_ROWS) * COLS;
+      const last = Math.min(groups.length, (row + WINDOW_ROWS + 1) * COLS);
+      if (first === start && nodes.size === last - first) return;
+      start = first;
+      for (const [i, node] of nodes) if (i < first || i >= last) { node.remove(); nodes.delete(i); }
+      for (let i = first; i < last; i++) if (!nodes.has(i)) place(i);
+    }
+    g.addEventListener('focusin', (e) => {
+      const c = e.target.closest('[data-index]');
+      if (c) render(Number(c.dataset.index));
+    });
+    return {
+      focusIndex(i) {
+        render(i);
+        M.nav.focus(nodes.get(i));
+      },
+    };
   }
 
   // A playlist or an album: its head and buttons, then its songs.

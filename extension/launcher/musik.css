@@ -33,6 +33,9 @@
 
 /* ---- square cards: playlists, albums, artists ---- */
 .musik-grid { display: grid; gap: 1.2rem 1.1rem; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+/* Only the rows around the focus are in the page (musik.js, windowed). */
+.musik-grid--windowed { grid-template-rows: repeat(var(--rows, 1), var(--row-h, 15rem)); }
+.musik-grid--windowed .musik-card { content-visibility: visible; }
 .musik-row { display: flex; gap: 1.1rem; overflow-x: auto; scrollbar-width: none; padding: 0.6rem; margin: -0.6rem; }
 .musik-row::-webkit-scrollbar { display: none; }
 .musik-row .musik-card { width: 11.5rem; }
