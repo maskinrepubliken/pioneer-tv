@@ -122,6 +122,20 @@ def panel_tracks(track_list: list) -> dict:
     return out
 
 
+def languages(source: dict, audio: int | None, subtitle: int | None) -> dict:
+    """The languages of the tracks asked for (Jellyfin's stream indexes):
+    {"audio": "swe", "subtitles": "eng" or "no"}, what is known of them."""
+    streams = {s.get("Index"): s for s in source.get("MediaStreams") or []}
+    out = {}
+    if audio is not None and (streams.get(audio) or {}).get("Language"):
+        out["audio"] = streams[audio]["Language"]
+    if subtitle is not None and subtitle < 0:
+        out["subtitles"] = "no"
+    elif subtitle is not None and (streams.get(subtitle) or {}).get("Language"):
+        out["subtitles"] = streams[subtitle]["Language"]
+    return out
+
+
 # Jellyfin's subtitle codecs and the file ending it serves them as.
 SUBTITLE_FORMAT = {"subrip": "srt", "srt": "srt", "ass": "ass", "ssa": "ssa", "webvtt": "vtt", "vtt": "vtt"}
 
@@ -213,7 +227,9 @@ class Video:
             log.warning("jellyfin: %s: %s", item_id, exc)
             self.state = "idle"
             return False, "Jellyfin svarar inte"
-        self.item = {"id": item_id, "name": item.get("Name", ""), "source": sources[0]}
+        self.item = {"id": item_id, "name": item.get("Name", ""), "source": sources[0],
+                     "key": item.get("SeriesId") or item_id}
+        self.remember(self.item["key"], **languages(sources[0], audio, subtitle))
         self.position, self.paused, self.ended = max(0.0, float(start or 0)), False, False
         try:
             await self._launch(audio, subtitle)
@@ -396,7 +412,49 @@ class Video:
         if not prop or not (track_id == "no" and kind == "subtitles" or isinstance(track_id, int)):
             return False, "okänt spår"
         await self._command(["set_property", prop, track_id])
+        if self.item:
+            chosen = next((t for t in self.track_list if t.get("type") == ("audio" if kind == "audio" else "sub")
+                           and t.get("id") == track_id), None)
+            lang = "no" if track_id == "no" else (chosen or {}).get("lang") or ""
+            if lang:
+                self.remember(self.item["key"], **{kind: lang})
         return True, ""
+
+    # ------------------------------------------------------------ remembered choices
+    # The sound and subtitles last chosen, by language, for each series (or
+    # film): the detail page picks them again for the next episode, where
+    # Jellyfin would start from the user's defaults every time.
+    @property
+    def choices_path(self) -> Path:
+        return self.root / "choices.json"
+
+    def choices(self) -> dict:
+        try:
+            data = json.loads(self.choices_path.read_text())
+            return data if isinstance(data, dict) else {}
+        except (OSError, ValueError):
+            return {}
+
+    def choice(self, key: str) -> dict:
+        return self.choices().get(key) or {}
+
+    def remember(self, key: str, audio: str = "", subtitles: str = "") -> None:
+        if not key or not (audio or subtitles):
+            return
+        data = self.choices()
+        entry = dict(data.get(key) or {})
+        if audio:
+            entry["audio"] = audio
+        if subtitles:
+            entry["subtitles"] = subtitles
+        data[key] = entry
+        try:
+            self.root.mkdir(parents=True, exist_ok=True)
+            tmp = self.choices_path.with_suffix(".tmp")
+            tmp.write_text(json.dumps(data))
+            tmp.replace(self.choices_path)
+        except OSError as exc:
+            log.warning("remembering the tracks: %s", exc)
 
     async def media(self, action: str) -> None:
         """The quick menu opening (pause) and closing (resume): only what it

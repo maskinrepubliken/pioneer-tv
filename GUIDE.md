@@ -280,7 +280,9 @@ a home video library's folders and clips. A on a film, an episode or a clip
 opens its page: the picture, year, length and overview, Spela or "Fortsätt
 från …" and "Spela från början", and, when there is a choice, Ljud and
 Undertexter (A steps through them). Which sound and subtitles are chosen
-first is Jellyfin's call, from the user's own settings. A series opens on
+first is the language chosen last time in the same series (or film), on
+the detail page or in the pause panel (`/var/lib/pioneer-tv/video/choices.json`),
+and otherwise Jellyfin's call, from the user's own settings. A series opens on
 the first season not finished, its seasons as buttons above the episodes.
 The search field (Y opens the keyboard) and the start page's search find
 films, series, episodes and clips by name.

@@ -378,6 +378,17 @@
     if (!isCurrent(token)) return;
     if (v.kind === 'series') return series(v.id, null, token);
     current = { video: v, audio: v.defaultAudio, subtitle: v.defaultSubtitle };
+    // The sound and subtitles chosen last time in this series (or film), by
+    // language, before Jellyfin's defaults; a language this one lacks keeps them.
+    const chose = await lastChoice(v.seriesId || v.id);
+    if (!isCurrent(token)) return;
+    const audio = chose.audio && v.audio.find((t) => t.language === chose.audio);
+    if (audio) current.audio = audio.index;
+    if (chose.subtitles === 'no') current.subtitle = -1;
+    else {
+      const sub = chose.subtitles && v.subtitles.find((t) => t.language === chose.subtitles);
+      if (sub) current.subtitle = sub.index;
+    }
     titleEl.textContent = v.kind === 'episode' ? v.series || 'Avsnitt' : v.kind === 'movie' ? 'Film' : 'Klipp';
     renderTabs(null);
     setLegend([['A', 'välj']]);
@@ -412,6 +423,15 @@
     box.appendChild(main);
     view.appendChild(box);
     restoreFocus(play);
+  }
+
+  async function lastChoice(key) {
+    try {
+      const r = await fetch(`/api/video?key=${encodeURIComponent(key)}`);
+      return (await r.json()).choice || {};
+    } catch {
+      return {};                     // the preview has no daemon
+    }
   }
 
   function trackButton(label, list, field, canBeOff) {

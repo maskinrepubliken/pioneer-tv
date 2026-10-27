@@ -11,13 +11,13 @@ from pathlib import Path
 from aiohttp import web
 
 from pioneertv import config
-from pioneertv.video import Video, panel_tracks, track_label, tracks
+from pioneertv.video import Video, languages, panel_tracks, track_label, tracks
 
 SOURCE = {"Id": "src1", "RunTimeTicks": 100 * 10_000_000, "MediaStreams": [
     {"Index": 0, "Type": "Video"},
-    {"Index": 1, "Type": "Audio", "Codec": "aac"},
-    {"Index": 2, "Type": "Audio", "Codec": "ac3"},
-    {"Index": 3, "Type": "Subtitle", "Codec": "subrip"},
+    {"Index": 1, "Type": "Audio", "Codec": "aac", "Language": "eng"},
+    {"Index": 2, "Type": "Audio", "Codec": "ac3", "Language": "swe"},
+    {"Index": 3, "Type": "Subtitle", "Codec": "subrip", "Language": "swe"},
     {"Index": 4, "Type": "Subtitle", "Codec": "ass"},
     {"Index": 5, "Type": "Subtitle", "Codec": "subrip", "IsExternal": True},
 ]}
@@ -72,6 +72,13 @@ class Tracks(unittest.TestCase):
         self.assertEqual(tracks(SOURCE, None, None), {})
 
 
+class Languages(unittest.TestCase):
+    def test_of_the_tracks_asked_for(self):
+        self.assertEqual(languages(SOURCE, 2, 3), {"audio": "swe", "subtitles": "swe"})
+        self.assertEqual(languages(SOURCE, 1, -1), {"audio": "eng", "subtitles": "no"})
+        self.assertEqual(languages(SOURCE, None, 4), {})          # no language on that one
+
+
 class Panel(unittest.TestCase):
     def test_labels(self):
         self.assertEqual(track_label({"id": 1, "lang": "swe"}), "Svenska")
@@ -99,7 +106,7 @@ class Base(unittest.IsolatedAsyncioTestCase):
                 return web.json_response({}, status=401)
             if request.query.get("userId") != "u1":
                 return web.json_response({}, status=400)
-            return web.json_response({"Id": request.match_info["id"], "Name": "Fyren", "MediaSources": [SOURCE]})
+            return web.json_response({"Id": request.match_info["id"], "Name": "Fyren", "SeriesId": "ser1", "MediaSources": [SOURCE]})
 
         async def report(request):
             self.reports.append((request.path, await request.json()))
@@ -234,6 +241,19 @@ class Playing(Base):
         self.assertIn('["set_property", "sid", "no"]', sent)
         self.assertIn('["set_property", "pause", false]', sent)
         self.assertFalse(self.video.held)
+        await self.video.stop()
+
+    async def test_the_choice_is_remembered_for_the_series(self):
+        os.environ["PANEL"] = "1"
+        self.video.overlay = lambda: True
+        try:
+            await self.video.play("abc", 0, 2, -1)               # Svenska, no subtitles
+            await self.wait_for("held")
+        finally:
+            os.environ.pop("PANEL", None)
+        self.assertEqual(self.video.choice("ser1"), {"audio": "swe", "subtitles": "no"})
+        await self.video.track("subtitles", 1)                   # the panel: Svenska subtitles (mpv's track 1)
+        self.assertEqual(self.video.choice("ser1"), {"audio": "swe", "subtitles": "swe"})
         await self.video.stop()
 
     async def test_one_at_a_time(self):

@@ -71,8 +71,6 @@ in `/tmp`, and are gone):
 - Every update ends with systemd logging "Failed to open
   /run/systemd/transient/pioneer-tv-update.service" a few times after the
   unit has finished. Harmless as far as seen.
-- The subtitle and sound chosen in the video panel are not remembered; the
-  next play starts from Jellyfin's defaults for the user.
 - Spike packages still on the box: grim (used for screenshots). Weston is
   still installed and disabled; the user has not yet said labwc may stay
   for good.

@@ -467,7 +467,11 @@ class Server:
     # Films and series in mpv (video.py): what plays, and play / stop.
     async def api_video_status(self, request: web.Request) -> web.Response:
         video = self.hooks.get("video")
-        return web.json_response(video.status() if video else {"state": "idle", "item": None})
+        status = video.status() if video else {"state": "idle", "item": None}
+        # ?key=<series or film id>: the sound and subtitles chosen last time.
+        if video and request.query.get("key"):
+            status["choice"] = video.choice(request.query["key"])
+        return web.json_response(status)
 
     async def api_video_action(self, request: web.Request) -> web.Response:
         video = self.hooks.get("video")
