@@ -66,6 +66,17 @@ in `/tmp`, and are gone):
   160 ms to the next picture to about 80. Pictures from Jellyfin are now
   sized for the screen (Film & serier down: 130 to 95 ms).
 
+- **Sound and subtitles** last chosen are kept per series (or film) in
+  `/var/lib/pioneer-tv/video/choices.json` and picked again on the next
+  episode's detail page. Playing with what the page offered counts as a
+  choice too.
+- **A review of the day's changes** (an independent read of e20cde4..)
+  found eight real defects, all fixed in b71efeb: a long action cut short
+  by the release, "seen" removed on a rewatch, races in video.py's stop,
+  an unchosen "no subtitles" remembered, installer key/migration edge
+  cases, two overlay timing slips. Left as is: evdev times are wall-clock,
+  so an NTP step between a press and its release can misjudge one press.
+
 ## Loose ends
 
 - Every update ends with systemd logging "Failed to open
