@@ -1,6 +1,6 @@
-// Pioneer TV tiles: the box's services as big tiles in two rows, its status
-// at the top, its buttons in a column at the left, the pad's legend at the
-// foot. The home page
+// Pioneer TV tiles: the box's services as big tiles of one size, and the
+// pad's legend under them; at the left a column of its own, the buttons in
+// the middle and the box's status at the foot. The home page
 // (home/home.js) is this sheet; the overlay's menus (overlay/hud.js) use
 // its row of holes on a choice that opens a page. Each wires its own choices:
 // the page's spatial navigation focuses them (pioneertv-focus), the
@@ -107,27 +107,24 @@ window.PioneerTV = window.PioneerTV || {};
 
   function sheet({ side = [], rows = [], legend: keys = [] }) {
     const root = el('div', 'tiles-sheet');
-    const top = el('header', 'tiles-head');
-    top.appendChild(pills());
-    root.appendChild(top);
+    const rail = el('aside', 'tiles-rail');
+    const column = el('nav', 'tiles-buttons');
+    side.forEach((it) => column.appendChild(sideButton(it)));
+    rail.append(column, pills());
     const body = el('div', 'tiles-body');
     const main = el('main', 'tiles-content');
+    // Every row as many columns as the longest, so the tiles are one size.
+    const columns = String(Math.max(1, Math.min(Math.max(...rows.map((r) => r.length)), 5)));
     let n = 0;
     for (const row of rows) {
       if (!row.length) continue;
       const r = el('section', 'tiles-row');
-      r.style.setProperty('--tiles', String(Math.max(1, Math.min(row.length, 5))));
+      r.style.setProperty('--tiles', columns);
       row.forEach((it) => r.appendChild(tile(it, ++n)));
       main.appendChild(r);
     }
-    if (side.length) {
-      const column = el('nav', 'tiles-buttons');
-      side.forEach((it) => column.appendChild(sideButton(it)));
-      body.appendChild(column);
-    }
-    body.appendChild(main);
-    root.appendChild(body);
-    root.appendChild(legend(keys));
+    body.append(main, legend(keys));
+    root.append(rail, body);
     return root;
   }
 

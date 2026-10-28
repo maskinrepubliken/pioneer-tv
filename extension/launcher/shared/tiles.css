@@ -5,31 +5,32 @@
    page's (pioneertv-focus) or the overlay menu's (pioneertv-menu-active). */
 
 .tiles-sheet {
-  display: flex; flex-direction: column; padding: 3.2vh 3.4vw 1.2vh;
-  font-size: 1.25vw; color: var(--pioneertv-ink); background: var(--pioneertv-paper);
+  display: flex; font-size: 1.25vw; color: var(--pioneertv-ink); background: var(--pioneertv-paper);
 }
 .tiles-sheet button { font: inherit; margin: 0; }
 
-/* ---- the top: the status pills ---- */
-.tiles-head { display: flex; align-items: center; gap: 1.5em; min-height: 2.6em; }
-.tiles-pills { display: flex; align-items: center; gap: 1.2em; min-width: 0; }
-.tiles-pill { display: inline-flex; align-items: center; gap: 0.35em; font-size: 1.1em; color: var(--pioneertv-ink-faint); }
+/* ---- the column at the left, on the sunken paper: the buttons in the
+   middle, the status at the foot, all on one axis ---- */
+.tiles-rail {
+  flex: none; width: 6.4em; display: flex; flex-direction: column; align-items: center;
+  padding: 5vh 0 4.5vh; background: var(--pioneertv-paper-sunken);
+}
+.tiles-buttons { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.2em; }
+.tiles-buttons .pioneertv-round { font-size: 1.1em; }
+/* The status: a symbol and its hole, filled when the thing is up. */
+.tiles-pills { display: flex; flex-direction: column; align-items: center; gap: 0.9em; }
+.tiles-pill { display: inline-flex; align-items: center; gap: 0.35em; font-size: 1.05em; color: var(--pioneertv-ink-faint); }
 .tiles-pill::after {
-  content: ""; flex: none; width: 0.5em; height: 0.5em; border-radius: 50%;
+  content: ""; flex: none; width: 0.45em; height: 0.45em; border-radius: 50%;
   border: 0.12em solid var(--pioneertv-line-strong); background: transparent;
 }
-.tiles-pill.on { color: var(--pioneertv-ink); }
+.tiles-pill.on { color: var(--pioneertv-ink-muted); }
 .tiles-pill.on::after { background: var(--pioneertv-surface-forest); border-color: var(--pioneertv-surface-forest); }
 .tiles-pill.warn { color: var(--pioneertv-alarm); }
 .tiles-pill.warn::after { background: var(--pioneertv-alarm); border-color: var(--pioneertv-alarm); }
-/* ---- the column at the left: the buttons, top to bottom, level with
-   the tiles ---- */
-.tiles-body { flex: 1; display: flex; gap: 2.2em; min-height: 0; }
-.tiles-buttons {
-  flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.1em;
-  padding: 1.5vh 2em 0 0; border-right: 1px solid var(--pioneertv-line);
-}
-.tiles-buttons .pioneertv-round { font-size: 1.1em; }
+
+/* ---- the rest: the tiles, the legend under them ---- */
+.tiles-body { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 5vh 4vw 4.5vh 3.4vw; }
 .tiles-btn {
   display: inline-flex; align-items: center; gap: 0.45em; padding: 0.55em 1em 0.55em 0.8em; cursor: pointer;
   font-weight: 600 !important; font-size: 0.95em !important; line-height: 1 !important; font-family: var(--pioneertv-font-ui) !important;
@@ -44,8 +45,8 @@
 .tiles-btn.pioneertv-menu-active .pioneertv-icon, .tiles-btn.pioneertv-focus .pioneertv-icon { color: var(--pioneertv-on-ochre); }
 .tiles-btn.pioneertv-menu-disabled { color: var(--pioneertv-ink-faint); border-color: var(--pioneertv-line); }
 
-/* ---- the tiles: two rows, each tile wider as there are fewer ---- */
-.tiles-content { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 3vh; min-height: 0; padding-top: 1.5vh; }
+/* ---- the tiles: rows of one size, as many columns as the longest ---- */
+.tiles-content { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 3vh; min-height: 0; }
 .tiles-row { display: grid; grid-template-columns: repeat(var(--tiles, 3), 1fr); gap: 1.3em; }
 .tiles-tile {
   position: relative; display: flex; flex-direction: column; justify-content: flex-end; cursor: pointer; text-align: center;
@@ -85,9 +86,8 @@
 
 /* ---- the legend ---- */
 .tiles-legend {
-  display: flex; align-items: center; gap: 1.8em; height: 2.6em; margin-top: 1vh;
-  border-top: 1px solid var(--pioneertv-line);
-  font-size: 0.95em; color: var(--pioneertv-ink-muted);
+  display: flex; align-items: center; gap: 2.2em; margin-top: 2vh;
+  font-size: 0.9em; color: var(--pioneertv-ink-faint);
 }
 .tiles-legend span { display: inline-flex; align-items: center; gap: 0.45em; }
 .tiles-legend i { display: inline-flex; font-size: 0.8em; font-style: normal; color: var(--pioneertv-ink-muted); }

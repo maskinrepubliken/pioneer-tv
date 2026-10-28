@@ -1,4 +1,4 @@
 /* Pioneer TV home page (home.js): the tiles sheet (shared/tiles.css) is
    the whole page. */
 html, body { margin: 0; height: 100%; overflow: hidden; background: var(--pioneertv-paper); }
-.tiles-sheet { position: fixed; inset: 0; padding: 5.5vh 5vw 2vh; }
+.tiles-sheet { position: fixed; inset: 0; }

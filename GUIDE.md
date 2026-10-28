@@ -589,10 +589,11 @@ tried again every three seconds.
   card at the right; the pause panels of a game and a film are the same
   card. The d-pad moves to the nearest choice that way on screen.
 - **The home page** (`launcher/index.html`, `home/home.js`) is a page of
-  its own: the services as big tiles in two rows (config `services`; Live
-  for the channels), the status pills at the top, and a column of round
-  buttons at the left: Sök, the quick menu (the pad's Home mark),
-  Inställningar and the TV's off button. Its Live tile and Sök ask the
+  its own: Live (the channels) first, then the services (config
+  `services`), as tiles of one size in two rows, the pad's legend under
+  them; at the left a column on the sunken paper with round buttons in
+  the middle (Sök, the quick menu with the pad's Home mark, Inställningar,
+  the TV's off button) and the box's status at its foot. Its Live tile and Sök ask the
   overlay for that panel alone (`relay` with a `panel`): Live's channels,
   or the on-screen keyboard and then where to search. Inställningar, and
   its Loggar tab, is the settings page.

@@ -27,9 +27,11 @@
     drawnFor = key;
     const focused = document.activeElement && document.activeElement.dataset.key;
     const service = (s) => ({ key: `tile:${s.id}`, label: s.name, art: S.art(s), color: s.color, url: s.url });
-    const row2 = second.map(service);
-    if (channels.length) row2.push({ key: 'tile:live', label: S.LIVE.name, art: S.art(S.LIVE), color: S.LIVE.color, panel: 'live' });
-    const rows = [first.map(service), row2];
+    // Live first, then the services; all the same size, in two rows.
+    const all = [...first, ...second].map(service);
+    if (channels.length) all.unshift({ key: 'tile:live', label: S.LIVE.name, art: S.art(S.LIVE), color: S.LIVE.color, panel: 'live' });
+    const half = Math.ceil(all.length / 2);
+    const rows = [all.slice(0, half), all.slice(half)];
     // The column at the left, top to bottom.
     const side = [
       { key: 'search', label: 'Sök', icon: 'search', round: true, run: panel('search') },
