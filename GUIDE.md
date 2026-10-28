@@ -14,6 +14,7 @@ what was learned on the way.
 - [Games](#games)
 - [Music](#music)
 - [Film and series](#film-and-series)
+- [Video on other sites](#video-on-other-sites)
 - [Covers on the box](#covers-on-the-box)
 - [Updating the box](#updating-the-box)
 - [Logs and CEC debugging](#logs-and-cec-debugging)
@@ -426,6 +427,24 @@ Jellyfin itself.
 Measured on the box in October: a 1080p HEVC episode decoded in hardware
 (`hevc-drm`), no dropped frames, mpv at about 18 % CPU, a cache about 40
 seconds ahead.
+
+## Video on other sites
+
+A site's own player (SVT Play, Cineasterna, any page with a video) is hard
+to drive from a pad, worst in fullscreen. `content/webvideo.js` runs in
+every frame of a page (a film service's player may sit in a frame of its
+own), finds its main video (the largest on screen) and tells the daemon how
+it is, which passes it to the overlay (`webvideo`, daemon/pioneertv/overlay.py).
+Home over such a page opens that video's panel instead of the quick menu:
+Fortsätt, Spola (left and right, 10 s a press, 30 s held; a live stream
+within what it keeps), Från början, Undertexter (when the video has text
+tracks of its own), TV-volym, Meny (the quick menu, one step in) and Sluta
+titta (back). The panel's choices go back to the frame they are for. The
+menu pauses the video as it does every page's (the media event, the
+frames' too), and closing it carries on. While the video fills the screen
+(fullscreen, or bigscreen.js's promotion) left and right seek and A pauses
+or plays, with a toast, without the panel. Nothing of the site's player is
+touched, so it works for what the site protects too.
 
 ## Covers on the box
 

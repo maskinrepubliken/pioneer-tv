@@ -197,6 +197,8 @@ window.PioneerTV = window.PioneerTV || {};
         if (layer.captureAll !== false || PAD_KEYS.has(e.key)) this.eat(e);
         return;
       }
+      // A video filling the screen: left and right seek, A pauses (webvideo.js).
+      if (M.webvideo && M.webvideo.key(e)) { this.eat(e); return; }
       const active = document.activeElement;
       if (this.engaged && this.engaged !== active) this.engaged = null;
       const dir = DIRS[e.key];

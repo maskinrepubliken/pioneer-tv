@@ -170,7 +170,7 @@ class Server:
                     if data.get("client") == "overlay":
                         self.router.connected(ws)
                         await self.broadcast(self.config_message())
-                elif t in ("overlay_menu", "relay", "toast"):
+                elif t in ("overlay_menu", "relay", "toast", "webvideo"):
                     for event in self.router.handle(data):
                         await self.broadcast(event)
                         # mpv is no page: the quick menu pauses it here.

@@ -58,6 +58,8 @@ window.PioneerTV = window.PioneerTV || {};
   b.on('menu', (e) => {
     if (e && e.panel) return M.mainMenu.panel(e.panel);
     if (e && e.open) return menu.isOpen() || menu.open(M.mainMenu.spec());
+    // Over a site's video: its panel (below), the quick menu one step in.
+    if (!menu.isOpen() && webVideo()) return webPanel();
     menu.toggle();
   });
   b.on('home', () => { if (!held) away(); });
@@ -181,6 +183,68 @@ window.PioneerTV = window.PioneerTV || {};
     panel('video', e, e.title, items, null, at, () => video('/resume'));
   }
   b.on('video', (e) => (e.state === 'held' ? videoPanel(e) : closePanel('video')));
+
+  // A site's video (SVT Play, Cineasterna, any page; content/webvideo.js in
+  // each of the page's frames says how its video is): Fortsätt, Spola (left
+  // and right, 10 s a press, 30 s held), Från början, Undertexter, TV-volym,
+  // the quick menu, Sluta titta. The menu opening paused it (the media
+  // event); closing it carries on, a seek where it was put.
+  const frames = new Map();      // frame -> what it said last, and when
+  const webVideo = () => {
+    let best = null;
+    for (const [id, s] of frames) {
+      if (Date.now() - s.at > 60000) { frames.delete(id); continue; }
+      if (s.present && (!best || s.area > best.area)) best = s;
+    }
+    return best;
+  };
+  const pageTitle = () => { for (const s of frames.values()) if (s.top && s.title) return s.title; return ''; };
+  const clock = (s) => {
+    s = Math.max(0, Math.floor(s || 0));
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = String(s % 60).padStart(2, '0');
+    return h ? `${h}:${String(m).padStart(2, '0')}:${sec}` : `${m}:${sec}`;
+  };
+  const where = (v) => (v.live ? (v.end - v.time > 30 ? `${clock(v.end - v.time)} efter direkt` : 'direkt') : `${clock(v.time)} av ${clock(v.duration)}`);
+  const tell = (v, action, value) => b.relay('webvideo', { frame: v.frame, action, value });
+  b.on('webvideo', (e) => {
+    frames.set(e.frame, { ...e, at: Date.now() });
+    // An open panel follows it (a seek, the subtitles), unless a step in.
+    if (held && held.kind === 'web' && menu.isOpen() && menu.stack.length === 1 && held.e.frame === e.frame) webPanel(menu.index);
+  });
+  function webPanel(at = 0) {
+    const v = webVideo();
+    if (!v) return;
+    const subs = [{ id: -1, label: 'Av' }, ...v.subs];
+    const current = subs.find((t) => t.selected) || subs[0];
+    const items = [
+      { label: 'Fortsätt', icon: 'play', primary: true, run: pick(() => {}) },
+      { label: 'Spola', icon: 'arrowRight', detail: `◀ ▶ · ${where(v)}`, keep: true, run: () => {},
+        step: (dir, heldDown) => {
+          const by = dir * (heldDown ? 30 : 10);
+          tell(v, 'seek', by);
+          v.time = Math.max(0, Math.min(v.live ? v.end : v.duration || 0, v.time + by));   // at once; the page says where it got to
+          webPanel(menu.index);
+        } },
+    ];
+    if (!v.live) items.push({ label: 'Från början', icon: 'reload', run: pick(() => tell(v, 'to', 0)) });
+    if (v.subs.length) {
+      items.push({ label: 'Undertexter', icon: 'info', detail: current.label, keep: true, run: () => {
+        const next = subs[(subs.indexOf(current) + 1) % subs.length];
+        tell(v, 'subs', next.id);
+      } });
+    }
+    items.push({ label: 'TV-volym', icon: 'volume', detail: '◀ ▶ · även L2/R2', volume: true, keep: true, run: () => b.cec('mute') });
+    items.push({ label: 'Meny', icon: 'menu', detail: 'snabbmenyn', keep: true, run: () => menu.push(M.mainMenu.spec()) });
+    items.push({ label: 'Sluta titta', icon: 'back', detail: 'tillbaka', run: pick(() => b.back()) });
+    if (held && held.kind === 'web' && menu.isOpen()) {
+      // Drawn again in place: the same panel, its row where it was.
+      held.e = v;
+      menu.stack[0] = { title: v.title || pageTitle() || 'Video', items, at };
+      menu.render();
+      return;
+    }
+    panel('web', v, v.title || pageTitle() || 'Video', items, null, at, () => {});
+  }
 
   M.overlay = { host };
 })(window.PioneerTV);

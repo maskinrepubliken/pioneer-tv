@@ -55,6 +55,9 @@
   const railOpen = ({ P, doc }) => { doc.getElementById('rail').classList.add('open'); P.nav.focus(doc.querySelector('.rail-item.aktiv .rail-mark')); };
   const playSong = async ({ doc }) => { doc.querySelector('.row').click(); doc.getElementById('audio').muted = true; await sleep(500); };
   const GAME_PICTURE = '/romm/assets/cover/101.svg';
+  // A site's video, as content/webvideo.js says it is.
+  const WEBVIDEO = { frame: 'f1', top: true, present: true, title: 'Rapport 19.30', area: 1, time: 754, duration: 1800, end: 1800,
+    live: false, paused: true, subs: [{ id: 0, label: 'Svenska', selected: true }, { id: 1, label: 'Svenska (textning)' }] };
   const FILM_PICTURE = '/jellyfin/Items/serie1-s1e3/Images/Primary?tag=p';
   const LONG = 600000;
   // zoom: the part of the screen a small view shows, [x, y, width] of 1280x720.
@@ -114,8 +117,8 @@
         { name: 'Sök: var', under: HOME, url: OVERLAY,
           setup: ({ P, doc }) => { panel('search')({ P }); const f = doc.querySelector('.pioneertv-search-field input'); f.value = 'mario'; P.keyboard.done(); } },
       ] },
-    { part: 'Komponenter', group: 'Pausmenyer', files: 'overlay/overlay.js · overlay/hud.js (hud.menu)',
-      used: 'Hem i ett spel (RetroArch) eller en film (mpv): samma kort som huvudmenyn.',
+    { part: 'Komponenter', group: 'Pausmenyer', files: 'overlay/overlay.js · overlay/hud.js (hud.menu) · content/webvideo.js (en sajts video)',
+      used: 'Hem i ett spel (RetroArch), en film (mpv) eller över en video på en sajt (SVT Play, Cineasterna): samma kort som snabbmenyn.',
       items: [
         { name: 'Spelets pausmeny', under: GAME_PICTURE, url: OVERLAY,
           setup: ({ P }) => P.bridge.emit('games', { state: 'held', title: 'Tetris & Dr. Mario', point: Date.now() / 1000 - 3600, players: ['Rosa handkontroll', 'Grön handkontroll'] }) },
@@ -125,6 +128,11 @@
           setup: ({ P }) => P.bridge.emit('video', { state: 'held', title: 'Avsnitt 3',
             audio: [{ id: 1, label: 'Engelska', selected: true }, { id: 2, label: 'Svenska · Kommentar' }],
             subtitles: [{ id: 1, label: 'Svenska' }, { id: 2, label: 'Engelska' }] }) },
+        { name: 'En sajts video (SVT Play, Cineasterna)', under: FILM_PICTURE, url: OVERLAY,
+          setup: ({ P }) => { P.bridge.emit('webvideo', WEBVIDEO); P.bridge.emit('menu', {}); },
+          note: 'Hem över en video på en sajt (content/webvideo.js): spola med ◀ ▶, 10 s ett tryck, 30 s hållet. I fullskärm spolar ◀ ▶ och A pausar utan panelen.' },
+        { name: 'En sajts direktsändning', under: FILM_PICTURE, url: OVERLAY,
+          setup: ({ P }) => { P.bridge.emit('webvideo', { ...WEBVIDEO, live: true, duration: null, time: 3500, end: 3620, subs: [], title: 'SVT1' }); P.bridge.emit('menu', {}); } },
       ] },
     { part: 'Komponenter', group: 'Skärmsläckaren', files: 'overlay/saver.js · overlay/saver.css · overlay/mandelbrot.js · overlay/tao.js · daemon idle.py',
       used: 'Över allt, ritad av overlayn, när ingen handkontroll är ansluten och inget spelas. En handkontroll som slås på tar bort den.',

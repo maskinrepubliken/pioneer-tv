@@ -23,10 +23,29 @@ ROUTED = ("keyboard", "escape")
 OVERLAY = ("menu", "toast", "saver", "rest")
 # What the overlay may ask the page (through the extension) to do, and what
 # a page may ask of the overlay (the home page: a panel, Live or Sök).
-RELAYS = ("home", "back", "reload", "settings", "keyboard", "navigate")
+RELAYS = ("home", "back", "reload", "settings", "keyboard", "navigate", "webvideo")
 TO_OVERLAY = ("menu",)
 # The panels the home page may open alone in the overlay.
 PANELS = ("live", "search")
+# What the overlay's panel for a site's video may ask of it (content/webvideo.js).
+WEBVIDEO_ACTIONS = ("toggle", "seek", "to", "subs")
+
+
+def webvideo_state(data: dict) -> dict:
+    """A page's video, as content/webvideo.js says it is, for the overlay:
+    only the fields it draws, of the types it expects."""
+    num = lambda v: float(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else None   # noqa: E731
+    subs = []
+    for t in (data.get("subs") or [])[:12] if isinstance(data.get("subs"), list) else []:
+        if isinstance(t, dict) and isinstance(t.get("id"), int):
+            subs.append({"id": t["id"], "label": str(t.get("label") or "")[:40], "selected": bool(t.get("selected"))})
+    return {
+        "type": "event", "name": "webvideo", "target": "overlay",
+        "frame": str(data.get("frame") or "")[:16], "top": bool(data.get("top")), "present": bool(data.get("present")),
+        "title": str(data.get("title") or "")[:120], "area": num(data.get("area")) or 0.0,
+        "time": num(data.get("time")), "duration": num(data.get("duration")), "end": num(data.get("end")),
+        "live": bool(data.get("live")), "paused": bool(data.get("paused")), "subs": subs,
+    }
 
 
 class Router:
@@ -74,6 +93,8 @@ class Router:
             if isinstance(data.get("ms"), (int, float)):
                 event["ms"] = max(500, min(int(data["ms"]), 15000))
             return [event]
+        elif t == "webvideo":
+            return [webvideo_state(data)]
         elif t == "relay" and data.get("name") in TO_OVERLAY:
             event = {"type": "event", "name": data["name"], "open": True, "target": "overlay"}
             if data.get("panel") in PANELS:
@@ -88,5 +109,12 @@ class Router:
                 event["url"] = url
             if data["name"] == "settings" and isinstance(data.get("section"), str):
                 event["section"] = data["section"][:40]
+            if data["name"] == "webvideo":
+                if data.get("action") not in WEBVIDEO_ACTIONS:
+                    return []
+                event.update(frame=str(data.get("frame") or "")[:16], action=data["action"])
+                value = data.get("value")
+                if isinstance(value, (int, float)) and not isinstance(value, bool):
+                    event["value"] = value
             return [event]
         return []

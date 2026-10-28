@@ -27,7 +27,8 @@ window.PioneerTV = window.PioneerTV || {};
   // A menu: { title, note, items, status }. An item: { label, icon, detail,
   // primary, disabled, run, keep (stays open after run), opens (a page:
   // holes are punched on it until that page has loaded), volume (left and
-  // right step the TV's volume), sub (a function giving the submenu) }.
+  // right step the TV's volume), step (left and right do this: step(-1 or
+  // 1, held)), sub (a function giving the submenu) }.
   hud.menu = {
     root: null, stack: [], index: 0, items: [],
     isOpen() { return !!(this.root && this.root.isConnected); },
@@ -183,6 +184,8 @@ window.PioneerTV = window.PioneerTV || {};
       const it = this.items[this.index];
       if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && it && it.volume && !it.disabled) {
         M.bridge.cec(e.key === 'ArrowLeft' ? 'volume_down' : 'volume_up');
+      } else if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && it && it.step && !it.disabled) {
+        it.step(e.key === 'ArrowLeft' ? -1 : 1, e.repeat);
       } else if (e.key.startsWith('Arrow')) this.move(e.key);
       else if (e.key === 'Enter') this.activate();
       else this.back();
