@@ -58,7 +58,7 @@ window.PioneerTV = window.PioneerTV || {};
     scroller.appendChild(gridEl);
     body.appendChild(scroller);
     const info = spec.info ? el('aside', 'grid-info') : null;
-    if (info) body.appendChild(info);
+    if (info) { body.appendChild(info); body.classList.add('grid-view--info'); }
     view.appendChild(body);
 
     function showInfo(item) {

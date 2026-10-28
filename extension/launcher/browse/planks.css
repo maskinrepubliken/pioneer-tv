@@ -46,6 +46,14 @@
   /* The grain only darkens the rust, its light flecks leave it be. */
   background-blend-mode: normal, normal, normal, multiply;
 }
+/* The planks run wall to wall: from the column at the left to the screen's
+   right edge (beside the grid's info panel, to the panel), the covers
+   keeping the page's margins. */
+.planks {
+  margin-left: calc(-1 * var(--side-l, 0px)); padding-left: var(--side-l, 0px);
+  margin-right: calc(-1 * var(--side-r, 0px)); padding-right: var(--side-r, 0px);
+}
+.grid-view--info .planks { margin-right: 0; padding-right: 0; }
 .planks--box { --cover-h: 9.4rem; }
 .planks--poster { --cover-h: 11.5rem; }
 .planks--square { --cover-h: 8.6rem; }

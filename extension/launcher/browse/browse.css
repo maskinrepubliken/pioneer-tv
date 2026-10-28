@@ -36,11 +36,16 @@
 /* Out of sight: the on-screen keyboard shows what is typed. */
 .head-search { position: absolute; left: -10000px; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 
-/* One scrolling column; the focus ring needs the margin. */
+/* One scrolling column; the focus ring needs the margin. It reaches from
+   the column at the left to the screen's right edge, so the shelves in it
+   can (planks.css); what is in it keeps the page's margins. */
 .scroll {
   flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none;
-  padding: 0.6rem; margin: -0.6rem;
+  padding: 0.6rem var(--side-r, 0.6rem) 0.6rem var(--side-l, 0.6rem);
+  margin: -0.6rem calc(-1 * var(--side-r, 0.6rem)) -0.6rem calc(-1 * var(--side-l, 0.6rem));
 }
+/* Beside the grid's info panel it stops at the panel. */
+.grid-view--info .grid-scroll { padding-right: 0.6rem; margin-right: -0.6rem; }
 .scroll::-webkit-scrollbar { display: none; }
 
 /* ---- the shelf: sections one under the other ---- */
