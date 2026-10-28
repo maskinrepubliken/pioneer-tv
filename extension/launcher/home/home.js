@@ -32,7 +32,7 @@
     if (channels.length) row2.push({ key: 'tile:live', label: S.LIVE.name, art: S.art(S.LIVE), color: S.LIVE.color, panel: 'live' });
     const rows = [first.map(service), row2];
     const head = [
-      { key: 'search', label: 'Sök', icon: 'search', run: panel('search') },
+      { key: 'search', label: 'Sök', icon: 'search', round: true, run: panel('search') },
       { key: 'settings', label: 'Inställningar', icon: 'gear', run: panel('settings') },
       { key: 'tv-off', label: 'Stäng av TV:n', icon: 'power', run: () => b.cec('tv_off') },
     ];

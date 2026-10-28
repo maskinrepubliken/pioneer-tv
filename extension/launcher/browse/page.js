@@ -25,6 +25,8 @@ window.PioneerTV = window.PioneerTV || {};
   const countEl = $('count');
   const tabsEl = $('tabs');
   const search = $('search');
+  const searchBtn = $('search-btn');
+  const queryEl = $('query');
   const legendEl = $('legend');
   M.launcherUrl = new URL('index.html?tv=1', location.href).href;
 
@@ -34,6 +36,7 @@ window.PioneerTV = window.PioneerTV || {};
   document.title = `${library.name} – Pioneer TV`;
   titleEl.textContent = library.name;
   search.placeholder = library.search;
+  searchBtn.title = library.search;
 
   const parts = () => (location.hash || '#/').slice(2).split('/').map(decodeURIComponent);
   const here = () => location.hash || '#/';
@@ -79,12 +82,12 @@ window.PioneerTV = window.PioneerTV || {};
     const typing = document.activeElement === search;
     if (spec.kind === 'grid') {
       grid = M.grid.render(view, spec, { setCount: (t) => { countEl.textContent = t; }, savedKey: lastFocus[here()] });
-      if (!typing && !grid.focusFirst()) M.nav.focus(search);
+      if (!typing && !grid.focusFirst()) M.nav.focus(searchBtn);
       if (!spec.filter) grid = null;
       return;
     }
     const first = spec.kind === 'detail' ? M.detail.render(view, spec) : M.shelf.render(view, spec);
-    if (!typing) restoreFocus(first || search);
+    if (!typing) restoreFocus(first || searchBtn);
   }
 
   // ------------------------------------------------------------ routing
@@ -95,6 +98,7 @@ window.PioneerTV = window.PioneerTV || {};
     const [what, arg] = parts();
     if (what === 'search' && arg && search.value.trim() !== arg) search.value = arg;
     if (what !== 'search' && document.activeElement !== search) search.value = '';
+    showQuery();
     // A view that takes a moment (a console of nearly a thousand games) says
     // so instead of leaving the last one on screen.
     let settled = false;
@@ -114,12 +118,30 @@ window.PioneerTV = window.PioneerTV || {};
   }
   window.addEventListener('hashchange', route);
 
-  // ------------------------------------------------------------ the search field
-  // Over a grid it filters what is there, at once. Elsewhere it searches the
-  // library after a pause, in place: the hash follows without a new history
-  // entry for every letter, so B leaves the search in one step.
+  // ------------------------------------------------------------ search
+  // A round button, as on every page of ours; A on it (or Y anywhere) opens
+  // the on-screen keyboard on a field out of sight, which shows what is
+  // typed. The words stay beside the button. Over a grid they filter what
+  // is there, at once; elsewhere they search the library after a pause, in
+  // place: the hash follows without a new history entry for every letter,
+  // so B leaves the search in one step.
+  searchBtn.appendChild(M.icons.svg('search'));
+  searchBtn.addEventListener('click', () => M.keyboard.open(search));
+  M.keyboard.searchField = search;
+  function showQuery() {
+    const q = search.value.trim();
+    queryEl.textContent = q ? `”${q}”` : '';
+  }
+  // The keyboard closed (OK, or B): the focus goes to what was found.
+  b.on('keyboard:close', () => setTimeout(() => {
+    if (document.activeElement !== search) return;
+    search.blur();
+    if (grid) grid.focusIndex(0);
+    else restoreFocus(view.querySelector('.card:not(.card--group), .row, .card, .knapp') || searchBtn);
+  }, 0));
   let typingTimer = null;
   search.addEventListener('input', () => {
+    showQuery();
     if (grid) { grid.filter(search.value); return; }
     clearTimeout(typingTimer);
     typingTimer = setTimeout(() => {
@@ -138,6 +160,7 @@ window.PioneerTV = window.PioneerTV || {};
     e.preventDefault();
     e.stopPropagation();
     search.value = '';
+    showQuery();
     if (grid) { grid.filter(''); grid.focusIndex(0); }
     else if (here().startsWith('#/search/')) history.back();
   });
@@ -153,6 +176,14 @@ window.PioneerTV = window.PioneerTV || {};
     if (library.onKey && library.onKey(e)) { e.preventDefault(); return; }
     if (e.key !== 'Escape') return;
     e.preventDefault();
+    // A grid filtered: B takes the filter away first.
+    if (grid && search.value) {
+      search.value = '';
+      showQuery();
+      grid.filter('');
+      grid.focusIndex(0);
+      return;
+    }
     if (library.isRoot(parts())) b.home();
     else history.back();
   });

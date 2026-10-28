@@ -23,6 +23,7 @@
 .tiles-pill.warn { color: var(--pioneertv-alarm); }
 .tiles-pill.warn::after { background: var(--pioneertv-alarm); border-color: var(--pioneertv-alarm); }
 .tiles-buttons { display: flex; align-items: center; gap: 0.7em; flex: none; }
+.tiles-buttons .pioneertv-round { font-size: 0.95em; }
 .tiles-btn {
   display: inline-flex; align-items: center; gap: 0.45em; padding: 0.55em 1em 0.55em 0.8em; cursor: pointer;
   font-weight: 600 !important; font-size: 0.95em !important; line-height: 1 !important; font-family: var(--pioneertv-font-ui) !important;

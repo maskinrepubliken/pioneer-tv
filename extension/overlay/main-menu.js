@@ -79,7 +79,7 @@ window.PioneerTV = window.PioneerTV || {};
       { label: 'Tillbaka', icon: 'back', run: () => b.back() },
       { label: 'Ladda om', icon: 'reload', run: () => b.reload() },
       { label: 'Tangentbord', icon: 'keyboard', run: () => b.keyboard() },
-      { label: 'Sök', icon: 'search', keep: true, run: search },
+      { label: 'Sök', icon: 'search', round: true, keep: true, run: search },
       { label: 'Inställningar', icon: 'gear', sub: settings },
       { label: 'Stäng av TV:n', icon: 'power', run: () => b.cec('tv_off'), disabled: !b.state.daemonConnected },
     ];

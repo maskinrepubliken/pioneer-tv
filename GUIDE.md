@@ -93,13 +93,17 @@ kinds, made of items of one shape (`browse/cards.js`):
 - **the shelf** (`browse/shelf.js`): sections one under the other, of rows,
   grids and type-only cards; a library's start, an artist, a search;
 - **the grid** (`browse/grid.js`): a long collection, only the rows around
-  the focus in the page, L1/R1 a letter, the search field filtering it, an
+  the focus in the page, L1/R1 a letter, Sök filtering it, an
   info panel when the library has one; a console's games, every album;
 - **the detail** (`browse/detail.js`): one thing, its picture, text,
   buttons, choices, tabs and a list; a film, a series, an album.
 
-`browse/page.js` does the rest for all of them: the hash, the heading, the
-search field, the legend, where the focus was, B. What plays is a player's:
+`browse/page.js` does the rest for all of them: the hash, the heading,
+search, the legend, where the focus was, B. Search is a round button, as on
+every page of ours (`pioneertv-round` in `content/paper.css`): A on it, or
+Y anywhere, opens the on-screen keyboard on a field out of sight, and the
+words stay beside the button; over a grid they filter it, elsewhere they
+search the library. B takes a filter away first. What plays is a player's:
 `players/video.js` (mpv, through the daemon) and `players/audio.js` (in the
 page, with "Spelas nu"). `shared/` has the canvas, the buttons and the
 legend (`base.css`), a view's messages (`views.js`), the full-screen
@@ -325,8 +329,8 @@ The Musik tile opens the browse page on top of [Jellyfin](https://jellyfin.org/)
 music library (`browse.html?library=musik`): Blanda allt, Album and
 Artister, then your playlists; a playlist or an album lists its songs beside
 its cover, with Spela and Blanda. Album and Artister are grids like a
-console's games: L1/R1 jump a letter, the search field filters them. Typing in the search field (Y opens the
-keyboard) searches songs, albums and artists. Films, series and clips have
+console's games: L1/R1 jump a letter, Sök filters them. Sök (the round
+button, or Y) searches songs, albums and artists. Films, series and clips have
 their own page ([Film and series](#film-and-series)).
 
 A song plays in the page itself and "Spelas nu" covers the screen: A or X
@@ -365,7 +369,7 @@ first is the language chosen last time in the same series (or film), on
 the detail page or in the pause panel (`/var/lib/pioneer-tv/video/choices.json`),
 and otherwise Jellyfin's call, from the user's own settings. A series opens on
 the first season not finished, its seasons as buttons above the episodes.
-The search field (Y opens the keyboard) and the main menu's Sök find
+Sök (the round button, or Y) and the main menu's Sök find
 films, series, episodes and clips by name.
 
 Videos play in **mpv**, not Chromium, started by the daemon

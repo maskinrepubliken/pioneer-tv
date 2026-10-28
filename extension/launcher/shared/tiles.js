@@ -7,7 +7,7 @@
 //
 //   M.tiles.sheet({ head, rows, legend }) -> the sheet
 //
-// head: [{ label, icon, disabled, run }] (buttons at the top right); rows:
+// head: [{ label, icon, round, disabled, run }] (buttons at the top right); rows:
 // [[{ label, art, color, disabled, run }], ...] (the tiles); legend: [[keys,
 // text], ...], a key 'arrows' for the four arrows. Each item gets its el.
 window.PioneerTV = window.PioneerTV || {};
@@ -39,13 +39,16 @@ window.PioneerTV = window.PioneerTV || {};
     return t;
   }
 
+  // A button at the top: its symbol and its name, or (round: Sök) its
+  // symbol alone in a ring (paper.css, pioneertv-round).
   function headButton(it) {
-    const btn = el('button', 'tiles-btn' + (it.disabled ? ' pioneertv-menu-disabled' : ''));
+    const btn = el('button', (it.round ? 'pioneertv-round' : 'tiles-btn') + (it.disabled ? ' pioneertv-menu-disabled' : ''));
     btn.type = 'button';
     btn.dataset.key = it.key || `btn:${it.label}`;
     if (it.disabled) btn.disabled = true;
     btn.innerHTML = M.icons.html(it.icon);
-    btn.appendChild(el('span', '', it.label));
+    if (it.round) { btn.title = it.label; btn.setAttribute('aria-label', it.label); }
+    else btn.appendChild(el('span', '', it.label));
     it.el = btn;
     return btn;
   }

@@ -23,6 +23,23 @@
 
 .pioneertv-icon { display: inline-block; vertical-align: -0.15em; width: 1em; height: 1em; }
 
+/* A round button: only its symbol, in a ring of line-strong (search, on
+   every page of ours). Chosen, it fills ochre inside the focus ring: the
+   page's (pioneertv-focus) or the overlay menu's (pioneertv-menu-active). */
+.pioneertv-round {
+  display: inline-flex; align-items: center; justify-content: center; flex: none; margin: 0; padding: 0;
+  width: 2.4em; height: 2.4em; font-size: inherit; cursor: pointer;
+  color: var(--pioneertv-ink-muted); background: transparent;
+  border: 1px solid var(--pioneertv-line-strong); border-radius: 50%;
+}
+.pioneertv-round .pioneertv-icon { font-size: 1.2em; }
+.pioneertv-round:hover { background: var(--pioneertv-paper-hover); color: var(--pioneertv-ink); }
+.pioneertv-round.pioneertv-focus, .pioneertv-round.pioneertv-menu-active {
+  background: var(--pioneertv-ochre); color: var(--pioneertv-on-ochre); border-color: var(--pioneertv-ochre);
+  outline: 0.15em solid var(--pioneertv-focus) !important; outline-offset: 0.2em !important;
+  box-shadow: none !important; border-radius: 50% !important;
+}
+
 /* Label: the system's etikett, mono capitals in ink-faint. */
 .pioneertv-label {
   font-family: var(--pioneertv-font-mono); font-size: 0.8em; letter-spacing: 0.1em;

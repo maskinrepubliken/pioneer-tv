@@ -90,6 +90,9 @@ window.PioneerTV = window.PioneerTV || {};
       if (this.isOpen()) return this.close();
       const active = this.deepActive();
       if (M.nav.isTextField(active)) return this.open(active);
+      // A page of ours whose search is a round button types into its own
+      // field, out of sight (browse/page.js).
+      if (this.searchField && this.searchField.isConnected) return this.open(this.searchField);
       // Type into the page's first text field without moving the d-pad focus
       // there: the ring stays where the person left it.
       const first = this.findTextField();

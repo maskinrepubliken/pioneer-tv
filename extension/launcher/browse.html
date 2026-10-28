@@ -22,7 +22,11 @@
       <h1 class="head-title" id="title"></h1>
       <span class="head-count" id="count"></span>
       <div class="head-tabs" id="tabs" hidden></div>
-      <input class="head-search" id="search" type="search" autocomplete="off">
+      <span class="head-query" id="query"></span>
+      <button class="pioneertv-round" id="search-btn" type="button" title="Sök" aria-label="Sök"></button>
+      <!-- The search button types into this through the on-screen keyboard,
+           which shows the text; the field itself stays out of sight. -->
+      <input class="head-search" id="search" type="search" autocomplete="off" tabindex="-1">
     </header>
     <main class="view" id="view" aria-live="polite"></main>
     <footer class="legend" id="legend"></footer>
