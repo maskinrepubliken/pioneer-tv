@@ -164,40 +164,11 @@ window.PioneerTV = window.PioneerTV || {};
       if (!it.keep) this.close();
       it.run();
     },
+    // The row of holes on a choice that opens a page (tiles.js); a page
+    // that never says it has loaded: the menu goes anyway.
     punch(el) {
-      const ns = 'http://www.w3.org/2000/svg', N = 7, PITCH = 20;
-      const svg = document.createElementNS(ns, 'svg');
-      svg.setAttribute('class', 'pioneertv-menu-opening');
-      svg.setAttribute('viewBox', `0 0 ${N * PITCH} ${PITCH}`);
-      svg.setAttribute('aria-hidden', 'true');
-      const holes = [];
-      for (let i = 0; i < N; i++) {
-        const c = document.createElementNS(ns, 'circle');
-        c.setAttribute('cx', String(i * PITCH + PITCH / 2));
-        c.setAttribute('cy', String(PITCH / 2));
-        c.setAttribute('r', '6');
-        svg.appendChild(c);
-        holes.push(c);
-      }
-      const detail = el.querySelector('.pioneertv-menu-detail');
-      if (detail) detail.hidden = true;
-      // A tile has a place for the row, under its picture.
-      const slot = el.querySelector('[data-punch]');
-      if (slot) slot.prepend(svg); else el.appendChild(svg);
-      el.setAttribute('aria-busy', 'true');
-      let step = 0;
-      const draw = () => { const lit = step++ % (N + 2); holes.forEach((h, i) => h.classList.toggle('punched', i < lit)); };
-      draw();
-      const timer = setInterval(draw, 160);
-      const stop = () => {
-        clearInterval(timer); clearTimeout(giveUp);
-        svg.remove(); el.removeAttribute('aria-busy');
-        if (detail) detail.hidden = false;
-        this.punching = null;
-      };
-      // A page that never says it has loaded: the menu goes anyway.
-      const giveUp = setTimeout(() => { stop(); this.close(); }, 25000);
-      this.punching = stop;
+      const stop = M.tiles.punch(el, () => { this.punching = null; this.close(); });
+      this.punching = () => { stop(); this.punching = null; };
     },
     // The d-pad moves to the nearest item that way on screen, so a grid of
     // cards and a list are walked alike; a plain list wraps round.
@@ -239,9 +210,11 @@ window.PioneerTV = window.PioneerTV || {};
 
   // ------------------------------------------------------------ the daemon's notes
   // Toasts from the daemon and the pages, a pad or a keyboard coming and
-  // going, the volume and the pad's colours.
+  // going, the volume, the screensaver (saver.js) and the pad's colours.
   hud.listen = function (b) {
     b.on('toast', (e) => hud.toast(e.text, e.icon || '', e.ms || 1800));
+    b.on('saver', (e) => (e.show ? M.saver.show() : M.saver.hide()));
+    b.on('rest', (e) => M.saver.rest(!!e.on));
     b.on('gamepad', (e) => hud.toast(`${e.label || 'Handkontroll'} ${e.connected ? 'ansluten' : 'frånkopplad'}`, 'gamepad'));
     b.on('keyboard_present', (e) => hud.toast(e.present ? 'Tangentbord anslutet' : 'Tangentbord frånkopplat', 'keyboard'));
     // Off by default: the TV draws its own volume bar (Settings → TV).

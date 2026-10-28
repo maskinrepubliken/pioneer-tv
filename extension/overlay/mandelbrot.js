@@ -1,4 +1,4 @@
-// Pioneer TV home: the Mandelbrot set, generated without end, like an open
+// Pioneer TV screensaver: the Mandelbrot set, generated without end, like an open
 // fire. It zooms in on one of a few places along the set's edge, out again
 // and on to the next, very slowly (a quarter of an hour a round). Nearly
 // all of it is ink; near the set's edge it glows as embers do, through rust

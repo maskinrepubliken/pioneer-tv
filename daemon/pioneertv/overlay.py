@@ -1,8 +1,8 @@
 """Who gets which events: the overlay or the page.
 
 The overlay (system/overlay.py, a WebKit page on labwc's top layer) draws
-every menu (the main menu, the pause panels) and every toast, over any
-window: Chromium, RetroArch or mpv. The pages draw
+every menu (the main menu, the pause panels), every toast and the
+screensaver, over any window: Chromium, RetroArch or mpv. The pages draw
 none of them; a page's toast is sent here and goes on to the overlay.
 
 Events the daemon broadcasts get a "target" ("overlay" or "page") here;
@@ -20,11 +20,13 @@ log = logging.getLogger("pioneertv.overlay")
 # Pad buttons whose meaning depends on whether the overlay's menu is open.
 ROUTED = ("keyboard", "escape")
 # Always the overlay's.
-OVERLAY = ("menu", "toast")
+OVERLAY = ("menu", "toast", "saver", "rest")
 # What the overlay may ask the page (through the extension) to do, and what
-# a page may ask of the overlay (a press on the home page opens the menu).
+# a page may ask of the overlay (the home page: a panel, Live or Sök).
 RELAYS = ("home", "back", "reload", "settings", "keyboard", "navigate")
 TO_OVERLAY = ("menu",)
+# The panels the home page may open alone in the overlay.
+PANELS = ("live", "search", "settings")
 
 
 class Router:
@@ -73,7 +75,10 @@ class Router:
                 event["ms"] = max(500, min(int(data["ms"]), 15000))
             return [event]
         elif t == "relay" and data.get("name") in TO_OVERLAY:
-            return [{"type": "event", "name": data["name"], "open": True, "target": "overlay"}]
+            event = {"type": "event", "name": data["name"], "open": True, "target": "overlay"}
+            if data.get("panel") in PANELS:
+                event["panel"] = data["panel"]
+            return [event]
         elif t == "relay" and data.get("name") in RELAYS:
             event = {"type": "event", "name": data["name"], "target": "page"}
             if data["name"] == "navigate":

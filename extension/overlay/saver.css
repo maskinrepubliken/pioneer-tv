@@ -1,0 +1,30 @@
+/* Pioneer TV screensaver (saver.js), drawn by the overlay over every
+   window: the Mandelbrot set like an open fire, a line of the Tao Te Ching
+   on it, and, resting (the TV off), the full-screen message "Vilar". */
+.pioneertv-saver {
+  position: fixed; inset: 0; z-index: 2147483646; margin: 0; padding: 0; border: 0;
+  width: 100vw; height: 100vh; max-width: none; max-height: none; overflow: hidden;
+  background: var(--pioneertv-surface-ink);
+}
+.pioneertv-saver .fractal { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+/* The line fills the screen, large: Fraunces' italic straight on the
+   fire, no box behind it, its size fitted to the screen (saver.js). It is
+   blended in (color-dodge): where the fire glows the letters glow with it,
+   over the ink they all but vanish, and they flicker as it does. */
+.pioneertv-saver .tao {
+  position: absolute; inset: 8vh 7vw; margin: 0;
+  display: flex; flex-direction: column; justify-content: center;
+  color: color-mix(in srgb, var(--pioneertv-ochre) 75%, var(--pioneertv-surface-ink));
+  mix-blend-mode: color-dodge;
+  pointer-events: none;
+}
+.pioneertv-saver .tao blockquote { margin: 0; font: italic 400 6vw/1.12 var(--pioneertv-font-prose); text-wrap: balance; }
+.pioneertv-saver .tao figcaption {
+  margin-top: 0.7em; font: 1.1vw/1 var(--pioneertv-font-mono); letter-spacing: 0.14em; text-transform: uppercase;
+  color: color-mix(in srgb, var(--pioneertv-ochre) 60%, var(--pioneertv-surface-ink));
+}
+
+/* Resting (the TV off): the fire and the line go; the full-screen message
+   says so, still, so nothing is drawn again. */
+.pioneertv-saver.resting .fractal, .pioneertv-saver.resting .tao { display: none; }

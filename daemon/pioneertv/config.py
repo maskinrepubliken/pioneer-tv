@@ -82,8 +82,10 @@ DEFAULTS: dict[str, Any] = {
     "mouse": {"mode": "virtual", "deadzone": 0.15, "max_speed": 1100.0, "curve": 2.0, "hz": 60},
     # volume_toast: our own "Volym +/−" note; off, since the TV shows its own volume.
     # home_minutes: left alone anywhere else, the box goes home after this
-    # long; tv_off_minutes: left alone at home, the TV goes off (0: never).
-    "ui": {"auto_keyboard": True, "volume_toast": False, "home_minutes": 10, "tv_off_minutes": 5},
+    # long; saver_minutes: with no pad connected and left alone, the
+    # screensaver; tv_off_minutes: the screensaver up that long, the TV
+    # goes off (0: never, for each).
+    "ui": {"auto_keyboard": True, "volume_toast": False, "home_minutes": 10, "saver_minutes": 2, "tv_off_minutes": 5},
     "chromium": {"log_file": "/home/pi/.pioneer-tv/chromium.log"},
     "remote": {"token": ""},
     # RomM for the Spel pages: base URL and a client API token (see /romm/ in server.py).

@@ -1,6 +1,6 @@
 """idle.py: left alone anywhere, home (a held game or film put away first);
-left alone at home, the TV off and the home page resting; never while
-something plays. `python -m unittest tests.test_idle` from daemon/."""
+with no pad, the screensaver; up long enough, the TV off and resting; never
+while something plays. `python -m unittest tests.test_idle` from daemon/."""
 import asyncio
 import time
 import unittest
@@ -15,6 +15,7 @@ class IdleTests(unittest.IsolatedAsyncioTestCase):
         self.busy = False
         self.home = False
         self.held = False
+        self.pads = 0
         idle_module.HOME_SETTLE = 0
 
         async def emit(msg):
@@ -28,18 +29,21 @@ class IdleTests(unittest.IsolatedAsyncioTestCase):
         async def put_away():
             self.put.append(self.held)
             return self.held
-        self.cfg = {"ui": {"home_minutes": 10, "tv_off_minutes": 5}}
-        self.idle = Idle(self.cfg, emit, tv_off, busy=lambda: self.busy, at_home=lambda: self.home, put_away=put_away)
+        self.cfg = {"ui": {"home_minutes": 10, "saver_minutes": 2, "tv_off_minutes": 5}}
+        self.idle = Idle(self.cfg, emit, tv_off, busy=lambda: self.busy, at_home=lambda: self.home,
+                         pads=lambda: self.pads, put_away=put_away)
 
     def alone(self, minutes):
         self.idle.last_input = time.monotonic() - minutes * 60
-        if self.idle.home_since is not None:
-            self.idle.home_since = min(self.idle.home_since, self.idle.last_input)
 
     def named(self, name):
         return [e for e in self.events if e.get("name") == name]
 
+    def shown(self):
+        return [e["show"] for e in self.named("saver")]
+
     async def test_away_from_home_then_home_quietly_once(self):
+        self.pads = 1
         self.alone(9)
         await self.idle.check()
         self.assertEqual(self.named("home"), [])
@@ -50,62 +54,95 @@ class IdleTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.put, [False])
 
     async def test_a_held_game_or_film_is_put_away_first(self):
+        self.pads = 1
         self.held = True
         self.alone(11)
         await self.idle.check()
         self.assertEqual(self.put, [True])
         self.assertEqual(len(self.named("home")), 1)
 
-    async def test_at_home_the_tv_off_counted_from_arriving(self):
-        self.home = True
-        self.alone(30)                         # long alone, but only just home
-        self.idle.home_since = time.monotonic() - 60
+    async def test_no_pad_the_screensaver_then_the_tv_off_once(self):
+        self.alone(1.9)
         await self.idle.check()
-        self.assertEqual(self.offs, [])
-        self.idle.home_since = time.monotonic() - 5.1 * 60
+        self.assertEqual(self.shown(), [])
+        self.alone(2.1)
         await self.idle.check()
         await self.idle.check()
-        self.assertEqual(self.offs, [True])    # once
+        self.assertEqual(self.shown(), [True])                 # once
+        self.idle.saver_since = time.monotonic() - 5.1 * 60
+        await self.idle.check()
+        await self.idle.check()
+        self.assertEqual(self.offs, [True])                    # once
         self.assertEqual(self.named("rest"), [{"type": "event", "name": "rest", "on": True}])
-        self.assertEqual(self.named("home"), [])
 
-    async def test_a_press_wakes_the_home_page(self):
+    async def test_a_pad_connected_keeps_it_away(self):
+        self.pads = 1
         self.home = True
+        self.alone(60)
         await self.idle.check()
-        self.idle.home_since = time.monotonic() - 6 * 60
-        self.alone(6)
+        self.assertEqual((self.shown(), self.offs), ([], []))
+
+    async def test_the_press_that_wakes_does_nothing_else(self):
+        self.alone(3)
         await self.idle.check()
-        self.assertFalse(self.idle.input())   # never swallowed here
+        self.assertTrue(self.idle.input())                     # swallowed
+        await asyncio.sleep(0)
+        self.assertEqual(self.shown(), [True, False])
+        self.assertFalse(self.idle.input())                    # the next one acts
+
+    async def test_a_pad_switched_on_takes_it_away(self):
+        self.alone(3)
+        await self.idle.check()
+        self.idle.pad_connected()
+        await asyncio.sleep(0)
+        self.assertEqual(self.shown(), [True, False])
+
+    async def test_a_press_wakes_it_from_resting(self):
+        self.alone(3)
+        await self.idle.check()
+        self.idle.saver_since = time.monotonic() - 6 * 60
+        await self.idle.check()
+        self.idle.input()
         await asyncio.sleep(0)
         self.assertEqual([e["on"] for e in self.named("rest")], [True, False])
         self.assertFalse(self.idle.tv_off_sent)
+
+    async def test_the_tv_off_by_its_remote_rests_too(self):
+        self.idle.tv_standby()
+        await asyncio.sleep(0)
+        self.assertEqual(self.shown(), [True])
+        self.assertEqual(self.named("rest"), [{"type": "event", "name": "rest", "on": True}])
+        self.idle.tv_on()
+        await asyncio.sleep(0)
+        self.assertEqual(self.shown(), [True, False])
+        self.assertFalse(self.idle.resting)
 
     async def test_never_while_a_game_or_a_film_plays(self):
         self.busy = True
         self.alone(30)
         await self.idle.check()
-        self.assertEqual((self.named("home"), self.offs), ([], []))
+        self.assertEqual((self.named("home"), self.shown(), self.offs), ([], [], []))
         # It ended: the count starts from then.
         self.busy = False
         await self.idle.check()
-        self.assertEqual(self.named("home"), [])
+        self.assertEqual(self.shown(), [])
 
     async def test_never_while_a_page_plays(self):
         self.idle.page({"playing": True})
         self.alone(30)
         await self.idle.check()
-        self.assertEqual(self.named("home"), [])
+        self.assertEqual(self.shown(), [])
         self.idle.page({"playing": False})
-        self.alone(11)
+        self.alone(3)
         await self.idle.check()
-        self.assertEqual(len(self.named("home")), 1)
+        self.assertEqual(self.shown(), [True])
 
     async def test_a_page_playing_report_runs_out(self):
         self.idle.page({"playing": True})
         self.idle.playing_until = time.monotonic() - 1    # no word from the page since
-        self.alone(11)
+        self.alone(3)
         await self.idle.check()
-        self.assertEqual(len(self.named("home")), 1)
+        self.assertEqual(self.shown(), [True])
 
     async def test_a_real_keyboard_counts(self):
         self.alone(9.9)
@@ -113,25 +150,10 @@ class IdleTests(unittest.IsolatedAsyncioTestCase):
         self.assertLess(time.monotonic() - self.idle.last_input, 1)
 
     async def test_zero_is_never(self):
-        self.cfg["ui"] = {"home_minutes": 0, "tv_off_minutes": 0}
+        self.cfg["ui"] = {"home_minutes": 0, "saver_minutes": 0, "tv_off_minutes": 0}
         self.alone(600)
         await self.idle.check()
-        self.home = True
-        await self.idle.check()
-        self.idle.home_since = time.monotonic() - 3600
-        await self.idle.check()
-        self.assertEqual((self.named("home"), self.offs), ([], []))
-
-    async def test_the_tv_coming_on_starts_afresh(self):
-        self.home = True
-        await self.idle.check()
-        self.idle.home_since = time.monotonic() - 6 * 60
-        self.alone(6)
-        await self.idle.check()
-        self.idle.tv_on()
-        await asyncio.sleep(0)
-        self.assertFalse(self.idle.resting)
-        self.assertFalse(self.idle.tv_off_sent)
+        self.assertEqual((self.named("home"), self.shown(), self.offs), ([], [], []))
 
 
 class DispatcherSwallows(unittest.IsolatedAsyncioTestCase):

@@ -37,6 +37,8 @@ async def amain(cfg: dict) -> None:
         await emit(msg)
         if msg.get("name") == "tv" and msg.get("power") == "on" and idle:
             idle.tv_on()
+        if msg.get("name") == "tv" and msg.get("power") == "standby" and idle:
+            idle.tv_standby()
         if msg.get("name") == "tv" and msg.get("power") == "standby" and cfg["cec"].get("home_on_standby", True):
             log.info("TV went to standby: back to the launcher")
             await emit({"type": "event", "name": "home", "quiet": True})
@@ -184,6 +186,8 @@ async def amain(cfg: dict) -> None:
     async def on_gamepad_change(connected: bool, name: str, label: str | None = None, at_start: bool = False) -> None:
         bluetooth.note_seen(name)
         await emit({"type": "event", "name": "gamepad", "connected": connected, "device": name, "label": label})
+        if connected and not at_start and idle:
+            idle.pad_connected()
         # A pad that was already on when the daemon started (a restart or an
         # update) is not someone reaching for it: it must not wake the TV.
         if connected and not at_start and cfg["cec"]["tv_on_gamepad_connect"]:
@@ -227,7 +231,7 @@ async def amain(cfg: dict) -> None:
     server.hooks["video"] = video
     await video.reap_strays()
 
-    # Left alone: home, then the TV off (idle.py). A game or a film held on
+    # Left alone: home, the screensaver, then the TV off (idle.py). A game or a film held on
     # its pause panel is not playing; left there, it is put away first.
     def playing() -> bool:
         game = games.state in ("loading", "running", "quitting")
@@ -246,7 +250,8 @@ async def amain(cfg: dict) -> None:
         return did
 
     idle = Idle(cfg, emit, tv_off=lambda: dispatcher.cec_command("tv_off"), busy=playing,
-                at_home=lambda: "/launcher/index.html" in (server.current_url or ""), put_away=put_away)
+                at_home=lambda: "/launcher/index.html" in (server.current_url or ""),
+                pads=lambda: len(pads_mgr.pads()), put_away=put_away)
     server.hooks["idle"] = idle
     dispatcher.on_input = idle.input
     mouse.on_move = idle.input

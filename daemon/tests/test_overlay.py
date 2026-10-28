@@ -12,9 +12,9 @@ from pioneertv.server import Server
 
 
 class Routing(unittest.TestCase):
-    def test_menus_and_toasts_are_the_overlays(self):
+    def test_menus_toasts_and_the_screensaver_are_the_overlays(self):
         r = Router()
-        for name in ("menu", "toast"):
+        for name in ("menu", "toast", "saver", "rest"):
             self.assertEqual(r.target(name), "overlay", name)
         self.assertEqual(r.target("keyboard"), "page")      # Y types into the page
         self.assertEqual(r.target("escape"), "page")

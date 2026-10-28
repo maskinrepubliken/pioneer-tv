@@ -174,7 +174,7 @@ class Server:
                             await self.hooks["video"].media(event["action"])
                 elif t == "loaded":
                     self.current_url = data.get("url")
-                    await self.broadcast({"type": "event", "name": "loaded", "target": "overlay"})
+                    await self.broadcast({"type": "event", "name": "loaded", "url": self.current_url, "target": "overlay"})
                 elif t == "activity" and self.hooks.get("idle"):
                     self.hooks["idle"].page(data)
                 elif t == "debug":

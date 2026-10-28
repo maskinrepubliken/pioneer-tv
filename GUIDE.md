@@ -42,7 +42,7 @@ what was learned on the way.
 | Right stick | Mouse pointer; click on the stick to left-click |
 | Start | Main menu (also: hold Y) |
 | Select | Status toast |
-| Guide / Home / PS / Xbox | Main menu, over whatever is on screen (press again to close it); in a game or a film, the pause panel instead. Hold: home (the screensaver) with the main menu open. Also wakes the TV and switches input when the pad connects |
+| Guide / Home / PS / Xbox | Main menu, over whatever is on screen (press again to close it); in a game or a film, the pause panel instead. Hold: home. Also wakes the TV and switches input when the pad connects |
 
 In a film or an episode playing in mpv, A, B and X pause it and open its
 pause panel, left and right seek ten seconds, L1 and R1 a minute, and
@@ -57,11 +57,11 @@ The TV remote works too: keys the TV forwards over CEC are mapped in `[cec.remot
  gamepad ──evdev──▶ daemon ──uinput──▶ labwc ──▶ Chromium (kiosk, --load-extension)
                       │                   │          ├─ content scripts: spatial nav, keyboard, HUD
                       │                   │          ├─ background: single tab, home, dev shortcuts
-                      │◀── ws://127.0.0.1:8765/ws ───┤  home page: the screensaver
+                      │◀── ws://127.0.0.1:8765/ws ───┤  home page: the services as tiles
                       │                   │             settings page: status, Wi-Fi, Bluetooth, services
                       │                   ├────▶ RetroArch (a game, started by the daemon)
                       │                   ├────▶ mpv (a film from Jellyfin, started by the daemon)
-                      │◀── ws ────────────┴────▶ overlay (WebKit, top layer): main menu, pause panels, toasts
+                      │◀── ws ────────────┴────▶ overlay (WebKit, top layer): main menu, pause panels, toasts, screensaver
                       └──cec-ctl──▶ /dev/cec0 ──▶ TV
 ```
 
@@ -80,7 +80,7 @@ page, each with a folder of its own code; what several of them use is in
 
 | Page | Code | What it is |
 | --- | --- | --- |
-| `index.html` | `home/` | Home and the screensaver: the fire, a line of the Tao Te Ching, resting |
+| `index.html` | `home/` | Home: the services as tiles, Sök, Inställningar, the TV's off button |
 | `browse.html` | `browse/`, `libraries/`, `players/` | One page for every library: `?library=spel`, `musik` or `film` |
 | `game.html` | `game/` | A game on its way, before RetroArch covers the screen |
 | `radio.html` | `radio/` | A Sveriges Radio channel |
@@ -211,16 +211,17 @@ Both behaviours are toggles on the TV page in settings. The daemon also polls
 the TV's power state every 30 seconds, because a set switched off with its own
 remote does not always announce it.
 
-Left alone, the box goes home, and home is the screensaver: the
+Left alone, the box goes home, and with no pad connected the screensaver
+comes over everything (the overlay draws it, `overlay/saver.js`): the
 Mandelbrot set, generated without end, like an open fire
-(`launcher/mandelbrot.js`, on the GPU at a third of the screen's width and
+(`overlay/mandelbrot.js`, on the GPU at a third of the screen's width and
 fifteen frames a second). It zooms in on one place along the set's edge,
 out, and on to the next, a quarter of an hour a round. Nearly all of it is
 ink; near the set's edge it glows as embers do, through rust to a dimmed
 ochre, brightest at the foot of the screen, flickering gently (a few slow
 waves out of step) while the edges waver upwards like the air over a
 flame. On it, with no box behind it, a line of the Tao Te Ching
-(`launcher/tao.js`, our own Swedish renderings) fills the screen, blended
+(`overlay/tao.js`, our own Swedish renderings) fills the screen, blended
 into the fire (color-dodge: the letters glow where it glows and all but
 vanish over the ink), and changes every three minutes. No clock, no date.
 
@@ -228,21 +229,25 @@ vanish over the ink), and changes every three minutes. No clock, no date.
   home. A game held on its pause panel is quit on the way (its state is
   saved, as Avsluta does) and a film held on its panel is stopped (its
   position is saved); every menu in the overlay closes.
-- **At home**, after five minutes without a button (counted from the last
-  press or from arriving, whichever is later), the TV is turned off over
-  CEC and the home page rests: "Vilar" in the full-screen message, nothing moving,
-  until a button wakes the TV. The TV turned off with its own remote does the same.
+- **With no pad connected**, after two minutes without a button, the
+  screensaver. A button takes it away and does nothing else; a pad
+  switched on takes it away too. A pad connected keeps it away (8BitDo pads
+  switch themselves off after a while, and then it comes).
+- **The screensaver up five minutes**, the TV is turned off over CEC and
+  the screensaver rests: "Vilar" in the full-screen message, nothing
+  moving, until a button wakes the TV. The TV turned off with its own
+  remote does the same.
 - **Never while something plays**: a game running in RetroArch, a film
   running in mpv, or a page whose video or audio plays, in any of its
   frames, or that is in game mode; the count starts again when it ends. A
   game or a film held on its pause panel is not playing.
 
-The daemon decides (`daemon/pioneertv/idle.py`): it sees every button and
-the pointer, the pages tell it what plays and when a real keyboard or mouse
-is used (`main.js`, `playing.js`), and the extension tells it which page is
-on screen (`loaded`). A press on the home page opens the main menu. Both
-times are on the TV page in settings (`ui.home_minutes`, `ui.tv_off_minutes`;
-0 is never).
+The daemon decides (`daemon/pioneertv/idle.py`): it sees every button, the
+pointer and the pads coming and going, the pages tell it what plays and
+when a real keyboard or mouse is used (`main.js`, `playing.js`), and the
+extension tells it which page is on screen (`loaded`). The times are on the
+TV page in settings (`ui.home_minutes`, `ui.saver_minutes`,
+`ui.tv_off_minutes`; 0 is never).
 
 ## Games
 
@@ -563,14 +568,15 @@ wlr-randr --output HDMI-A-1 --off      # black until --on or the display restart
 layer (wlr-layer-shell, through gtk4-layer-shell), above every other window:
 Chromium, RetroArch and mpv. It shows the daemon's `/ext/overlay/index.html`
 (`extension/overlay/`), and it draws everything of the box's own over the
-picture: every menu and every toast. The pages draw none of
+picture: every menu, every toast and the screensaver. The pages draw none of
 them; a page's toast is sent to the daemon and on to the overlay
 (`content/hud.js`). A page that does not load (the daemon not up yet) is
 tried again every three seconds.
 
-- **The main menu** (`overlay/main-menu.js`): Home opens it over anything,
-  holding Home goes to the home page and opens it there. A sheet over nearly
-  the whole screen, laid out as the start page was: the status pills and
+- **The main menu** (`overlay/main-menu.js`): Home opens it over anything
+  but the home page, which is the same tiles (`launcher/shared/tiles.js`);
+  holding Home goes to the home page. A sheet over nearly the whole screen:
+  the status pills and
   Tillbaka, Ladda om, Tangentbord, Sök, Inställningar and Stäng av TV:n at
   the top, the services as big tiles in two rows (config `services`; Live
   for the channels), the pad's legend at the foot. Live and Inställningar
@@ -585,9 +591,13 @@ tried again every three seconds.
   panels of a game and a film are the same card. The d-pad moves to the
   nearest choice that way on screen, so tiles, buttons and lists are walked
   alike.
-- **The home page** (`launcher/index.html`) is the screensaver, the
-  Mandelbrot set ([The TV (HDMI-CEC)](#the-tv-hdmi-cec) above); a
-  press there opens the main menu.
+- **The home page** (`launcher/index.html`, `home/home.js`) is a page of
+  its own: the same tiles and status, Sök, Inställningar and the TV's off
+  button at the top. Its Live tile, Sök and Inställningar ask the overlay
+  for that panel alone (`relay` with a `panel`).
+- **The screensaver** (`overlay/saver.js`), over everything when no pad is
+  connected and nobody has pressed anything ([The TV
+  (HDMI-CEC)](#the-tv-hdmi-cec) above); it closes every menu.
 
 Who gets Home, Y and B is decided in the daemon (`daemon/pioneertv/overlay.py`):
 Home, toasts and the screensaver always go to the overlay; Y and B go to the
@@ -613,9 +623,10 @@ paused RetroArch. The overlay hands the keyboard back only once every key
 is up: Chromium given the keyboard while the B that closed the menu was
 still down took it as its own Escape and left fullscreen.
 
-**Not yet tried on the box (27 October):** the main menu in the overlay
+**Not yet tried on the box (28 October):** the main menu in the overlay
 with its submenus, Sök on the overlay's keyboard, the toasts sent from the
-pages and the settings page, and the clock as the home page.
+pages and the settings page, the home page of tiles, and the screensaver in
+the overlay (WebGL in WebKitGTK over the other windows).
 
 ## When the box hangs
 

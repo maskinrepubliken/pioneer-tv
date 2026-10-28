@@ -1,0 +1,89 @@
+/* Pioneer TV tiles (tiles.js): the home page, and the overlay's main menu
+   over any window. 1em = 1/80 of the width (16px at 1280), so a laptop
+   window and the TV look the same. The system allows no motion except a
+   response to input: focus is an instant change of ring and marker, the
+   page's (pioneertv-focus) or the overlay menu's (pioneertv-menu-active). */
+
+.tiles-sheet {
+  display: flex; flex-direction: column; padding: 3.2vh 3.4vw 1.2vh;
+  font-size: 1.25vw; color: var(--pioneertv-ink); background: var(--pioneertv-paper);
+}
+.tiles-sheet button { font: inherit; margin: 0; }
+
+/* ---- the top: the status pills at the left, the buttons at the right ---- */
+.tiles-head { display: flex; align-items: center; justify-content: space-between; gap: 1.5em; min-height: 2.6em; }
+.tiles-pills { display: flex; align-items: center; gap: 1.2em; min-width: 0; }
+.tiles-pill { display: inline-flex; align-items: center; gap: 0.35em; font-size: 1.1em; color: var(--pioneertv-ink-faint); }
+.tiles-pill::after {
+  content: ""; flex: none; width: 0.5em; height: 0.5em; border-radius: 50%;
+  border: 0.12em solid var(--pioneertv-line-strong); background: transparent;
+}
+.tiles-pill.on { color: var(--pioneertv-ink); }
+.tiles-pill.on::after { background: var(--pioneertv-surface-forest); border-color: var(--pioneertv-surface-forest); }
+.tiles-pill.warn { color: var(--pioneertv-alarm); }
+.tiles-pill.warn::after { background: var(--pioneertv-alarm); border-color: var(--pioneertv-alarm); }
+.tiles-buttons { display: flex; align-items: center; gap: 0.7em; flex: none; }
+.tiles-btn {
+  display: inline-flex; align-items: center; gap: 0.45em; padding: 0.55em 1em 0.55em 0.8em; cursor: pointer;
+  font-weight: 600 !important; font-size: 0.95em !important; line-height: 1 !important; font-family: var(--pioneertv-font-ui) !important;
+  color: var(--pioneertv-ink); white-space: nowrap; background: transparent;
+  border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-pill);
+}
+.tiles-btn .pioneertv-icon { font-size: 1.15em; color: var(--pioneertv-ink-muted); }
+.tiles-btn.pioneertv-menu-active, .tiles-btn.pioneertv-focus {
+  background: var(--pioneertv-ochre); border-color: var(--pioneertv-ochre); color: var(--pioneertv-on-ochre);
+  outline: none !important; box-shadow: none !important;
+}
+.tiles-btn.pioneertv-menu-active .pioneertv-icon, .tiles-btn.pioneertv-focus .pioneertv-icon { color: var(--pioneertv-on-ochre); }
+.tiles-btn.pioneertv-menu-disabled { color: var(--pioneertv-ink-faint); border-color: var(--pioneertv-line); }
+
+/* ---- the tiles: two rows, each tile wider as there are fewer ---- */
+.tiles-content { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 3vh; min-height: 0; padding-top: 1.5vh; }
+.tiles-row { display: grid; grid-template-columns: repeat(var(--tiles, 3), 1fr); gap: 1.3em; }
+.tiles-tile {
+  position: relative; display: flex; flex-direction: column; justify-content: flex-end; cursor: pointer; text-align: center;
+  height: 31vh; padding: 1.3em 1.5em 1.2em; overflow: hidden; color: var(--pioneertv-ink);
+}
+.tiles-row[style*="--tiles: 5"] .tiles-tile { padding-left: 1.2em; padding-right: 1.2em; }
+.tiles-art { flex: 1; display: flex; align-items: center; justify-content: center; padding: 0.6em 0.4em 0; min-height: 0; }
+.tiles-art .art-svg, .tiles-art img { max-height: 100%; max-width: 100%; width: auto; height: 100%; object-fit: contain; }
+.tiles-text { display: block; padding-top: 0.5em; }
+/* The band is the ochre marker: empty on a resting tile, lit on the chosen one. */
+.tiles-band { position: absolute; top: 0; left: 0; right: 0; height: 0.45em; background: transparent; }
+/* The title in Rubik, the wordmark's face: always capitals and Black. */
+.tiles-name {
+  display: block; font-family: var(--pioneertv-font-display); font-weight: 900; font-size: 1.9em; line-height: 1.02;
+  letter-spacing: -0.01em; text-transform: uppercase;
+}
+.tiles-row[style*="--tiles: 4"] .tiles-name { font-size: 1.7em; }
+.tiles-row[style*="--tiles: 5"] .tiles-name { font-size: 1.15em; }
+.tiles-index {
+  position: absolute; top: 1.1em; right: 1.3em;
+  font-family: var(--pioneertv-font-mono); font-size: 0.9em; font-variant-numeric: tabular-nums; color: var(--pioneertv-ink-faint);
+}
+/* The chosen tile: a solid ring with air around it, the ochre marker, and
+   the surface switching to paper-hover. */
+.tiles-tile.pioneertv-menu-active, .tiles-tile.pioneertv-focus {
+  background: var(--pioneertv-paper-hover); border-color: var(--pioneertv-ink);
+  outline: 0.25em solid var(--pioneertv-focus) !important; outline-offset: 0.3em !important; z-index: 2;
+  box-shadow: none !important; border-radius: var(--pioneertv-radius-card) !important;
+}
+.tiles-tile.pioneertv-menu-active .tiles-band, .tiles-tile.pioneertv-focus .tiles-band, .tiles-tile[aria-busy] .tiles-band { background: var(--pioneertv-ochre); }
+
+/* ---- a choice opening a page: its row of holes (tiles.js, punch) ---- */
+.pioneertv-menu-opening { margin-left: auto; width: 98px; height: auto; flex: none; overflow: visible; }
+.pioneertv-menu-opening circle { fill: transparent; stroke: var(--pioneertv-line-strong); stroke-width: 2; }
+.pioneertv-menu-opening circle.punched { fill: var(--pioneertv-ochre); stroke: var(--pioneertv-ochre); }
+.tiles-text .pioneertv-menu-opening { display: block; width: 46%; margin: 0 auto 0.55em; }
+
+/* ---- the legend ---- */
+.tiles-legend {
+  display: flex; align-items: center; gap: 1.8em; height: 2.6em; margin-top: 1vh;
+  border-top: 1px solid var(--pioneertv-line);
+  font-size: 0.95em; color: var(--pioneertv-ink-muted);
+}
+.tiles-legend span { display: inline-flex; align-items: center; gap: 0.45em; }
+.tiles-legend i { display: inline-flex; font-size: 0.8em; font-style: normal; color: var(--pioneertv-ink-muted); }
+.tiles-legend .pioneertv-kbd { font-size: 0.75em; }
+.tiles-legend .credit { margin-left: auto; display: inline-flex; }
+.tiles-legend .credit img { display: block; width: 8.5em; min-width: 120px; height: auto; }

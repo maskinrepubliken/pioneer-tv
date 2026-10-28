@@ -1,66 +1,59 @@
-// Pioneer TV home page, and the box's screensaver: the Mandelbrot set,
-// generated without end (mandelbrot.js), and a line of the Tao Te Ching
-// (tao.js). Everything to choose from is in the main menu, which the
-// overlay draws over any window: Home opens it, and so does any press here
-// (the daemon passes it on to the overlay).
-//
-// Left alone here, the daemon turns the TV off (idle.py) and says "rest":
-// the fire goes out and a full-screen message (screen.js, as when a game
-// or a film starts) says "Vilar", still, until the TV is on again.
+// Pioneer TV home page: the box's services as big tiles, its status and a
+// few buttons at the top (launcher/shared/tiles.js, the same sheet the
+// overlay's main menu draws over other windows). A tile opens its service;
+// Live, Sök and Inställningar are panels the overlay draws over this page
+// (the daemon passes the ask on). The screensaver is not this page: the
+// overlay draws it over everything when no pad is connected (idle.py).
 (function (M) {
   const b = M.bridge;
+  const S = M.services;
   M.launcherUrl = location.href;
-  const $ = (id) => document.getElementById(id);
 
-  const fractal = M.mandelbrot($('fractal'));
+  const panel = (name) => () => b.relay('menu', { panel: name });
+  let opening = null;              // the tile on its way to its page
+  function open(it) {
+    if (opening) return;
+    opening = M.tiles.punch(it.el, () => { opening = null; });
+    b.navigate(S.resolve(it.url));
+  }
+  // Back on a page kept in the back/forward cache: no tile is opening.
+  window.addEventListener('pageshow', (e) => { if (e.persisted && opening) { opening(); opening = null; } });
 
-  // A new line every few minutes, as large as the screen takes it.
-  const LINE_MS = 3 * 60 * 1000;
-  let order = [];
-  let lineTimer = null;
-  function line() {
-    if (!order.length) order = M.tao.map((_, i) => i).sort(() => Math.random() - 0.5);
-    const [text, chapter] = M.tao[order.pop()];
-    $('tao-text').textContent = `”${text}”`;
-    $('tao-where').textContent = `Tao Te Ching · ${chapter}`;
-    fitLine();
+  let sheet = null;
+  let drawnFor = '';
+  function draw() {
+    const { first, second, channels } = S.rows();
+    const key = JSON.stringify([first, second, channels.length]);
+    if (sheet && key === drawnFor) return;
+    drawnFor = key;
+    const focused = document.activeElement && document.activeElement.dataset.key;
+    const service = (s) => ({ key: `tile:${s.id}`, label: s.name, art: S.art(s), color: s.color, url: s.url });
+    const row2 = second.map(service);
+    if (channels.length) row2.push({ key: 'tile:live', label: S.LIVE.name, art: S.art(S.LIVE), color: S.LIVE.color, panel: 'live' });
+    const rows = [first.map(service), row2];
+    const head = [
+      { key: 'search', label: 'Sök', icon: 'search', run: panel('search') },
+      { key: 'settings', label: 'Inställningar', icon: 'gear', run: panel('settings') },
+      { key: 'tv-off', label: 'Stäng av TV:n', icon: 'power', run: () => b.cec('tv_off') },
+    ];
+    const next = M.tiles.sheet({ head, rows, legend: [[['arrows'], 'navigera'], [['A'], 'välj'], [['Y'], 'tangentbord']] });
+    for (const it of rows.flat()) it.el.addEventListener('click', () => (it.panel ? panel(it.panel)() : open(it)));
+    for (const it of head) it.el.addEventListener('click', it.run);
+    if (sheet) sheet.replaceWith(next); else document.body.appendChild(next);
+    sheet = next;
+    M.tiles.fitNames(sheet);
+    if (document.fonts) document.fonts.ready.then(() => M.tiles.fitNames(sheet));
+    const again = (focused && sheet.querySelector(`[data-key="${CSS.escape(focused)}"]`)) || sheet.querySelector('.tiles-tile');
+    requestAnimationFrame(() => M.nav.focus(again, { scroll: false }));
   }
-  // The largest size at which the line and its chapter fit the screen.
-  function fitLine() {
-    const box = $('tao');
-    const quote = $('tao-text');
-    let lo = 2, hi = 16;                       // vw
-    for (let i = 0; i < 12; i++) {
-      const mid = (lo + hi) / 2;
-      quote.style.fontSize = `${mid}vw`;
-      if (box.scrollHeight <= box.clientHeight && quote.scrollWidth <= quote.clientWidth) lo = mid; else hi = mid;
-    }
-    quote.style.fontSize = `${lo}vw`;
-  }
-  window.addEventListener('resize', fitLine);
-  if (document.fonts) document.fonts.ready.then(fitLine);
-  function lines(on) {
-    clearInterval(lineTimer);
-    lineTimer = null;
-    if (on) { line(); lineTimer = setInterval(line, LINE_MS); }
-  }
-  lines(true);
 
-  // Resting: the TV is off. Nothing moves, nothing is drawn.
-  function rest(on) {
-    if (document.documentElement.classList.contains('resting') === on) return;
-    document.documentElement.classList.toggle('resting', on);
-    if (on) { fractal.stop(); lines(false); M.screen.show('Vilar', 'Tryck en knapp för att väcka TV:n'); }
-    else { M.screen.hide(); fractal.start(); lines(true); }
-  }
-  b.on('rest', (e) => rest(!!e.on));
-  b.on('tv', (e) => { if (e.power) rest(e.power === 'standby'); });
-
-  const openMenu = () => b.relay('menu');
-  window.addEventListener('keydown', (e) => {
-    if (e.key.startsWith('Arrow') || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openMenu(); }
+  // The services come with the daemon's config; the status pills follow it.
+  b.on('state', () => {
+    draw();
+    const pills = sheet.querySelector('.tiles-pills');
+    if (pills) pills.replaceWith(M.tiles.pills());
   });
-  window.addEventListener('click', openMenu);
+  window.addEventListener('resize', () => sheet && M.tiles.fitNames(sheet));
 
-  M.home = { fractal, rest, line };
+  draw();
 })(window.PioneerTV);

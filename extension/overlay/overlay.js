@@ -1,4 +1,5 @@
-// Pioneer TV overlay page: every menu and every toast, over every window.
+// Pioneer TV overlay page: every menu, every toast and the screensaver,
+// over every window.
 //
 // Loaded by system/overlay.py, a WebKit view on labwc's top layer, from the
 // daemon (/ext/overlay/). It talks to the daemon over the WebSocket like the
@@ -50,19 +51,27 @@ window.PioneerTV = window.PioneerTV || {};
     if (!s.daemonConnected && menu.isOpen()) menu.close();
   });
 
-  // Home: the main menu, or away with it. Held, the page goes home and the
-  // main menu opens over it; a press on the home page opens it too (open).
-  // Home the daemon sends after a while alone (quiet) closes everything.
-  b.on('menu', (e) => (e && e.open ? (menu.isOpen() || menu.open(M.mainMenu.spec())) : menu.toggle()));
-  b.on('home', (e) => {
-    if (e && e.quiet) { if (M.keyboard.isOpen()) M.keyboard.close(); menu.close(); }
-    else if (!held) menu.open(M.mainMenu.spec());
+  // Home: the main menu, or away with it; on the home page, which is the
+  // same tiles, nothing (or away with a panel the page opened). The home
+  // page asks for a panel of its own (Live, Sök, Inställningar). Held, Home
+  // goes to the home page: away with everything here.
+  let atHome = false;
+  b.on('loaded', (e) => { if (e && e.url) atHome = /\/launcher\/index\.html/.test(e.url); });
+  const away = () => { if (M.keyboard.isOpen()) M.keyboard.close(); menu.close(); };
+  b.on('menu', (e) => {
+    if (e && e.panel) return M.mainMenu.panel(e.panel);
+    if (e && e.open) return menu.isOpen() || menu.open(M.mainMenu.spec());
+    if (atHome && !menu.isOpen()) return;
+    menu.toggle();
   });
+  b.on('home', () => { if (!held) away(); });
   // Y: away with the keyboard, else with the menu (as on the pages).
   b.on('keyboard', () => (M.keyboard.isOpen() ? M.keyboard.close() : menu.close()));
   b.on('escape', () => (M.keyboard.isOpen() ? M.keyboard.close() : menu.back()));
   // The page a choice opened has loaded: the menu waiting on it goes.
   b.on('loaded', () => { if (menu.punching) menu.close(); });
+  // Nothing of a menu stays under the screensaver.
+  b.on('saver', (e) => { if (e.show && !held) away(); });
 
   // The window has the keyboard while the menu or the keyboard is open, and
   // the daemon is told (it routes Y and B here then, and pauses what plays).

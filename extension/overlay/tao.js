@@ -1,4 +1,4 @@
-// Pioneer TV home: lines from the Tao Te Ching, one at a time over the
+// Pioneer TV screensaver: lines from the Tao Te Ching, one at a time over the
 // Mandelbrot set. Our own Swedish renderings of the old text (the
 // translations in print are not free to use); the number is the chapter.
 window.PioneerTV = window.PioneerTV || {};
