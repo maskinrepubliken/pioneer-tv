@@ -37,7 +37,7 @@ what was learned on the way.
 | D-pad, left stick | Move focus (arrow keys) |
 | A / Cross | Select (Enter) |
 | B / Circle | Escape: closes an overlay, releases an engaged slider, leaves a text field. Hold: one page back |
-| X / Square | The filled button, wherever there is one: on the box's pages (Spela, Blanda allt, Försök igen, the settings page's Spara), the overlay's menus (Fortsätt, Hem) and the on-screen keyboard (OK); each is marked X. Elsewhere play, pause (Space) or the page's own use. Hold: undo (Ctrl+Z), e.g. what X took off a list |
+| X / Square | The filled button, wherever there is one: on the box's pages (Spela, Blanda allt, Försök igen, the settings page's Spara), the overlay's menus (Fortsätt, Hem) and the on-screen keyboard (OK); unmarked (one learns it), the browse page's legend says it. Elsewhere play, pause (Space) or the page's own use. Hold: undo (Ctrl+Z), e.g. what X took off a list |
 | Y / Triangle | On-screen keyboard. Hold: quick menu |
 | L1, R1 | Shift+Tab, Tab (previous, next focusable) |
 | L2, R2 | TV volume down, up (CEC, repeats while held) |
@@ -123,8 +123,9 @@ on a field out of sight, and the words stay in the heading; over a grid they fil
 search the library. B takes a filter away first. What plays is a player's:
 `players/video.js` (mpv, through the daemon) and `players/audio.js` (in the
 page, with "Spelas nu"). `shared/` has the canvas, the buttons and the
-legend (`base.css`), a view's messages (`views.js`), the full-screen
-message (`screen.js`) and the services' illustrations (`art.js`). The old
+legend (`base.css`), the full-screen message (`screen.js`; a view that
+is loading or cannot reach its source says so on the whole screen through
+`views.js`, X tries again, B goes back) and the services' illustrations (`art.js`). The old
 addresses `spel.html`, `musik.html` and `film.html` go on to the browse
 page.
 
@@ -577,13 +578,16 @@ The launcher is at `chrome-extension://dpigdefepjjejbkidlabpjlnleidgjaf/launcher
 ## Design
 
 **X is the filled button's.** Wherever there is a filled (ochre) button, X
-presses it, whatever has the focus, and the button carries an X to say so:
+presses it, whatever has the focus. The button itself is not marked (one
+learns it); the browse page's legend says "X" and the button's name:
 the browse page's (`browse/page.js`; Spela, Fortsätt från, Blanda allt,
 Spela allt, Försök igen), the overlay's menus (`overlay/hud.js`; the filled
 row: Fortsätt in a pause panel, Hem in the quick menu), the on-screen
 keyboard's OK (A only types; there is no holding A for OK) and the settings
 page's (`settings.js`). So a view has at most one filled button; a list's
-own buttons (a network's Anslut, a pad's Para) are outlined. Where there is
+own buttons (a network's Anslut, a pad's Para) are outlined: where a
+button X does not press was filled, another is filled instead, never a
+second X. Where there is
 none, X keeps the page's own meaning (off Senast spelade, Spelas nu, pause).
 
 The UI follows Maskinrepubliken's design system, vendored in

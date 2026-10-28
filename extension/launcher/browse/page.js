@@ -45,7 +45,7 @@ window.PioneerTV = window.PioneerTV || {};
   // ------------------------------------------------------------ the filled button
   // A view's filled button (Spela, Blanda allt, Försök igen) is always X's:
   // X presses it wherever the focus is, before whatever else X means in the
-  // library (Spelas nu, a favourite), and the legend says nothing else for X.
+  // library (Spelas nu), and the legend says it, X and the button's name.
   const filled = () => [...view.querySelectorAll('.knapp.primar:not([disabled])')].find((b) => b.offsetParent);
 
   // ------------------------------------------------------------ the legend
@@ -53,7 +53,8 @@ window.PioneerTV = window.PioneerTV || {};
   function legend(items) {
     if (items) viewLegend = items;
     let extra = library.legend ? library.legend() : [];
-    if (filled()) extra = extra.filter(([key]) => key !== 'X');
+    const button = filled();
+    if (button) extra = [['X', button.textContent.trim().toLocaleLowerCase('sv-SE')], ...extra.filter(([key]) => key !== 'X')];
     V.legend(legendEl, [...viewLegend, ...extra, ['Y', 'sök'], ['B', library.isRoot(parts()) ? 'hem' : 'tillbaka']]);
   }
 
@@ -73,6 +74,7 @@ window.PioneerTV = window.PioneerTV || {};
   // ------------------------------------------------------------ drawing
   let grid = null;               // the grid on screen, which the search field filters
   function draw(spec) {
+    if (spec.kind !== 'message') V.clear();
     drawView(spec);
     legend();                    // again, now that it knows whether there is a filled button
     b.emit('browse:drawn');
@@ -191,6 +193,7 @@ window.PioneerTV = window.PioneerTV || {};
     const active = document.activeElement;
     // A text field keeps its keys, except B in an empty search field: back.
     if (M.nav.isTextField(active) && !(e.key === 'Escape' && active === search && !search.value)) return;
+    if (V.key(e)) { e.preventDefault(); return; }
     const button = e.key === ' ' && filled();
     if (button) { e.preventDefault(); if (!e.repeat) button.click(); return; }
     if (library.onKey && library.onKey(e)) { e.preventDefault(); return; }

@@ -102,8 +102,6 @@ window.PioneerTV = window.PioneerTV || {};
       const name = document.createElement('span'); name.className = 'pioneertv-menu-label'; name.textContent = it.label; el.appendChild(name);
       const detail = it.detail || (it.sub ? '›' : '');
       if (detail) { const d = document.createElement('span'); d.className = 'pioneertv-menu-detail'; d.textContent = detail; el.appendChild(d); }
-      // The filled row is X's, from anywhere in the menu.
-      if (it.primary) { const x = document.createElement('span'); x.className = 'pioneertv-x'; x.textContent = 'X'; el.appendChild(x); }
       it.el = el;
       return el;
     },

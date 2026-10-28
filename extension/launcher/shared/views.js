@@ -12,11 +12,10 @@ window.PioneerTV = window.PioneerTV || {};
     return e;
   }
 
-  // A filled one (primary) carries X: X presses it from anywhere in the view
-  // (browse/page.js).
+  // A filled one (primary) is X's: X presses it from anywhere in the view
+  // (browse/page.js), unmarked (one learns it); the legend says it.
   function button(text, primary, onClick) {
     const btn = el('button', `knapp${primary ? ' primar' : ''}`, text);
-    if (primary) btn.appendChild(el('span', 'pioneertv-x', 'X'));
     btn.type = 'button';
     btn.addEventListener('click', onClick);
     return btn;
@@ -102,23 +101,34 @@ window.PioneerTV = window.PioneerTV || {};
     return box;
   }
 
-  // A view's place taken by a sentence, a hint under it and Försök igen.
+  // A view that has only a sentence to say says it on the whole screen, as
+  // the game and the film do (shared/screen.js, a screen of its own so a
+  // film's does not take it): "Laddar…", or what is wrong and a hint, and
+  // with retry, X tries again (browse/page.js asks key(e) first). clear()
+  // gives the screen back to the view.
+  let own = null;
+  const screen = () => own || (own = M.screen.in(document.body));
+  let again = null;
   function message(view, text, hint, retry) {
     view.innerHTML = '';
-    const box = el('section', 'view-message');
-    box.appendChild(el('p', '', text));
-    if (hint) box.appendChild(el('p', 'hint', hint));
-    if (retry) {
-      const btn = button('Försök igen', true, retry);
-      box.appendChild(btn);
-      M.nav.focus(btn);
-    }
-    view.appendChild(box);
+    again = retry || null;
+    screen().show(text, [hint, retry ? 'X försök igen' : ''].filter(Boolean).join(' · '));
   }
-
   function loading(view) {
     view.innerHTML = '';
-    view.appendChild(el('p', 'view-loading', 'Laddar…'));
+    again = null;
+    screen().show('Laddar…');
+  }
+  function clear() {
+    again = null;
+    if (own) own.hide();
+  }
+  // While a message has the screen: X (or A) tries again; B falls through
+  // to the page (back, or home); the rest does nothing. True when taken.
+  function key(e) {
+    if (!own || !own.isOpen() || e.key === 'Escape') return false;
+    if ((e.key === ' ' || e.key === 'Enter') && again && !e.repeat) again();
+    return true;
   }
 
   // What a source's error code means, in the same words for RomM and
@@ -133,5 +143,5 @@ window.PioneerTV = window.PioneerTV || {};
     return message(view, `${source} svarar inte`, 'Kontrollera att servern är igång.', retry);
   }
 
-  M.views = { el, button, legend, cover, message, loading, error };
+  M.views = { el, button, legend, cover, message, loading, clear, key, error };
 })(window.PioneerTV);

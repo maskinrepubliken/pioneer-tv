@@ -75,12 +75,6 @@ button, .btn {
 button:hover { background: var(--pioneertv-paper-hover); }
 button.primary { background: var(--pioneertv-ochre); border-color: var(--pioneertv-ochre); color: var(--pioneertv-on-ochre); }
 button.primary:hover { background: var(--pioneertv-ochre); border-color: var(--pioneertv-ink); }
-/* The filled button is X's: the pad's X presses it (settings.js). */
-button.primary::after {
-  content: "X"; display: inline-flex; align-items: center; justify-content: center; min-width: 1.45em; height: 1.45em;
-  margin-left: 0.6em; vertical-align: middle; font: 600 0.68em/1 var(--pioneertv-font-mono); text-transform: uppercase;
-  border: 0.12em solid currentColor; border-radius: 0.35em; opacity: 0.85;
-}
 button.danger { border-color: var(--pioneertv-alarm); color: var(--pioneertv-alarm); }
 button:disabled, button:disabled:hover { background: var(--pioneertv-paper-sunken); color: var(--pioneertv-ink-faint); border-color: var(--pioneertv-line); cursor: default; }
 button.small { padding: 9px 16px; font-size: 15px; }

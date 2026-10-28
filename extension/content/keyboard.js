@@ -193,8 +193,6 @@ window.PioneerTV = window.PioneerTV || {};
     setLabel(el, def) {
       if (def.icon) el.replaceChildren(M.icons.svg(def.icon));
       else el.textContent = this.displayLabel(def);
-      // OK, the filled key, is X's.
-      if (def.accent) { const x = document.createElement('span'); x.className = 'pioneertv-x'; x.textContent = 'X'; el.appendChild(x); }
     },
 
     refreshLabels() {
