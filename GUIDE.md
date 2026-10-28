@@ -131,7 +131,7 @@ page.
 
 The installer pulls in labwc, Chromium, Widevine, WebKitGTK (for the overlay),
 v4l-utils, BlueZ, aiohttp and evdev, copies the repo to `/opt/pioneer-tv`, installs the systemd units,
-sets the video mode (1280x720), leaves swap in compressed memory to
+sets the video mode (1280x720, or the TV's own 1360x768), leaves swap in compressed memory to
 Raspberry Pi OS's own zram, sets the CPU governor to performance at
 boot, sets the boot target to graphical, and arms the guards in
 [When the box hangs](#when-the-box-hangs). It also adds the SSH keys in
@@ -590,8 +590,13 @@ and are not yet redrawn to it.
 Pioneer TV runs on a Raspberry Pi 4 with 4 GB; the installer warns on anything
 else and carries on. The window is 1280x720: players cap stream quality to the
 window size, and 1080p in a browser drops frames on this board under every
-flag set we measured. A TV without a 720p mode (many only offer 1080p and
-1360x768) is asked for a custom 1280x720 mode (session.sh, `wlr-randr`). The size is written to
+flag set we measured. A TV whose own panel is HD ready (its preferred mode
+1360x768 or 1366x768) gets that size instead: such a TV shows it pixel for
+pixel, while a 720p picture it zooms in a few percent and cuts at the edges
+(seen on the Philips, the column at the left half gone). The pages are laid
+out in `vw`, so they fill either. A TV without a 720p mode (many only offer
+1080p and 1360x768) is asked for a custom 1280x720 mode (session.sh,
+`wlr-randr`). The size is written to
 `/etc/pioneer-tv/board.env`. Chromium composites and rasterises on the GPU;
 the flags can be overridden with `PIONEER_TV_GPU_FLAGS` in `chromium.env`.
 A Pi 3 was tried first and was too slow for Cineasterna's software-decoded
@@ -610,7 +615,7 @@ run by `pioneer-tv-display.service` as `labwc -C /opt/pioneer-tv/system/labwc
 -S /opt/pioneer-tv/system/session.sh`. Its config (`system/labwc/rc.xml`)
 makes it a kiosk: every window fills the screen without a frame, and there
 are no key bindings, so Alt+F4 or Alt+Tab on a keyboard plugged in for a DOS
-game do nothing. `session.sh` sets the TV to 1280x720 with `wlr-randr`,
+game do nothing. `session.sh` sets the TV to 1280x720 (or its own 1360x768) with `wlr-randr`,
 starts the overlay and then Chromium; when Chromium exits the session ends,
 labwc with it, and systemd restarts the display.
 

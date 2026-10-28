@@ -9,8 +9,12 @@ HEIGHT=${PIONEER_TV_HEIGHT:-720}
 PIONEER_TV_DIR=${PIONEER_TV_DIR:-/opt/pioneer-tv}
 
 # Players cap stream quality to the window size, and 1080p in a browser drops
-# frames on a Pi 4: the TV gets 1280x720 (or its scaling when it has no such mode).
-wlr-randr --output HDMI-A-1 --mode "${WIDTH}x${HEIGHT}@60" 2>&1 || wlr-randr --output HDMI-A-1 --custom-mode "${WIDTH}x${HEIGHT}@60" 2>&1 || true
+# frames on a Pi 4: the TV gets 1280x720, or its own HD-ready size (install.sh
+# chose; 1360x768 is 59.8 Hz, so the mode is asked for by its size first), or
+# its scaling when it has no such mode.
+wlr-randr --output HDMI-A-1 --mode "${WIDTH}x${HEIGHT}" 2>&1 \
+  || wlr-randr --output HDMI-A-1 --mode "${WIDTH}x${HEIGHT}@60" 2>&1 \
+  || wlr-randr --output HDMI-A-1 --custom-mode "${WIDTH}x${HEIGHT}@60" 2>&1 || true
 
 # The overlay draws the box's own panels over any window (overlay.py). It
 # starts without the ambient capability (CAP_WAKE_ALARM) that the login

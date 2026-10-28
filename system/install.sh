@@ -17,8 +17,22 @@ case "$MODEL" in
   *) echo "warning: Pioneer TV is built for a Raspberry Pi 4 (4 GB); this is '$MODEL'. Continuing anyway." >&2 ;;
 esac
 # 720p: players cap stream quality to the window, and 1080p in a browser drops
-# frames on this board under every flag set we measured.
+# frames on this board under every flag set we measured. But a TV whose own
+# panel is HD ready (1360x768, 1366x768, its preferred mode, first in the
+# list) gets that: it shows its own size pixel for pixel, while a 720p
+# picture it zooms in a few percent and cuts at the edges (seen on the
+# Philips: the column at the left half gone). A TV not there at install
+# keeps the mode it had.
 MODE=1280x720@60
+NATIVE=$(cat /sys/class/drm/card*-HDMI-A-1/modes 2>/dev/null | head -n1)
+case "$NATIVE" in
+  1360x768|1366x768) MODE="$NATIVE@60" ;;
+  "") if [ -f /etc/pioneer-tv/board.env ]; then
+        OLD_W=$(sed -n 's/^PIONEER_TV_WIDTH=//p' /etc/pioneer-tv/board.env)
+        OLD_H=$(sed -n 's/^PIONEER_TV_HEIGHT=//p' /etc/pioneer-tv/board.env)
+        [ -n "$OLD_W" ] && [ -n "$OLD_H" ] && MODE="${OLD_W}x${OLD_H}@60"
+      fi ;;
+esac
 mkdir -p /etc/pioneer-tv
 rm -f /etc/pioneer-tv/mode   # an older installer let the mode be chosen
 echo "== board: $MODEL ($MODE)"
