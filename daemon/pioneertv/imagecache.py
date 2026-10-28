@@ -1,15 +1,13 @@
 """Pictures kept on the box's own disk: RomM's covers and Jellyfin's
-posters, stills and album art, as the /romm/ and /jellyfin/ proxies fetch
-them for the pages (server.py).
+posters, stills and album art (covers.py fetches them, for the pages
+through the /romm/ and /jellyfin/ proxies and every night all of them).
 
-The first time a picture is asked for it comes from the server and is
-written here; after that it comes from the disk, without asking the server
-at all. Both servers put a version in the address (RomM ?ts=, Jellyfin
-&tag=), so a picture that changes there gets an address of its own and is
-fetched anew; the old one ages out. The pictures are kept up to a size
-(config: images.cache_mb); past it, the ones unused longest go first.
+A picture is kept once, whatever size a page asks for: by its source, its
+path and its version (RomM ?ts=, Jellyfin &tag=), so a picture that
+changes there is a new one, and the old ages out. They are kept up to a
+size (config: images.cache_mb); past it, the ones unused longest go first.
 
-Stdlib only: the proxies do the fetching.
+Stdlib only.
 """
 from __future__ import annotations
 
@@ -18,6 +16,7 @@ import logging
 import os
 import time
 from pathlib import Path
+from urllib.parse import parse_qs, unquote
 
 log = logging.getLogger(__name__)
 
@@ -45,7 +44,15 @@ def wanted(source: str, method: str, path: str, headers) -> bool:
 
 
 def key(source: str, path: str, query: str) -> str:
-    return hashlib.sha256(f"{source}\n{path}\n{query}".encode()).hexdigest()
+    """A picture's name here: one for every size a page may ask for. RomM's
+    by its path and query (its ?ts=, the same spelt %20 or not); Jellyfin's
+    by its item and kind, and its tag."""
+    if source == "jellyfin":
+        tag = (parse_qs(query).get("tag") or [""])[0]
+        ident = f"{path.lower()}\n{tag}"
+    else:
+        ident = f"{path}\n{unquote(query)}"
+    return hashlib.sha256(f"{source}\n{ident}".encode()).hexdigest()
 
 
 class ImageCache:
@@ -56,6 +63,11 @@ class ImageCache:
 
     def _dir(self, k: str) -> Path:
         return self.root / k[:2]
+
+    def has(self, k: str) -> bool:
+        """Whether it is kept, without counting that as a use."""
+        d = self._dir(k)
+        return any((d / (k + ending)).exists() for ending in ENDINGS)
 
     def get(self, k: str) -> tuple[Path, str] | None:
         """The kept picture and its type, or None."""

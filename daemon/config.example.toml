@@ -17,8 +17,10 @@ home_on_standby = true         # the TV going to standby sends the box back to t
 monitor = true                 # follow TV standby and TV remote keys
 
 [images]                      # RomM's covers and Jellyfin's pictures kept on the disk
-dir      = "/var/lib/pioneer-tv/images"
-cache_mb = 4000               # the ones unused longest go past this; 0: keep none
+dir         = "/var/lib/pioneer-tv/images"
+cache_mb    = 10240           # the ones unused longest go past this; 0: keep none
+max_px      = 600             # made this small (its longer side), as WebP
+prefetch_at = "03:30"         # every cover fetched each night; "" for never
 
 [bluetooth]
 # Dial paired, trusted pads that are not connected: every 20 s for the first

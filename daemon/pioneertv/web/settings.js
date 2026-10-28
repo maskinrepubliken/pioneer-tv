@@ -82,7 +82,8 @@
     if (path === '/api/cec/topology') return wait('Driver Info:\n\tDriver Name                : vc4_hdmi\n\tPhysical Address           : 1.0.0.0\n\tLogical Address            : 4 (Playback Device 1)\n\nTopology:\n\tSystem Information for device 0 (TV):\n\t\tVendor ID: 0x00e091 (LG)\n\t\tPower Status: On');
     if (path === '/api/cec/trace') return wait('09:20:01 >> cec-ctl --to 0 --user-control-pressed ui-cmd=volume-up\n09:20:01 >> cec-ctl --to 0 --user-control-released\n09:20:07 << Received from TV to Playback Device 1 (0 to 4): USER_CONTROL_PRESSED (0x44):\n09:20:07 <<     ui-cmd: up (0x01)\n09:20:07 << Received from TV to Playback Device 1 (0 to 4): USER_CONTROL_RELEASED (0x45)');
     if (path === '/api/cec/raw') return wait({ ok: true, output: 'Transmit from Playback Device 1 to TV (4 to 0):\n\tGIVE_DEVICE_POWER_STATUS (0x8f)\n    Received from TV (0):\n\tREPORT_POWER_STATUS (0x90):\n\t\tpwr-state: on (0x00)' }, 400);
-    if (path === '/api/images') return wait({ enabled: true, files: 2814, bytes: 412e6, max_bytes: 4000 * 1024 * 1024 });
+    if (path === '/api/images') return wait({ enabled: true, files: 2814, bytes: 412e6, max_bytes: 10240 * 1024 * 1024, max_px: 600, prefetch_at: '03:30',
+      last_night: { new: 2810, had: 4, failed: 0, seconds: 1460, time: Date.now() / 1000 - 30000 } });
     if (path.startsWith('/api/logs')) return wait('2026-09-10T07:00:01 pioneertv INFO pioneertv 0.1.0\n2026-09-10T07:00:02 pioneertv.cec INFO CEC registered as playback device\n');
     return wait({ ok: true, message: 'mock' });
   }
@@ -408,7 +409,8 @@
           st.enabled
             ? h('p', {}, `${st.files.toLocaleString('sv-SE')} bilder, ${mb(st.bytes)} av högst ${mb(st.max_bytes)}.`)
             : h('p', { class: 'muted' }, 'Av (images.cache_mb är 0).'),
-          h('p', { class: 'muted' }, 'Omslag från RomM och bilder från Jellyfin sparas här första gången de visas och hämtas sedan från disken. De som inte använts på längst tid får gå när det blir fullt.'),
+          h('p', { class: 'muted' }, `Omslag från RomM och bilder från Jellyfin, krympta till högst ${st.max_px || 600} px. De sparas första gången de visas${st.prefetch_at ? `, och alla hämtas varje natt kl ${st.prefetch_at}` : ''}; sedan kommer de från disken. De som inte använts på längst tid får gå när det blir fullt.`),
+          st.last_night ? h('p', { class: 'hint' }, `Senaste natten ${new Date(st.last_night.time * 1000).toLocaleString('sv-SE')}: ${st.last_night.new} nya, ${st.last_night.had} fanns redan, ${st.last_night.failed} misslyckades (${Math.round(st.last_night.seconds / 60)} min).`) : '',
           st.enabled ? h('div', { class: 'actions' }, confirmBtn('Töm', 'small', async () => {
             try { await api('POST', '/api/images/clear'); toast('Tömt'); } catch (e) { toast(`Misslyckades: ${e.message}`); }
             drawPics();

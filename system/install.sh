@@ -27,7 +27,7 @@ echo "== board: $MODEL ($MODE)"
 # on every update that touches this script, and pulling a new Chromium (about
 # 170 MB) over the box's Wi-Fi made a one-line change take most of an hour.
 # Upgrades happen at night instead (pioneer-tv-upgrade.timer, upgrade.sh).
-REQUIRED="labwc wlr-randr mpv python3-gi gir1.2-gtk-4.0 gir1.2-webkit-6.0 gir1.2-gtk4layershell-1.0 seatd v4l-utils bluez python3 python3-evdev python3-aiohttp rsync git curl pipewire pipewire-pulse wireplumber pipewire-alsa fonts-noto-core"
+REQUIRED="labwc wlr-randr mpv python3-gi gir1.2-gtk-4.0 gir1.2-webkit-6.0 gir1.2-gtk4layershell-1.0 seatd v4l-utils bluez python3 python3-evdev python3-aiohttp python3-pil rsync git curl pipewire pipewire-pulse wireplumber pipewire-alsa fonts-noto-core"
 missing_required() { for p in $REQUIRED; do dpkg -s "$p" >/dev/null 2>&1 || return 0; done; return 1; }
 
 echo "== preflight"

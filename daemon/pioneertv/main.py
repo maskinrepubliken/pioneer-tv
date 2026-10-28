@@ -253,6 +253,8 @@ async def amain(cfg: dict) -> None:
                 at_home=lambda: "/launcher/index.html" in (server.current_url or ""),
                 pads=lambda: len(pads_mgr.pads()), put_away=put_away)
     server.hooks["idle"] = idle
+    # Every cover at night, waiting while a film or a game plays (covers.py).
+    server.covers.busy = playing
     dispatcher.on_input = idle.input
     mouse.on_move = idle.input
 
@@ -267,6 +269,7 @@ async def amain(cfg: dict) -> None:
         asyncio.create_task(status_loop(), name="status"),
         asyncio.create_task(bluetooth.reconnect_loop(cfg), name="bt-reconnect"),
         asyncio.create_task(idle.run(), name="idle"),
+        asyncio.create_task(server.covers.run_nightly(), name="covers"),
     ]
 
     stop = asyncio.Event()

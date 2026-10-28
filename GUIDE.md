@@ -310,7 +310,7 @@ itself: no menu, notices or logo, only the game. The design is in
   played yet.
 - **Starting.** The player asks the daemon (`games.py`, `/api/games/play`),
   which fetches the file from RomM into `/var/lib/pioneer-tv/games/cache`
-  (800 MB at most; the games played longest ago go first) and starts
+  (5 GB at most; the games played longest ago go first) and starts
   RetroArch as the kiosk user on the TV's display, over Chromium. A game
   resumes where it was left.
 - **Pausing.** Guide in a game: RetroArch pauses where it is and the
@@ -429,16 +429,23 @@ seconds ahead.
 
 ## Covers on the box
 
-The daemon keeps RomM's covers and Jellyfin's posters, stills and album
-art on the box's own disk (`daemon/pioneertv/imagecache.py`, in
-`/var/lib/pioneer-tv/images`): the first time a picture is shown it comes
-through the `/romm/` or `/jellyfin/` proxy from the server and is written
-there, and after that it comes from the disk without asking the server.
-Both servers put a version in a picture's address (RomM `?ts=`, Jellyfin
-`&tag=`), so a changed picture is fetched anew. They are kept up to
-`images.cache_mb` (4000 MB); past it the ones unused longest go. The
-System page in settings shows how many and how much, with a button to
-empty it.
+The daemon keeps RomM's covers and Jellyfin's posters, stills, album and
+artist pictures on the box's own disk (`daemon/pioneertv/covers.py`,
+`imagecache.py`, in `/var/lib/pioneer-tv/images`), made small on the way:
+at most `images.max_px` (600) on the longer side, as WebP (with Pillow,
+`python3-pil`; without it, as they came). A page's picture comes from the
+disk when it is there; else through the `/romm/` or `/jellyfin/` proxy
+from the server, kept on the way. Each picture is kept once whatever size
+a page asks for (Jellyfin is asked for it at the size kept), by its path
+and its version (RomM `?ts=`, Jellyfin `&tag=`), so a changed picture is
+fetched anew. Every night at `images.prefetch_at` (03:30) the daemon
+fetches every one there is, one at a time and waiting while a film or a
+game plays: every game's two covers, and the pictures of every album,
+artist, playlist, film, series, season, episode and video. They are kept
+up to `images.cache_mb` (10 GB); past it the ones unused longest go. The
+System page in settings shows how many and how much, how the last night
+went, and can empty it. The games downloaded to play are kept up to
+`games.cache_mb` (5 GB) the same way (saves and states are not counted).
 
 ## Updating the box
 

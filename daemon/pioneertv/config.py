@@ -105,7 +105,7 @@ DEFAULTS: dict[str, Any] = {
         "user": "pi",
         "wayland_display": "",          # empty: the compositor's socket, found in runtime_dir
         "dir": "/var/lib/pioneer-tv/games",
-        "cache_mb": 800,
+        "cache_mb": 5120,
         "port": 55355,
         # Through PipeWire's PulseAudio side: N64 sound stuttered with
         # RetroArch's own pipewire driver and 64 ms (heard on the TV).
@@ -130,9 +130,11 @@ DEFAULTS: dict[str, Any] = {
     # {"<serial>": {"name": ..., "pointer": "#rrggbb", "accent": "#rrggbb",
     # "highlight": "#rrggbb"}}: pointer fill, focus ring, and what is ochre.
     "pads": {},
-    # RomM's covers and Jellyfin's pictures kept on the box's disk
-    # (imagecache.py): up to cache_mb, the ones unused longest let go; 0: none.
-    "images": {"dir": "/var/lib/pioneer-tv/images", "cache_mb": 4000},
+    # RomM's covers and Jellyfin's pictures kept on the box's disk, made
+    # small (at most max_px, WebP), all of them fetched every night at
+    # prefetch_at ("" for never) (covers.py): up to cache_mb, the ones unused
+    # longest let go past it; 0: none kept.
+    "images": {"dir": "/var/lib/pioneer-tv/images", "cache_mb": 10240, "max_px": 600, "prefetch_at": "03:30"},
     "bluetooth": {"auto_connect": True, "reconnect_interval": 300},
     "services": [],
 }

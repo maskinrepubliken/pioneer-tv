@@ -19,6 +19,7 @@ import aiohttp
 from aiohttp import WSMsgType, web
 
 from . import imagecache, jellyfin, romm, settings, sysinfo, updater, wifitest
+from .covers import Covers, Passed
 from .overlay import Router
 
 log = logging.getLogger("pioneertv.server")
@@ -40,10 +41,7 @@ class Server:
         self._tasks: set[asyncio.Task] = set()
         self.proxy_session: aiohttp.ClientSession | None = None
         self._jellyfin_user: tuple[tuple, dict] | None = None   # (url, key, wanted) -> user
-        icfg = cfg.get("images") or {}
-        self.images = (imagecache.ImageCache(Path(icfg.get("dir", "/var/lib/pioneer-tv/images")),
-                                             int(icfg["cache_mb"]) * 1024 * 1024)
-                       if icfg.get("cache_mb") else None)
+        self.covers = Covers(cfg)        # pictures kept on the disk, and fetched at night
         self.app = web.Application(middlewares=[self.auth_middleware])
         self.app.router.add_get("/ws", self.ws_handler)
         self.app.router.add_get("/", self.index)
@@ -220,8 +218,10 @@ class Server:
         if not cfg.get("api_key"):
             return web.json_response({"error": "no_key"}, status=503)
         headers = romm.request_headers(request.headers, cfg["api_key"])
-        if self.images and imagecache.wanted("romm", request.method, request.match_info["path"], request.headers):
-            return await self._picture(request, target, headers, romm.RESPONSE_HEADERS, "romm")
+        if self.covers.cache and imagecache.wanted("romm", request.method, request.match_info["path"], request.headers):
+            if picture := await self.covers.picture("romm", cfg["url"], request.match_info["path"],
+                                                    request.query_string, headers):
+                return self._picture(picture)
         return await self._forward(request, target, headers, romm.RESPONSE_HEADERS, "romm")
 
     async def jellyfin_proxy(self, request: web.Request) -> web.StreamResponse:
@@ -238,8 +238,10 @@ class Server:
         if not cfg.get("api_key"):
             return web.json_response({"error": "no_key"}, status=503)
         headers = jellyfin.request_headers(request.headers, cfg["api_key"])
-        if self.images and imagecache.wanted("jellyfin", request.method, request.match_info["path"], request.headers):
-            return await self._picture(request, target, headers, jellyfin.RESPONSE_HEADERS, "jellyfin")
+        if self.covers.cache and imagecache.wanted("jellyfin", request.method, request.match_info["path"], request.headers):
+            if picture := await self.covers.picture("jellyfin", cfg["url"], request.match_info["path"],
+                                                    request.query_string, headers):
+                return self._picture(picture)
         return await self._forward(request, target, headers, jellyfin.RESPONSE_HEADERS, "jellyfin")
 
     def _session(self) -> aiohttp.ClientSession:
@@ -271,48 +273,38 @@ class Server:
             log.warning("%s: %s %s failed: %s", name, request.method, target, exc)
             return web.json_response({"error": "unreachable"}, status=502)
 
-    async def _picture(self, request: web.Request, target: str, headers: dict, keep: frozenset,
-                       name: str) -> web.StreamResponse:
-        """A cover or a poster: from the box's disk when it is there, else from
-        the server, kept on the way (imagecache.py). Its address carries its
-        version, so the browser may keep it a long while too."""
-        k = imagecache.key(name, request.match_info["path"], request.query_string)
-        cache_control = "max-age=2592000"
-        if hit := self.images.get(k):
-            path, kind = hit
-            return web.FileResponse(path, headers={"Content-Type": kind, "Cache-Control": cache_control})
-        try:
-            async with self._session().get(target, headers={**headers, "Accept-Encoding": "identity"},
-                                           allow_redirects=False,
-                                           timeout=aiohttp.ClientTimeout(total=60, sock_connect=5)) as upstream:
-                kind = upstream.headers.get("Content-Type", "").split(";")[0].strip().lower()
-                small = upstream.content_length is None or upstream.content_length <= imagecache.MAX_ONE
-                if upstream.status == 200 and kind in imagecache.TYPES and small:
-                    body = await upstream.read()
-                    await asyncio.to_thread(self.images.put, k, body, kind)
-                    return web.Response(body=body, headers={"Content-Type": kind, "Cache-Control": cache_control})
-                # Not one to keep (an error, something else): as it came.
-                body = await upstream.read()
-                return web.Response(status=upstream.status, body=body,
-                                    headers={h: v for h, v in upstream.headers.items() if h.lower() in keep})
-        except (aiohttp.ClientError, asyncio.TimeoutError) as exc:
-            log.warning("%s: picture %s failed: %s", name, target, exc)
-            return web.json_response({"error": "unreachable"}, status=502)
+    @staticmethod
+    def _picture(found) -> web.StreamResponse:
+        """A cover or a poster (covers.py): its address carries its version,
+        so the browser may keep it a long while too. Or an answer that was no
+        picture, as it came."""
+        if isinstance(found, Passed):
+            return web.Response(status=found.status, body=found.body, headers=found.headers)
+        found, kind = found
+        headers = {"Content-Type": kind, "Cache-Control": "max-age=2592000"}
+        if isinstance(found, Path):
+            return web.FileResponse(found, headers=headers)
+        return web.Response(body=found, headers=headers)
 
     async def api_images(self, _request: web.Request) -> web.Response:
-        """The pictures kept on the disk: {enabled, files, bytes, max_bytes}."""
-        if not self.images:
+        """The pictures kept on the disk: {enabled, files, bytes, max_bytes,
+        max_px, prefetch_at, last_night}."""
+        cache = self.covers.cache
+        if not cache:
             return web.json_response({"enabled": False})
-        return web.json_response({"enabled": True, **await asyncio.to_thread(self.images.stats)})
+        icfg = self.cfg.get("images") or {}
+        return web.json_response({"enabled": True, **await asyncio.to_thread(cache.stats), "max_px": self.covers.max_px,
+                                  "prefetch_at": icfg.get("prefetch_at", ""), "last_night": self.covers.last_night})
 
     async def api_images_clear(self, _request: web.Request) -> web.Response:
-        if self.images:
-            await asyncio.to_thread(self.images.clear)
+        if self.covers.cache:
+            await asyncio.to_thread(self.covers.cache.clear)
         return web.json_response({"ok": True})
 
     async def _close_proxy_session(self, _app: web.Application) -> None:
         if self.proxy_session is not None:
             await self.proxy_session.close()
+        await self.covers.close()
 
     async def api_jellyfin(self, request: web.Request) -> web.Response:
         """Who the Musik pages play as: {ok, user_id, user} or {ok: false, error}."""
