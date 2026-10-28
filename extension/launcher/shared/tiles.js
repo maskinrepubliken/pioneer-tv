@@ -1,13 +1,15 @@
 // Pioneer TV tiles: the box's services as big tiles in two rows, its status
-// and its buttons at the top, the pad's legend at the foot. The home page
+// at the top, its buttons in a column at the right, the pad's legend at the
+// foot. The home page
 // (home/home.js) is this sheet; the overlay's menus (overlay/hud.js) use
 // its row of holes on a choice that opens a page. Each wires its own choices:
 // the page's spatial navigation focuses them (pioneertv-focus), the
 // overlay's menu marks them (pioneertv-menu-active). Styled by tiles.css.
 //
-//   M.tiles.sheet({ head, rows, legend }) -> the sheet
+//   M.tiles.sheet({ side, rows, legend }) -> the sheet
 //
-// head: [{ label, icon, round, disabled, run }] (buttons at the top right); rows:
+// side: [{ label, icon, round, disabled, run }] (the column of buttons at
+// the right, top to bottom); rows:
 // [[{ label, art, color, disabled, run }], ...] (the tiles); legend: [[keys,
 // text], ...], a key 'arrows' for the four arrows. Each item gets its el.
 window.PioneerTV = window.PioneerTV || {};
@@ -19,7 +21,6 @@ window.PioneerTV = window.PioneerTV || {};
     if (text != null) e.textContent = text;
     return e;
   };
-  const wordmark = new URL('ordbild-en-rad-black.svg', document.currentScript.src).href;
 
   function tile(it, n) {
     const t = el('button', 'pioneertv-card tiles-tile' + (it.disabled ? ' pioneertv-menu-disabled' : ''));
@@ -39,10 +40,9 @@ window.PioneerTV = window.PioneerTV || {};
     return t;
   }
 
-  // A button at the top: its symbol and its name, or (round: Sök,
-  // Inställningar, Stäng av TV:n) its symbol alone in a ring (paper.css,
-  // pioneertv-round).
-  function headButton(it) {
+  // A button in the column: its symbol and its name, or (round) its symbol
+  // alone in a ring (paper.css, pioneertv-round).
+  function sideButton(it) {
     const btn = el('button', (it.round ? 'pioneertv-round' : 'tiles-btn') + (it.disabled ? ' pioneertv-menu-disabled' : ''));
     btn.type = 'button';
     btn.dataset.key = it.key || `btn:${it.label}`;
@@ -88,12 +88,6 @@ window.PioneerTV = window.PioneerTV || {};
       s.append(` ${text}`);
       foot.appendChild(s);
     }
-    const credit = el('span', 'credit');
-    const img = el('img');
-    img.src = wordmark;
-    img.alt = 'Maskinrepubliken';
-    credit.appendChild(img);
-    foot.appendChild(credit);
     return foot;
   }
 
@@ -111,14 +105,12 @@ window.PioneerTV = window.PioneerTV || {};
     if (scale < 1) names.forEach((n) => { n.style.fontSize = `${parseFloat(getComputedStyle(n).fontSize) * scale}px`; });
   }
 
-  function sheet({ head = [], rows = [], legend: keys = [] }) {
+  function sheet({ side = [], rows = [], legend: keys = [] }) {
     const root = el('div', 'tiles-sheet');
     const top = el('header', 'tiles-head');
     top.appendChild(pills());
-    const buttons = el('div', 'tiles-buttons');
-    head.forEach((it) => buttons.appendChild(headButton(it)));
-    top.appendChild(buttons);
     root.appendChild(top);
+    const body = el('div', 'tiles-body');
     const main = el('main', 'tiles-content');
     let n = 0;
     for (const row of rows) {
@@ -128,7 +120,13 @@ window.PioneerTV = window.PioneerTV || {};
       row.forEach((it) => r.appendChild(tile(it, ++n)));
       main.appendChild(r);
     }
-    root.appendChild(main);
+    body.appendChild(main);
+    if (side.length) {
+      const column = el('nav', 'tiles-buttons');
+      side.forEach((it) => column.appendChild(sideButton(it)));
+      body.appendChild(column);
+    }
+    root.appendChild(body);
     root.appendChild(legend(keys));
     return root;
   }

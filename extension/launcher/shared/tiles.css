@@ -10,8 +10,8 @@
 }
 .tiles-sheet button { font: inherit; margin: 0; }
 
-/* ---- the top: the status pills at the left, the buttons at the right ---- */
-.tiles-head { display: flex; align-items: center; justify-content: space-between; gap: 1.5em; min-height: 2.6em; }
+/* ---- the top: the status pills ---- */
+.tiles-head { display: flex; align-items: center; gap: 1.5em; min-height: 2.6em; }
 .tiles-pills { display: flex; align-items: center; gap: 1.2em; min-width: 0; }
 .tiles-pill { display: inline-flex; align-items: center; gap: 0.35em; font-size: 1.1em; color: var(--pioneertv-ink-faint); }
 .tiles-pill::after {
@@ -22,8 +22,14 @@
 .tiles-pill.on::after { background: var(--pioneertv-surface-forest); border-color: var(--pioneertv-surface-forest); }
 .tiles-pill.warn { color: var(--pioneertv-alarm); }
 .tiles-pill.warn::after { background: var(--pioneertv-alarm); border-color: var(--pioneertv-alarm); }
-.tiles-buttons { display: flex; align-items: center; gap: 0.7em; flex: none; }
-.tiles-buttons .pioneertv-round { font-size: 0.95em; }
+/* ---- the column at the right: the buttons, top to bottom, level with
+   the tiles ---- */
+.tiles-body { flex: 1; display: flex; gap: 2.2em; min-height: 0; }
+.tiles-buttons {
+  flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.1em;
+  padding: 1.5vh 0 0 2em; border-left: 1px solid var(--pioneertv-line);
+}
+.tiles-buttons .pioneertv-round { font-size: 1.1em; }
 .tiles-btn {
   display: inline-flex; align-items: center; gap: 0.45em; padding: 0.55em 1em 0.55em 0.8em; cursor: pointer;
   font-weight: 600 !important; font-size: 0.95em !important; line-height: 1 !important; font-family: var(--pioneertv-font-ui) !important;
@@ -39,7 +45,7 @@
 .tiles-btn.pioneertv-menu-disabled { color: var(--pioneertv-ink-faint); border-color: var(--pioneertv-line); }
 
 /* ---- the tiles: two rows, each tile wider as there are fewer ---- */
-.tiles-content { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 3vh; min-height: 0; padding-top: 1.5vh; }
+.tiles-content { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 3vh; min-height: 0; padding-top: 1.5vh; }
 .tiles-row { display: grid; grid-template-columns: repeat(var(--tiles, 3), 1fr); gap: 1.3em; }
 .tiles-tile {
   position: relative; display: flex; flex-direction: column; justify-content: flex-end; cursor: pointer; text-align: center;
@@ -86,5 +92,3 @@
 .tiles-legend span { display: inline-flex; align-items: center; gap: 0.45em; }
 .tiles-legend i { display: inline-flex; font-size: 0.8em; font-style: normal; color: var(--pioneertv-ink-muted); }
 .tiles-legend .pioneertv-kbd { font-size: 0.75em; }
-.tiles-legend .credit { margin-left: auto; display: inline-flex; }
-.tiles-legend .credit img { display: block; width: 8.5em; min-width: 120px; height: auto; }

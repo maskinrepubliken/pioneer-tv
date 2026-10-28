@@ -30,16 +30,17 @@
     const row2 = second.map(service);
     if (channels.length) row2.push({ key: 'tile:live', label: S.LIVE.name, art: S.art(S.LIVE), color: S.LIVE.color, panel: 'live' });
     const rows = [first.map(service), row2];
-    const head = [
+    // The column at the right, top to bottom.
+    const side = [
       { key: 'search', label: 'Sök', icon: 'search', round: true, run: panel('search') },
-      { key: 'settings', label: 'Inställningar', icon: 'gear', round: true, run: () => b.settings() },
-      { key: 'tv-off', label: 'Stäng av TV:n', icon: 'power', round: true, run: () => b.cec('tv_off') },
       // What Home on the pad opens, with its button's mark.
       { key: 'menu', label: 'Snabbmenyn', icon: 'padHome', round: true, run: () => b.relay('menu') },
+      { key: 'settings', label: 'Inställningar', icon: 'gear', round: true, run: () => b.settings() },
+      { key: 'tv-off', label: 'Stäng av TV:n', icon: 'power', round: true, run: () => b.cec('tv_off') },
     ];
-    const next = M.tiles.sheet({ head, rows, legend: [[['arrows'], 'navigera'], [['A'], 'välj'], [['Y'], 'tangentbord']] });
+    const next = M.tiles.sheet({ side, rows, legend: [[['arrows'], 'navigera'], [['A'], 'välj'], [['Y'], 'tangentbord']] });
     for (const it of rows.flat()) it.el.addEventListener('click', () => (it.panel ? panel(it.panel)() : open(it)));
-    for (const it of head) it.el.addEventListener('click', it.run);
+    for (const it of side) it.el.addEventListener('click', it.run);
     if (sheet) sheet.replaceWith(next); else document.body.appendChild(next);
     sheet = next;
     M.tiles.fitNames(sheet);
