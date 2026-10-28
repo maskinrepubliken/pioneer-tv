@@ -37,7 +37,7 @@ what was learned on the way.
 | D-pad, left stick | Move focus (arrow keys) |
 | A / Cross | Select (Enter) |
 | B / Circle | Escape: closes an overlay, releases an engaged slider, leaves a text field. Hold: one page back |
-| X / Square | Play, pause (Space). Hold: undo (Ctrl+Z), e.g. what X took off a list |
+| X / Square | The filled button, wherever there is one: on the box's pages (Spela, Blanda allt, Försök igen, the settings page's Spara), the overlay's menus (Fortsätt, Hem) and the on-screen keyboard (OK); each is marked X. Elsewhere play, pause (Space) or the page's own use. Hold: undo (Ctrl+Z), e.g. what X took off a list |
 | Y / Triangle | On-screen keyboard. Hold: quick menu |
 | L1, R1 | Shift+Tab, Tab (previous, next focusable) |
 | L2, R2 | TV volume down, up (CEC, repeats while held) |
@@ -362,7 +362,8 @@ their own page ([Film and series](#film-and-series)).
 A song plays in the page itself and "Spelas nu" covers the screen: A or X
 pauses, L1/R1 go to the previous and next song, left and right seek ten
 seconds, B goes back to browsing while the music plays on, and X brings
-"Spelas nu" back. The music lives only as long as the page: leaving it (Home
+"Spelas nu" back (on a view without a filled button: there X is the
+button's). The music lives only as long as the page: leaving it (Home
 included) stops it. A song that cannot be played is skipped after a few
 seconds; a stream that stalls for ten seconds is picked up again where it was.
 Jellyfin hears what plays (`Sessions/Playing`, shown on its dashboard), and
@@ -564,6 +565,16 @@ The launcher is at `chrome-extension://dpigdefepjjejbkidlabpjlnleidgjaf/launcher
 (the ID is fixed by the key in the manifest).
 
 ## Design
+
+**X is the filled button's.** Wherever there is a filled (ochre) button, X
+presses it, whatever has the focus, and the button carries an X to say so:
+the browse page's (`browse/page.js`; Spela, Fortsätt från, Blanda allt,
+Spela allt, Försök igen), the overlay's menus (`overlay/hud.js`; the filled
+row: Fortsätt in a pause panel, Hem in the quick menu), the on-screen
+keyboard's OK (A only types; there is no holding A for OK) and the settings
+page's (`settings.js`). So a view has at most one filled button; a list's
+own buttons (a network's Anslut, a pad's Para) are outlined. Where there is
+none, X keeps the page's own meaning (a favourite, Spelas nu, pause).
 
 The UI follows Maskinrepubliken's design system, vendored in
 `design/maskinrepubliken/` (its brand book is `README.md` there, in Swedish).

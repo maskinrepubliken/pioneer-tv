@@ -40,6 +40,16 @@
   box-shadow: none !important; border-radius: 50% !important;
 }
 
+/* X, the pad's button, on a filled button: X is always its shortcut (the
+   browse page's, the overlay's menus', the keyboard's OK, the settings
+   page's). In the button's own colour, as an outlined key. */
+.pioneertv-x {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  min-width: 1.45em; height: 1.45em; padding: 0 0.25em; margin-left: 0.6em; vertical-align: middle;
+  font: 600 0.68em/1 var(--pioneertv-font-mono); letter-spacing: 0; text-transform: uppercase;
+  border: 0.12em solid currentColor; border-radius: 0.35em; opacity: 0.85;
+}
+
 /* Label: the system's etikett, mono capitals in ink-faint. */
 .pioneertv-label {
   font-family: var(--pioneertv-font-mono); font-size: 0.8em; letter-spacing: 0.1em;

@@ -168,7 +168,7 @@
         };
         pw.addEventListener('keydown', (e) => { if (e.key === 'Enter') connect(); });
         connectForm.append(pw, h('button', { class: 'primary small', onclick: connect }, 'Anslut'));
-        const btn = h('button', { class: 'small' + (n.active ? '' : ' primary'), onclick: () => {
+        const btn = h('button', { class: 'small', onclick: () => {
           if (n.active) return;
           if (!n.security) return connect();
           connectForm.hidden = !connectForm.hidden;
@@ -186,7 +186,7 @@
       const addSsid = h('input', { type: 'text', placeholder: 'Nätverkets namn (SSID)' });
       const addPw = h('input', { type: 'password', placeholder: 'Lösenord' });
       const addHidden = h('button', { class: 'toggle', role: 'switch', 'aria-checked': 'false', title: 'Dolt nätverk', onclick: (e) => e.currentTarget.setAttribute('aria-checked', String(e.currentTarget.getAttribute('aria-checked') !== 'true')) });
-      const addBtn = h('button', { class: 'primary small', onclick: async () => {
+      const addBtn = h('button', { class: 'small', onclick: async () => {
         if (!addSsid.value.trim()) { toast('Skriv nätverkets namn'); return; }
         addBtn.disabled = true;
         try { const r = await api('POST', '/api/wifi/add', { ssid: addSsid.value.trim(), password: addPw.value, hidden: addHidden.getAttribute('aria-checked') === 'true' }); toast(r.ok ? `Sparade ${addSsid.value.trim()}` : r.message); views.wifi(); }
@@ -206,8 +206,8 @@
           list.append(h('div', { class: 'item pioneertv-card' },
             icon(d.icon === 'input-gaming' ? 'gamepad' : 'link'),
             h('div', { class: 'grow' }, h('div', { class: 'name' }, d.name), h('div', { class: 'sub' }, `${state} · ${d.mac}${d.battery != null ? ` · batteri ${d.battery}%` : ''}`)),
-            !d.paired ? h('button', { class: 'primary small', onclick: () => bt('pair', d, 'Parar…') }, 'Para') : '',
-            d.paired && !d.connected ? h('button', { class: 'primary small', onclick: () => bt('connect', d, 'Ansluter…') }, 'Anslut') : '',
+            !d.paired ? h('button', { class: 'small', onclick: () => bt('pair', d, 'Parar…') }, 'Para') : '',
+            d.paired && !d.connected ? h('button', { class: 'small', onclick: () => bt('connect', d, 'Ansluter…') }, 'Anslut') : '',
             d.connected ? h('button', { class: 'small', onclick: () => bt('disconnect', d) }, 'Koppla från') : '',
             d.paired ? confirmBtn('Ta bort', 'small danger', () => bt('remove', d)) : '',
           ));
@@ -292,7 +292,7 @@
         topo,
         h('h2', {}, 'Rått kommando'),
         h('p', { class: 'muted' }, 'Argument till cec-ctl (enheten läggs till automatiskt). Exempel: ', h('code', {}, '--to 0 --image-view-on'), ', ', h('code', {}, '--to 0 --user-control-pressed ui-cmd=volume-up'), '.'),
-        h('div', { class: 'inline-form' }, rawIn, h('button', { class: 'small primary', onclick: runRaw }, 'Kör')),
+        h('div', { class: 'inline-form' }, rawIn, h('button', { class: 'small', onclick: runRaw }, 'Kör')),
         rawOut,
         h('h2', {}, 'CEC-spår'),
         h('p', { class: 'muted' }, '>> skickat av daemonen, << mottaget från bussen. Uppdateras varannan sekund.'),
@@ -474,6 +474,21 @@
     (views[view] || views.status)(show).catch((e) => { show(h('h1', {}, 'Fel'), h('p', {}, e.message)); });
   }
   window.addEventListener('hashchange', route);
+  // X (the pad's, as Space) presses the view's filled button wherever the
+  // focus is, as on every page of the box: the one in the form the focus is
+  // in, else the first in sight. Not while typing (a field, the keyboard).
+  window.addEventListener('keydown', (e) => {
+    if (e.key !== ' ' || e.repeat) return;
+    const a = document.activeElement;
+    if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable)) return;
+    if (document.documentElement.classList.contains('pioneertv-keyboard-open')) return;
+    const all = [...mainHost.querySelectorAll('button.primary:not([disabled])')].filter((b) => b.offsetParent);
+    const near = a && all.find((b) => b.parentElement && b.parentElement.contains(a));
+    const button = near || all[0];
+    if (!button) return;
+    e.preventDefault();
+    button.click();
+  });
   // Focusing a tab shows its view, so the d-pad only ever moves along the row.
   document.getElementById('nav').addEventListener('focusin', (e) => {
     const view = e.target && e.target.dataset && e.target.dataset.view;

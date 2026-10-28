@@ -1,5 +1,5 @@
 // Pioneer TV: the small pieces every page draws alike, so each exists once:
-// an element, a capsule button, the legend at the foot, a picture (or the
+// an element, a capsule button (a filled one marked X), the legend at the foot, a picture (or the
 // paper standing in for it), "Laddar…", a message with Försök igen in a
 // view's place, and the errors a source (RomM, Jellyfin) can give. Styled
 // by base.css.
@@ -12,19 +12,23 @@ window.PioneerTV = window.PioneerTV || {};
     return e;
   }
 
+  // A filled one (primary) carries X: X presses it from anywhere in the view
+  // (browse/page.js).
   function button(text, primary, onClick) {
     const btn = el('button', `knapp${primary ? ' primar' : ''}`, text);
+    if (primary) btn.appendChild(el('span', 'pioneertv-x', 'X'));
     btn.type = 'button';
     btn.addEventListener('click', onClick);
     return btn;
   }
 
-  // [[key, text], ...]: the pad's buttons and what they do here, and the
-  // wordmark at the right.
+  // [[key, text, how], ...]: the pad's buttons and what they do here (how:
+  // "håll", said before the key), and the wordmark at the right.
   function legend(target, items) {
     target.innerHTML = '';
-    for (const [key, text] of items) {
+    for (const [key, text, how] of items) {
       const s = el('span');
+      if (how) s.append(`${how} `);
       if (key) { s.appendChild(el('kbd', 'pioneertv-kbd', key)); s.append(' '); }
       s.append(text);
       target.appendChild(s);

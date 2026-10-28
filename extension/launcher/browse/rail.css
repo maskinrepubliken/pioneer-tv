@@ -39,7 +39,7 @@
 }
 .rail-label {
   display: none; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  font: 600 1rem/1.1 var(--pioneertv-font-ui); color: var(--pioneertv-ink-muted);
+  font: 600 1rem/1.35 var(--pioneertv-font-ui); color: var(--pioneertv-ink-muted);
 }
 .rail.open .rail-label, .rail:focus-within .rail-label { display: block; }
 .rail-item:has(.pioneertv-focus) .rail-label { color: var(--pioneertv-ink); }

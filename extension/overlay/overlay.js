@@ -32,12 +32,6 @@ window.PioneerTV = window.PioneerTV || {};
     if (!down.size && letGo) letGo();
   }, true);
 
-  // X on a pause panel carries on, as B does (before the spatial
-  // navigation, which keeps every key while a menu is open).
-  window.addEventListener('keydown', (e) => {
-    if (e.key === ' ' && held && menu.isOpen()) { e.preventDefault(); menu.close(); }
-  }, true);
-
   b.init();
   M.nav.init();
   b.state.tvMode = true;
@@ -100,8 +94,8 @@ window.PioneerTV = window.PioneerTV || {};
   // ------------------------------------------------------------ pause panels
   // A game or a video, held where it is by the daemon ("held"), with its
   // panel over it. B closes the panel and carries on (a choice that closes
-  // it runs in the same turn, so that is checked a moment later); so does
-  // X, and Home, which the daemon takes itself.
+  // it runs in the same turn, so that is checked a moment later); so do X
+  // (its filled row, Fortsätt) and Home, which the daemon takes itself.
   const hhmm = (t) => new Date(t * 1000).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
   async function post(path, body) {
     try {

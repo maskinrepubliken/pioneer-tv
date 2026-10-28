@@ -42,11 +42,18 @@ window.PioneerTV = window.PioneerTV || {};
   const parts = () => (location.hash || '#/').slice(2).split('/').map(decodeURIComponent);
   const here = () => location.hash || '#/';
 
+  // ------------------------------------------------------------ the filled button
+  // A view's filled button (Spela, Blanda allt, Försök igen) is always X's:
+  // X presses it wherever the focus is, before whatever else X means in the
+  // library (Spelas nu, a favourite), and the legend says nothing else for X.
+  const filled = () => [...view.querySelectorAll('.knapp.primar:not([disabled])')].find((b) => b.offsetParent);
+
   // ------------------------------------------------------------ the legend
   let viewLegend = [];
   function legend(items) {
     if (items) viewLegend = items;
-    const extra = library.legend ? library.legend() : [];
+    let extra = library.legend ? library.legend() : [];
+    if (filled()) extra = extra.filter(([key]) => key !== 'X');
     V.legend(legendEl, [...viewLegend, ...extra, ['Y', 'sök'], ['B', library.isRoot(parts()) ? 'hem' : 'tillbaka']]);
   }
 
@@ -67,6 +74,7 @@ window.PioneerTV = window.PioneerTV || {};
   let grid = null;               // the grid on screen, which the search field filters
   function draw(spec) {
     drawView(spec);
+    legend();                    // again, now that it knows whether there is a filled button
     b.emit('browse:drawn');
   }
   function drawView(spec) {
@@ -183,6 +191,8 @@ window.PioneerTV = window.PioneerTV || {};
     const active = document.activeElement;
     // A text field keeps its keys, except B in an empty search field: back.
     if (M.nav.isTextField(active) && !(e.key === 'Escape' && active === search && !search.value)) return;
+    const button = e.key === ' ' && filled();
+    if (button) { e.preventDefault(); if (!e.repeat) button.click(); return; }
     if (library.onKey && library.onKey(e)) { e.preventDefault(); return; }
     if (e.key !== 'Escape') return;
     e.preventDefault();

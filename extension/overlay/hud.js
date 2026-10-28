@@ -102,6 +102,8 @@ window.PioneerTV = window.PioneerTV || {};
       const name = document.createElement('span'); name.className = 'pioneertv-menu-label'; name.textContent = it.label; el.appendChild(name);
       const detail = it.detail || (it.sub ? '›' : '');
       if (detail) { const d = document.createElement('span'); d.className = 'pioneertv-menu-detail'; d.textContent = detail; el.appendChild(d); }
+      // The filled row is X's, from anywhere in the menu.
+      if (it.primary) { const x = document.createElement('span'); x.className = 'pioneertv-x'; x.textContent = 'X'; el.appendChild(x); }
       it.el = el;
       return el;
     },
@@ -178,9 +180,15 @@ window.PioneerTV = window.PioneerTV || {};
       if (best >= 0) { this.index = best; this.highlight(); }
     },
     onKeyDown(e) {
-      const handled = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Escape'];
+      const handled = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Escape', ' '];
       if (!handled.includes(e.key)) return;
       e.preventDefault(); e.stopImmediatePropagation();
+      // X: the filled row (Fortsätt, Hem, the first channel), wherever the highlight is.
+      if (e.key === ' ') {
+        const i = this.items.findIndex((it) => it.primary && !it.disabled);
+        if (i >= 0 && !e.repeat) { this.index = i; this.highlight(); this.activate(); }
+        return;
+      }
       const it = this.items[this.index];
       if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && it && it.volume && !it.disabled) {
         M.bridge.cec(e.key === 'ArrowLeft' ? 'volume_down' : 'volume_up');

@@ -25,7 +25,7 @@
   --wood-dark: color-mix(in srgb, var(--wood) 65%, var(--pioneertv-ink));
   --shade: color-mix(in srgb, var(--pioneertv-ink) 18%, transparent);
   --shade-soft: color-mix(in srgb, var(--pioneertv-ink) 5%, transparent);
-  --label-h: 4.1rem; --row-gap: 1rem;
+  --label-h: 4.4rem; --row-gap: 1rem;
   --row-h: calc(var(--cover-h) + var(--plank-h) + var(--label-h));
   --period: calc(var(--row-h) + var(--row-gap));
   --foot: var(--cover-h); --wall: calc(var(--foot) - var(--back));
@@ -100,7 +100,8 @@
 .planks--still { --paper: 16 / 9; }
 /* The label under the plank. */
 .planks .card .title {
-  grid-row: 3; margin-top: 0.7rem; text-align: center; font-size: 0.92rem; line-height: 1.15; -webkit-line-clamp: 2;
+  grid-row: 3; margin-top: 0.7rem; text-align: center; font-size: 0.92rem; line-height: 1.22; -webkit-line-clamp: 2;
+  padding-bottom: 0.15em;      /* g, j, p and y hang below the line; the clamp would cut them */
 }
 .planks .card .meta { grid-row: 4; max-width: 100%; text-align: center; }
 .planks .card .fav { display: inline-flex; vertical-align: -0.1em; margin-right: 0.3em; color: var(--pioneertv-ochre); }

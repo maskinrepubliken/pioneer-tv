@@ -48,7 +48,8 @@ window.PioneerTV = window.PioneerTV || {};
   function gridOf(title, games, filter, favs, favorites) {
     return {
       kind: 'grid', title, filter,
-      legend: [['A', 'spela'], ['X', favorites ? 'ta bort · håll: ångra' : 'favorit'], ['L1', ''], ['R1', 'hoppa en bokstav']],
+      legend: [['A', 'spela'], ...(favorites ? [['X', 'ta bort från favoriter'], ['X', 'ångra borttagning', 'håll']] : [['X', 'favorit eller inte']]),
+        ['L1', ''], ['R1', 'hoppa en bokstav']],
       items: games.map((g) => game(g, undefined, favs)), shape: 'box', columns: 6, letter,
       count: (n, all) => (n === all ? `${all} spel` : `${n} av ${all} spel`),
       empty: 'Inga spel här.',
@@ -69,7 +70,7 @@ window.PioneerTV = window.PioneerTV || {};
     const total = platforms.reduce((n, p) => n + p.count, 0);
     return {
       kind: 'shelf', title: 'Spel', count: `${platforms.length} konsoler · ${total} spel`,
-      legend: [['A', 'spela · öppna'], ['X', 'ta bort · håll: ångra']],
+      legend: [['A', 'spela · öppna'], ['X', 'ta bort från senast spelade'], ['X', 'ångra borttagning', 'håll']],
       sections: [
         { id: 'recent', label: 'Senast spelade', layout: 'shelf', shape: 'box',
           items: recent.filter((g) => !pending.has(g.id)).map((g) => game(g, `${platformName(g.platform)} · ${when(g.lastPlayed)}`, favs)),

@@ -45,8 +45,6 @@ window.PioneerTV = window.PioneerTV || {};
       this.row = 1; this.col = 0;
       this.highlight();
       M.nav.captured = this;
-      // A types on release; holding A jumps to the OK key instead. The nav
-      // hands this layer its key releases (onKeyUp below).
       document.documentElement.classList.add('pioneertv-keyboard-open');
       // The d-pad focus stays where it was; only a field out of sight is
       // brought into view, so what is typed can be seen.
@@ -81,7 +79,6 @@ window.PioneerTV = window.PioneerTV || {};
         // and click), then stop listening.
         setTimeout(() => { for (const t of ['pointerdown', 'mousedown', 'mouseup', 'click']) window.removeEventListener(t, fn, true); }, 400);
       }
-      clearTimeout(this._holdTimer); this._holdTimer = null; this._holdFired = false;
       document.documentElement.classList.remove('pioneertv-keyboard-open');
       M.bridge && M.bridge.emit('keyboard:close');
     },
@@ -135,7 +132,7 @@ window.PioneerTV = window.PioneerTV || {};
       this.field.className = 'pioneertv-keyfield';
       const hint = document.createElement('div');
       hint.className = 'pioneertv-keyhint';
-      hint.textContent = 'A skriv · X eller håll A: OK · B stäng';
+      hint.textContent = 'A skriv · X OK · B stäng';
       top.append(this.field, hint);
       root.appendChild(top);
       const rows = LAYERS[this.layer];
@@ -196,6 +193,8 @@ window.PioneerTV = window.PioneerTV || {};
     setLabel(el, def) {
       if (def.icon) el.replaceChildren(M.icons.svg(def.icon));
       else el.textContent = this.displayLabel(def);
+      // OK, the filled key, is X's.
+      if (def.accent) { const x = document.createElement('span'); x.className = 'pioneertv-x'; x.textContent = 'X'; el.appendChild(x); }
     },
 
     refreshLabels() {
@@ -240,14 +239,13 @@ window.PioneerTV = window.PioneerTV || {};
         case 'ArrowDown': this.moveRow(1); break;
         case 'ArrowLeft': this.col = (this.col - 1 + this.buttons[this.row].length) % this.buttons[this.row].length; this.highlight(); break;
         case 'ArrowRight': this.col = (this.col + 1) % this.buttons[this.row].length; this.highlight(); break;
-        case 'Enter':
-          if (e.repeat || this._holdTimer) break; // already holding
-          this._holdFired = false;
-          this._holdTimer = setTimeout(() => {
-            this._holdTimer = null; this._holdFired = true;
-            this.jumpTo('done');
-          }, 550);
+        // A types the key it is on (and only that: OK is X's).
+        case 'Enter': {
+          const def = this.buttons[this.row][this.col].def;
+          if (e.repeat && def.k !== 'backspace') break;
+          this.press(def); this.showValue();
           break;
+        }
         case 'Escape': this.close(); break;
       }
     },
@@ -261,20 +259,6 @@ window.PioneerTV = window.PioneerTV || {};
       if (this.target && t instanceof Node && (t === this.target || this.target.contains(t))) return;
       e.preventDefault(); e.stopImmediatePropagation();
       if (this.isOpen() && (e.type === 'pointerdown' || e.type === 'mousedown')) this.close();
-    },
-
-    onKeyUp(e) {
-      if (e.key !== 'Enter' || !e.isTrusted) return;
-      const held = !!this._holdTimer;
-      clearTimeout(this._holdTimer); this._holdTimer = null;
-      if (this._holdFired) { this._holdFired = false; return; } // the jump was the action
-      if (held) { this.press(this.buttons[this.row][this.col].def); this.showValue(); } // a short tap: type
-    },
-
-    // Move the highlight to a key by its id, e.g. 'done' (OK).
-    jumpTo(key) {
-      this.buttons.forEach((row, ri) => row.forEach(({ def }, ci) => { if (def.k === key) { this.row = ri; this.col = ci; } }));
-      this.highlight();
     },
 
     press(def) {
