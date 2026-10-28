@@ -594,8 +594,15 @@ none, X keeps the page's own meaning (off Senast spelade, Spelas nu, pause).
 The UI follows Maskinrepubliken's design system, vendored in
 `design/maskinrepubliken/` (its brand book is `README.md` there, in Swedish).
 Paper is the ground, ink is what you read with, ochre is the one signal; there
-are no shadows, gradients or see-through tones, and nothing moves except in
-answer to a button. Four voices, bundled in `extension/fonts/` under the SIL
+are no shadows, gradients or see-through tones. Unlike the design system
+(made for e-ink, where nothing may move), the box moves like soft clay
+(`content/clay.css`): a new view sinks into place and settles, the focus
+gives a little and swells back (a cover squashes onto its plank), a press
+squashes what was pressed, and the menu, the keyboard, a toast and a
+full-screen message are set down a little too far and come back, on a
+damped spring. Only transform's own properties and opacity move, so the Pi
+keeps up; nothing moves when less motion is asked for. Our pages carry
+`html.pioneertv-own`, so a site's own elements never squash. Four voices, bundled in `extension/fonts/` under the SIL
 Open Font License: IBM Plex Sans for everything you press or fill in, Fraunces
 for what you read and for card titles, IBM Plex Mono for every number and
 machine word, and Rubik Black for a page heading.

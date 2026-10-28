@@ -78,6 +78,7 @@ window.PioneerTV = window.PioneerTV || {};
       root.appendChild(panel);
       if (this.root) M.bridge.unmount(this.root);
       M.bridge.mount(root, { modal: true });
+      if (!was) root.classList.add('pioneertv-arrive');   // set down, as clay (content/clay.css)
       this.root = root;
       this.index = Math.min(spec.at || 0, this.items.length - 1);
       if (this.items[this.index] && this.items[this.index].disabled) this.index = Math.max(0, this.items.findIndex((it) => !it.disabled));
@@ -147,6 +148,7 @@ window.PioneerTV = window.PioneerTV || {};
     activate() {
       const it = this.items[this.index];
       if (!it || it.disabled || this.punching) return;
+      M.nav.press(it.el);
       if (it.sub) { this.push(it.sub()); return; }
       // A choice that opens a page keeps the menu and punches the row of
       // holes on it until that page has loaded ("loaded", overlay.js).

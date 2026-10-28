@@ -470,7 +470,13 @@
     const gen = ++generation;
     const el = h('div');
     mainHost.replaceChildren(el);
-    const show = (...children) => { if (gen === generation) el.replaceChildren(...children); };
+    // The view sinks into place the first time it is shown (clay.css), not
+    // on every refresh after.
+    const show = (...children) => {
+      if (gen !== generation) return;
+      el.replaceChildren(...children);
+      if (!el.classList.contains('pioneertv-arrive')) el.classList.add('pioneertv-arrive');
+    };
     (views[view] || views.status)(show).catch((e) => { show(h('h1', {}, 'Fel'), h('p', {}, e.message)); });
   }
   window.addEventListener('hashchange', route);
