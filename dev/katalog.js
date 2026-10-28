@@ -51,6 +51,12 @@
   const FILM = `${L}browse.html?library=film&tv=1`;
   const GAME = `${L}game.html?rom=101`;
   // A song playing, muted (the catalogue makes no sound).
+  // A grid filtered as Y and the keyboard would: the words in the search field.
+  const filterGrid = (words) => ({ doc }) => {
+    const f = doc.getElementById('search');
+    f.value = words;
+    f.dispatchEvent(new Event('input', { bubbles: true }));
+  };
   // The browse page's column at the left, opened on where the page is.
   const railOpen = ({ P, doc }) => { doc.getElementById('rail').classList.add('open'); P.nav.focus(doc.querySelector('.rail-item.aktiv .rail-mark')); };
   const playSong = async ({ doc }) => { doc.querySelector('.row').click(); doc.getElementById('audio').muted = true; await sleep(500); };
@@ -180,25 +186,12 @@
         { name: 'Vilar', under: HOME, url: OVERLAY, setup: ({ P }) => { P.saver.show(); P.saver.rest(true); } },
       ] },
     { part: 'Komponenter', group: 'Vänsterkolumnen', files: 'launcher/browse/rail.js · browse/rail.css · libraries/*.js (rail)',
-      used: 'Bläddringssidan, för alla bibliotek: Sök och bibliotekets vägar in, med ikon eller initial. Utfälld med namnen när fokus är där, eller pekaren rör sig över den; i vila syns den på varje bläddringsvy.',
+      used: 'Bläddringssidan, för alla bibliotek: Sök och bibliotekets vägar in, med ikon eller initial. Utfälld med namnen när fokus är där, eller pekaren rör sig över den.',
       items: [
-        { name: 'Spel', url: SPEL, ready: '.rail-mark', setup: railOpen, note: 'Senast spelade, Samlingar, och konsolerna med sin handkontroll.' },
-        { name: 'Musik', url: MUSIK, ready: '.rail-mark', setup: railOpen },
-        { name: 'Film, med mappar', url: `${FILM}#/lib/lib-hem`, ready: '.rail-item:nth-child(2)', setup: railOpen, note: 'Biblioteken, och mapparna i det man är i (också inne i en mapp).' },
-      ] },
-    { part: 'Komponenter', group: 'Hyllan', files: 'launcher/browse/planks.js · browse/planks.css · browse/cards.js (card)',
-      used: 'Omslag som står på hyllplan, i sin egen form, namnet under planet. Sektionerna och rutnätet; inget skrollar i sidled.',
-      items: [
-        { name: 'Lådor: Spel, senast spelade', url: SPEL, ready: '.card', note: 'X tar bort, en efter en; håll X ångrar.' },
-        { name: 'Affischer och stillbilder: Film', url: FILM, ready: '.card', note: 'Hur långt in: ockra längs omslagets fot.' },
-        { name: 'Kvadrater: Musik, album', url: `${MUSIK}#/albums`, ready: '.grid .card', note: 'I ett rutnät: L1/R1 hoppar en bokstav.' },
-      ] },
-    { part: 'Komponenter', group: 'Kort', files: 'launcher/browse/cards.js (stack) · browse/cards.css (.card--stack)',
-      used: 'En helhet som ett kort: dess bild, eller de första i en hög, namnet och en rad under. Samlingar, spellistor, artister.',
-      items: [
-        { name: 'Spel: samlingar', url: `${SPEL}#/collections`, ready: '.card' },
-        { name: 'Musik: blanda allt och spellistor', url: MUSIK, ready: '.card' },
-        { name: 'Musik: artister', url: `${MUSIK}#/artists`, ready: '.grid .card', note: 'I ett rutnät: L1/R1 hoppar en bokstav.' },
+        { name: 'I vila (Spel, en konsol)', url: `${SPEL}#/platform/2`, ready: '.rail-mark', note: 'Bara ikonerna och initialerna; den man är i i bläck.' },
+        { name: 'Utfälld: Spel', url: SPEL, ready: '.rail-mark', setup: railOpen, note: 'Senast spelade, Samlingar, och konsolerna med sin handkontroll.' },
+        { name: 'Utfälld: Musik', url: MUSIK, ready: '.rail-mark', setup: railOpen },
+        { name: 'Utfälld: Film, med mappar', url: `${FILM}#/lib/lib-hem`, ready: '.rail-item:nth-child(2)', setup: railOpen, note: 'Biblioteken, och mapparna i det man är i (också inne i en mapp).' },
       ] },
     { part: 'Komponenter', group: 'Spelas nu', files: 'launcher/players/audio.js · launcher/players/audio.css',
       used: 'Musik: en låt spelar i sidan; Spelas nu täcker den, och i rubriken medan man bläddrar.',
@@ -213,32 +206,44 @@
       items: [
         { name: 'Hem', url: HOME, ready: '.tiles-tile', setup: ({ P }) => daemonUp(P) },
       ] },
-    { part: 'Sidor', group: 'Bläddra: sektioner', files: 'launcher/browse.html · browse/page.js · browse/shelf.js · libraries/*.js',
-      used: 'Bläddringssidan, för alla bibliotek: en vy av sektioner under varandra, av hyllor, kort, knappar och listor. Ett biblioteks början (under Hyllan och Kort), en artist, ett filmbibliotek, en mapp, sök.',
+    { part: 'Sidor', group: 'Hyllor', files: 'launcher/browse.html · browse/planks.js · browse/planks.css · browse/shelf.js · browse/grid.js · browse/cards.js (card) · libraries/*.js',
+      used: 'Bläddringssidan, för alla bibliotek: omslag som står på hyllplan i sin egen form, namnet under planet, hyllorna från kant till kant och inget som skrollar i sidled. Långa samlingar är rutnät: bara raderna runt fokus i sidan, L1/R1 hoppar en bokstav, sök filtrerar, infon under hyllorna.',
       items: [
-        { name: 'Musik: en artist', url: `${MUSIK}#/artist/artist2`, ready: '.card' },
-        { name: 'Musik: sök', url: `${MUSIK}#/search/kom`, ready: '.card, .row' },
-        { name: 'Film: serier', url: `${FILM}#/lib/lib-serier`, ready: '.card' },
-        { name: 'Film: hemvideor och klipp', url: `${FILM}#/lib/lib-hem`, ready: '.card' },
-        { name: 'Film: en mapp', url: `${FILM}#/folder/mapp1`, ready: '.card' },
-        { name: 'Film: sök', url: `${FILM}#/search/s`, ready: '.card' },
+        { name: 'Spel · Senast spelade', url: SPEL, ready: '.card', note: 'Lådor. X tar bort, en efter en; håll X ångrar.' },
+        { name: 'Spel · En konsol', url: `${SPEL}#/platform/1`, ready: '.grid .card', note: 'Rutnät, med det valda spelets info under hyllorna. X gör ett spel till favorit.' },
+        { name: 'Spel · En konsol, längre ned', url: `${SPEL}#/platform/1`, ready: '.grid .card', setup: ({ P }) => P.grid.active.focusIndex(9) },
+        { name: 'Spel · Favoriter', url: `${SPEL}#/collection/own/1`, ready: '.grid .card', note: 'Hjärtat före namnet. Här tar X bort ur favoriter; håll X ångrar.' },
+        { name: 'Spel · Sök', url: `${SPEL}#/search/mario`, ready: '.grid .card' },
+        { name: 'Spel · Sök utan träffar', url: `${SPEL}#/search/zzz`, ready: '.empty, .grid' },
+        { name: 'Musik · Album', url: `${MUSIK}#/albums`, ready: '.grid .card', note: 'Kvadrater, i ett rutnät.' },
+        { name: 'Musik · Album, filtrerade', url: `${MUSIK}#/albums`, ready: '.grid .card', setup: filterGrid('s'), note: 'Y skriver; rutnätet visar bara det som matchar, medan man skriver.' },
+        { name: 'Musik · En artist', url: `${MUSIK}#/artist/artist2`, ready: '.card', note: 'Spela allt och Blanda, och artistens album på en hylla.' },
+        { name: 'Film · Fortsätt titta och filmer', url: FILM, ready: '.card', note: 'Stillbilder och affischer; hur långt in: ockra längs omslagets fot.' },
+        { name: 'Film · Serier', url: `${FILM}#/lib/lib-serier`, ready: '.card' },
+        { name: 'Film · Hemvideor och klipp', url: `${FILM}#/lib/lib-hem`, ready: '.card' },
+        { name: 'Film · En mapp', url: `${FILM}#/folder/mapp1`, ready: '.card' },
+        { name: 'Film · Sök', url: `${FILM}#/search/s`, ready: '.card' },
       ] },
-    { part: 'Sidor', group: 'Bläddra: rutnät', files: 'launcher/browse.html · browse/grid.js · libraries/*.js',
-      used: 'Långa samlingar, på hyllor eller som kort: bara raderna runt fokus i sidan, L1/R1 hoppar en bokstav, sökfältet filtrerar. Infopanelen när biblioteket har en. (Album och artister: under Hyllan och Kort.)',
+    { part: 'Sidor', group: 'Kort', files: 'launcher/browse.html · browse/cards.js (stack) · browse/cards.css (.card--stack) · browse/shelf.js · browse/grid.js · libraries/*.js',
+      used: 'Bläddringssidan: en helhet som ett kort, dess bild eller de första i en hög, namnet och en rad under. Samlingar, spellistor och artister.',
       items: [
-        { name: 'Spel: en konsol', url: `${SPEL}#/platform/1`, ready: '.grid .card', note: 'X gör ett spel till favorit: hjärtat före namnet.' },
-        { name: 'Spel: favoriter', url: `${SPEL}#/collection/own/1`, ready: '.grid .card', note: 'X tar bort ur favoriter, en efter en; håll X ångrar.' },
-        { name: 'Spel: sök', url: `${SPEL}#/search/mario`, ready: '.grid .card' },
+        { name: 'Spel · Samlingar', url: `${SPEL}#/collections`, ready: '.card' },
+        { name: 'Spel · Samlingar, medan omslagen kommer', url: `${SPEL}#/collections`, ready: '.card',
+          setup: ({ P, doc }) => doc.querySelectorAll('.card--stack').forEach((c) => P.cards.pile(c, null)),
+          note: 'Korten kommer direkt, omslagen efter hand (RomM tar en stund per samling).' },
+        { name: 'Musik · Blanda allt och spellistor', url: MUSIK, ready: '.card' },
+        { name: 'Musik · Artister', url: `${MUSIK}#/artists`, ready: '.grid .card', note: 'Ett rutnät av kort: L1/R1 hoppar en bokstav.' },
+        { name: 'Musik · Sök', url: `${MUSIK}#/search/kom`, ready: '.card, .row', note: 'Artister som kort, album på en hylla, låtar i en lista.' },
       ] },
-    { part: 'Sidor', group: 'Bläddra: detalj', files: 'launcher/browse.html · browse/detail.js · browse/cards.js · libraries/*.js',
-      used: 'En sak: bilden till vänster, namn, text, knappar, val, flikar och en lista bredvid.',
+    { part: 'Sidor', group: 'Detaljsidor', files: 'launcher/browse.html · browse/detail.js · browse/cards.js (row) · libraries/*.js',
+      used: 'Bläddringssidan, en sak: bilden till vänster, namn, text, knappar, val, flikar och en lista bredvid.',
       items: [
-        { name: 'Film: en film', url: `${FILM}#/item/film1`, ready: '.knapp.primar' },
-        { name: 'Film: ett avsnitt, påbörjat', url: `${FILM}#/item/serie1-s1e3`, ready: '.knapp.primar' },
-        { name: 'Film: ett klipp (inga undertexter)', url: `${FILM}#/item/klipp1`, ready: '.knapp.primar' },
-        { name: 'Film: en serie, säsonger och avsnitt', url: `${FILM}#/series/serie1`, ready: '.row' },
-        { name: 'Musik: ett album', url: `${MUSIK}#/album/album1`, ready: '.row' },
-        { name: 'Musik: en spellista', url: `${MUSIK}#/playlist/lista1`, ready: '.row' },
+        { name: 'Film · En film', url: `${FILM}#/item/film1`, ready: '.knapp.primar' },
+        { name: 'Film · Ett avsnitt, påbörjat', url: `${FILM}#/item/serie1-s1e3`, ready: '.knapp.primar' },
+        { name: 'Film · Ett klipp, utan undertexter', url: `${FILM}#/item/klipp1`, ready: '.knapp.primar' },
+        { name: 'Film · En serie, säsonger och avsnitt', url: `${FILM}#/series/serie1`, ready: '.row' },
+        { name: 'Musik · Ett album', url: `${MUSIK}#/album/album1`, ready: '.row' },
+        { name: 'Musik · En spellista', url: `${MUSIK}#/playlist/lista1`, ready: '.row' },
       ] },
     { part: 'Sidor', group: 'Spela ett spel', files: 'launcher/game.html · game/game.js · game/game.css', used: 'Innan RetroArchs fönster täcker skärmen.',
       items: [

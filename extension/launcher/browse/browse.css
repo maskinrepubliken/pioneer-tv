@@ -44,8 +44,6 @@
   padding: 0.6rem var(--side-r, 0.6rem) 0.6rem var(--side-l, 0.6rem);
   margin: -0.6rem calc(-1 * var(--side-r, 0.6rem)) -0.6rem calc(-1 * var(--side-l, 0.6rem));
 }
-/* Beside the grid's info panel it stops at the panel. */
-.grid-view--info .grid-scroll { padding-right: 0.6rem; margin-right: -0.6rem; }
 .scroll::-webkit-scrollbar { display: none; }
 
 /* ---- the shelf: sections one under the other ---- */
@@ -55,19 +53,28 @@
 .shelf-actions .knapp { align-self: stretch; }
 .shelf-actions .card--group { min-width: 11rem; }
 
-/* ---- the grid: cards at the left, the info panel (if any) at the right ---- */
-.grid-view { flex: 1; min-height: 0; display: flex; gap: 2rem; }
+/* ---- the grid: the cards, and (if the library has one) the chosen one's
+   info in a strip under them, like a shelf's sign, so the shelves keep the
+   whole width: its name and its line at the left, its text beside. ---- */
+.grid-view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .grid-scroll { min-width: 0; }
 .grid { grid-template-rows: repeat(var(--rows, 1), var(--row-h)); }
-.grid-info { width: 16.5rem; flex: none; padding-left: 1.6rem; border-left: 1px solid var(--pioneertv-line); overflow: hidden; }
-.grid-info-title {
-  margin: 0 0 0.5rem; font-family: var(--pioneertv-font-display); font-weight: 900; font-size: 1.5rem; line-height: 1.05;
-  letter-spacing: -0.01em; text-transform: uppercase;
+.grid-info {
+  flex: none; height: 4.9rem; margin-top: 0.9rem; padding-top: 0.8rem; border-top: 1px solid var(--pioneertv-line);
+  display: grid; grid-template-columns: minmax(0, 20rem) minmax(0, 1fr); column-gap: 2rem; align-items: start; overflow: hidden;
 }
-.grid-info-meta { margin: 0 0 0.8rem; font-family: var(--pioneertv-font-mono); font-size: 0.8rem; color: var(--pioneertv-ink-faint); }
+.grid-info:empty { display: none; }
+.grid-info-title {
+  grid-column: 1; margin: 0; padding-top: 0.12em; font-family: var(--pioneertv-font-display); font-weight: 900; font-size: 1.3rem; line-height: 1.05;
+  letter-spacing: -0.01em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.grid-info-meta {
+  grid-column: 1; margin: 0.35rem 0 0; font-family: var(--pioneertv-font-mono); font-size: 0.78rem; color: var(--pioneertv-ink-faint);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .grid-info-text {
-  margin: 0 0 0.9rem; font-family: var(--pioneertv-font-prose); font-size: 1rem; line-height: 1.45; color: var(--pioneertv-ink-muted);
-  display: -webkit-box; -webkit-line-clamp: 9; -webkit-box-orient: vertical; overflow: hidden;
+  grid-column: 2; grid-row: 1 / span 3; margin: 0; font-family: var(--pioneertv-font-prose); font-size: 0.98rem; line-height: 1.4;
+  color: var(--pioneertv-ink-muted); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
 }
 
 /* ---- the detail: the picture at the left, the rest beside it ---- */

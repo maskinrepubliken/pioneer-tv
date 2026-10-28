@@ -103,8 +103,9 @@ kinds, made of items of one shape (`browse/cards.js`):
 - **the grid** (`browse/grid.js`): a long collection on the same shelves
   (or as stacks, `look: 'stacks'`: every artist),
   only the rows around the focus in the page (the planks are drawn behind
-  the rows, so they are all there), L1/R1 a letter, Sök filtering it, an
-  info panel when the library has one; a console's games, every album;
+  the rows, so they are all there), L1/R1 a letter, Sök filtering it, the
+  chosen one's info in a strip under the shelves when the library has it
+  (so the shelves always run wall to wall); a console's games, every album;
 - **the detail** (`browse/detail.js`): one thing, its picture, text,
   buttons, choices, tabs and a list; a film, a series, an album.
 

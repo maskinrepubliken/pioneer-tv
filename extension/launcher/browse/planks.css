@@ -5,18 +5,26 @@
    planks, each at its own shape, the name on a label under it, as many to
    a plank as there are columns and the next plank under it. The planks are
    drawn behind the rows, so a grid that keeps only the rows near the focus
-   (grid.js) has them all the same. A plank in the system's rust with a
-   wood grain on its front edge, seen a little from above: its top runs back to the wall, darker there, and the
-   covers stand on it a little in from its front edge, each with its
-   shadow on the top and on the wall; under the front edge, the plank's
-   own shadow on the wall. ---- */
+   (grid.js) has them all the same, and they always run wall to wall: from
+   the column at the left to the screen's right edge, the covers keeping the
+   page's margins.
+
+   A plank in the system's rust, seen a little from above. Its top runs back
+   to the wall, in shade there, and the wall darkens a little just above it,
+   where the two meet; the covers stand on it a little in from its front
+   edge, each with its shadow on the top and on the wall. The front edge
+   has a wood grain, lit along its top and dark along its foot, and the
+   plank's own shadow falls on the wall under it. ---- */
 .planks {
-  --back: 0.9rem; --fore: 0.6rem; --front: 0.75rem; --plank-h: calc(var(--fore) + var(--front));
+  --back: 0.9rem; --fore: 0.6rem; --front: 0.8rem; --plank-h: calc(var(--fore) + var(--front));
   --wood: var(--pioneertv-surface-rust);
   --wood-deep: color-mix(in srgb, var(--wood) 62%, var(--pioneertv-paper));
   --wood-top: color-mix(in srgb, var(--wood) 26%, var(--pioneertv-paper));
   --wood-lit: color-mix(in srgb, var(--wood) 12%, var(--pioneertv-paper));
+  --wood-edge: color-mix(in srgb, var(--wood) 70%, var(--pioneertv-paper));
+  --wood-dark: color-mix(in srgb, var(--wood) 65%, var(--pioneertv-ink));
   --shade: color-mix(in srgb, var(--pioneertv-ink) 18%, transparent);
+  --shade-soft: color-mix(in srgb, var(--pioneertv-ink) 5%, transparent);
   --label-h: 4.1rem; --row-gap: 1rem;
   --row-h: calc(var(--cover-h) + var(--plank-h) + var(--label-h));
   --period: calc(var(--row-h) + var(--row-gap));
@@ -25,35 +33,36 @@
   display: grid; column-gap: 1.3rem; row-gap: var(--row-gap);
   grid-template-columns: repeat(var(--columns, 6), minmax(0, 1fr));
   grid-auto-rows: var(--row-h);
-  /* Layers, top first: the plank's shadow on the wall; its top; the wall
-     itself, everywhere but the front edge; under that the edge, the wood
-     grain (wood.png: "Purty Wood" by Richard Tabor, from
+  margin-left: calc(-1 * var(--side-l, 0px)); padding-left: var(--side-l, 0px);
+  margin-right: calc(-1 * var(--side-r, 0px)); padding-right: var(--side-r, 0px);
+  /* Layers, top first: the plank's shadow on the wall; its front edge's lit
+     top and dark foot; its top; the wall darkening where it meets the top;
+     the wall itself, everywhere but the front edge; under that the edge,
+     the wood grain (wood.png: "Purty Wood" by Richard Tabor, from
      transparenttextures.com, turned to run along the plank) over the rust. */
   background-color: var(--wood);
   background-image:
-    linear-gradient(to bottom, transparent var(--end), var(--shade) var(--end), transparent calc(var(--end) + 1rem)),
+    linear-gradient(to bottom, transparent var(--end), var(--shade) var(--end), transparent calc(var(--end) + 1.1rem)),
+    linear-gradient(to bottom,
+      transparent var(--lip), var(--wood-edge) var(--lip), transparent calc(var(--lip) + 2px),
+      transparent calc(var(--end) - 2px), var(--wood-dark) calc(var(--end) - 2px), var(--wood-dark) var(--end), transparent var(--end)),
     linear-gradient(to bottom,
       transparent var(--wall),
       var(--wood-deep) var(--wall),
       var(--wood-top) calc(var(--wall) + 0.45rem),
       var(--wood-lit) var(--lip),
       transparent var(--lip)),
+    linear-gradient(to bottom, transparent calc(var(--wall) - 1.6rem), var(--shade-soft) var(--wall), transparent var(--wall)),
     linear-gradient(to bottom,
       var(--pioneertv-paper) var(--lip), transparent var(--lip) var(--end), var(--pioneertv-paper) var(--end)),
     url("wood.png");
-  background-size: 100% var(--period), 100% var(--period), 100% var(--period), 12rem auto;
-  background-repeat: repeat-y, repeat-y, repeat-y, repeat;
+  background-size: 100% var(--period), 100% var(--period), 100% var(--period), 100% var(--period), 100% var(--period), 12rem auto;
+  background-repeat: repeat-y, repeat-y, repeat-y, repeat-y, repeat-y, repeat;
   /* The grain only darkens the rust, its light flecks leave it be. */
-  background-blend-mode: normal, normal, normal, multiply;
+  background-blend-mode: normal, normal, normal, normal, normal, multiply;
 }
-/* The planks run wall to wall: from the column at the left to the screen's
-   right edge (beside the grid's info panel, to the panel), the covers
-   keeping the page's margins. */
-.planks {
-  margin-left: calc(-1 * var(--side-l, 0px)); padding-left: var(--side-l, 0px);
-  margin-right: calc(-1 * var(--side-r, 0px)); padding-right: var(--side-r, 0px);
-}
-.grid-view--info .planks { margin-right: 0; padding-right: 0; }
+/* No covers (a search that found nothing): no plank either. */
+.planks:empty { background: none; }
 .planks--box { --cover-h: 9.4rem; }
 .planks--poster { --cover-h: 11.5rem; }
 .planks--square { --cover-h: 8.6rem; }

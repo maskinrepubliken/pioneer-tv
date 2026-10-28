@@ -49,7 +49,7 @@ window.PioneerTV = window.PioneerTV || {};
     return {
       kind: 'grid', title, filter,
       legend: [['A', 'spela'], ['X', favorites ? 'ta bort · håll: ångra' : 'favorit'], ['L1', ''], ['R1', 'hoppa en bokstav']],
-      items: games.map((g) => game(g, undefined, favs)), shape: 'box', columns: 4, letter,
+      items: games.map((g) => game(g, undefined, favs)), shape: 'box', columns: 6, letter,
       count: (n, all) => (n === all ? `${all} spel` : `${n} av ${all} spel`),
       empty: 'Inga spel här.',
       info: (it) => {

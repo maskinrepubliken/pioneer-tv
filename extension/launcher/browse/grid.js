@@ -4,10 +4,9 @@
 //   { items, shape, look, columns, info, letter, count }
 //
 // look: 'stacks' for cards of wholes (cards.js stack: the artists), else
-// covers on shelves. info(item): { title, meta, text, foot } for a panel at the right that
-// follows the focus (else the cards take the width); letter(item): the
-// letter it files under, for L1/R1 jumps; count(shown, all): the heading's
-// count. The page's search field filters it while it is on screen.
+// covers on shelves. info(item): { title, meta, text, foot } for a strip
+// under the cards that follows the focus; letter(item): the letter it
+// files under, for L1/R1 jumps; count(shown, all): the heading's count. The page's search field filters it while it is on screen.
 //
 // Only the rows around the focus are in the page (a console can have nearly
 // a thousand games, the box 1,707 albums): with every card there, the
@@ -58,7 +57,7 @@ window.PioneerTV = window.PioneerTV || {};
     scroller.appendChild(gridEl);
     body.appendChild(scroller);
     const info = spec.info ? el('aside', 'grid-info') : null;
-    if (info) { body.appendChild(info); body.classList.add('grid-view--info'); }
+    if (info) body.appendChild(info);
     view.appendChild(body);
 
     function showInfo(item) {
