@@ -445,9 +445,16 @@ tracks of its own), TV-volym, Meny (the quick menu, one step in) and Sluta
 titta (back). The panel's choices go back to the frame they are for. The
 menu pauses the video as it does every page's (the media event, the
 frames' too), and closing it carries on. While the video fills the screen
-(fullscreen, or bigscreen.js's promotion) left and right seek and A pauses
-or plays, with a toast, without the panel. Nothing of the site's player is
-touched, so it works for what the site protects too.
+(fullscreen, or bigscreen.js's promotion) the pad drives the `<video>`
+itself, not the site's keys: left and right seek, A or X pauses or plays,
+up and down only show where it is. Our own bar says so at the foot of the
+picture (a card on ink: playing or paused, the name, how far in on a line
+of ochre, the time, what the pad does), for a few seconds after a press and
+for as long as it is paused. Where we know the site's own controls they
+are hidden meanwhile (`SITE_UI` in webvideo.js; SVT Play's `desktopUi` and
+top bar, which came and went at every press); its subtitles stay. The
+video itself is never touched beyond play, pause and its time, so it works
+for what the site protects too.
 
 ## Covers on the box
 
