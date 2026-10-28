@@ -449,8 +449,8 @@ frames' too), and closing it carries on. While the video fills the screen
 itself, not the site's keys: left and right seek, A or X pauses or plays,
 up and down only show where it is. Our own bar says so at the foot of the
 picture (a card on ink: playing or paused, the name, how far in on a line
-of ochre, the time, what the pad does), for a few seconds after a press and
-for as long as it is paused. Where we know the site's own controls they
+of ochre, the time, what the pad does), for three seconds after the last
+press, paused or not. Where we know the site's own controls they
 are hidden meanwhile (`SITE_UI` in webvideo.js; SVT Play's `desktopUi` and
 top bar, which came and went at every press); its subtitles stay. The
 video itself is never touched beyond play, pause and its time, so it works
@@ -601,15 +601,8 @@ none, X keeps the page's own meaning (off Senast spelade, Spelas nu, pause).
 The UI follows Maskinrepubliken's design system, vendored in
 `design/maskinrepubliken/` (its brand book is `README.md` there, in Swedish).
 Paper is the ground, ink is what you read with, ochre is the one signal; there
-are no shadows, gradients or see-through tones. Unlike the design system
-(made for e-ink, where nothing may move), the box moves like soft clay
-(`content/clay.css`): a new view sinks into place and settles, the focus
-gives a little and swells back (a cover squashes onto its plank), a press
-squashes what was pressed, and the menu, the keyboard, a toast and a
-full-screen message are set down a little too far and come back, on a
-damped spring. Only transform's own properties and opacity move, so the Pi
-keeps up; nothing moves when less motion is asked for. Our pages carry
-`html.pioneertv-own`, so a site's own elements never squash. Four voices, bundled in `extension/fonts/` under the SIL
+are no shadows, gradients or see-through tones, and nothing moves except in
+answer to a button. Four voices, bundled in `extension/fonts/` under the SIL
 Open Font License: IBM Plex Sans for everything you press or fill in, Fraunces
 for what you read and for card titles, IBM Plex Mono for every number and
 machine word, and Rubik Black for a page heading.

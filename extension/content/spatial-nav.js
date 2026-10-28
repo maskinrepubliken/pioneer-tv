@@ -168,17 +168,6 @@ window.PioneerTV = window.PioneerTV || {};
       else this.focus(el, { scroll: false });
     },
 
-    // What was pressed squashes and springs back (content/clay.css): a
-    // click, A on it, a menu's row or a key (hud.js, keyboard.js).
-    press(el) {
-      if (!el || !el.classList) return;
-      el.classList.remove('pioneertv-press');
-      void el.offsetWidth;
-      el.classList.add('pioneertv-press');
-      clearTimeout(el._pioneertvPress);
-      el._pioneertvPress = setTimeout(() => el.classList.remove('pioneertv-press'), 340);
-    },
-
     // Enter on div-based "buttons" that only react to click.
     activate(el) {
       if (!el) return false;
@@ -321,8 +310,6 @@ window.PioneerTV = window.PioneerTV || {};
       document.addEventListener('mousemove', seen, { capture: true, passive: true });
       // Real pointer (right stick) clicks: keep our ring on the clicked thing.
       document.addEventListener('click', (e) => {
-        const pressed = e.target instanceof Element && e.target.closest(FOCUSABLE);
-        if (pressed && !pressed.closest('.pioneertv-keyboard, .pioneertv-menu')) this.press(pressed);
         if (M.bridge && M.bridge.autoKeyboard() && this.isTextField(e.target) && M.keyboard && !M.keyboard.isOpen()) M.keyboard.open(e.target);
       }, true);
     },

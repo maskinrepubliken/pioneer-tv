@@ -75,8 +75,7 @@
       "css": [
         "content/tokens.css",
         "content/paper.css",
-        "content/content.css",
-        "content/clay.css"
+        "content/content.css"
       ],
       "run_at": "document_idle",
       "exclude_matches": [

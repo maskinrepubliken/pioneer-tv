@@ -1,15 +1,3 @@
-/* The colours a pad lends the page (main.js, applyPad) are registered as
-   colours so that a change of pad fades instead of jumping. */
-@property --pioneertv-ochre { syntax: '<color>'; inherits: true; initial-value: #f5cf5a; }
-@property --pioneertv-on-ochre { syntax: '<color>'; inherits: true; initial-value: #1c1613; }
-@property --pioneertv-focus { syntax: '<color>'; inherits: true; initial-value: #1c1613; }
-@property --pioneertv-focus-on-dark { syntax: '<color>'; inherits: true; initial-value: #f5cf5a; }
-@property --pioneertv-pointer-fill { syntax: '<color>'; inherits: true; initial-value: #f4efe4; }
-:root {
-  transition: --pioneertv-ochre 0.4s ease, --pioneertv-on-ochre 0.4s ease, --pioneertv-focus 0.4s ease,
-    --pioneertv-focus-on-dark 0.4s ease, --pioneertv-pointer-fill 0.4s ease;
-}
-
 /* Pioneer TV overlays on any page, on Maskinrepubliken's design system.
    Namespaced with pioneertv- and drawn above the page. Tokens come from
    tokens.css, primitives from paper.css. No shadows, no gradients and no

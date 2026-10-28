@@ -10,8 +10,6 @@
   position: fixed; top: 0; bottom: 0; left: 0; z-index: 5; width: var(--rail);
   display: flex; flex-direction: column; padding: 4.5vh 0 3vh;
   background: var(--pioneertv-paper-sunken);
-  /* it widens and narrows softly, as clay (content/clay.css) */
-  transition: width 420ms var(--pioneertv-clay-settle, ease-out);
 }
 .rail.open, .rail:focus-within { width: 19rem; border-right: 1px solid var(--pioneertv-line); }
 .rail-list {

@@ -42,7 +42,6 @@ window.PioneerTV = window.PioneerTV || {};
       this.layer = 'letters';
       this.shift = false;
       this.build();
-      this.root.classList.add('pioneertv-arrive');         // set down, as clay (clay.css)
       this.row = 1; this.col = 0;
       this.highlight();
       M.nav.captured = this;
@@ -147,7 +146,7 @@ window.PioneerTV = window.PioneerTV || {};
         b.style.flexBasis = '0';
         this.setLabel(b, def);
         b.dataset.key = def.k;
-        b.addEventListener('click', () => { this.row = ri; this.col = ci; this.highlight(); M.nav.press(b); this.press(def); this.showValue(); });
+        b.addEventListener('click', () => { this.row = ri; this.col = ci; this.highlight(); this.press(def); this.showValue(); });
         // The pointer over a key marks it, so the d-pad goes on from there.
         b.addEventListener('mouseover', () => {
           if (!(M.cursor && M.cursor.active()) || (this.row === ri && this.col === ci)) return;
@@ -247,7 +246,6 @@ window.PioneerTV = window.PioneerTV || {};
         case 'Enter': {
           const def = this.buttons[this.row][this.col].def;
           if (e.repeat && def.k !== 'backspace') break;
-          M.nav.press(this.buttons[this.row][this.col].el);
           this.press(def); this.showValue();
           break;
         }

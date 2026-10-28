@@ -160,7 +160,7 @@ window.PioneerTV = window.PioneerTV || {};
   // ------------------------------------------------------------ our bar
   // Over the video at its foot, a card on ink: playing or paused, the name,
   // how far in on a line of ochre, the time, and what the pad does. It
-  // comes on a press and goes after a few seconds; paused, it stays. It is a
+  // comes on a press and goes a few seconds after the last one. It is a
   // popover in its own shadow, so it is drawn over the fullscreen video and
   // the site's styles never reach it (this frame may be a film service's,
   // without the rest of ours).
@@ -180,13 +180,9 @@ window.PioneerTV = window.PioneerTV || {};
     .name { flex: 1; min-width: 0; font: italic 400 26px/1.25 Fraunces, Georgia, serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-bottom: 0.12em; }
     .time { flex: none; font: 400 22px/1 "IBM Plex Mono", "Courier New", monospace; color: #f4efe4; }
     .track { position: relative; height: 8px; margin: 18px 0 14px; border-radius: 4px; background: #3f3934; overflow: hidden; }
-    .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: #f5cf5a; transition: width 300ms cubic-bezier(0.22, 0.8, 0.3, 1); }
-    .hint { font: 400 16px/1 "IBM Plex Mono", "Courier New", monospace; letter-spacing: 0.06em; color: #c9c4ba; }
-    .arrive { animation: plop 480ms linear(0, 0.071, 0.229, 0.415, 0.593, 0.742, 0.858, 0.939, 0.992, 1.022, 1.035, 1.038, 1.035, 1.029, 1.021, 1.015, 1.009, 1.005, 1.002, 1, 0.999, 1) backwards; transform-origin: 50% 100%; }
-    .squish { animation: squish 380ms ease-out; }
-    @keyframes plop { from { opacity: 0; translate: 0 18px; scale: 0.94 0.88; } 60% { opacity: 1; } to { opacity: 1; translate: 0 0; scale: 1 1; } }
-    @keyframes squish { 0% { scale: 1 1; } 30% { scale: 0.88 0.85; } 65% { scale: 1.06 1.08; } 100% { scale: 1 1; } }
-    @media (prefers-reduced-motion: reduce) { .arrive, .squish, .fill { animation: none; transition: none; } }`;
+    .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: #f5cf5a; }
+    .hint { font: 400 16px/1 "IBM Plex Mono", "Courier New", monospace; letter-spacing: 0.06em; color: #c9c4ba; }`;
+  const HIDE_MS = 3000;
   const bar = (() => {
     let host = null, root = null, els = null, hideTimer = 0, tick = 0, shownOver = null;
     function build() {
@@ -215,7 +211,7 @@ window.PioneerTV = window.PioneerTV || {};
         ? (end - v.currentTime > 15 ? `Direkt −${clock(end - v.currentTime)}` : 'Direkt')
         : `${clock(v.currentTime)} / ${clock(v.duration)}`;
     }
-    function show(squish) {
+    function show() {
       const v = main();
       if (!v) return;
       if (!host) build();
@@ -225,17 +221,13 @@ window.PioneerTV = window.PioneerTV || {};
       if (!open()) {
         try { host.showPopover(); } catch { return; }
         shownOver = over;
-        els.bar.classList.remove('arrive'); void els.bar.offsetWidth; els.bar.classList.add('arrive');
-      } else if (squish) {
-        els.icon.classList.remove('squish'); void els.icon.offsetWidth; els.icon.classList.add('squish');
       }
       draw();
       clearInterval(tick);
       tick = setInterval(draw, 500);
+      // It goes a few seconds after the last press, paused or not.
       clearTimeout(hideTimer);
-      // Paused it stays; playing, it goes after a while.
-      const later = () => { hideTimer = setTimeout(() => { const m = main(); if (m && m.paused) later(); else hide(); }, 3500); };
-      later();
+      hideTimer = setTimeout(hide, HIDE_MS);
     }
     function hide() {
       clearTimeout(hideTimer);
@@ -244,8 +236,6 @@ window.PioneerTV = window.PioneerTV || {};
     }
     return { show, hide };
   })();
-  // Paused or played from elsewhere (the overlay's menu, the site): the bar says so.
-  for (const ev of ['play', 'pause']) document.addEventListener(ev, (e) => { if (e.target === main() && ownPlayer()) bar.show(true); }, true);
 
   // Left and right seek, A or X pauses or plays, up and down show the bar,
   // while the video fills the screen; true when the key was taken. The
@@ -259,15 +249,14 @@ window.PioneerTV = window.PioneerTV || {};
     if (!v || !filling(v)) return false;
     ownPlayer();
     if (e.key === 'Enter' || e.key === ' ') {
-      if (!e.repeat) { if (v.paused) v.play().catch(() => {}); else v.pause(); }
-      bar.show(true);
+      if (!e.repeat) { if (v.paused) v.play().catch(() => {}); else v.pause(); bar.show(); }
       return true;
     }
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
       seek(v, (e.key === 'ArrowLeft' ? -1 : 1) * (e.repeat ? LONG_STEP : STEP));
       report(true);
-    }
-    bar.show(false);
+      bar.show();
+    } else if (!e.repeat) bar.show();     // up or down: only where it is
     return true;
   }
   if (!M.nav) {

@@ -76,7 +76,6 @@ window.PioneerTV = window.PioneerTV || {};
   function draw(spec) {
     if (spec.kind !== 'message') V.clear();
     drawView(spec);
-    arrive();
     legend();                    // again, now that it knows whether there is a filled button
     b.emit('browse:drawn');
   }
@@ -100,13 +99,6 @@ window.PioneerTV = window.PioneerTV || {};
     }
     const first = spec.kind === 'detail' ? M.detail.render(view, spec) : M.shelf.render(view, spec);
     if (!typing) restoreFocus(first || searchBtn);
-  }
-
-  // A new view sinks into place, as clay (content/clay.css).
-  function arrive() {
-    view.classList.remove('pioneertv-arrive');
-    void view.offsetWidth;
-    view.classList.add('pioneertv-arrive');
   }
 
   // ------------------------------------------------------------ routing
