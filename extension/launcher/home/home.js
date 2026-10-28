@@ -33,8 +33,8 @@
     const rows = [first.map(service), row2];
     const head = [
       { key: 'search', label: 'Sök', icon: 'search', round: true, run: panel('search') },
-      { key: 'settings', label: 'Inställningar', icon: 'gear', run: panel('settings') },
-      { key: 'tv-off', label: 'Stäng av TV:n', icon: 'power', run: () => b.cec('tv_off') },
+      { key: 'settings', label: 'Inställningar', icon: 'gear', round: true, run: panel('settings') },
+      { key: 'tv-off', label: 'Stäng av TV:n', icon: 'power', round: true, run: () => b.cec('tv_off') },
     ];
     const next = M.tiles.sheet({ head, rows, legend: [[['arrows'], 'navigera'], [['A'], 'välj'], [['Y'], 'tangentbord']] });
     for (const it of rows.flat()) it.el.addEventListener('click', () => (it.panel ? panel(it.panel)() : open(it)));

@@ -39,8 +39,9 @@ window.PioneerTV = window.PioneerTV || {};
     return t;
   }
 
-  // A button at the top: its symbol and its name, or (round: Sök) its
-  // symbol alone in a ring (paper.css, pioneertv-round).
+  // A button at the top: its symbol and its name, or (round: Sök,
+  // Inställningar, Stäng av TV:n) its symbol alone in a ring (paper.css,
+  // pioneertv-round).
   function headButton(it) {
     const btn = el('button', (it.round ? 'pioneertv-round' : 'tiles-btn') + (it.disabled ? ' pioneertv-menu-disabled' : ''));
     btn.type = 'button';

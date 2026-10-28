@@ -80,8 +80,8 @@ window.PioneerTV = window.PioneerTV || {};
       { label: 'Ladda om', icon: 'reload', run: () => b.reload() },
       { label: 'Tangentbord', icon: 'keyboard', run: () => b.keyboard() },
       { label: 'Sök', icon: 'search', round: true, keep: true, run: search },
-      { label: 'Inställningar', icon: 'gear', sub: settings },
-      { label: 'Stäng av TV:n', icon: 'power', run: () => b.cec('tv_off'), disabled: !b.state.daemonConnected },
+      { label: 'Inställningar', icon: 'gear', round: true, sub: settings },
+      { label: 'Stäng av TV:n', icon: 'power', round: true, run: () => b.cec('tv_off'), disabled: !b.state.daemonConnected },
     ];
     return {
       title: 'Meny',
