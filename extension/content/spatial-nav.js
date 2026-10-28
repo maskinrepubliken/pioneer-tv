@@ -88,9 +88,11 @@ window.PioneerTV = window.PioneerTV || {};
 
     gap(a1, a2, b1, b2) { return Math.max(0, Math.max(a1, b1) - Math.min(a2, b2)); },
 
-    // The ring is put away while the pointer is in use (cursor.js), so only one
+    // While the pointer is in use (cursor.js) the ring is on what it is
+    // over, and put away while it is over nothing one can focus, so only one
     // thing on screen looks selected; the focus itself is kept.
-    ringShown() { return !document.documentElement.classList.contains('pioneertv-pointer'); },
+    hovering: false,
+    ringShown() { return this.hovering || !document.documentElement.classList.contains('pioneertv-pointer'); },
     ring(show) {
       const el = this.current;
       if (el && el.isConnected) el.classList.toggle(FOCUS_CLASS, show);
@@ -143,6 +145,27 @@ window.PioneerTV = window.PioneerTV || {};
         if (s < bs) { bs = s; best = el; }
       }
       return best || list[0];
+    },
+
+    // The pointer (the right stick's arrow, or a mouse) moved over t: what
+    // one can focus there gets the focus and the ring, as if the d-pad had
+    // gone to it, so the arrows go on from it. Over nothing, the ring goes.
+    // Only while the arrow is on screen: a mouse at rest is told of what is
+    // drawn anew under it, which must not take the focus.
+    pointerOver(t) {
+      if (this.captured || !(M.cursor && M.cursor.active())) return;
+      let el = t && t.closest ? t.closest(FOCUSABLE) : null;
+      // An icon inside a button: the button.
+      const outer = el && el.parentElement && el.parentElement.closest(FOCUSABLE);
+      if (outer && el.tagName !== 'INPUT' && this.rectContains(outer.getBoundingClientRect(), el.getBoundingClientRect())) el = outer;
+      if (el && (el.disabled || el.getAttribute('aria-disabled') === 'true' || !this.isVisible(el))) el = null;
+      if (!el) {
+        if (this.hovering) { this.hovering = false; this.ring(false); }
+        return;
+      }
+      this.hovering = true;
+      if (el === this.current) this.ring(true);
+      else this.focus(el, { scroll: false });
     },
 
     // Enter on div-based "buttons" that only react to click.
@@ -279,6 +302,12 @@ window.PioneerTV = window.PioneerTV || {};
         this.current = el;
         el.classList.toggle(FOCUS_CLASS, this.ringShown());
       });
+      // A mouse's first move says mouseover before the arrow is shown
+      // (cursor.js shows it on mousemove), so a move over something new counts too.
+      let over = null;
+      const seen = (e) => { if (e.type === 'mouseover' || e.target !== over) { over = e.target; this.pointerOver(e.target); } };
+      document.addEventListener('mouseover', seen, true);
+      document.addEventListener('mousemove', seen, { capture: true, passive: true });
       // Real pointer (right stick) clicks: keep our ring on the clicked thing.
       document.addEventListener('click', (e) => {
         if (M.bridge && M.bridge.autoKeyboard() && this.isTextField(e.target) && M.keyboard && !M.keyboard.isOpen()) M.keyboard.open(e.target);

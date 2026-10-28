@@ -41,7 +41,7 @@ what was learned on the way.
 | Y / Triangle | On-screen keyboard. Hold: quick menu |
 | L1, R1 | Shift+Tab, Tab (previous, next focusable) |
 | L2, R2 | TV volume down, up (CEC, repeats while held) |
-| Right stick | Mouse pointer; click on the stick to left-click |
+| Right stick | Mouse pointer; click on the stick to left-click. What it (or a mouse) is over is drawn as selected and takes the focus, so the d-pad goes on from there |
 | Start | Quick menu (also: hold Y) |
 | Select | Status toast |
 | Guide / Home / PS / Xbox | Quick menu, over whatever is on screen (press again to close it); in a game or a film, the pause panel instead. Hold: the home page. Also wakes the TV and switches input when the pad connects |

@@ -110,14 +110,6 @@ html.pioneertv-keyboard-open { scroll-padding-bottom: 320px; }
   background: var(--pioneertv-surface-ink) !important; border-color: var(--pioneertv-surface-ink) !important; color: var(--pioneertv-on-dark) !important;
   outline: 3px solid var(--pioneertv-focus); outline-offset: 3px;
 }
-/* While the pointer is in use the d-pad's key is not marked: the arrow is. */
-html.pioneertv-pointer .pioneertv-key.pioneertv-key-active:not(.pioneertv-hover) {
-  background: var(--pioneertv-paper-raised) !important; border-color: var(--pioneertv-line-strong) !important; color: var(--pioneertv-ink) !important;
-  outline: none;
-}
-html.pioneertv-pointer .pioneertv-key.pioneertv-key-accent.pioneertv-key-active {
-  background: var(--pioneertv-ochre) !important; border-color: var(--pioneertv-ochre) !important; color: var(--pioneertv-on-ochre) !important;
-}
 .pioneertv-keyhint {
   font: 14px/1.4 var(--pioneertv-font-mono); letter-spacing: 0.1em; text-transform: uppercase;
   color: var(--pioneertv-ink-faint); text-align: right; white-space: nowrap;

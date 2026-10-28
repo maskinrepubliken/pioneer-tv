@@ -66,7 +66,15 @@ window.PioneerTV = window.PioneerTV || {};
       root.setAttribute('data-pioneertv-overlay', '');
       this.items = spec.items;
       const panel = this.panel(spec);
-      this.items.forEach((it, i) => it.el.addEventListener('click', () => { this.index = i; this.highlight(); this.activate(); }));
+      this.items.forEach((it, i) => {
+        it.el.addEventListener('click', () => { this.index = i; this.highlight(); this.activate(); });
+        // The pointer over a row marks it, so the d-pad goes on from there.
+        it.el.addEventListener('mouseover', () => {
+          if (it.disabled || i === this.index || !(M.cursor && M.cursor.active())) return;
+          this.index = i;
+          this.highlight();
+        });
+      });
       root.appendChild(panel);
       if (this.root) M.bridge.unmount(this.root);
       M.bridge.mount(root, { modal: true });

@@ -147,6 +147,11 @@ window.PioneerTV = window.PioneerTV || {};
         this.setLabel(b, def);
         b.dataset.key = def.k;
         b.addEventListener('click', () => { this.row = ri; this.col = ci; this.highlight(); this.press(def); this.showValue(); });
+        // The pointer over a key marks it, so the d-pad goes on from there.
+        b.addEventListener('mouseover', () => {
+          if (!(M.cursor && M.cursor.active()) || (this.row === ri && this.col === ci)) return;
+          this.row = ri; this.col = ci; this.highlight();
+        });
         return { def, el: b };
       }));
       for (const row of this.buttons) {

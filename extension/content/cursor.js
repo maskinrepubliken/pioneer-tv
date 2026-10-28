@@ -5,8 +5,9 @@
 // streams right-stick motion as "pointer" events instead, and this script
 // draws a paper arrow, moves it, and delivers hover, clicks and
 // edge-scrolling to whatever is under it. While the arrow is on screen A
-// (Enter) always clicks what is under it, and the focus ring is put away so
-// there is only one thing that looks selected.
+// (Enter) always clicks what is under it, and what it is over is drawn as
+// selected and takes the focus (spatial-nav.js pointerOver; the overlay's
+// menus and the keyboard their own), so the arrows go on from there.
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const ARROW = '<svg viewBox="0 0 24 36" width="24" height="36" aria-hidden="true">'
@@ -36,7 +37,9 @@ window.PioneerTV = window.PioneerTV || {};
     const root = document.documentElement;
     if (!root || root.classList.contains('pioneertv-pointer') === on) return;
     root.classList.toggle('pioneertv-pointer', on);
-    if (M.nav && M.nav.ring) M.nav.ring(!on);
+    // Off: the ring back on the focus (which the pointer may have moved,
+    // spatial-nav.js pointerOver). On: it stays where the pointer puts it.
+    if (!on && M.nav) { M.nav.hovering = false; if (M.nav.ring) M.nav.ring(true); }
   }
 
   function hideArrow() {

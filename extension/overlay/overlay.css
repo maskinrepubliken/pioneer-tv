@@ -46,7 +46,7 @@ html, body { margin: 0; height: 100%; background: transparent !important; overfl
 .pioneertv-menu-primary .pioneertv-menu-icon, .pioneertv-menu-primary .pioneertv-menu-detail { color: var(--pioneertv-on-ochre); }
 .pioneertv-menu-icon { width: 24px; font-size: 22px; display: inline-flex; justify-content: center; flex: none; color: var(--pioneertv-ink-muted); }
 .pioneertv-menu-detail { margin-left: auto; font: 400 15px/1 var(--pioneertv-font-mono); color: var(--pioneertv-ink-faint); white-space: nowrap; }
-html:not(.pioneertv-pointer) .pioneertv-menu-active { outline: 4px solid var(--pioneertv-focus); outline-offset: 5px; }
+.pioneertv-menu-active { outline: 4px solid var(--pioneertv-focus); outline-offset: 5px; }
 .pioneertv-menu-disabled, .pioneertv-menu-disabled .pioneertv-menu-icon { color: var(--pioneertv-ink-faint); border-color: var(--pioneertv-line); }
 .pioneertv-menu-status {
   margin-top: auto; padding-top: 13px; border-top: 1px solid var(--pioneertv-line);

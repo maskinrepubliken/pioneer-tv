@@ -70,7 +70,7 @@ window.PioneerTV = window.PioneerTV || {};
     const now = !!target && rail.contains(target);
     const entering = now && !inside;
     inside = now;
-    if (!entering || !list.contains(target)) return;
+    if (!entering || !list.contains(target) || M.nav.hovering) return;   // the pointer chose it
     const here = list.querySelector('.rail-item.aktiv .rail-mark');
     if (here && here !== target) M.nav.focus(here);
   });
