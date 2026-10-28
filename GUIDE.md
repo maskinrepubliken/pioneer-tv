@@ -35,7 +35,7 @@ what was learned on the way.
 | D-pad, left stick | Move focus (arrow keys) |
 | A / Cross | Select (Enter) |
 | B / Circle | Escape: closes an overlay, releases an engaged slider, leaves a text field. Hold: one page back |
-| X / Square | Play, pause (Space) |
+| X / Square | Play, pause (Space). Hold: undo (Ctrl+Z), e.g. what X took off a list |
 | Y / Triangle | On-screen keyboard. Hold: quick menu |
 | L1, R1 | Shift+Tab, Tab (previous, next focusable) |
 | L2, R2 | TV volume down, up (CEC, repeats while held) |
@@ -269,13 +269,17 @@ TV page in settings (`ui.home_minutes`, `ui.tv_off_minutes`; 0 is never).
 
 The Spel tile opens the browse page on top of [RomM](https://github.com/rommapp/romm)
 (`browse.html?library=spel`, [The pages](#the-pages)): recently played;
-Samlingar, a shelf per collection with its first games and Alla; the
+Samlingar, each collection as a whole (its first covers fanned out, its
+name and how many), A opening it; the
 consoles in the column at the left, each by its pad (or its initial); each
 console's games with covers; a game opens `game.html`, which has it
 played. X on a game makes it a favourite, or not, a heart before its name:
 RomM's own Favourites collection (the one with `is_favorite`), made the
-first time if RomM has none. On the first view X instead removes a game
-from Senast spelade; X again within five seconds puts it back.
+first time if RomM has none. On Senast spelade, and in Favoriter, X
+instead takes the game off the list at once, one after the other;
+holding X (Ctrl+Z) puts back the last one taken, then the one before.
+RomM hears of a game off Senast spelade only after a minute, or when the
+page goes away, so putting it back never touches it.
 
 The pages never talk to RomM directly. They call `/romm/...` on their own
 origin, and the daemon forwards that to RomM with the API key added; only

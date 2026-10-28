@@ -36,12 +36,15 @@ window.PioneerTV = window.PioneerTV || {};
     return /^[a-z]$/.test(base) ? base : '#';
   }
 
-  // ctx: { setCount(text), savedKey }. Returns { focusFirst(), filter(words) }.
+  // ctx: { setCount(text), savedKey }. Returns { focusFirst(), filter(words),
+  // focusIndex(i), remove(key), insert(item, at), alive() }; the grid on
+  // screen is also M.grid.active.
   function render(view, spec, ctx) {
     const all = spec.items;
     const cols = spec.columns || 5;
     const letter = spec.letter || ((it) => letterOf(it.title));
     let shown = all;
+    let words = '';
     let windowStart = -1;
     const nodes = new Map();       // index in shown -> card
 
@@ -143,18 +146,46 @@ window.PioneerTV = window.PioneerTV || {};
 
     if (!all.length && spec.empty) scroller.appendChild(el('p', 'empty', spec.empty));
     setShown(all);
-    return {
+    const matches = () => {
+      const q = fold(words.trim());
+      return q ? all.filter((it) => fold(it.title).includes(q)) : all;
+    };
+    const api = {
       focusFirst() {
         const at = ctx.savedKey ? shown.findIndex((it) => it.key === ctx.savedKey) : -1;
         focusIndex(Math.max(at, 0));
         return !!shown.length;
       },
-      filter(words) {
-        const q = fold(words.trim());
-        setShown(q ? all.filter((it) => fold(it.title).includes(q)) : all);
+      filter(w) {
+        words = w;
+        setShown(matches());
       },
       focusIndex,
+      // Takes an item off (X on a list it can leave): the focus goes to the
+      // one now in its place. Returns { item, at } (where it was in the
+      // whole) for insert, or null.
+      remove(key) {
+        const i = shown.findIndex((it) => it.key === key);
+        if (i < 0) return null;
+        const item = shown[i];
+        const at = all.indexOf(item);
+        all.splice(at, 1);
+        setShown(matches());
+        if (shown.length) focusIndex(Math.min(i, shown.length - 1));
+        else M.nav.focus(document.getElementById('search-btn'));
+        return { item, at };
+      },
+      // Puts it back where it was, with the focus on it.
+      insert(item, at) {
+        all.splice(Math.min(at, all.length), 0, item);
+        setShown(matches());
+        const i = shown.indexOf(item);
+        if (i >= 0) focusIndex(i);
+      },
+      alive: () => gridEl.isConnected,
     };
+    M.grid.active = api;
+    return api;
   }
 
   M.grid = { render, letterOf };

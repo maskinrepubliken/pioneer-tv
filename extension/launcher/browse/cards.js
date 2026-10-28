@@ -78,6 +78,22 @@ window.PioneerTV = window.PioneerTV || {};
     return a;
   }
 
+  // A collection as a whole: its first few pictures fanned out on paper
+  // (pictures: [{ src, name }]), its name and how many under them.
+  function stack(item) {
+    const a = el('a', 'card card--stack pioneertv-card');
+    link(a, item);
+    const fan = el('span', 'stack');
+    const pics = (item.pictures || []).slice(0, 3);
+    fan.dataset.n = String(pics.length);
+    pics.forEach((p) => fan.appendChild(V.cover(p.src, p.name)));
+    if (!pics.length) fan.appendChild(el('span', 'stack-empty', 'Tom'));
+    a.appendChild(fan);
+    a.appendChild(el('span', 'name', item.title));
+    if (item.meta) a.appendChild(el('span', 'meta', item.meta));
+    return a;
+  }
+
   // A row of a list (songs, episodes): picture 'still', 'thumb', or the number.
   function row(item, n, look) {
     const a = el(item.href ? 'a' : 'button', `row row--${look}${item.played ? ' played' : ''}`);
@@ -120,5 +136,5 @@ window.PioneerTV = window.PioneerTV || {};
     return nav;
   }
 
-  M.cards = { card, group, row, picture, tabs, favorite };
+  M.cards = { card, group, stack, row, picture, tabs, favorite };
 })(window.PioneerTV);

@@ -17,6 +17,7 @@ import evdev
 from evdev import ecodes as e
 
 from .actions import Dispatcher
+from .config import UNDO
 
 log = logging.getLogger("pioneertv.gamepad")
 
@@ -59,7 +60,7 @@ QUIRKS = [
     ("Nintendo", {"invert": ["ABS_Y", "ABS_RY"]}),
     ("Stratus XL", {"invert": ["ABS_Y", "ABS_RZ"], "buttons": {
         "BTN_B": {"key": "KEY_ESC", "long": {"system": "back"}},
-        "BTN_C": {"key": "KEY_SPACE"},                                  # X
+        "BTN_C": {"key": "KEY_SPACE", "long": UNDO},                    # X (hold: undo)
         "BTN_NORTH": {"system": "keyboard", "long": {"system": "menu"}},  # Y
         "BTN_WEST": {"key": "KEY_TAB", "modifiers": ["KEY_LEFTSHIFT"]}, # L1: previous focusable
         "BTN_Z": {"key": "KEY_TAB"},                                    # R1: next focusable
@@ -73,7 +74,7 @@ QUIRKS = [
     # the keyboard (hold: the quick menu), as on every other pad. Verified on
     # the box button by button; everything else matches the defaults.
     ("Ultimate 2C", {"buttons": {
-        "BTN_NORTH": {"key": "KEY_SPACE"},                                  # X
+        "BTN_NORTH": {"key": "KEY_SPACE", "long": UNDO},                    # X (hold: undo)
         "BTN_WEST": {"system": "keyboard", "long": {"system": "menu"}},     # Y
     }}),
 ]

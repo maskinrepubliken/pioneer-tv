@@ -8,6 +8,9 @@ from typing import Any
 
 DEFAULT_PATHS = [Path("/etc/pioneer-tv/config.toml"), Path(__file__).resolve().parent.parent / "config.toml"]
 
+# Holding X: undo, as Ctrl+Z (the browse page takes back what X removed).
+UNDO: dict[str, Any] = {"key": "KEY_Z", "modifiers": ["KEY_LEFTCTRL"]}
+
 DEFAULTS: dict[str, Any] = {
     "daemon": {"host": "127.0.0.1", "port": 8765, "log_level": "info"},
     "cec": {
@@ -54,7 +57,7 @@ DEFAULTS: dict[str, Any] = {
             "BTN_DPAD_RIGHT": {"key": "KEY_RIGHT"},
             "BTN_SOUTH": {"key": "KEY_ENTER"},
             "BTN_EAST": {"key": "KEY_ESC", "long": {"system": "back"}},      # hold: one page back
-            "BTN_WEST": {"key": "KEY_SPACE"},
+            "BTN_WEST": {"key": "KEY_SPACE", "long": UNDO},                 # hold: undo (Ctrl+Z)
             "BTN_NORTH": {"system": "keyboard", "long": {"system": "menu"}},  # hold: quick menu
             "BTN_TL": {"key": "KEY_TAB", "modifiers": ["KEY_LEFTSHIFT"]},  # previous focusable
             "BTN_TR": {"key": "KEY_TAB"},                                  # next focusable

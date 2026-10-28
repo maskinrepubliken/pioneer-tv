@@ -2,15 +2,16 @@
 // each with its label, scrolling as one column. A library's start, a film
 // library, an artist, a search. A section:
 //
-//   { label, layout, items, shape, columns, limit, more, look, empty }
+//   { label, layout, items, shape, columns, look, empty }
 //
-// layout: 'shelf' (covers standing on shelves, as many to a shelf as there
+// layout: 'stacks' (collections as wholes, three to a row, each its first
+// pictures fanned out: items { key, title, meta, href, pictures }),
+// 'shelf' (covers standing on shelves, as many to a shelf as there
 // are columns, the next shelf under it: nothing scrolls sideways; 'row' and
 // 'grid' are shelves too), 'groups' (type-only cards, wrapping), 'actions'
 // (buttons and type-only cards in a line: { button: true, label, primary,
 // run, key } for a button) or 'rows' (a list, look 'number', 'thumb' or
-// 'still'). limit: one shelf only; more: a type-only card at its end (the
-// way to all of them). A section without items is left out, or says empty.
+// 'still'). A section without items is left out, or says empty.
 // focus: the key the focus goes to first.
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
@@ -50,6 +51,9 @@ window.PioneerTV = window.PioneerTV || {};
         if (it.key) b.dataset.key = it.key;
         body.appendChild(b);
       }
+    } else if (s.layout === 'stacks') {
+      body = el('div', 'shelf-stacks');
+      items.forEach((it) => body.appendChild(C.stack(it)));
     } else if (s.layout === 'groups') {
       body = el('div', 'shelf-groups');
       items.forEach((it) => body.appendChild(C.group(it)));
@@ -57,9 +61,7 @@ window.PioneerTV = window.PioneerTV || {};
       const shape = s.shape || items[0].shape || 'square';
       const columns = s.columns || COLUMNS[shape] || 6;
       body = planks(shape, columns);
-      const shown = s.limit ? items.slice(0, columns - (s.more ? 1 : 0)) : items;
-      shown.forEach((it) => body.appendChild(C.card(it, shape)));
-      if (s.more) body.appendChild(C.group(s.more));
+      items.forEach((it) => body.appendChild(C.card(it, shape)));
     }
     box.appendChild(body);
     return box;

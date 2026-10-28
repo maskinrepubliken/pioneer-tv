@@ -243,18 +243,32 @@
   border-radius: 0.16rem; background: var(--pioneertv-ochre);
 }
 .planks .card.pioneertv-focus .title { color: var(--pioneertv-ink); }
-/* A type-only card on a shelf (the way to all of them): a block standing
-   on the plank, as tall as the covers. */
-.planks .card--group {
-  display: flex; flex-direction: column; height: var(--cover-h); width: auto; aspect-ratio: var(--paper, 3 / 4); max-width: 100%; justify-self: center;
-  min-width: 0; align-self: start; justify-content: flex-end; padding: 0.8rem 0.9rem; text-align: left;
-  border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-s); background: var(--pioneertv-paper-raised);
+/* ---- collections as wholes (shelf.js, stacks): a card each on raised
+   paper, its first covers fanned out, the first in front, standing as on
+   the shelves; its name in Rubik, how many under it. ---- */
+.shelf-stacks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.6rem 1.5rem; }
+.card--stack {
+  padding: 1.3rem 1.4rem 1.1rem; border: 1px solid var(--pioneertv-line-strong);
+  background: var(--pioneertv-paper-raised);
 }
-.planks .card--group .name { font-size: 1.3rem; }
-.planks .card--group .meta { text-align: left; }
-.planks .card--group.pioneertv-focus {
-  outline: 0.22rem solid var(--pioneertv-focus) !important; outline-offset: 0.25rem !important; border-radius: var(--pioneertv-radius-s) !important;
+.stack { position: relative; display: block; height: 10.5rem; margin-bottom: 1.1rem; }
+.stack .cover {
+  position: absolute; bottom: 0; left: 50%; width: 6.8rem; height: 9.2rem; border-radius: 0.15rem;
+  transform-origin: 50% 100%; filter: drop-shadow(0.25rem 0.2rem 0.35rem color-mix(in srgb, var(--pioneertv-ink) 22%, transparent));
 }
+.stack .cover img { object-fit: cover; }
+.stack .cover:nth-child(1) { z-index: 3; transform: translateX(-50%); }
+.stack .cover:nth-child(2) { z-index: 2; transform: translateX(-50%) translateX(-3.6rem) rotate(-8deg); }
+.stack .cover:nth-child(3) { z-index: 1; transform: translateX(-50%) translateX(3.6rem) rotate(8deg); }
+.stack-empty {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font: italic 1.1rem var(--pioneertv-font-prose); color: var(--pioneertv-ink-faint);
+}
+.card--stack .name {
+  font-family: var(--pioneertv-font-display); font-weight: 900; font-size: 1.45rem; line-height: 1.05; padding-top: 0.1em;
+  letter-spacing: -0.01em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.card--stack .meta { margin-top: 0.3rem; padding: 0; }
 
 /* Type only: a console, a collection, a folder. */
 .card--group { min-width: 9.5rem; padding: 0.65rem 1.2rem 0.6rem; justify-content: flex-end; }
