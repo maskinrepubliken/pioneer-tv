@@ -151,8 +151,8 @@
    planks, each at its own shape, the name on a label under it, as many to
    a plank as there are columns and the next plank under it. The planks are
    drawn behind the rows, so a grid that keeps only the rows near the focus
-   (grid.js) has them all the same. A plank in the system's rust, seen a
-   little from above: its top runs back to the wall, darker there, and the
+   (grid.js) has them all the same. A plank in the system's rust with a
+   wood grain on its front edge, seen a little from above: its top runs back to the wall, darker there, and the
    covers stand on it a little in from its front edge, each with its
    shadow on the top and on the wall; under the front edge, the plank's
    own shadow on the wall. ---- */
@@ -171,20 +171,26 @@
   display: grid; column-gap: 1.3rem; row-gap: var(--row-gap);
   grid-template-columns: repeat(var(--columns, 6), minmax(0, 1fr));
   grid-auto-rows: var(--row-h);
+  /* Layers, top first: the plank's shadow on the wall; its top; the wall
+     itself, everywhere but the front edge; under that the edge, the wood
+     grain (wood.png: "Purty Wood" by Richard Tabor, from
+     transparenttextures.com, turned to run along the plank) over the rust. */
+  background-color: var(--wood);
   background-image:
-    /* the plank: its top from the wall (in shade) to the lit lip, then its front */
+    linear-gradient(to bottom, transparent var(--end), var(--shade) var(--end), transparent calc(var(--end) + 1rem)),
     linear-gradient(to bottom,
       transparent var(--wall),
       var(--wood-deep) var(--wall),
       var(--wood-top) calc(var(--wall) + 0.45rem),
-      var(--wood-lit) calc(var(--lip) - 1px),
-      var(--pioneertv-paper-raised) calc(var(--lip) - 1px) calc(var(--lip) + 1px),
-      var(--wood) calc(var(--lip) + 1px) var(--end),
-      transparent var(--end)),
-    /* its shadow on the wall under it */
-    linear-gradient(to bottom, transparent var(--end), var(--shade) var(--end), transparent calc(var(--end) + 1rem));
-  background-size: 100% var(--period);
-  background-repeat: repeat-y;
+      var(--wood-lit) var(--lip),
+      transparent var(--lip)),
+    linear-gradient(to bottom,
+      var(--pioneertv-paper) var(--lip), transparent var(--lip) var(--end), var(--pioneertv-paper) var(--end)),
+    url("wood.png");
+  background-size: 100% var(--period), 100% var(--period), 100% var(--period), 12rem auto;
+  background-repeat: repeat-y, repeat-y, repeat-y, repeat;
+  /* The grain only darkens the rust, its light flecks leave it be. */
+  background-blend-mode: normal, normal, normal, multiply;
 }
 .planks--box { --cover-h: 9.4rem; }
 .planks--poster { --cover-h: 11.5rem; }
