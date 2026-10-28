@@ -1,6 +1,6 @@
 // Pioneer TV library Musik: Jellyfin's music (sources/jellyfin.js), drawn
-// by the browse page (browse/page.js). #/ is Blanda allt, Album, Artister
-// and the playlists; #/albums and #/artists are grids; #/album/<id> and
+// by the browse page (browse/page.js). #/ is Blanda allt and the
+// playlists, and the column at the left goes to Album and Artister; #/albums and #/artists are grids; #/album/<id> and
 // #/playlist/<id> a list of songs; #/artist/<id> an artist's albums;
 // #/search/<words> what was found. A song plays in the page, from where it
 // is in its list (players/audio.js): X opens Spelas nu, L1/R1 skip.
@@ -56,8 +56,6 @@ window.PioneerTV = window.PioneerTV || {};
       sections: [
         { layout: 'actions', items: [
           { button: true, label: 'Blanda allt', primary: true, key: 'shuffle', run: tryPlay(() => J.shuffleAll(), false) },
-          { key: 'albums', title: 'Album', href: '#/albums' },
-          { key: 'artists', title: 'Artister', href: '#/artists' },
         ] },
         { label: 'Spellistor', layout: 'grid', columns: 5, items: playlists.map(group),
           empty: 'Inga spellistor än. Gör en i Jellyfin på datorn eller telefonen.' },
@@ -122,6 +120,13 @@ window.PioneerTV = window.PioneerTV || {};
     };
   }
 
+  // The column at the left: the playlists (the start), the albums, the artists.
+  const rail = () => [{ items: [
+    { label: 'Spellistor', href: '#/', key: 'rail:playlists' },
+    { label: 'Album', href: '#/albums', key: 'rail:albums' },
+    { label: 'Artister', href: '#/artists', key: 'rail:artists' },
+  ] }];
+
   function view([what, arg]) {
     if (what === 'albums' || what === 'artists') return grid(what);
     if ((what === 'playlist' || what === 'album') && arg) return list(what, arg);
@@ -141,6 +146,6 @@ window.PioneerTV = window.PioneerTV || {};
   M.libraries.musik = {
     name: 'Musik', source: 'Jellyfin', search: 'Sök låt, album eller artist…',
     isRoot: ([what]) => !what,
-    view, onKey, legend: () => audio.legend(),
+    view, rail, onKey, legend: () => audio.legend(),
   };
 })(window.PioneerTV);

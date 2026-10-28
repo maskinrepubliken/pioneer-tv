@@ -17,13 +17,20 @@
 </head>
 <body>
   <!-- One page for every library (?library=spel, musik, film): browse/page.js. -->
+  <!-- The column at the left: Sök, then the library's ways in (browse/rail.js). -->
+  <aside class="rail" id="rail">
+    <div class="rail-item rail-search" id="search-item">
+      <button class="pioneertv-round rail-mark" id="search-btn" type="button" aria-label="Sök"></button>
+      <span class="rail-label">Sök</span>
+    </div>
+    <nav class="rail-list" id="rail-list"></nav>
+  </aside>
   <div class="page">
     <header class="head" id="head">
       <h1 class="head-title" id="title"></h1>
       <span class="head-count" id="count"></span>
       <div class="head-tabs" id="tabs" hidden></div>
       <span class="head-query" id="query"></span>
-      <button class="pioneertv-round" id="search-btn" type="button" title="Sök" aria-label="Sök"></button>
       <!-- The search button types into this through the on-screen keyboard,
            which shows the text; the field itself stays out of sight. -->
       <input class="head-search" id="search" type="search" autocomplete="off" tabindex="-1">
@@ -50,6 +57,7 @@
   <script src="browse/shelf.js"></script>
   <script src="browse/grid.js"></script>
   <script src="browse/detail.js"></script>
+  <script src="browse/rail.js"></script>
   <script src="players/video.js"></script>
   <script src="players/audio.js"></script>
   <script src="libraries/spel.js"></script>

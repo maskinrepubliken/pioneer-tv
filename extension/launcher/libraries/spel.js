@@ -54,7 +54,7 @@ window.PioneerTV = window.PioneerTV || {};
   }
 
   async function start() {
-    const [recent, platforms, collections] = await Promise.all([R.recent(), R.platforms(), R.collections()]);
+    const [recent, platforms] = await Promise.all([R.recent(), R.platforms()]);
     undo = null;                 // its card belonged to the view drawn before
     const total = platforms.reduce((n, p) => n + p.count, 0);
     return {
@@ -62,11 +62,8 @@ window.PioneerTV = window.PioneerTV || {};
       legend: [['A', 'spela · öppna'], ['X', 'ta bort ur senast spelade']],
       sections: [
         { id: 'recent', label: 'Senast spelade', layout: 'row', shape: 'box',
-          items: recent.filter((g) => !pending.has(g.id)).map((g) => game(g, `${platformName(g.platform)} · ${when(g.lastPlayed)}`)) },
-        { label: 'Konsoler', layout: 'groups',
-          items: platforms.map((p) => ({ key: `platform:${p.id}`, title: PLATFORM_SHORT[p.slug] || p.name, meta: `${p.count} spel`, href: `#/platform/${p.id}` })) },
-        { label: 'Samlingar', layout: 'groups',
-          items: collections.map((c) => ({ key: `collection:${c.kind}:${c.id}`, title: c.name, meta: `${c.count} spel`, style: 'prose', href: `#/collection/${c.kind}/${encodeURIComponent(c.id)}` })) },
+          items: recent.filter((g) => !pending.has(g.id)).map((g) => game(g, `${platformName(g.platform)} · ${when(g.lastPlayed)}`)),
+          empty: 'Inget spelat än. Välj en konsol till vänster.' },
       ],
     };
   }
@@ -87,6 +84,16 @@ window.PioneerTV = window.PioneerTV || {};
       return gridOf(`”${a}”`, games, false);
     }
     return start();
+  }
+
+  // The column at the left: the start, the consoles, the collections.
+  async function rail() {
+    const [platforms, collections] = await Promise.all([R.platforms(), R.collections()]);
+    return [
+      { items: [{ label: 'Senast spelade', href: '#/', key: 'rail:recent' }] },
+      { label: 'Konsoler', items: platforms.map((p) => ({ label: PLATFORM_SHORT[p.slug] || p.name, href: `#/platform/${p.id}`, key: `platform:${p.id}` })) },
+      { label: 'Samlingar', items: collections.map((c) => ({ label: c.name, href: `#/collection/${c.kind}/${encodeURIComponent(c.id)}`, key: `collection:${c.kind}:${c.id}` })) },
+    ];
   }
 
   // ------------------------------------------------------------ remove + undo
@@ -140,6 +147,6 @@ window.PioneerTV = window.PioneerTV || {};
   M.libraries.spel = {
     name: 'Spel', source: 'RomM', search: 'Sök bland spelen…',
     isRoot: ([what]) => !what,
-    view, onKey,
+    view, rail, onKey,
   };
 })(window.PioneerTV);

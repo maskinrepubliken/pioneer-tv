@@ -3,8 +3,9 @@
 // played on the box in mpv (players/video.js).
 //
 // #/ (the first library) and #/lib/<id>: "Fortsätt titta", then the
-// library's films, series or clips, the libraries as tabs (Jellyfin's own,
-// music left out, so a new one appears by itself); #/folder/<id>;
+// library's films, series or clips; the libraries and a library's folders
+// in the column at the left (Jellyfin's own, music left out, so a new one
+// appears by itself); #/folder/<id>;
 // #/series/<id>[/<season id>]: the series, its seasons as tabs, a season's
 // episodes; #/item/<id>: a film, an episode or a clip, with Spela, sound
 // and subtitles; #/search/<words>.
@@ -55,12 +56,13 @@ window.PioneerTV = window.PioneerTV || {};
     };
   }
 
-  // What a library or a folder holds: folders first, then posters, then stills.
-  function sections(found, label) {
-    const folders = found.filter((v) => v.kind === 'folder').map(item);
+  // What a library or a folder holds: folders first (a library's are in the
+  // column at the left instead), then posters, then stills.
+  function sections(found, label, { folders: withFolders = true } = {}) {
+    const folders = withFolders ? found.filter((v) => v.kind === 'folder').map(item) : [];
     const posters = found.filter((v) => v.kind === 'movie' || v.kind === 'series').map(item);
     const stills = found.filter((v) => !['folder', 'movie', 'series'].includes(v.kind)).map(item);
-    if (!found.length) return [{ label, items: [], empty: 'Här finns inget än.' }];
+    if (!found.length || (!folders.length && found.every((v) => v.kind === 'folder'))) return [{ label, items: [], empty: 'Här finns inget än.' }];
     return [
       { label, layout: 'groups', items: folders },
       { label: folders.length ? null : label, layout: 'grid', columns: 6, shape: 'poster', items: posters },
@@ -75,15 +77,33 @@ window.PioneerTV = window.PioneerTV || {};
     return libraries;
   }
 
+  // What a library holds, kept for the column at the left (its folders).
+  const held = new Map();
+  function browse(lib) {
+    if (!held.has(lib.id)) held.set(lib.id, J.browse(lib).catch((e) => { held.delete(lib.id); throw e; }));
+    return held.get(lib.id);
+  }
+
+  // The column at the left: the libraries, and the folders of the one the
+  // page is in.
+  async function rail([what, id]) {
+    const all = await libs();
+    const lib = what === 'lib' ? all.find((l) => l.id === id) : !what ? all[0] : null;
+    const folders = lib ? (await browse(lib)).filter((v) => v.kind === 'folder') : [];
+    return [
+      { label: 'Bibliotek', items: all.map((l) => ({ label: l.name, href: `#/lib/${encodeURIComponent(l.id)}`, key: `lib:${l.id}`, active: lib ? l.id === lib.id : false })) },
+      { label: 'Mappar', items: folders.map((v) => ({ label: v.name, href: href(v), key: `v:${v.id}` })) },
+    ];
+  }
+
   async function library(id) {
     const all = await libs();
     const lib = all.find((l) => l.id === id) || all[0];
     if (!lib) return { kind: 'message', text: 'Inga bibliotek med film eller serier', hint: 'Lägg till ett i Jellyfin.' };
-    const [begun, found] = await Promise.all([J.resume(lib).catch(() => []), J.browse(lib)]);
+    const [begun, found] = await Promise.all([J.resume(lib).catch(() => []), browse(lib)]);
     return {
-      kind: 'shelf', title: 'Film & serier', legend: [['A', 'öppna']],
-      tabs: all.map((l) => ({ label: l.name, href: `#/lib/${encodeURIComponent(l.id)}`, key: `tab:${l.id}`, active: l.id === lib.id })),
-      sections: [{ label: 'Fortsätt titta', layout: 'row', shape: 'still', items: begun.map(still) }, ...sections(found, lib.name)],
+      kind: 'shelf', title: lib.name, legend: [['A', 'öppna']],
+      sections: [{ label: 'Fortsätt titta', layout: 'row', shape: 'still', items: begun.map(still) }, ...sections(found, null, { folders: false })],
     };
   }
 
@@ -176,6 +196,6 @@ window.PioneerTV = window.PioneerTV || {};
     name: 'Film & serier', source: 'Jellyfin', search: 'Sök film eller serie…',
     // B leaves the page from any library tab.
     isRoot: ([what]) => !what || what === 'lib',
-    view,
+    view, rail,
   };
 })(window.PioneerTV);

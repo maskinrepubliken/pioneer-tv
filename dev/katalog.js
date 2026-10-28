@@ -51,6 +51,8 @@
   const FILM = `${L}browse.html?library=film&tv=1`;
   const GAME = `${L}game.html?rom=101`;
   // A song playing, muted (the catalogue makes no sound).
+  // The browse page's column at the left, opened on where the page is.
+  const railOpen = ({ P, doc }) => { doc.getElementById('rail').classList.add('open'); P.nav.focus(doc.querySelector('.rail-item.aktiv .rail-mark')); };
   const playSong = async ({ doc }) => { doc.querySelector('.row').click(); doc.getElementById('audio').muted = true; await sleep(500); };
   const GAME_PICTURE = '/romm/assets/cover/101.svg';
   const FILM_PICTURE = '/jellyfin/Items/serie1-s1e3/Images/Primary?tag=p';
@@ -182,16 +184,19 @@
       items: [
         { name: 'Hem', url: HOME, ready: '.tiles-tile', setup: ({ P }) => daemonUp(P) },
       ] },
-    { part: 'Sidor', group: 'Bläddra: hylla', files: 'launcher/browse.html · browse/page.js · browse/shelf.js · browse/cards.js · libraries/*.js',
-      used: 'Ett biblioteks början, en artist, ett filmbibliotek, en mapp, sök: sektioner med rader, rutnät och kort, för alla bibliotek.',
+    { part: 'Sidor', group: 'Bläddra: hylla', files: 'launcher/browse.html · browse/page.js · browse/rail.js · browse/shelf.js · browse/cards.js · libraries/*.js',
+      used: 'Ett biblioteks början, en artist, ett filmbibliotek, en mapp, sök: sektioner med rader, rutnät och kort, för alla bibliotek. Till vänster Sök och bibliotekets vägar in, med initialen; utfälld med namnen när fokus är där.',
       items: [
-        { name: 'Spel: senast spelade, konsoler, samlingar', url: SPEL, ready: '.card' },
-        { name: 'Musik: blanda allt, album, artister, spellistor', url: MUSIK, ready: '.card' },
+        { name: 'Spel: senast spelade', url: SPEL, ready: '.card' },
+        { name: 'Spel: kolumnen utfälld', url: SPEL, ready: '.rail-mark', setup: railOpen, note: 'Fokus i kolumnen (eller pekaren över den): konsolerna och samlingarna med namn, över vyn.' },
+        { name: 'Musik: blanda allt och spellistor', url: MUSIK, ready: '.card' },
+        { name: 'Musik: kolumnen utfälld', url: MUSIK, ready: '.rail-mark', setup: railOpen },
         { name: 'Musik: en artist', url: `${MUSIK}#/artist/artist2`, ready: '.card' },
         { name: 'Musik: sök', url: `${MUSIK}#/search/kom`, ready: '.card, .row' },
         { name: 'Film: fortsätt titta och alla filmer', url: FILM, ready: '.card' },
         { name: 'Film: serier', url: `${FILM}#/lib/lib-serier`, ready: '.card' },
-        { name: 'Film: hemvideor, mappar och klipp', url: `${FILM}#/lib/lib-hem`, ready: '.card' },
+        { name: 'Film: hemvideor och klipp', url: `${FILM}#/lib/lib-hem`, ready: '.card' },
+        { name: 'Film: kolumnen utfälld, med mappar', url: `${FILM}#/lib/lib-hem`, ready: '.rail-item:nth-child(2)', setup: railOpen, note: 'Biblioteken, och mapparna i det man är i.' },
         { name: 'Film: en mapp', url: `${FILM}#/folder/mapp1`, ready: '.card' },
         { name: 'Film: sök', url: `${FILM}#/search/s`, ready: '.card' },
       ] },

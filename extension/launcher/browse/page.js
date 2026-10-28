@@ -6,8 +6,9 @@
 // cards.js).
 //
 // A library is { name, source, search, isRoot(parts), view(parts),
-// legend(), onKey(e) }: view() answers a hash (#/what/arg/...) with a view
-// to draw,
+// rail(parts), legend(), onKey(e) }: rail() gives the column at the left
+// its ways in (browse/rail.js); view() answers a hash (#/what/arg/...) with
+// a view to draw,
 //
 //   { kind: 'shelf' | 'grid' | 'detail', title, count, tabs, legend, ... }
 //
@@ -26,6 +27,7 @@ window.PioneerTV = window.PioneerTV || {};
   const tabsEl = $('tabs');
   const search = $('search');
   const searchBtn = $('search-btn');
+  const searchItem = $('search-item');
   const queryEl = $('query');
   const legendEl = $('legend');
   M.launcherUrl = new URL('index.html?tv=1', location.href).href;
@@ -36,7 +38,6 @@ window.PioneerTV = window.PioneerTV || {};
   document.title = `${library.name} – Pioneer TV`;
   titleEl.textContent = library.name;
   search.placeholder = library.search;
-  searchBtn.title = library.search;
 
   const parts = () => (location.hash || '#/').slice(2).split('/').map(decodeURIComponent);
   const here = () => location.hash || '#/';
@@ -95,6 +96,7 @@ window.PioneerTV = window.PioneerTV || {};
   const isCurrent = (t) => t === routeToken;
   async function route() {
     const token = ++routeToken;
+    rail(token);
     const [what, arg] = parts();
     if (what === 'search' && arg && search.value.trim() !== arg) search.value = arg;
     if (what !== 'search' && document.activeElement !== search) search.value = '';
@@ -118,6 +120,14 @@ window.PioneerTV = window.PioneerTV || {};
   }
   window.addEventListener('hashchange', route);
 
+  // The column at the left, for where the page is now; a source that does
+  // not answer leaves it with Sök alone (the view says what is wrong).
+  async function rail(token) {
+    let groups = [];
+    try { groups = library.rail ? await library.rail(parts()) : []; } catch { /* the view says it */ }
+    if (isCurrent(token)) M.rail.render(groups, here());
+  }
+
   // ------------------------------------------------------------ search
   // A round button, as on every page of ours; A on it (or Y anywhere) opens
   // the on-screen keyboard on a field out of sight, which shows what is
@@ -126,7 +136,7 @@ window.PioneerTV = window.PioneerTV || {};
   // place: the hash follows without a new history entry for every letter,
   // so B leaves the search in one step.
   searchBtn.appendChild(M.icons.svg('search'));
-  searchBtn.addEventListener('click', () => M.keyboard.open(search));
+  searchItem.addEventListener('click', () => M.keyboard.open(search));
   M.keyboard.searchField = search;
   function showQuery() {
     const q = search.value.trim();

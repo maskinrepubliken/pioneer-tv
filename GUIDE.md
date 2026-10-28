@@ -99,10 +99,16 @@ kinds, made of items of one shape (`browse/cards.js`):
   buttons, choices, tabs and a list; a film, a series, an album.
 
 `browse/page.js` does the rest for all of them: the hash, the heading,
-search, the legend, where the focus was, B. Search is a round button, as on
-every page of ours (`pioneertv-round` in `content/paper.css`): A on it, or
-Y anywhere, opens the on-screen keyboard on a field out of sight, and the
-words stay beside the button; over a grid they filter it, elsewhere they
+search, the legend, where the focus was, B. At the left is a column on the
+sunken paper, as on the home page (`browse/rail.js`): Sök at the top, then
+the library's ways in (`library.rail()`: Spel's consoles and collections,
+Musik's Spellistor, Album and Artister, Film's libraries and the folders of
+the one it is in), each a ring with its initial. With the focus in it, or a
+pointer moving over it, it widens over the view and gives their names;
+left from the view lands on the one the page is at. Search is a round
+button, as on every page of ours (`pioneertv-round` in
+`content/paper.css`): A on it, or Y anywhere, opens the on-screen keyboard
+on a field out of sight, and the words stay in the heading; over a grid they filter it, elsewhere they
 search the library. B takes a filter away first. What plays is a player's:
 `players/video.js` (mpv, through the daemon) and `players/audio.js` (in the
 page, with "Spelas nu"). `shared/` has the canvas, the buttons and the
@@ -258,8 +264,9 @@ TV page in settings (`ui.home_minutes`, `ui.tv_off_minutes`; 0 is never).
 ## Games
 
 The Spel tile opens the browse page on top of [RomM](https://github.com/rommapp/romm)
-(`browse.html?library=spel`, [The pages](#the-pages)): recently played,
-consoles, collections, each console's games with covers; a game opens
+(`browse.html?library=spel`, [The pages](#the-pages)): recently played, the
+consoles and collections in the column at the left, each console's games
+with covers; a game opens
 `game.html`, which has it played. On the first view X removes a game from
 Senast spelade; X again within five seconds puts it back.
 
@@ -326,8 +333,8 @@ drives it as usual. Game mode ends when the page goes away or stops sending hear
 ## Music
 
 The Musik tile opens the browse page on top of [Jellyfin](https://jellyfin.org/)'s
-music library (`browse.html?library=musik`): Blanda allt, Album and
-Artister, then your playlists; a playlist or an album lists its songs beside
+music library (`browse.html?library=musik`): Blanda allt, then your
+playlists, with Album and Artister in the column at the left; a playlist or an album lists its songs beside
 its cover, with Spela and Blanda. Album and Artister are grids like a
 console's games: L1/R1 jump a letter, Sök filters them. Sök (the round
 button, or Y) searches songs, albums and artists. Films, series and clips have
@@ -357,11 +364,12 @@ administrator, the user whose playlists to show under Inställningar → Jellyfi
 The Film & serier tile opens the browse page on top of Jellyfin
 (`browse.html?library=film`), served by the daemon like Musik
 (`http://127.0.0.1:8765/ext/launcher/browse.html?library=film`); the installer moved a tile
-that still opened Jellyfin's web UI over to it once. Its tabs are Jellyfin's
-own libraries (`UserViews`), music, photos and books left out, so a library
-added in Jellyfin appears by itself. Each tab starts with "Fortsätt titta"
+that still opened Jellyfin's web UI over to it once. The column at the left
+has Jellyfin's own libraries (`UserViews`), music, photos and books left
+out, so a library added in Jellyfin appears by itself, and the folders of
+the library the page is in. Each library starts with "Fortsätt titta"
 (what was begun) and then holds the library's films or series as posters, or
-a home video library's folders and clips. A on a film, an episode or a clip
+a home video library's clips. A on a film, an episode or a clip
 opens its page: the picture, year, length and overview, Spela or "Fortsätt
 från …" and "Spela från början", and, when there is a choice, Ljud and
 Undertexter (A steps through them). Which sound and subtitles are chosen
