@@ -78,17 +78,23 @@ window.PioneerTV = window.PioneerTV || {};
     return a;
   }
 
-  // A collection as a whole: its first few pictures fanned out on paper
-  // (pictures: [{ src, name }]), its name and how many under them.
-  function stack(item) {
-    const a = el('a', 'card card--stack pioneertv-card');
+  // A whole (a collection, a playlist, an artist) as a card on paper: its
+  // picture, or its first few in a pile, the first in front (pictures:
+  // [{ src, name }], else its own picture), its name and a line under it.
+  // shape: box, square or round, the pictures' shape.
+  function stack(item, shape = item.shape || 'square') {
+    const a = el('a', `card card--stack card--stack-${shape} pioneertv-card`);
     link(a, item);
-    const fan = el('span', 'stack');
-    const pics = (item.pictures || []).slice(0, 3);
-    fan.dataset.n = String(pics.length);
-    pics.forEach((p) => fan.appendChild(V.cover(p.src, p.name)));
-    if (!pics.length) fan.appendChild(el('span', 'stack-empty', 'Tom'));
-    a.appendChild(fan);
+    const pile = el('span', 'stack');
+    const pics = (item.pictures || (item.picture !== undefined ? [{ src: item.picture, name: item.title }] : [])).slice(0, 3);
+    pile.style.setProperty('--n', String(pics.length));
+    pics.forEach((p, i) => {
+      const c = V.cover(p.src, p.name, { initial: shape === 'round' });
+      c.style.setProperty('--i', String(i));
+      pile.appendChild(c);
+    });
+    if (!pics.length) pile.appendChild(el('span', 'stack-empty', 'Tom'));
+    a.appendChild(pile);
     a.appendChild(el('span', 'name', item.title));
     if (item.meta) a.appendChild(el('span', 'meta', item.meta));
     return a;

@@ -95,7 +95,11 @@ kinds, made of items of one shape (`browse/cards.js`):
   plank, its name on a label under it, as many to a shelf as there are
   columns and the next shelf under it, so nothing scrolls sideways), and
   type-only cards and buttons; a library's start, an artist, a search;
-- **the grid** (`browse/grid.js`): a long collection on the same shelves,
+- **the stacks** (`shelf.js` layout `stacks`, `cards.js` stack): wholes
+  as cards on paper, a collection, a playlist, an artist: its picture, or
+  its first few in a pile, its name and a line under it;
+- **the grid** (`browse/grid.js`): a long collection on the same shelves
+  (or as stacks, `look: 'stacks'`: every artist),
   only the rows around the focus in the page (the planks are drawn behind
   the rows, so they are all there), L1/R1 a letter, Sök filtering it, an
   info panel when the library has one; a console's games, every album;
@@ -269,7 +273,7 @@ TV page in settings (`ui.home_minutes`, `ui.tv_off_minutes`; 0 is never).
 
 The Spel tile opens the browse page on top of [RomM](https://github.com/rommapp/romm)
 (`browse.html?library=spel`, [The pages](#the-pages)): recently played;
-Samlingar, each collection as a whole (its first covers fanned out, its
+Samlingar, each collection as a card (its first covers in a pile, its
 name and how many), A opening it; the
 consoles in the column at the left, each by its pad (or its initial); each
 console's games with covers; a game opens `game.html`, which has it
@@ -345,7 +349,8 @@ drives it as usual. Game mode ends when the page goes away or stops sending hear
 
 The Musik tile opens the browse page on top of [Jellyfin](https://jellyfin.org/)'s
 music library (`browse.html?library=musik`): Blanda allt, then your
-playlists, with Album and Artister in the column at the left; a playlist or an album lists its songs beside
+playlists as cards (like Spel's collections), with Album and Artister in
+the column at the left; Album is shelves of covers, Artister cards; a playlist or an album lists its songs beside
 its cover, with Spela and Blanda. Album and Artister are grids like a
 console's games: L1/R1 jump a letter, Sök filters them. Sök (the round
 button, or Y) searches songs, albums and artists. Films, series and clips have

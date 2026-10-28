@@ -188,9 +188,9 @@
       used: 'Ett biblioteks början, en artist, ett filmbibliotek, en mapp, sök: omslag på hyllor (inget skrollar i sidled), för alla bibliotek. Till vänster Sök och bibliotekets vägar in, med ikon eller initial; utfälld med namnen när fokus är där.',
       items: [
         { name: 'Spel: senast spelade', url: SPEL, ready: '.card' },
-        { name: 'Spel: samlingar', url: `${SPEL}#/collections`, ready: '.card', note: 'Varje samling som en helhet: de första omslagen i en solfjäder, namnet och hur många.' },
+        { name: 'Spel: samlingar', url: `${SPEL}#/collections`, ready: '.card', note: 'Varje samling som ett kort: de första omslagen i en hög, namnet och hur många. Spellistor och artister är samma slags kort.' },
         { name: 'Spel: kolumnen utfälld', url: SPEL, ready: '.rail-mark', setup: railOpen, note: 'Fokus i kolumnen (eller pekaren över den): konsolerna och samlingarna med namn, över vyn.' },
-        { name: 'Musik: blanda allt och spellistor', url: MUSIK, ready: '.card' },
+        { name: 'Musik: blanda allt och spellistor', url: MUSIK, ready: '.card', note: 'Spellistorna som kort, som samlingarna.' },
         { name: 'Musik: kolumnen utfälld', url: MUSIK, ready: '.rail-mark', setup: railOpen },
         { name: 'Musik: en artist', url: `${MUSIK}#/artist/artist2`, ready: '.card' },
         { name: 'Musik: sök', url: `${MUSIK}#/search/kom`, ready: '.card, .row' },

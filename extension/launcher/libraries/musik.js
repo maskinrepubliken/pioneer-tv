@@ -57,7 +57,7 @@ window.PioneerTV = window.PioneerTV || {};
         { layout: 'actions', items: [
           { button: true, label: 'Blanda allt', primary: true, key: 'shuffle', run: tryPlay(() => J.shuffleAll(), false) },
         ] },
-        { label: 'Spellistor', layout: 'shelf', items: playlists.map(group),
+        { label: 'Spellistor', layout: 'stacks', columns: 4, shape: 'square', items: playlists.map(group),
           empty: 'Inga spellistor än. Gör en i Jellyfin på datorn eller telefonen.' },
       ],
     };
@@ -69,7 +69,8 @@ window.PioneerTV = window.PioneerTV || {};
     return {
       kind: 'grid', title: kind === 'albums' ? 'Album' : 'Artister', filter: true,
       legend: [['A', 'öppna'], ['L1', ''], ['R1', 'hoppa en bokstav']],
-      items: all.map(group), shape: kind === 'albums' ? 'square' : 'round', columns: 6,
+      items: all.map(group), shape: kind === 'albums' ? 'square' : 'round',
+      look: kind === 'albums' ? 'shelf' : 'stacks', columns: kind === 'albums' ? 6 : 4,
       count: (n, total) => (n === total ? `${total} ${word}` : `${n} av ${total} ${word}`),
       empty: kind === 'albums' ? 'Inga album.' : 'Inga artister.',
     };
@@ -113,7 +114,7 @@ window.PioneerTV = window.PioneerTV || {};
     return {
       kind: 'shelf', title: 'Sök', legend: [['A', 'spela · öppna']],
       sections: [
-        { label: 'Artister', layout: 'shelf', items: found.artists.map(group), empty: 'Inga artister.' },
+        { label: 'Artister', layout: 'stacks', columns: 4, shape: 'round', items: found.artists.map(group), empty: 'Inga artister.' },
         { label: 'Album', layout: 'shelf', items: found.albums.map(group), empty: 'Inga album.' },
         { label: 'Låtar', layout: 'rows', look: 'thumb', items: found.songs.map((s, i) => song(s, i, found.songs, true)), empty: 'Inga låtar.' },
       ],

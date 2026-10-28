@@ -1,9 +1,10 @@
 // Pioneer TV browse page, the grid: a long collection of cards (a console's
 // games, every album), with
 //
-//   { items, shape, columns, info, letter, count }
+//   { items, shape, look, columns, info, letter, count }
 //
-// info(item): { title, meta, text, foot } for a panel at the right that
+// look: 'stacks' for cards of wholes (cards.js stack: the artists), else
+// covers on shelves. info(item): { title, meta, text, foot } for a panel at the right that
 // follows the focus (else the cards take the width); letter(item): the
 // letter it files under, for L1/R1 jumps; count(shown, all): the heading's
 // count. The page's search field filters it while it is on screen.
@@ -50,8 +51,10 @@ window.PioneerTV = window.PioneerTV || {};
 
     const body = el('div', 'grid-view');
     const scroller = el('div', 'scroll grid-scroll');
-    const gridEl = M.shelf.planks(spec.shape || 'square', cols);
+    const stacks = spec.look === 'stacks';
+    const gridEl = stacks ? el('div', 'shelf-stacks') : M.shelf.planks(spec.shape || 'square', cols);
     gridEl.classList.add('grid');
+    gridEl.style.setProperty('--columns', String(cols));
     scroller.appendChild(gridEl);
     body.appendChild(scroller);
     const info = spec.info ? el('aside', 'grid-info') : null;
@@ -70,7 +73,7 @@ window.PioneerTV = window.PioneerTV || {};
     }
 
     function place(i) {
-      const c = C.card(shown[i], spec.shape);
+      const c = stacks ? C.stack(shown[i], spec.shape) : C.card(shown[i], spec.shape);
       c.dataset.index = String(i);
       c.style.gridRow = String(Math.floor(i / cols) + 1);
       c.style.gridColumn = String((i % cols) + 1);

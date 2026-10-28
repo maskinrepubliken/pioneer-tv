@@ -87,7 +87,7 @@ window.PioneerTV = window.PioneerTV || {};
       kind: 'shelf', title: 'Samlingar', count: collections.length === 1 ? '1 samling' : `${collections.length} samlingar`,
       legend: [['A', 'öppna']],
       sections: [{
-        layout: 'stacks', empty: 'Inga samlingar än. Gör en i RomM.',
+        layout: 'stacks', shape: 'box', empty: 'Inga samlingar än. Gör en i RomM.',
         items: collections.map((c, i) => ({
           key: `collection:${c.kind}:${c.id}`, title: c.name, href: `#/collection/${c.kind}/${encodeURIComponent(c.id)}`,
           meta: lists[i].length === 1 ? '1 spel' : `${lists[i].length} spel`,

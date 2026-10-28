@@ -4,8 +4,9 @@
 //
 //   { label, layout, items, shape, columns, look, empty }
 //
-// layout: 'stacks' (collections as wholes, three to a row, each its first
-// pictures fanned out: items { key, title, meta, href, pictures }),
+// layout: 'stacks' (wholes as cards: collections, playlists, artists, each
+// its picture or its first few in a pile, cards.js stack; columns, 3 if
+// not given),
 // 'shelf' (covers standing on shelves, as many to a shelf as there
 // are columns, the next shelf under it: nothing scrolls sideways; 'row' and
 // 'grid' are shelves too), 'groups' (type-only cards, wrapping), 'actions'
@@ -53,7 +54,8 @@ window.PioneerTV = window.PioneerTV || {};
       }
     } else if (s.layout === 'stacks') {
       body = el('div', 'shelf-stacks');
-      items.forEach((it) => body.appendChild(C.stack(it)));
+      if (s.columns) body.style.setProperty('--columns', String(s.columns));
+      items.forEach((it) => body.appendChild(C.stack(it, s.shape)));
     } else if (s.layout === 'groups') {
       body = el('div', 'shelf-groups');
       items.forEach((it) => body.appendChild(C.group(it)));

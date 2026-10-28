@@ -243,29 +243,38 @@
   border-radius: 0.16rem; background: var(--pioneertv-ochre);
 }
 .planks .card.pioneertv-focus .title { color: var(--pioneertv-ink); }
-/* ---- collections as wholes (shelf.js, stacks): a card each on raised
-   paper, its first covers fanned out, the first in front, standing as on
-   the shelves; its name in Rubik, how many under it. ---- */
-.shelf-stacks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.6rem 1.5rem; }
-.card--stack {
-  padding: 1.3rem 1.4rem 1.1rem; border: 1px solid var(--pioneertv-line-strong);
-  background: var(--pioneertv-paper-raised);
+/* ---- wholes as cards (shelf.js and grid.js, stacks; cards.js stack):
+   collections, playlists, artists. A card on raised paper, its picture,
+   or its first few in a pile, straight, each a step behind and to the
+   right of the one before; its name in Rubik and a line under it. ---- */
+.shelf-stacks {
+  --row-h: 14.2rem;
+  display: grid; grid-template-columns: repeat(var(--columns, 3), minmax(0, 1fr)); gap: 1.4rem 1.3rem;
+  grid-auto-rows: var(--row-h);
 }
-.stack { position: relative; display: block; height: 10.5rem; margin-bottom: 1.1rem; }
+.card--stack {
+  padding: 1.1rem 1.2rem 1rem; border: 1px solid var(--pioneertv-line); background: var(--pioneertv-paper-raised);
+  content-visibility: visible;
+}
+.stack {
+  --w: 8.6rem; --h: 8.6rem; --step: 1.3rem;
+  position: relative; display: block; flex: none; height: var(--h); margin-bottom: 1rem;
+}
+.card--stack-box .stack { --w: 6.4rem; }
 .stack .cover {
-  position: absolute; bottom: 0; left: 50%; width: 6.8rem; height: 9.2rem; border-radius: 0.15rem;
-  transform-origin: 50% 100%; filter: drop-shadow(0.25rem 0.2rem 0.35rem color-mix(in srgb, var(--pioneertv-ink) 22%, transparent));
+  position: absolute; bottom: 0; width: var(--w); height: calc(var(--h) - var(--i) * 0.7rem);
+  left: calc(50% - (var(--w) + (var(--n) - 1) * var(--step)) / 2 + var(--i) * var(--step));
+  z-index: calc(3 - var(--i)); border-radius: 0.15rem;
+  box-shadow: 0.12rem 0 0 var(--pioneertv-paper-raised);
 }
 .stack .cover img { object-fit: cover; }
-.stack .cover:nth-child(1) { z-index: 3; transform: translateX(-50%); }
-.stack .cover:nth-child(2) { z-index: 2; transform: translateX(-50%) translateX(-3.6rem) rotate(-8deg); }
-.stack .cover:nth-child(3) { z-index: 1; transform: translateX(-50%) translateX(3.6rem) rotate(8deg); }
+.card--stack-round .stack .cover { border-radius: 50%; box-shadow: none; }
 .stack-empty {
   position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
   font: italic 1.1rem var(--pioneertv-font-prose); color: var(--pioneertv-ink-faint);
 }
 .card--stack .name {
-  font-family: var(--pioneertv-font-display); font-weight: 900; font-size: 1.45rem; line-height: 1.05; padding-top: 0.1em;
+  font-family: var(--pioneertv-font-display); font-weight: 900; font-size: 1.15rem; line-height: 1.05; padding-top: 0.1em;
   letter-spacing: -0.01em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .card--stack .meta { margin-top: 0.3rem; padding: 0; }
