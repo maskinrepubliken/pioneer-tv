@@ -152,22 +152,37 @@
    label under it, as many to a plank as there are columns and the next
    plank under it. The planks are drawn behind the rows, so a grid that
    keeps only the rows near the focus (grid.js) has them all the same: a
-   paper top between two lines, and its front edge. ---- */
+   plank in the system's rust, its top lit and its front edge solid, its
+   shadow on the wall under it, and a bracket under each end. ---- */
 .planks {
-  --plank-top: 0.4rem; --plank-front: 0.5rem; --plank-h: calc(var(--plank-top) + var(--plank-front));
-  --label-h: 3.6rem; --row-gap: 1.2rem;
+  --plank-top: 0.5rem; --plank-front: 0.7rem; --plank-h: calc(var(--plank-top) + var(--plank-front));
+  --wood: var(--pioneertv-surface-rust);
+  --wood-top: color-mix(in srgb, var(--wood) 32%, var(--pioneertv-paper));
+  --wood-lit: color-mix(in srgb, var(--wood) 55%, var(--pioneertv-paper));
+  --shade: color-mix(in srgb, var(--pioneertv-ink) 16%, transparent);
+  --period: calc(var(--row-h) + var(--row-gap));
+  --label-h: 4.1rem; --row-gap: 1rem;
   --row-h: calc(var(--cover-h) + var(--plank-h) + var(--label-h));
   --at: var(--cover-h); --mid: calc(var(--at) + var(--plank-top)); --end: calc(var(--mid) + var(--plank-front));
   display: grid; column-gap: 1.3rem; row-gap: var(--row-gap);
   grid-template-columns: repeat(var(--columns, 6), minmax(0, 1fr));
   grid-auto-rows: var(--row-h);
-  background-image: linear-gradient(to bottom,
-    transparent var(--at),
-    var(--pioneertv-line-strong) var(--at) calc(var(--at) + 1px),
-    var(--pioneertv-paper-raised) calc(var(--at) + 1px) var(--mid),
-    var(--pioneertv-line-strong) var(--mid) var(--end),
-    transparent var(--end));
-  background-size: 100% calc(var(--row-h) + var(--row-gap));
+  background-image:
+    /* the plank: its back edge, its top, the lit edge, its front */
+    linear-gradient(to bottom,
+      transparent var(--at),
+      var(--wood-lit) var(--at) calc(var(--at) + 1px),
+      var(--wood-top) calc(var(--at) + 1px) var(--mid),
+      var(--wood-lit) var(--mid) calc(var(--mid) + 2px),
+      var(--wood) calc(var(--mid) + 2px) var(--end),
+      transparent var(--end)),
+    /* the brackets under its ends */
+    linear-gradient(to bottom, transparent var(--end), var(--wood) var(--end) calc(var(--end) + 1.1rem), transparent calc(var(--end) + 1.1rem)),
+    linear-gradient(to bottom, transparent var(--end), var(--wood) var(--end) calc(var(--end) + 1.1rem), transparent calc(var(--end) + 1.1rem)),
+    /* its shadow on the wall */
+    linear-gradient(to bottom, transparent var(--end), var(--shade) var(--end), transparent calc(var(--end) + 0.9rem));
+  background-size: 100% var(--period), 0.45rem var(--period), 0.45rem var(--period), 100% var(--period);
+  background-position: 0 0, 0.5rem 0, calc(100% - 0.5rem) 0, 0 0;
   background-repeat: repeat-y;
 }
 .planks--box { --cover-h: 9.4rem; }
@@ -205,7 +220,7 @@
 .planks--still { --paper: 16 / 9; }
 /* The label under the plank. */
 .planks .card .title {
-  grid-row: 3; margin-top: 0.45rem; text-align: center; font-size: 0.92rem; line-height: 1.15; -webkit-line-clamp: 2;
+  grid-row: 3; margin-top: 0.7rem; text-align: center; font-size: 0.92rem; line-height: 1.15; -webkit-line-clamp: 2;
 }
 .planks .card .meta { grid-row: 4; max-width: 100%; text-align: center; }
 .planks .card .fav { display: inline-flex; vertical-align: -0.1em; margin-right: 0.3em; color: var(--pioneertv-ochre); }
