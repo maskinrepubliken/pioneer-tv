@@ -101,8 +101,8 @@ window.PioneerTV = window.PioneerTV || {};
     return q;
   }
 
-  async function list(query) {
-    const d = await json(`api/roms?limit=1000&order_by=name&order_dir=asc&${query}`);
+  async function list(query, limit = 1000) {
+    const d = await json(`api/roms?limit=${limit}&order_by=name&order_dir=asc&${query}`);
     return { games: d.items.map(toGame), letters: d.char_index || {} };
   }
 
@@ -134,6 +134,9 @@ window.PioneerTV = window.PioneerTV || {};
       return d.items.map(toGame);
     },
     games(opts) { return opts && opts.search ? this.search(opts.search) : list(listQuery(opts)); },
+    // A collection's first few games, for its picture (Samlingar): not the
+    // whole list, which for every collection is megabytes.
+    async firstGames(collection, n = 3) { return (await list(`${listQuery({ collection })}&with_char_index=false`, n)).games; },
     search(term, opts) { return list(listQuery(opts) + `&search_term=${encodeURIComponent(term)}`); },
     // favorite: RomM's Favourites (the one collection with is_favorite);
     // romIds: an own collection's games, kept up to date as they change here.

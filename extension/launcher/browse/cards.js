@@ -80,24 +80,33 @@ window.PioneerTV = window.PioneerTV || {};
 
   // A whole (a collection, a playlist, an artist) as a card on paper: its
   // picture, or its first few in a pile, the first in front (pictures:
-  // [{ src, name }], else its own picture), its name and a line under it.
-  // shape: box, square or round, the pictures' shape.
+  // [{ src, name }], else its own picture; null: still to come, pile(card,
+  // pictures) draws them), its name and a line under it. shape: box,
+  // square or round, the pictures' shape.
   function stack(item, shape = item.shape || 'square') {
     const a = el('a', `card card--stack card--stack-${shape} pioneertv-card`);
     link(a, item);
-    const pile = el('span', 'stack');
-    const pics = (item.pictures || (item.picture !== undefined ? [{ src: item.picture, name: item.title }] : [])).slice(0, 3);
-    pile.style.setProperty('--n', String(pics.length));
-    pics.forEach((p, i) => {
-      const c = V.cover(p.src, p.name, { initial: shape === 'round' });
-      c.style.setProperty('--i', String(i));
-      pile.appendChild(c);
-    });
-    if (!pics.length) pile.appendChild(el('span', 'stack-empty', 'Tom'));
-    a.appendChild(pile);
+    a.dataset.shape = shape;
+    a.appendChild(el('span', 'stack'));
+    pile(a, item.pictures !== undefined ? item.pictures : item.picture !== undefined ? [{ src: item.picture, name: item.title }] : []);
     a.appendChild(el('span', 'name', item.title));
     if (item.meta) a.appendChild(el('span', 'meta', item.meta));
     return a;
+  }
+
+  // A card of a whole's pictures, in its pile (null: none yet, an empty place).
+  function pile(card, pictures) {
+    const box = card.querySelector('.stack');
+    box.innerHTML = '';
+    if (pictures === null) return;
+    const pics = pictures.slice(0, 3);
+    box.style.setProperty('--n', String(pics.length));
+    pics.forEach((p, i) => {
+      const c = V.cover(p.src, p.name, { initial: card.dataset.shape === 'round' });
+      c.style.setProperty('--i', String(i));
+      box.appendChild(c);
+    });
+    if (!pics.length) box.appendChild(el('span', 'stack-empty', 'Tom'));
   }
 
   // A row of a list (songs, episodes): picture 'still', 'thumb', or the number.
@@ -142,5 +151,5 @@ window.PioneerTV = window.PioneerTV || {};
     return nav;
   }
 
-  M.cards = { card, group, stack, row, picture, tabs, favorite };
+  M.cards = { card, group, stack, pile, row, picture, tabs, favorite };
 })(window.PioneerTV);

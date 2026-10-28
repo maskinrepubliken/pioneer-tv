@@ -78,23 +78,42 @@ window.PioneerTV = window.PioneerTV || {};
     };
   }
 
-  // The collections, each as a whole: its first covers fanned out, its
-  // name and how many; A opens it.
+  // The collections, each as a card: its first covers in a pile, its name
+  // and how many; A opens it. The cards come at once and their covers
+  // after, a few collections at a time from the top: RomM takes a while
+  // over each (56 of them took 13 s on the box), and they are kept.
+  const firsts = new Map();        // collection key -> its first games
   async function collectionsView() {
     const collections = await R.collections();
-    const lists = await Promise.all(collections.map((c) => R.games({ collection: c }).then((r) => r.games).catch(() => [])));
+    const key = (c) => `collection:${c.kind}:${c.id}`;
+    setTimeout(() => fillCollections(collections.filter((c) => !firsts.has(key(c))), key), 0);
     return {
       kind: 'shelf', title: 'Samlingar', count: collections.length === 1 ? '1 samling' : `${collections.length} samlingar`,
       legend: [['A', 'öppna']],
       sections: [{
         layout: 'stacks', shape: 'box', empty: 'Inga samlingar än. Gör en i RomM.',
-        items: collections.map((c, i) => ({
-          key: `collection:${c.kind}:${c.id}`, title: c.name, href: `#/collection/${c.kind}/${encodeURIComponent(c.id)}`,
-          meta: lists[i].length === 1 ? '1 spel' : `${lists[i].length} spel`,
-          pictures: lists[i].slice(0, 3).map((g) => ({ src: g.cover, name: g.name })),
+        items: collections.map((c) => ({
+          key: key(c), title: c.name, href: `#/collection/${c.kind}/${encodeURIComponent(c.id)}`,
+          meta: c.count === 1 ? '1 spel' : `${c.count} spel`,
+          pictures: firsts.has(key(c)) ? firsts.get(key(c)) : null,
         })),
       }],
     };
+  }
+  async function fillCollections(todo, key) {
+    const next = async () => {
+      const c = todo.shift();
+      if (!c) return;
+      const games = await R.firstGames(c).catch(() => null);
+      if (games) {
+        const pics = games.map((g) => ({ src: g.cover, name: g.name }));
+        firsts.set(key(c), pics);
+        const card = document.querySelector(`.view [data-key="${CSS.escape(key(c))}"]`);
+        if (card) M.cards.pile(card, pics);
+      }
+      return next();
+    };
+    await Promise.all([next(), next(), next(), next()]);
   }
 
   async function view([what, a, b]) {
