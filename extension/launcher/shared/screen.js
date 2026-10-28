@@ -1,5 +1,5 @@
 // Pioneer TV full-screen message: the screen given over to one sentence, a
-// line under it, on ink. Everything that has one shows it so: the game on
+// line under it, on paper as the pages are. Everything that has one shows it so: the game on
 // its way (game/game.js: "Laddar…", "Startar…", what went wrong), the film
 // (players/video.js: "Startar…", "Slut", what went wrong) and the
 // screensaver resting (overlay/saver.js: "Vilar"). Styled by screen.css.
