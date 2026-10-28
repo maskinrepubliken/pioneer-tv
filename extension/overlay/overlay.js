@@ -51,17 +51,13 @@ window.PioneerTV = window.PioneerTV || {};
     if (!s.daemonConnected && menu.isOpen()) menu.close();
   });
 
-  // Home: the main menu, or away with it; on the home page, which is the
-  // same tiles, nothing (or away with a panel the page opened). The home
-  // page asks for a panel of its own (Live, Sök, Inställningar). Held, Home
-  // goes to the home page: away with everything here.
-  let atHome = false;
-  b.on('loaded', (e) => { if (e && e.url) atHome = /\/launcher\/index\.html/.test(e.url); });
+  // Home: the quick menu, or away with it. The home page asks for a panel
+  // of its own (Live, Sök). Held, Home goes to the home page: away with
+  // everything here.
   const away = () => { if (M.keyboard.isOpen()) M.keyboard.close(); menu.close(); };
   b.on('menu', (e) => {
     if (e && e.panel) return M.mainMenu.panel(e.panel);
     if (e && e.open) return menu.isOpen() || menu.open(M.mainMenu.spec());
-    if (atHome && !menu.isOpen()) return;
     menu.toggle();
   });
   b.on('home', () => { if (!held) away(); });

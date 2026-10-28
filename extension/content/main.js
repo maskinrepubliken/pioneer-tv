@@ -17,10 +17,8 @@
   // Y: the keyboard. The menus and the toasts are the
   // overlay's (overlay/), never the page's: Home goes there.
   b.on('keyboard', () => M.keyboard.toggle());
-  b.on('logs', () => M.logs.toggle());
   b.on('escape', () => {
-    if (M.logs.isOpen()) M.logs.close();
-    else if (M.keyboard.isOpen()) M.keyboard.close();
+    if (M.keyboard.isOpen()) M.keyboard.close();
   });
   // The pad's colours (hud.js).
   M.hud.listen(b);

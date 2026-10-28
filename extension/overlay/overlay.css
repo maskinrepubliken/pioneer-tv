@@ -7,7 +7,7 @@ html, body { margin: 0; height: 100%; background: transparent !important; overfl
 .pioneertv-search-field { position: fixed; left: -10000px; top: 0; width: 1px; height: 1px; overflow: hidden; }
 
 /* ---- menu: a paper card at the right, over whatever window is below; the
-   main menu, its submenus and the pause panels are the same card. The title in Rubik capitals,
+   quick menu, the Live and Sök panels and the pause panels are the same card. The title in Rubik capitals,
    the choices as pill buttons with the focus ring, and the box's status at
    the foot. In px, since the pages under it set their own rem. ---- */
 .pioneertv-menu {
@@ -62,22 +62,4 @@ html:not(.pioneertv-pointer) .pioneertv-menu-active { outline: 4px solid var(--p
 .pioneertv-menu-dot.warn { background: var(--pioneertv-ochre); border-color: var(--pioneertv-surface-rust); }
 .pioneertv-menu-dot.bad { background: var(--pioneertv-alarm); border-color: var(--pioneertv-alarm); }
 
-/* ---- the main menu: the tiles (launcher/shared/tiles.css) on a sheet over
-   nearly the whole screen; a submenu opened from it is the card at the
-   right, over the sheet dimmed. ---- */
-.pioneertv-menu .tiles-sheet {
-  position: absolute; inset: 2.2vh 1.6vw; z-index: 0;
-  border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-panel);
-}
-.pioneertv-menu-panel { position: relative; z-index: 1; }
-.pioneertv-menu-under::after {
-  content: ""; position: absolute; inset: -1px; border-radius: inherit;
-  background: var(--pioneertv-surface-ink); opacity: 0.45;
-}
-
-/* ---- the wide card (Inställningar): its tabs two to a row ---- */
-.pioneertv-menu-panel.pioneertv-menu-wide { width: 640px; gap: 0; }
-.pioneertv-menu-wide .pioneertv-menu-items + .pioneertv-menu-items { margin-top: 11px; }
-.pioneertv-menu-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.pioneertv-menu-pair .pioneertv-menu-item { padding: 12px 18px 12px 16px; font-size: 19px; }
 .pioneertv-menu-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

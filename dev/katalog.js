@@ -34,14 +34,9 @@
     b.emit('state', b.state);
   }
 
-  // The main menu, and a submenu of it (by its label).
-  const mainMenu = (P) => { daemonUp(P); P.hud.menu.open(P.mainMenu.spec()); };
-  const submenu = (label) => ({ P }) => {
-    mainMenu(P);
-    const m = P.hud.menu;
-    m.index = m.items.findIndex((it) => it.label === label);
-    m.activate();
-  };
+  // The quick menu, and a panel the home page opens (live, search).
+  const quickMenu = (P) => { daemonUp(P); P.hud.menu.open(P.mainMenu.spec()); };
+  const panel = (name) => ({ P }) => { daemonUp(P); P.mainMenu.panel(name); };
 
   // ------------------------------------------------------------ the views
   // Two parts: the shared components (each once, with its variants, drawn by
@@ -107,16 +102,15 @@
         toast('Ansluten till Småhusbyn', '', 'settings.js · Wi-Fi'),
         toast('Misslyckades: nätverket svarar inte', '', 'settings.js · ett fel'),
       ] },
-    { part: 'Komponenter', group: 'Huvudmenyn', files: 'overlay/main-menu.js · overlay/hud.js (hud.menu) · overlay/overlay.css (.pioneertv-menu)',
-      used: 'Hem öppnar den över allt; håll Hem går till klockan och öppnar den. En knapp på hemsidan öppnar den också. B tar ett steg tillbaka.',
+    { part: 'Komponenter', group: 'Snabbmenyn', files: 'overlay/main-menu.js · overlay/hud.js (hud.menu) · overlay/overlay.css (.pioneertv-menu)',
+      used: 'Hem öppnar den över allt (håll Hem går till hemsidan). Hemsidans Live och Sök öppnar sina paneler med samma kort. B tar ett steg tillbaka.',
       items: [
-        { name: 'Över hemsidan', under: HOME, url: OVERLAY, setup: ({ P }) => mainMenu(P) },
-        { name: 'Över en sida', under: FILM, url: OVERLAY, setup: ({ P }) => mainMenu(P) },
-        { name: 'Live', under: HOME, url: OVERLAY, setup: submenu('Live') },
-        { name: 'Sök: tangentbordet', under: HOME, url: OVERLAY, setup: submenu('Sök') },
+        { name: 'Över hemsidan', under: HOME, url: OVERLAY, setup: ({ P }) => quickMenu(P) },
+        { name: 'Över en sida', under: FILM, url: OVERLAY, setup: ({ P }) => quickMenu(P) },
+        { name: 'Live', under: HOME, url: OVERLAY, setup: panel('live') },
+        { name: 'Sök: tangentbordet', under: HOME, url: OVERLAY, setup: panel('search') },
         { name: 'Sök: var', under: HOME, url: OVERLAY,
-          setup: ({ P, doc }) => { submenu('Sök')({ P }); const f = doc.querySelector('.pioneertv-search-field input'); f.value = 'mario'; P.keyboard.done(); } },
-        { name: 'Inställningar', under: HOME, url: OVERLAY, setup: submenu('Inställningar'), note: 'Varje rad öppnar sin flik på inställningssidan; boxens status längst ner.' },
+          setup: ({ P, doc }) => { panel('search')({ P }); const f = doc.querySelector('.pioneertv-search-field input'); f.value = 'mario'; P.keyboard.done(); } },
       ] },
     { part: 'Komponenter', group: 'Pausmenyer', files: 'overlay/overlay.js · overlay/hud.js (hud.menu)',
       used: 'Hem i ett spel (RetroArch) eller en film (mpv): samma kort som huvudmenyn.',
@@ -140,13 +134,9 @@
         { name: 'Vilar (TV:n av)', under: HOME, url: OVERLAY, setup: ({ P }) => { P.saver.show(); P.saver.rest(true); },
           note: 'Skärmsläckaren på i 5 min, eller TV:n av med sin fjärrkontroll: TV:n av, och bara Vilar, stilla, tills TV:n är på igen.' },
       ] },
-    { part: 'Komponenter', group: 'Skärmtangentbordet', files: 'content/keyboard.js', used: 'Y på alla sidor, i sidans textfält; Sök i huvudmenyn (i overlayn).',
+    { part: 'Komponenter', group: 'Skärmtangentbordet', files: 'content/keyboard.js', used: 'Y på alla sidor, i sidans textfält eller bakom den runda sökknappen; Sök i overlayn.',
       items: [
         { name: 'På en sida', url: FILM, ready: '.card', setup: ({ P, doc }) => P.keyboard.open(doc.getElementById('search')) },
-      ] },
-    { part: 'Komponenter', group: 'Loggar', files: 'content/logs.js', used: 'Inställningar → System.',
-      items: [
-        { name: 'Loggar', url: FILM, ready: '.card', setup: ({ P }) => P.logs.open(0) },
       ] },
     { part: 'Komponenter', group: 'Pekaren', files: 'content/cursor.js', used: 'Högra spaken, på alla sidor.',
       items: [
@@ -188,7 +178,7 @@
       ] },
 
     { part: 'Sidor', group: 'Hem', files: 'launcher/index.html · home/home.js · home/home.css · shared/tiles.js · shared/tiles.css · shared/services.js',
-      used: 'Håll Hem. Tjänsterna som rutor; Live, Sök och Inställningar öppnas som paneler i overlayn. Samma rutor som huvudmenyn.',
+      used: 'Håll Hem, eller Hem i snabbmenyn. Tjänsterna som rutor; Live och Sök öppnas som paneler i overlayn, Inställningar är en egen sida.',
       items: [
         { name: 'Hem', url: HOME, ready: '.tiles-tile', setup: ({ P }) => daemonUp(P) },
       ] },
@@ -228,13 +218,14 @@
       items: [
         { name: 'Laddar (innan spelet hämtats)', url: GAME, ready: '.pioneertv-screen' },
       ] },
-    { part: 'Sidor', group: 'Radio', files: 'launcher/radio.html · radio/radio.js · radio/radio.css', used: 'Huvudmenyn → Live → P1–P4.',
+    { part: 'Sidor', group: 'Radio', files: 'launcher/radio.html · radio/radio.js · radio/radio.css', used: 'Hemsidan → Live → P1–P4.',
       items: [
         { name: 'Radio', url: `${L}radio.html?channel=132&name=P1`, ready: (doc) => doc.getElementById('now-title').textContent !== '…', note: 'Hämtar tablån från Sveriges Radio på riktigt.' },
       ] },
-    { part: 'Sidor', group: 'Inställningar', files: 'daemon/pioneertv/web/settings.html · settings.js', used: 'Huvudmenyn → Inställningar → en flik.',
+    { part: 'Sidor', group: 'Inställningar', files: 'daemon/pioneertv/web/settings.html · settings.js · settings.css', used: 'Snabbmenyn eller hemsidan → Inställningar.',
       items: [
         { name: 'Inställningar', url: '/static/settings.html?mock=1', ready: '.card', note: 'Med inställningssidans egen exempeldata.' },
+        { name: 'Loggar', url: '/static/settings.html?mock=1#logs', ready: 'pre.log-full', note: 'En flik på inställningssidan: en knapp per tjänst; daemonens och CEC:s logg uppdateras medan de visas.' },
       ] },
   ];
 

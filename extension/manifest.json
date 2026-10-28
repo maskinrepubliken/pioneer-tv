@@ -66,7 +66,6 @@
         "content/spatial-nav.js",
         "content/keyboard.js",
         "content/hud.js",
-        "content/logs.js",
         "content/cursor.js",
         "content/game.js",
         "content/video.js",
@@ -112,7 +111,7 @@
       "suggested_key": {
         "default": "Alt+Shift+M"
       },
-      "description": "Open the main menu"
+      "description": "Open the quick menu"
     }
   },
   "web_accessible_resources": [

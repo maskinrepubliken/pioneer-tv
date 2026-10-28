@@ -1,8 +1,7 @@
 // Pioneer TV home page: the box's services as big tiles, its status and a
-// few buttons at the top (launcher/shared/tiles.js, the same sheet the
-// overlay's main menu draws over other windows). A tile opens its service;
-// Live, Sök and Inställningar are panels the overlay draws over this page
-// (the daemon passes the ask on). The screensaver is not this page: the
+// few buttons at the top (launcher/shared/tiles.js). A tile opens its
+// service, Inställningar the settings page; Live and Sök are panels the
+// overlay draws over this page (the daemon passes the ask on). The screensaver is not this page: the
 // overlay draws it over everything when no pad is connected (idle.py).
 (function (M) {
   const b = M.bridge;
@@ -33,7 +32,7 @@
     const rows = [first.map(service), row2];
     const head = [
       { key: 'search', label: 'Sök', icon: 'search', round: true, run: panel('search') },
-      { key: 'settings', label: 'Inställningar', icon: 'gear', round: true, run: panel('settings') },
+      { key: 'settings', label: 'Inställningar', icon: 'gear', round: true, run: () => b.settings() },
       { key: 'tv-off', label: 'Stäng av TV:n', icon: 'power', round: true, run: () => b.cec('tv_off') },
     ];
     const next = M.tiles.sheet({ head, rows, legend: [[['arrows'], 'navigera'], [['A'], 'välj'], [['Y'], 'tangentbord']] });

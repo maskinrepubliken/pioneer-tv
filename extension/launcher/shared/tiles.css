@@ -1,5 +1,5 @@
-/* Pioneer TV tiles (tiles.js): the home page, and the overlay's main menu
-   over any window. 1em = 1/80 of the width (16px at 1280), so a laptop
+/* Pioneer TV tiles (tiles.js): the home page; the overlay's menus use
+   its row of holes. 1em = 1/80 of the width (16px at 1280), so a laptop
    window and the TV look the same. The system allows no motion except a
    response to input: focus is an instant change of ring and marker, the
    page's (pioneertv-focus) or the overlay menu's (pioneertv-menu-active). */

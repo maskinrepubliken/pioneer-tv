@@ -13,7 +13,7 @@ This is a pioneer project from Maskinrepubliken. Pioneer projects are small prog
 Chromium plays the video. Pioneer TV is everything around it:
 
 - `extension/` a Chromium extension with gamepad navigation on any site and an on-screen keyboard, and
-  the overlay's pages: the main menu, the pause panels, the toasts and the clock that is the home screen
+  the overlay's pages: the quick menu, the pause panels, the toasts and the screensaver
 - `daemon/` a Python service that turns the gamepad into key presses, controls the TV over HDMI-CEC and
   serves a settings page
 - `system/` the kiosk setup: the labwc display, Chromium, the overlay that draws the box's own panels

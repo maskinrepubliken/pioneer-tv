@@ -54,7 +54,7 @@ window.PioneerTV = window.PioneerTV || {};
     // overlay is invisible, a manual popover is drawn over the video.
     //
     // mount(el, { modal }) shows an overlay there; unmount(el) takes it away.
-    // A modal overlay (menu, keyboard, logs) has the pad: while one is open in
+    // A modal overlay (the keyboard) has the pad: while one is open in
     // fullscreen, Escape is held with the Keyboard Lock API, because B sends
     // Escape and the browser would otherwise leave fullscreen on it instead of
     // letting the overlay close. Held down for two seconds it still exits.
@@ -216,7 +216,7 @@ window.PioneerTV = window.PioneerTV || {};
         else if (msg.type === 'status') { state.status = msg; this._applyState(state); }
         // home, back and reload are the extension background's to carry out
         // for the tab; doing them here as well would do them twice. The
-        // overlay hears home (it opens the main menu over the home page).
+        // overlay hears home (it opens the quick menu, or closes what is open).
         else if (msg.type === 'event' && forMe(msg) && (role === 'overlay' || !['home', 'back', 'reload', 'settings', 'navigate'].includes(msg.name))) this.emit(msg.name, msg);
       };
       ws.onerror = () => {};

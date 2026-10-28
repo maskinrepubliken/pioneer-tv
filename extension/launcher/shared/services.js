@@ -1,5 +1,5 @@
 // Pioneer TV: what the box offers, as the home page (home/home.js) and the
-// overlay's main menu (overlay/main-menu.js) both show it: the services
+// overlay's Live and Sök panels (overlay/main-menu.js) both use it: the services
 // from the daemon's config (or default-services.js while designing), in two
 // rows of tiles, Live for the channels, and where a service's address goes.
 window.PioneerTV = window.PioneerTV || {};
@@ -35,12 +35,5 @@ window.PioneerTV = window.PioneerTV || {};
   // The Live tile's look.
   const LIVE = { id: 'live', name: 'Live', color: '#a8352a' };
 
-  // The settings page's tabs, as Inställningar lists them.
-  const SETTINGS = [
-    ['status', 'Status', 'info'], ['gamepads', 'Handkontroller', 'gamepad'], ['wifi', 'Wi-Fi', 'wifi'],
-    ['services', 'Tjänster', 'menu'], ['tv', 'TV', 'tv'], ['controls', 'Kontroller', 'keyboard'],
-    ['remote', 'Fjärråtkomst', 'link'], ['system', 'System', 'gear'],
-  ];
-
-  M.services = { list, resolve, art, rows, LIVE, SETTINGS };
+  M.services = { list, resolve, art, rows, LIVE };
 })(window.PioneerTV);

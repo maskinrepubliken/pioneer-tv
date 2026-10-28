@@ -126,7 +126,7 @@ class Idle:
                     await asyncio.sleep(HOME_SETTLE)
             except Exception as exc:
                 log.warning("putting away: %s", exc)
-        # quiet: the overlay closes its menus instead of opening the main menu.
+        # quiet: the overlay closes its menus instead of opening the quick menu.
         await self.emit({"type": "event", "name": "home", "quiet": True})
 
     async def check(self) -> None:

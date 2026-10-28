@@ -36,13 +36,13 @@ what was learned on the way.
 | A / Cross | Select (Enter) |
 | B / Circle | Escape: closes an overlay, releases an engaged slider, leaves a text field. Hold: one page back |
 | X / Square | Play, pause (Space) |
-| Y / Triangle | On-screen keyboard. Hold: main menu |
+| Y / Triangle | On-screen keyboard. Hold: quick menu |
 | L1, R1 | Shift+Tab, Tab (previous, next focusable) |
 | L2, R2 | TV volume down, up (CEC, repeats while held) |
 | Right stick | Mouse pointer; click on the stick to left-click |
-| Start | Main menu (also: hold Y) |
+| Start | Quick menu (also: hold Y) |
 | Select | Status toast |
-| Guide / Home / PS / Xbox | Main menu, over whatever is on screen (press again to close it); in a game or a film, the pause panel instead. Hold: home. Also wakes the TV and switches input when the pad connects |
+| Guide / Home / PS / Xbox | Quick menu, over whatever is on screen (press again to close it); in a game or a film, the pause panel instead. Hold: the home page. Also wakes the TV and switches input when the pad connects |
 
 In a film or an episode playing in mpv, A, B and X pause it and open its
 pause panel, left and right seek ten seconds, L1 and R1 a minute, and
@@ -168,11 +168,11 @@ vcgencmd get_throttled                # 0x0 means the TV's USB port is enough
 ## Settings and status
 
 The daemon serves a settings page at `http://127.0.0.1:8765/`. On the TV it is
-reached from the main menu (Home → Inställningar → a tab), where the spatial
+reached from the quick menu or the home page (Inställningar), where the spatial
 navigation and on-screen keyboard work like on any other page; a USB keyboard
 works too, and while one is plugged in the on-screen keyboard stays out of the
-way. The menu's Inställningar shows Wi-Fi, Tailscale (and whether the Jellyfin
-peer is online), connected gamepads with battery, and temperature at its foot.
+way. The quick menu shows Wi-Fi, Tailscale (and whether the Jellyfin peer is
+online), connected gamepads with battery, and temperature at its foot.
 Its toasts are the overlay's, like every other (`POST /api/toast`).
 
 The page has: status (network, Tailscale, CEC, gamepads, thermals and power
@@ -319,8 +319,8 @@ on screen, and so does any full-screen page with a large canvas. In game mode th
 pad buttons into arrows, Enter and Escape, so the emulator reads the pad itself through the browser's
 Gamepad API and its own button mapping applies. The extension leaves the page's keys alone too.
 
-A few buttons still belong to the box: Guide opens the main menu and holding it goes home, holding
-Start opens the main menu too and the triggers set the TV volume. While an overlay is open the pad
+A few buttons still belong to the box: Guide opens the quick menu and holding it goes home, holding
+Start opens the quick menu too and the triggers set the TV volume. While an overlay is open the pad
 drives it as usual. Game mode ends when the page goes away or stops sending heartbeats.
 
 ## Music
@@ -369,7 +369,7 @@ first is the language chosen last time in the same series (or film), on
 the detail page or in the pause panel (`/var/lib/pioneer-tv/video/choices.json`),
 and otherwise Jellyfin's call, from the user's own settings. A series opens on
 the first season not finished, its seasons as buttons above the episodes.
-Sök (the round button, or Y) and the main menu's Sök find
+Sök (the round button, or Y) and the home page's Sök find
 films, series, episodes and clips by name.
 
 Videos play in **mpv**, not Chromium, started by the daemon
@@ -417,10 +417,9 @@ branch you want to follow.
 
 ## Logs and CEC debugging
 
-Start → Meny → **Loggar** opens a log sheet over whatever is on screen. Left
-and right switch between the daemon, the display, the updater, Bluetooth,
-NetworkManager, Tailscale and the CEC trace; up and down scroll; A refreshes.
-The daemon and CEC tabs follow live. The CEC trace shows every command the
+**Loggar** is a tab of the settings page (`#logs`). A button per part: the
+daemon, the display, Chromium, the updater, Bluetooth, NetworkManager,
+Tailscale and the CEC trace. The daemon and CEC logs follow live while shown. The CEC trace shows every command the
 daemon sends (`>>`) and everything it hears on the bus (`<<`), so a TV remote
 press that does nothing can be traced to either "never arrived" or "arrived
 but is not mapped".
@@ -457,7 +456,7 @@ with `?mockerror=no_key`, `auth` or `down` gets that error from the
 stand-ins. When `ROMM_URL` or `JELLYFIN_URL` is set, the real server
 answers instead.
 
-For working on a view: pick its group (`#grupp=huvudmenyn`, a link at the
+For working on a view: pick its group (`#grupp=snabbmenyn`, a link at the
 top), so only that group's views are drawn, and keep the one you change
 open large. A save under `extension/`, the settings page or `dev/` draws
 the views in sight and the open one again within a second (the preview
@@ -484,7 +483,7 @@ in Chrome. Arrow keys navigate, Enter selects, Escape goes back. `?tv=1` turns
 on TV mode so Enter on the search field opens the on-screen keyboard. The
 pages are laid out on a 1280x720 canvas in `vw` units, so a laptop window
 looks like the TV ([The pages](#the-pages)). Set `logo` on a service to show a
-picture instead of its illustration in the main menu.
+picture instead of its illustration on the home page.
 
 To try the extension parts on real sites, load `extension/` as an unpacked
 extension at `chrome://extensions` (developer mode). Then any page gets the
@@ -494,7 +493,7 @@ spatial navigation and the overlays, and these shortcuts work:
 | --- | --- |
 | Alt+Shift+H | Launcher (home) |
 | Alt+Shift+K | Toggle on-screen keyboard |
-| Alt+Shift+M | Open the main menu (in the overlay) |
+| Alt+Shift+M | Open the quick menu (in the overlay) |
 
 The launcher is at `chrome-extension://dpigdefepjjejbkidlabpjlnleidgjaf/launcher/index.html`
 (the ID is fixed by the key in the manifest).
@@ -579,28 +578,23 @@ them; a page's toast is sent to the daemon and on to the overlay
 (`content/hud.js`). A page that does not load (the daemon not up yet) is
 tried again every three seconds.
 
-- **The main menu** (`overlay/main-menu.js`): Home opens it over anything
-  but the home page, which is the same tiles (`launcher/shared/tiles.js`);
-  holding Home goes to the home page. A sheet over nearly the whole screen:
-  the status pills and
-  Tillbaka, Ladda om, Tangentbord, Sök, Inställningar and Stäng av TV:n at
-  the top, the services as big tiles in two rows (config `services`; Live
-  for the channels), the pad's legend at the foot. Live and Inställningar
-  (each row opens its tab of the settings page, the box's status at the
-  foot) are the card at the right, over the sheet; so are Sök's results. B
-  goes one step back, the last step closes it. A choice that opens a page
-  punches its row of holes until the page has loaded (the extension says
-  `loaded`). Sök types on the on-screen keyboard here in the overlay, over
-  the sheet. The TV's volume is L2 and R2 (and a row in the pause panels).
+- **The quick menu** (`overlay/main-menu.js`): Home opens it over any
+  window, the paper card at the right: Tillbaka, Hem, TV-volym,
+  Tangentbord, Ladda om, Stäng av TV:n, Inställningar, and the box's status
+  at the foot. Holding Home goes to the home page. B goes one step back,
+  the last step closes it. A choice that opens a page punches its row of
+  holes until the page has loaded (the extension says `loaded`). The TV's
+  volume is L2 and R2 too (and a row in the pause panels).
 - **The menu system** (`overlay/hud.js`): a stack of menus, each the paper
-  card at the right or (the main menu) a sheet that draws itself; the pause
-  panels of a game and a film are the same card. The d-pad moves to the
-  nearest choice that way on screen, so tiles, buttons and lists are walked
-  alike.
+  card at the right; the pause panels of a game and a film are the same
+  card. The d-pad moves to the nearest choice that way on screen.
 - **The home page** (`launcher/index.html`, `home/home.js`) is a page of
-  its own: the same tiles and status, Sök, Inställningar and the TV's off
-  button at the top. Its Live tile, Sök and Inställningar ask the overlay
-  for that panel alone (`relay` with a `panel`).
+  its own: the services as big tiles in two rows (config `services`; Live
+  for the channels), the status pills, and Sök, Inställningar and the TV's
+  off button as round buttons at the top. Its Live tile and Sök ask the
+  overlay for that panel alone (`relay` with a `panel`): Live's channels,
+  or the on-screen keyboard and then where to search. Inställningar, and
+  its Loggar tab, is the settings page.
 - **The screensaver** (`overlay/saver.js`), over everything when no pad is
   connected and nobody has pressed anything ([The TV
   (HDMI-CEC)](#the-tv-hdmi-cec) above); it closes every menu.

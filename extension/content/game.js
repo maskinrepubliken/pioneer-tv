@@ -44,7 +44,7 @@ window.PioneerTV = window.PioneerTV || {};
   // The overlay's menu (over the page, overlay/) says so with "media".
   let menuOver = false;
   function overlayOpen() {
-    return menuOver || (M.keyboard && M.keyboard.isOpen()) || (M.logs && M.logs.isOpen());
+    return menuOver || (M.keyboard && M.keyboard.isOpen());
   }
 
   function send(force) {
@@ -81,7 +81,7 @@ window.PioneerTV = window.PioneerTV || {};
       timer = setInterval(tick, DETECT_MS);
       tick();
       // Overlays pause game mode; resume when they close.
-      ['keyboard:open', 'keyboard:close', 'logs:open', 'logs:close'].forEach((ev) => b.on(ev, () => send(true)));
+      ['keyboard:open', 'keyboard:close'].forEach((ev) => b.on(ev, () => send(true)));
       b.on('media', (e) => { menuOver = e.action === 'pause'; send(true); });
       window.addEventListener('pagehide', () => { if (inGame) { inGame = false; b.daemon({ type: 'gamemode', on: false }); } });
       document.addEventListener('fullscreenchange', tick);

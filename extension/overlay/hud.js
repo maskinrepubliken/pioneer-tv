@@ -1,9 +1,9 @@
 // Pioneer TV HUD, the overlay's part: every toast and every menu, drawn
 // over whatever window is below (Chromium, RetroArch, mpv). The pages send their toasts here (content/hud.js).
 //
-// The menu is one panel with a stack: the main menu (overlay/main-menu.js),
-// its submenus (Live, Sök, Inställningar) and the pause panels of a game or
-// a film. B goes one step back, the last step closes it.
+// The menu is one panel with a stack: the quick menu (overlay/main-menu.js),
+// the panels the home page asks for (Live, Sök) and the pause panels of a
+// game or a film. B goes one step back, the last step closes it.
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const hud = M.hud;
@@ -24,17 +24,14 @@ window.PioneerTV = window.PioneerTV || {};
   };
 
   // ------------------------------------------------------------ menu
-  // A menu: { title, note, items, wide, status }, or one that draws itself
-  // whole (build: the main menu's sheet, which gives each item its el; the
-  // submenus opened from it are drawn over it). An item: { label, icon,
-  // detail, primary, disabled, run, keep (stays open after run), opens (a
-  // page: holes are punched on it until that page has loaded), volume (left
-  // and right step the TV's volume), sub (a function giving the submenu),
-  // grid ('pair': items side by side, two to a row) }.
+  // A menu: { title, note, items, status }. An item: { label, icon, detail,
+  // primary, disabled, run, keep (stays open after run), opens (a page:
+  // holes are punched on it until that page has loaded), volume (left and
+  // right step the TV's volume), sub (a function giving the submenu) }.
   hud.menu = {
     root: null, stack: [], index: 0, items: [],
     isOpen() { return !!(this.root && this.root.isConnected); },
-    // Home: the main menu, or away with whatever is open.
+    // Home: the quick menu, or away with whatever is open.
     toggle() { this.isOpen() ? this.close() : this.open(M.mainMenu.spec()); },
     open(spec) {
       this.stack = [spec];
@@ -66,21 +63,13 @@ window.PioneerTV = window.PioneerTV || {};
       const root = document.createElement('div');
       root.className = 'pioneertv-menu';
       root.setAttribute('data-pioneertv-overlay', '');
-      // A sheet at the bottom of the stack stays under its submenus.
-      const base = this.stack[0];
-      if (base !== spec && base.build) {
-        const under = base.build();
-        under.classList.add('pioneertv-menu-under');
-        root.appendChild(under);
-      }
       this.items = spec.items;
-      const panel = spec.build ? spec.build() : this.panel(spec);
+      const panel = this.panel(spec);
       this.items.forEach((it, i) => it.el.addEventListener('click', () => { this.index = i; this.highlight(); this.activate(); }));
       root.appendChild(panel);
       if (this.root) M.bridge.unmount(this.root);
       M.bridge.mount(root, { modal: true });
       this.root = root;
-      if (spec.mounted) spec.mounted(panel);
       this.index = Math.min(spec.at || 0, this.items.length - 1);
       if (this.items[this.index] && this.items[this.index].disabled) this.index = Math.max(0, this.items.findIndex((it) => !it.disabled));
       this.highlight();
@@ -91,24 +80,16 @@ window.PioneerTV = window.PioneerTV || {};
     panel(spec) {
       const b = M.bridge;
       const panel = document.createElement('div');
-      panel.className = 'pioneertv-menu-panel' + (spec.wide ? ' pioneertv-menu-wide' : '');
+      panel.className = 'pioneertv-menu-panel';
       const title = document.createElement('div');
       title.className = 'pioneertv-menu-title';
       title.textContent = spec.title || 'Meny';
       panel.append(title);
       if (spec.note) panel.appendChild(spec.note);
-      let group = null;
-      let groupKind = null;
-      spec.items.forEach((it) => {
-        const kind = it.grid || 'list';
-        if (!group || kind !== groupKind) {
-          group = document.createElement('div');
-          group.className = `pioneertv-menu-items pioneertv-menu-${kind}`;
-          groupKind = kind;
-          panel.appendChild(group);
-        }
-        group.appendChild(this.item(it));
-      });
+      const group = document.createElement('div');
+      group.className = 'pioneertv-menu-items pioneertv-menu-list';
+      spec.items.forEach((it) => group.appendChild(this.item(it)));
+      panel.appendChild(group);
       if (spec.status) panel.appendChild(this.statusBlock(b.state.status, b.state.daemonConnected));
       return panel;
     },

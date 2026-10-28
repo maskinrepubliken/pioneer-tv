@@ -109,7 +109,7 @@ Piltangenter navigerar, Enter väljer, Escape stänger. Layouten är ritad för 
 <h2>Hem och overlayn</h2>
 <ul>
   <li><a href="/launcher">Hem: klockan</a></li>
-  <li><a href="/ext/overlay/index.html">Overlayn</a> (genomskinlig; huvudmenyn och notiserna visas i katalogen)</li>
+  <li><a href="/ext/overlay/index.html">Overlayn</a> (genomskinlig; snabbmenyn och notiserna visas i katalogen)</li>
 </ul>
 <h2>Spel</h2>
 <ul><li><a href="/spel">Spel mot RomM</a> (kräver ROMM_URL och ROMM_API_KEY)</li></ul>

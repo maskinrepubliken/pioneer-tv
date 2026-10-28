@@ -103,6 +103,13 @@
   }
 
   // ---------------------------------------------------------------- views
+  // The parts whose journal the Loggar tab shows, and the CEC bus.
+  const LOG_UNITS = [
+    ['pioneer-tv-daemon', 'Daemon'], ['pioneer-tv-display', 'Skärm'], ['chromium', 'Chromium'],
+    ['pioneer-tv-update', 'Uppdatering'], ['bluetooth', 'Bluetooth'], ['NetworkManager', 'Nätverk'],
+    ['tailscaled', 'Tailscale'], ['cec', 'CEC'],
+  ];
+
   const views = {
     async status(show) {
       const s = await api('GET', '/api/status');
@@ -304,10 +311,41 @@
         h('p', { class: 'muted' }, 'Ett USB-tangentbord fungerar direkt; när ett är anslutet öppnas inte skärmtangentbordet automatiskt.')));
     },
 
+    // The journal of each of the box's parts, and the CEC bus as the daemon
+    // sees it. A picks a part (and fetches it again); the daemon's log and
+    // the CEC trace follow live while they are on screen.
+    async logs(show) {
+      const pre = h('pre', { class: 'log log-full' }, 'Hämtar…');
+      let timer = null;
+      let unit = LOG_UNITS[0][0];
+      const load = async () => {
+        clearTimeout(timer);
+        const now = unit;
+        try {
+          const text = await api('GET', now === 'cec' ? '/api/cec/trace' : `/api/logs?unit=${encodeURIComponent(now)}&lines=200`);
+          if (!pre.isConnected || now !== unit) return;
+          pre.textContent = text || '(tomt)';
+        } catch (e) {
+          if (!pre.isConnected) return;
+          pre.textContent = `Kunde inte hämta loggen: ${e.message}`;
+        }
+        pre.scrollTop = pre.scrollHeight;
+        if (pre.isConnected && (now === 'pioneer-tv-daemon' || now === 'cec')) timer = setTimeout(load, now === 'cec' ? 2000 : 5000);
+      };
+      const buttons = LOG_UNITS.map(([id, label]) => h('button', {
+        class: `small${id === unit ? ' active' : ''}`,
+        onclick: (e) => {
+          unit = id;
+          for (const b of buttons) b.classList.toggle('active', b === e.currentTarget);
+          pre.textContent = 'Hämtar…';
+          load();
+        },
+      }, label));
+      show(h('h1', {}, 'Loggar'), h('div', { class: 'actions log-units' }, buttons), pre);
+      load();
+    },
+
     async system(show) {
-      const logs = h('pre', { class: 'log' }, 'Hämtar…');
-      const unit = h('select', { onchange: () => loadLogs() }, ['pioneer-tv-daemon', 'pioneer-tv-display', 'chromium', 'pioneer-tv-update', 'bluetooth', 'NetworkManager', 'tailscaled'].map((u) => h('option', { value: u }, u)));
-      const loadLogs = async () => { logs.textContent = await api('GET', `/api/logs?unit=${unit.value}&lines=150`); logs.scrollTop = logs.scrollHeight; };
       // ---- update from the git repo
       const upd = h('div', { class: 'card pioneertv-card update' });
       let pollTimer = null;
@@ -367,11 +405,8 @@
           h('button', { onclick: () => sysAction('restart_daemon') }, 'Starta om daemon'),
           confirmBtn('Starta om Pi', 'danger', () => sysAction('reboot')),
           confirmBtn('Stäng av Pi', 'danger', () => sysAction('shutdown'))),
-        h('h2', {}, 'Loggar'),
-        h('div', { class: 'actions' }, unit, h('button', { class: 'small', onclick: loadLogs }, 'Uppdatera')),
-        logs,
+        h('p', { class: 'muted' }, 'Loggarna finns under ', h('a', { href: '#logs' }, 'Loggar'), '.'),
       );
-      loadLogs();
       refreshUpdate(false);
     },
   };

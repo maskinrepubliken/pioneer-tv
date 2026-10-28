@@ -45,7 +45,7 @@ class Routing(unittest.TestCase):
         self.assertEqual(r.handle({"type": "relay", "name": "navigate", "url": "javascript:alert(1)"}), [])
         self.assertEqual(r.handle({"type": "relay", "name": "settings", "section": "wifi"}),
                          [{"type": "event", "name": "settings", "target": "page", "section": "wifi"}])
-        # A press on the home page opens the overlay's main menu.
+        # A press on a page opens the overlay's quick menu.
         self.assertEqual(r.handle({"type": "relay", "name": "menu"}),
                          [{"type": "event", "name": "menu", "open": True, "target": "overlay"}])
 

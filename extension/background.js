@@ -103,7 +103,7 @@ async function openSettings(section) {
   if (tab) chrome.tabs.update(tab.id, { url: section ? `${url}#${encodeURIComponent(section)}` : url });
 }
 
-// A service chosen in the overlay's main menu (the daemon checked the scheme).
+// A service chosen in the overlay's Live panel (the daemon checked the scheme).
 async function navigateActive(url) {
   if (!/^(https?:\/\/|chrome-extension:\/\/)/.test(url || '')) return;
   const tab = await activeTab();

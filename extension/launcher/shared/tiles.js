@@ -1,7 +1,7 @@
 // Pioneer TV tiles: the box's services as big tiles in two rows, its status
 // and its buttons at the top, the pad's legend at the foot. The home page
-// (home/home.js) is this sheet; the overlay's main menu (overlay/
-// main-menu.js) draws the same over any window. Each wires its own choices:
+// (home/home.js) is this sheet; the overlay's menus (overlay/hud.js) use
+// its row of holes on a choice that opens a page. Each wires its own choices:
 // the page's spatial navigation focuses them (pioneertv-focus), the
 // overlay's menu marks them (pioneertv-menu-active). Styled by tiles.css.
 //

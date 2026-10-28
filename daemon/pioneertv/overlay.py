@@ -1,7 +1,7 @@
 """Who gets which events: the overlay or the page.
 
 The overlay (system/overlay.py, a WebKit page on labwc's top layer) draws
-every menu (the main menu, the pause panels), every toast and the
+every menu (the quick menu, the pause panels), every toast and the
 screensaver, over any window: Chromium, RetroArch or mpv. The pages draw
 none of them; a page's toast is sent here and goes on to the overlay.
 
@@ -26,7 +26,7 @@ OVERLAY = ("menu", "toast", "saver", "rest")
 RELAYS = ("home", "back", "reload", "settings", "keyboard", "navigate")
 TO_OVERLAY = ("menu",)
 # The panels the home page may open alone in the overlay.
-PANELS = ("live", "search", "settings")
+PANELS = ("live", "search")
 
 
 class Router:

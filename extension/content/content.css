@@ -47,7 +47,7 @@
   z-index: 1;
 }
 
-.pioneertv-keyboard, .pioneertv-toast, .pioneertv-menu, .pioneertv-logs {
+.pioneertv-keyboard, .pioneertv-toast, .pioneertv-menu {
   font-family: var(--pioneertv-font-ui);
   color: var(--pioneertv-ink);
 }
@@ -122,29 +122,3 @@ html.pioneertv-pointer .pioneertv-key.pioneertv-key-accent.pioneertv-key-active 
   font: 14px/1.4 var(--pioneertv-font-mono); letter-spacing: 0.1em; text-transform: uppercase;
   color: var(--pioneertv-ink-faint); text-align: right; white-space: nowrap;
 }
-
-/* ---- log viewer: a full sheet of paper, no dimmed page behind ---- */
-.pioneertv-logs {
-  position: fixed; inset: 0; z-index: 2147483002;
-  background: var(--pioneertv-paper-sunken);
-  display: flex; align-items: center; justify-content: center;
-}
-.pioneertv-logs-sheet {
-  width: min(92vw, 1100px); height: 84vh; padding: 22px 26px 16px;
-  background: var(--pioneertv-paper-raised); border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-panel);
-  display: flex; flex-direction: column; gap: 12px;
-}
-.pioneertv-logs-head { display: flex; align-items: baseline; gap: 22px; border-bottom: 1px solid var(--pioneertv-line); padding-bottom: 10px; }
-.pioneertv-logs-title { font: italic 400 30px/1.2 var(--pioneertv-font-prose); }
-.pioneertv-logs-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
-.pioneertv-logs-tab {
-  padding: 6px 14px; border-radius: var(--pioneertv-radius-pill); border: 1px solid transparent;
-  font: 16px/1.2 var(--pioneertv-font-ui); color: var(--pioneertv-ink-muted); cursor: pointer;
-}
-.pioneertv-logs-tab-active { background: var(--pioneertv-surface-ink); color: var(--pioneertv-on-dark); }
-.pioneertv-logs-body {
-  flex: 1; margin: 0; overflow: auto; padding: 14px 16px;
-  background: var(--pioneertv-paper-sunken); border: 1px solid var(--pioneertv-line); border-radius: var(--pioneertv-radius-m);
-  font: 15px/1.55 var(--pioneertv-font-mono); color: var(--pioneertv-ink); white-space: pre-wrap; word-break: break-word;
-}
-.pioneertv-logs .pioneertv-keyhint .pioneertv-icon { font-size: 13px; }
