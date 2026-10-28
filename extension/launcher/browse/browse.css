@@ -1,10 +1,10 @@
 /* Pioneer TV browse page (browse/page.js), on base.css: the same for every
    library. The column at the left (Sök and the library's ways in), the
    heading (title, count, tabs, what is searched for), the shelf, the grid
-   and the detail views, and the cards and rows they are made of. Covers sit
-   on raised paper cards; type-only cards are Rubik capitals (or Fraunces).
-   Focus is the ink ring with air around it and the ochre band, switched in
-   one step. */
+   and the detail views, and the cards and rows they are made of. Covers
+   stand on shelves (.planks), the name on a label under the plank;
+   type-only cards are Rubik capitals (or Fraunces). Focus is the ink ring
+   with air around it, and the ochre marker, switched in one step. */
 
 .view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 
@@ -55,6 +55,7 @@
 .rail-item.aktiv .rail-mark { background: var(--pioneertv-ink); color: var(--pioneertv-paper); border-color: var(--pioneertv-ink); }
 .rail-item.aktiv .rail-label { color: var(--pioneertv-ink); }
 .rail-search .rail-mark { color: var(--pioneertv-ink-muted); }
+.rail-list .rail-mark .pioneertv-icon { font-size: 1.4em; }
 
 /* ---- the legend, as on the home page: quiet, no line, no wordmark ---- */
 .legend { border-top: 0; color: var(--pioneertv-ink-faint); }
@@ -64,6 +65,9 @@
 .head { flex: none; display: flex; align-items: center; gap: 1.6rem; margin-bottom: 1.2rem; min-height: 2.6rem; }
 .head-title {
   margin: 0; min-width: 0; flex: 0 1 auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  /* Room above the capitals for Å's ring and Ä's dots, which the clip
+     for the ellipsis would cut. */
+  padding-top: 0.14em;
   font-family: var(--pioneertv-font-display); font-weight: 900; font-size: 2.6rem; line-height: 1;
   letter-spacing: -0.01em; text-transform: uppercase;
 }
@@ -104,13 +108,6 @@
 
 /* ---- the shelf: sections one under the other ---- */
 .shelf-section + .shelf-section { margin-top: 1.3rem; }
-.shelf-row {
-  display: flex; gap: 1rem; overflow-x: auto; scrollbar-width: none;
-  padding: 0.6rem 0.6rem 0.7rem; margin: -0.6rem -0.6rem -0.7rem;   /* room for the focus ring */
-}
-.shelf-row::-webkit-scrollbar { display: none; }
-.shelf-row .card { flex: none; }
-.shelf-grid { display: grid; gap: 1.2rem 1.1rem; grid-template-columns: repeat(var(--columns, 5), minmax(0, 1fr)); }
 .shelf-groups { display: flex; flex-wrap: wrap; gap: 1rem; }
 .shelf-actions { display: flex; gap: 1rem; }
 .shelf-actions .knapp { align-self: stretch; }
@@ -139,15 +136,6 @@
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
-/* A game's box art, at its own shape: in a row, a fixed height under a
-   two-line title; in a grid, the cover fills the card up to the title. */
-.card--box { padding-bottom: 0.5rem; }
-.shelf-row .card--box { width: 12.4rem; }
-.shelf-row .card--box .cover { height: 9.8rem; }
-.shelf-row .card--box .title { -webkit-line-clamp: 2; }
-.grid--box .card--box .cover { flex: 1; min-height: 0; }
-.grid--box .card--box .title { flex: none; margin-top: 0.5rem; }
-
 /* Posters, stills, squares and rounds fill their picture's shape. Cards out
    of sight are skipped (content-visibility). */
 .card--poster, .card--still, .card--square, .card--round { content-visibility: auto; contain-intrinsic-size: auto 15rem; }
@@ -158,9 +146,88 @@
 .card--still .cover { aspect-ratio: 16 / 9; }
 .card--square .cover, .card--round .cover { aspect-ratio: 1; }
 .card--round .cover { border-radius: 50%; }
-.shelf-row .card--still { width: 15rem; }
-.shelf-row .card--square, .shelf-row .card--round { width: 11.5rem; }
-.shelf-row .card--poster { width: 10rem; }
+
+/* ---- the shelves (shelf.js, planks; the grid's too): covers standing on
+   planks, each at its own shape with its foot on the plank, the name on a
+   label under it, as many to a plank as there are columns and the next
+   plank under it. The planks are drawn behind the rows, so a grid that
+   keeps only the rows near the focus (grid.js) has them all the same: a
+   paper top between two lines, and its front edge. ---- */
+.planks {
+  --plank-top: 0.4rem; --plank-front: 0.5rem; --plank-h: calc(var(--plank-top) + var(--plank-front));
+  --label-h: 3.6rem; --row-gap: 1.2rem;
+  --row-h: calc(var(--cover-h) + var(--plank-h) + var(--label-h));
+  --at: var(--cover-h); --mid: calc(var(--at) + var(--plank-top)); --end: calc(var(--mid) + var(--plank-front));
+  display: grid; column-gap: 1.3rem; row-gap: var(--row-gap);
+  grid-template-columns: repeat(var(--columns, 6), minmax(0, 1fr));
+  grid-auto-rows: var(--row-h);
+  background-image: linear-gradient(to bottom,
+    transparent var(--at),
+    var(--pioneertv-line-strong) var(--at) calc(var(--at) + 1px),
+    var(--pioneertv-paper-raised) calc(var(--at) + 1px) var(--mid),
+    var(--pioneertv-line-strong) var(--mid) var(--end),
+    transparent var(--end));
+  background-size: 100% calc(var(--row-h) + var(--row-gap));
+  background-repeat: repeat-y;
+}
+.planks--box { --cover-h: 9.4rem; }
+.planks--poster { --cover-h: 11.5rem; }
+.planks--square { --cover-h: 8.6rem; }
+.planks--round { --cover-h: 8rem; }
+.planks--still { --cover-h: 7.6rem; }
+.planks .card {
+  height: var(--row-h); padding: 0; overflow: visible; border: 0; border-radius: 0; background: none;
+  content-visibility: visible;
+  display: grid; grid-template-rows: var(--cover-h) var(--plank-h) auto auto; justify-items: center; align-content: start;
+}
+.planks .card .band { display: none; }
+/* The cover at its own shape and no wider, its foot on the plank (so a
+   film's progress runs along its own foot). */
+.planks .card .cover {
+  grid-row: 1; align-self: end; width: fit-content; max-width: 100%; height: auto; aspect-ratio: auto; padding: 0;
+  display: block; overflow: hidden; background: none; border-radius: var(--pioneertv-radius-s);
+}
+.planks .card .cover img {
+  display: block; width: auto; height: auto; max-width: 100%; max-height: var(--cover-h); object-fit: contain;
+  border-radius: inherit;
+}
+.planks--round .card .cover { border-radius: 50%; }
+.planks--round .card .cover img { width: var(--cover-h); height: var(--cover-h); object-fit: cover; }
+/* No picture: the paper at the shape's own proportions. */
+.planks .card .cover-paper {
+  height: var(--cover-h); width: auto; max-width: 100%; aspect-ratio: var(--paper, 3 / 4);
+  display: flex; align-items: center; justify-content: center; background: var(--pioneertv-paper-sunken);
+}
+.planks--poster { --paper: 2 / 3; }
+.planks--square { --paper: 1; }
+.planks--round { --paper: 1; }
+.planks--round .card .cover-paper { border-radius: 50%; }
+.planks--still { --paper: 16 / 9; }
+/* The label under the plank. */
+.planks .card .title {
+  grid-row: 3; margin-top: 0.45rem; text-align: center; font-size: 0.92rem; line-height: 1.15; -webkit-line-clamp: 2;
+}
+.planks .card .meta { grid-row: 4; max-width: 100%; text-align: center; }
+.planks .card .fav { display: inline-flex; vertical-align: -0.1em; margin-right: 0.3em; color: var(--pioneertv-ochre); }
+.planks .card .fav svg { fill: currentColor; }
+/* The chosen one: the ring round its cover, its name in ink over an ochre line. */
+.planks .card.pioneertv-focus { background: none; outline: none !important; box-shadow: none !important; }
+.planks .card.pioneertv-focus .cover { overflow: visible; outline: 0.22rem solid var(--pioneertv-focus); outline-offset: 0.25rem; }
+.planks .card.pioneertv-focus .title {
+  color: var(--pioneertv-ink); text-decoration: underline 0.18rem var(--pioneertv-ochre); text-underline-offset: 0.3rem;
+}
+/* A type-only card on a shelf (the way to all of them): a block standing
+   on the plank, as tall as the covers. */
+.planks .card--group {
+  display: flex; flex-direction: column; height: var(--cover-h); width: auto; aspect-ratio: var(--paper, 3 / 4); max-width: 100%; justify-self: center;
+  min-width: 0; align-self: start; justify-content: flex-end; padding: 0.8rem 0.9rem; text-align: left;
+  border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-s); background: var(--pioneertv-paper-raised);
+}
+.planks .card--group .name { font-size: 1.3rem; }
+.planks .card--group .meta { text-align: left; }
+.planks .card--group.pioneertv-focus {
+  outline: 0.22rem solid var(--pioneertv-focus) !important; outline-offset: 0.25rem !important; border-radius: var(--pioneertv-radius-s) !important;
+}
 
 /* Type only: a console, a collection, a folder. */
 .card--group { min-width: 9.5rem; padding: 0.65rem 1.2rem 0.6rem; justify-content: flex-end; }
@@ -178,11 +245,7 @@
 /* ---- the grid: cards at the left, the info panel (if any) at the right ---- */
 .grid-view { flex: 1; min-height: 0; display: flex; gap: 2rem; }
 .grid-scroll { min-width: 0; }
-.grid {
-  display: grid; gap: 1.2rem 1.1rem;
-  grid-template-columns: repeat(var(--columns, 5), minmax(0, 1fr));
-  grid-template-rows: repeat(var(--rows, 1), var(--row-h, 15rem));
-}
+.grid { grid-template-rows: repeat(var(--rows, 1), var(--row-h)); }
 .grid-info { width: 16.5rem; flex: none; padding-left: 1.6rem; border-left: 1px solid var(--pioneertv-line); overflow: hidden; }
 .grid-info-title {
   margin: 0 0 0.5rem; font-family: var(--pioneertv-font-display); font-weight: 900; font-size: 1.5rem; line-height: 1.05;
@@ -205,7 +268,7 @@
 .detail-side--square .cover { aspect-ratio: 1; }
 .detail-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .detail-name {
-  margin: 0 0 0.6rem; font-family: var(--pioneertv-font-display); font-weight: 900; font-size: 2.2rem; line-height: 1.02;
+  margin: 0 0 0.6rem; padding-top: 0.14em; font-family: var(--pioneertv-font-display); font-weight: 900; font-size: 2.2rem; line-height: 1.02;
   letter-spacing: -0.01em; text-transform: uppercase;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }

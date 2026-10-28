@@ -1,7 +1,7 @@
 // Pioneer TV browse page, the grid: a long collection of cards (a console's
 // games, every album), with
 //
-//   { items, shape, columns, rowHeight, info, letter, count }
+//   { items, shape, columns, info, letter, count }
 //
 // info(item): { title, meta, text, foot } for a panel at the right that
 // follows the focus (else the cards take the width); letter(item): the
@@ -11,9 +11,9 @@
 // Only the rows around the focus are in the page (a console can have nearly
 // a thousand games, the box 1,707 albums): with every card there, the
 // spatial navigation looked at each on every press, 110 to 160 ms. The rows
-// have one height (rowHeight, else measured from the first card); the
-// navigation moves into the row just outside the window by geometry, and
-// the focus moving in it shifts the window around it.
+// are shelves of one height (browse.css, .planks); the navigation moves
+// into the row just outside the window by geometry, and the focus moving
+// in it shifts the window around it.
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const el = M.views.el;
@@ -47,8 +47,8 @@ window.PioneerTV = window.PioneerTV || {};
 
     const body = el('div', 'grid-view');
     const scroller = el('div', 'scroll grid-scroll');
-    const gridEl = el('div', `grid grid--${spec.shape || 'square'}`);
-    gridEl.style.setProperty('--columns', String(cols));
+    const gridEl = M.shelf.planks(spec.shape || 'square', cols);
+    gridEl.classList.add('grid');
     scroller.appendChild(gridEl);
     body.appendChild(scroller);
     const info = spec.info ? el('aside', 'grid-info') : null;
@@ -102,17 +102,6 @@ window.PioneerTV = window.PioneerTV || {};
       if (spec.count) ctx.setCount(spec.count(list.length, all.length));
       if (list.length) renderWindow(0);
       showInfo(list[0]);
-    }
-
-    // The height of a row, from a card with every line (the first one),
-    // measured at its own height before the rows are fixed.
-    if (spec.rowHeight) gridEl.style.setProperty('--row-h', spec.rowHeight);
-    else if (all.length) {
-      gridEl.style.setProperty('--row-h', 'auto');
-      const probe = C.card(all[0], spec.shape);
-      gridEl.appendChild(probe);
-      gridEl.style.setProperty('--row-h', `${probe.getBoundingClientRect().height}px`);
-      probe.remove();
     }
 
     gridEl.addEventListener('focusin', (e) => {

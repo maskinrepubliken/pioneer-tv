@@ -65,8 +65,8 @@ window.PioneerTV = window.PioneerTV || {};
     if (!found.length || (!folders.length && found.every((v) => v.kind === 'folder'))) return [{ label, items: [], empty: 'Här finns inget än.' }];
     return [
       { label, layout: 'groups', items: folders },
-      { label: folders.length ? null : label, layout: 'grid', columns: 6, shape: 'poster', items: posters },
-      { label: folders.length || posters.length ? null : label, layout: 'grid', columns: 4, shape: 'still', items: stills },
+      { label: folders.length ? null : label, layout: 'shelf', shape: 'poster', items: posters },
+      { label: folders.length || posters.length ? null : label, layout: 'shelf', shape: 'still', items: stills },
     ];
   }
 
@@ -84,11 +84,20 @@ window.PioneerTV = window.PioneerTV || {};
     return held.get(lib.id);
   }
 
+  // The library a folder is in: the one whose folders hold it (a folder in
+  // a folder: none, the column then marks only the library's own).
+  async function libraryOf(folderId) {
+    for (const lib of await libs()) {
+      if ((await browse(lib)).some((v) => v.id === folderId)) return lib;
+    }
+    return null;
+  }
+
   // The column at the left: the libraries, and the folders of the one the
-  // page is in.
+  // page is in (in one of its folders too).
   async function rail([what, id]) {
     const all = await libs();
-    const lib = what === 'lib' ? all.find((l) => l.id === id) : !what ? all[0] : null;
+    const lib = what === 'lib' ? all.find((l) => l.id === id) : !what ? all[0] : what === 'folder' ? await libraryOf(id) : null;
     const folders = lib ? (await browse(lib)).filter((v) => v.kind === 'folder') : [];
     return [
       { label: 'Bibliotek', items: all.map((l) => ({ label: l.name, href: `#/lib/${encodeURIComponent(l.id)}`, key: `lib:${l.id}`, active: lib ? l.id === lib.id : false })) },
@@ -103,7 +112,7 @@ window.PioneerTV = window.PioneerTV || {};
     const [begun, found] = await Promise.all([J.resume(lib).catch(() => []), browse(lib)]);
     return {
       kind: 'shelf', title: lib.name, legend: [['A', 'öppna']],
-      sections: [{ label: 'Fortsätt titta', layout: 'row', shape: 'still', items: begun.map(still) }, ...sections(found, null, { folders: false })],
+      sections: [{ label: 'Fortsätt titta', layout: 'shelf', shape: 'still', items: begun.map(still) }, ...sections(found, null, { folders: false })],
     };
   }
 

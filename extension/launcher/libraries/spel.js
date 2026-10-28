@@ -1,9 +1,11 @@
 // Pioneer TV library Spel: RomM's games (sources/romm.js), drawn by the
-// browse page (browse/page.js). #/ is recently played, the consoles and the
-// collections; #/platform/<id>, #/collection/<own|virtual>/<id> and
-// #/search/<words> are grids of games. A game opens game.html, which has
-// the daemon play it in RetroArch. X on a recently played game takes it off
-// the list (X again within five seconds puts it back).
+// browse page (browse/page.js). #/ is recently played; #/collections the
+// collections, a shelf each; #/platform/<id>, #/collection/<own|virtual>/<id>
+// and #/search/<words> are grids of games; the column at the left goes to
+// them, the consoles by their pad. A game opens game.html, which has the
+// daemon play it in RetroArch. X on a recently played game takes it off the
+// list (X again within five seconds puts it back); X on any other game
+// marks it favourite, or not (RomM's Favourites).
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const R = M.romm;
@@ -11,6 +13,14 @@ window.PioneerTV = window.PioneerTV || {};
   const UNDO_MS = 5000;
 
   const PLATFORM_SHORT = { nes: 'NES', snes: 'SNES', n64: 'N64', genesis: 'Genesis', win: 'PC' };
+  // A console's symbol in the column (content/icons.js), by RomM's slug;
+  // one without keeps its initial.
+  const CONSOLE_ICON = {
+    nes: 'nes', famicom: 'nes', snes: 'snes', sfam: 'snes', n64: 'n64',
+    genesis: 'genesis', 'genesis-slash-megadrive': 'genesis', sms: 'genesis', segacd: 'disc', saturn: 'disc',
+    gb: 'gameboy', gbc: 'gameboy', gba: 'gba', psx: 'disc', ps2: 'disc', dc: 'disc',
+    dos: 'floppy', win: 'floppy', amiga: 'floppy', c64: 'floppy', arcade: 'arcade', mame: 'arcade', neogeoaes: 'arcade',
+  };
   const platformName = (slug) => PLATFORM_SHORT[slug] || (slug || '').toUpperCase();
   const PLAYERS = (p) => (p === 'flera' ? 'flera spelare' : p ? `${p} spelare` : null);
 
@@ -24,9 +34,10 @@ window.PioneerTV = window.PioneerTV || {};
     return d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
   }
 
-  // A game as the browse page's item: its box art, small then sharp.
-  const game = (g, meta) => ({
-    key: `game:${g.id}`, id: g.id, title: g.name, meta, shape: 'box',
+  // A game as the browse page's item: its box art, small then sharp; a
+  // heart when it is a favourite (favs: the ids, R.favorites()).
+  const game = (g, meta, favs) => ({
+    key: `game:${g.id}`, id: g.id, title: g.name, meta, shape: 'box', favorite: !!favs && favs.has(g.id),
     picture: g.cover, large: g.coverLarge, href: `game.html?rom=${g.id}${tv}`, game: g,
   });
 
@@ -34,11 +45,11 @@ window.PioneerTV = window.PioneerTV || {};
   // follow the order the grid is in ("The Blues Brothers" is a B).
   const letter = (it) => M.grid.letterOf(it.game.sortKey || it.game.name);
 
-  function gridOf(title, games, filter) {
+  function gridOf(title, games, filter, favs) {
     return {
       kind: 'grid', title, filter,
-      legend: [['A', 'spela'], ['L1', ''], ['R1', 'hoppa en bokstav']],
-      items: games.map((g) => game(g)), shape: 'box', columns: 3, rowHeight: '16.2rem', letter,
+      legend: [['A', 'spela'], ['X', 'favorit'], ['L1', ''], ['R1', 'hoppa en bokstav']],
+      items: games.map((g) => game(g, undefined, favs)), shape: 'box', columns: 4, letter,
       count: (n, all) => (n === all ? `${all} spel` : `${n} av ${all} spel`),
       empty: 'Inga spel här.',
       info: (it) => {
@@ -54,46 +65,85 @@ window.PioneerTV = window.PioneerTV || {};
   }
 
   async function start() {
-    const [recent, platforms] = await Promise.all([R.recent(), R.platforms()]);
+    const [recent, platforms, favs] = await Promise.all([R.recent(), R.platforms(), R.favorites().catch(() => new Set())]);
     undo = null;                 // its card belonged to the view drawn before
     const total = platforms.reduce((n, p) => n + p.count, 0);
     return {
       kind: 'shelf', title: 'Spel', count: `${platforms.length} konsoler · ${total} spel`,
       legend: [['A', 'spela · öppna'], ['X', 'ta bort ur senast spelade']],
       sections: [
-        { id: 'recent', label: 'Senast spelade', layout: 'row', shape: 'box',
-          items: recent.filter((g) => !pending.has(g.id)).map((g) => game(g, `${platformName(g.platform)} · ${when(g.lastPlayed)}`)),
+        { id: 'recent', label: 'Senast spelade', layout: 'shelf', shape: 'box',
+          items: recent.filter((g) => !pending.has(g.id)).map((g) => game(g, `${platformName(g.platform)} · ${when(g.lastPlayed)}`, favs)),
           empty: 'Inget spelat än. Välj en konsol till vänster.' },
       ],
     };
   }
 
+  // The collections: a shelf each, its first games and the way to all.
+  async function shelves() {
+    const [collections, favs] = await Promise.all([R.collections(), R.favorites()]);
+    const lists = await Promise.all(collections.map((c) => R.games({ collection: c }).then((r) => r.games).catch(() => [])));
+    return {
+      kind: 'shelf', title: 'Samlingar', count: collections.length === 1 ? '1 samling' : `${collections.length} samlingar`,
+      legend: [['A', 'spela · öppna'], ['X', 'favorit']],
+      sections: collections.map((c, i) => ({
+        label: `${c.name} · ${lists[i].length} spel`, layout: 'shelf', shape: 'box', limit: true,
+        items: lists[i].map((g) => game(g, platformName(g.platform), favs)),
+        more: { key: `collection:${c.kind}:${c.id}`, title: 'Alla', meta: `${lists[i].length} spel`, href: `#/collection/${c.kind}/${encodeURIComponent(c.id)}` },
+        empty: 'Inga spel här än.',
+      })),
+    };
+  }
+
   async function view([what, a, b]) {
+    const favs = await R.favorites().catch(() => new Set());
     if (what === 'platform') {
       const [{ games }, platforms] = await Promise.all([R.games({ platformId: Number(a) }), R.platforms()]);
       const p = platforms.find((x) => x.id === Number(a));
-      return gridOf(p ? (PLATFORM_SHORT[p.slug] || p.name) : 'Spel', games, true);
+      return gridOf(p ? (PLATFORM_SHORT[p.slug] || p.name) : 'Spel', games, true, favs);
     }
+    if (what === 'collections') return shelves();
     if (what === 'collection') {
       const [{ games }, collections] = await Promise.all([R.games({ collection: { kind: a, id: b } }), R.collections()]);
       const c = collections.find((x) => x.kind === a && String(x.id) === String(b));
-      return gridOf(c ? c.name : 'Samling', games, true);
+      return gridOf(c ? c.name : 'Samling', games, true, favs);
     }
     if (what === 'search' && a) {
       const { games } = await R.games({ search: a });
-      return gridOf(`”${a}”`, games, false);
+      return gridOf(`”${a}”`, games, false, favs);
     }
     return start();
   }
 
-  // The column at the left: the start, the consoles, the collections.
-  async function rail() {
-    const [platforms, collections] = await Promise.all([R.platforms(), R.collections()]);
+  // The column at the left: the start, the collections (one page for all
+  // of them, marked inside one too), the consoles.
+  async function rail([what]) {
+    const platforms = await R.platforms();
     return [
-      { items: [{ label: 'Senast spelade', href: '#/', key: 'rail:recent' }] },
-      { label: 'Konsoler', items: platforms.map((p) => ({ label: PLATFORM_SHORT[p.slug] || p.name, href: `#/platform/${p.id}`, key: `platform:${p.id}` })) },
-      { label: 'Samlingar', items: collections.map((c) => ({ label: c.name, href: `#/collection/${c.kind}/${encodeURIComponent(c.id)}`, key: `collection:${c.kind}:${c.id}` })) },
+      { items: [
+        { label: 'Senast spelade', icon: 'clock', href: '#/', key: 'rail:recent' },
+        { label: 'Samlingar', icon: 'stack', href: '#/collections', key: 'rail:collections', active: what === 'collections' || what === 'collection' },
+      ] },
+      { label: 'Konsoler', items: platforms.map((p) => ({
+        label: PLATFORM_SHORT[p.slug] || p.name, icon: CONSOLE_ICON[p.slug], href: `#/platform/${p.id}`, key: `platform:${p.id}`,
+      })) },
     ];
+  }
+
+  // X on a game: favourite, or not. The heart changes at once; RomM is told
+  // after, and the heart goes back if it says no.
+  async function toggleFavorite(card) {
+    const id = Number(card.dataset.key.split(':')[1]);
+    const on = !card.classList.contains('card--fav');
+    M.cards.favorite(card, on);
+    M.hud.toast(on ? 'Favorit' : 'Inte längre favorit', 'heart');
+    try {
+      await R.setFavorite(id, on);
+    } catch (err) {
+      console.error('favourite', id, err);
+      M.cards.favorite(card, !on);
+      M.hud.toast('RomM svarar inte, prova igen', 'info');
+    }
   }
 
   // ------------------------------------------------------------ remove + undo
@@ -138,8 +188,10 @@ window.PioneerTV = window.PioneerTV || {};
     if (e.key !== ' ') return false;
     if (e.repeat) return true;
     const active = document.activeElement;
+    const isGame = active && active.classList.contains('card') && /^game:/.test(active.dataset.key || '');
     if (undo) restore();
-    else if (active && active.closest('#recent') && active.classList.contains('card')) remove(active);
+    else if (isGame && active.closest('#recent')) remove(active);
+    else if (isGame) toggleFavorite(active);
     return true;
   }
 

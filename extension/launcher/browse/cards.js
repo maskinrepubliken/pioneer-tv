@@ -3,13 +3,14 @@
 // serier from Jellyfin). A library hands them items in one shape:
 //
 //   { key, title, meta, detail, picture, large, shape, initial, progress,
-//     href | run, song, played }
+//     href | run, song, played, favorite }
 //
 // key: stable, so the focus comes back to it; picture/large: a small and a
 // sharp image; shape: how it is drawn (below); progress: 0 to 1, how far
 // into it; href: where it goes (a view of this page, or another page), or
 // run: what it does; song: marks the row of what plays (players/audio.js);
-// played: dimmed; detail: a row's right-hand column.
+// played: dimmed; detail: a row's right-hand column; favorite: a heart
+// before the name (favorite(card, on) sets it on one drawn).
 //
 // A card's shape: box (a game's box art at its own shape), poster (2:3),
 // still (16:9), square (an album, a playlist), round (an artist), or group
@@ -53,7 +54,19 @@ window.PioneerTV = window.PioneerTV || {};
     a.appendChild(picture({ ...item, initial: item.initial || shape === 'round' }));
     a.appendChild(el('span', 'title', item.title));
     if (item.meta) a.appendChild(el('span', 'meta', item.meta));
+    if (item.favorite) favorite(a, true);
     return a;
+  }
+
+  // The heart before a card's name, in ochre.
+  function favorite(card, on) {
+    card.classList.toggle('card--fav', on);
+    const has = card.querySelector('.fav');
+    if (on && !has) {
+      const mark = el('span', 'fav');
+      mark.innerHTML = M.icons.html('heart');
+      card.querySelector('.title').prepend(mark);
+    } else if (!on && has) has.remove();
   }
 
   function group(item) {
@@ -107,5 +120,5 @@ window.PioneerTV = window.PioneerTV || {};
     return nav;
   }
 
-  M.cards = { card, group, row, picture, tabs };
+  M.cards = { card, group, row, picture, tabs, favorite };
 })(window.PioneerTV);

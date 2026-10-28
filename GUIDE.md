@@ -90,10 +90,14 @@ The browse page draws every library the same way. A library
 its source (`sources/romm.js`, `sources/jellyfin.js`), as views of a few
 kinds, made of items of one shape (`browse/cards.js`):
 
-- **the shelf** (`browse/shelf.js`): sections one under the other, of rows,
-  grids and type-only cards; a library's start, an artist, a search;
-- **the grid** (`browse/grid.js`): a long collection, only the rows around
-  the focus in the page, L1/R1 a letter, Sök filtering it, an
+- **the shelf** (`browse/shelf.js`): sections one under the other; covers
+  standing on shelves (`planks`: each at its own shape, its foot on the
+  plank, its name on a label under it, as many to a shelf as there are
+  columns and the next shelf under it, so nothing scrolls sideways), and
+  type-only cards and buttons; a library's start, an artist, a search;
+- **the grid** (`browse/grid.js`): a long collection on the same shelves,
+  only the rows around the focus in the page (the planks are drawn behind
+  the rows, so they are all there), L1/R1 a letter, Sök filtering it, an
   info panel when the library has one; a console's games, every album;
 - **the detail** (`browse/detail.js`): one thing, its picture, text,
   buttons, choices, tabs and a list; a film, a series, an album.
@@ -264,11 +268,14 @@ TV page in settings (`ui.home_minutes`, `ui.tv_off_minutes`; 0 is never).
 ## Games
 
 The Spel tile opens the browse page on top of [RomM](https://github.com/rommapp/romm)
-(`browse.html?library=spel`, [The pages](#the-pages)): recently played, the
-consoles and collections in the column at the left, each console's games
-with covers; a game opens
-`game.html`, which has it played. On the first view X removes a game from
-Senast spelade; X again within five seconds puts it back.
+(`browse.html?library=spel`, [The pages](#the-pages)): recently played;
+Samlingar, a shelf per collection with its first games and Alla; the
+consoles in the column at the left, each by its pad (or its initial); each
+console's games with covers; a game opens `game.html`, which has it
+played. X on a game makes it a favourite, or not, a heart before its name:
+RomM's own Favourites collection (the one with `is_favorite`), made the
+first time if RomM has none. On the first view X instead removes a game
+from Senast spelade; X again within five seconds puts it back.
 
 The pages never talk to RomM directly. They call `/romm/...` on their own
 origin, and the daemon forwards that to RomM with the API key added; only

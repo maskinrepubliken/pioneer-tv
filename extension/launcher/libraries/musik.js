@@ -57,7 +57,7 @@ window.PioneerTV = window.PioneerTV || {};
         { layout: 'actions', items: [
           { button: true, label: 'Blanda allt', primary: true, key: 'shuffle', run: tryPlay(() => J.shuffleAll(), false) },
         ] },
-        { label: 'Spellistor', layout: 'grid', columns: 5, items: playlists.map(group),
+        { label: 'Spellistor', layout: 'shelf', items: playlists.map(group),
           empty: 'Inga spellistor än. Gör en i Jellyfin på datorn eller telefonen.' },
       ],
     };
@@ -69,7 +69,7 @@ window.PioneerTV = window.PioneerTV || {};
     return {
       kind: 'grid', title: kind === 'albums' ? 'Album' : 'Artister', filter: true,
       legend: [['A', 'öppna'], ['L1', ''], ['R1', 'hoppa en bokstav']],
-      items: all.map(group), shape: kind === 'albums' ? 'square' : 'round', columns: 5,
+      items: all.map(group), shape: kind === 'albums' ? 'square' : 'round', columns: 6,
       count: (n, total) => (n === total ? `${total} ${word}` : `${n} av ${total} ${word}`),
       empty: kind === 'albums' ? 'Inga album.' : 'Inga artister.',
     };
@@ -102,7 +102,7 @@ window.PioneerTV = window.PioneerTV || {};
           { button: true, label: 'Spela allt', primary: true, key: 'play', run: tryPlay(all, false) },
           { button: true, label: 'Blanda', key: 'shuffle', run: tryPlay(all, true) },
         ] },
-        { label: 'Album', layout: 'grid', columns: 5, items: albums.map(group) },
+        { label: 'Album', layout: 'shelf', items: albums.map(group) },
       ],
       focus: 'play',
     };
@@ -113,8 +113,8 @@ window.PioneerTV = window.PioneerTV || {};
     return {
       kind: 'shelf', title: 'Sök', legend: [['A', 'spela · öppna']],
       sections: [
-        { label: 'Artister', layout: 'row', items: found.artists.map(group), empty: 'Inga artister.' },
-        { label: 'Album', layout: 'row', items: found.albums.map(group), empty: 'Inga album.' },
+        { label: 'Artister', layout: 'shelf', items: found.artists.map(group), empty: 'Inga artister.' },
+        { label: 'Album', layout: 'shelf', items: found.albums.map(group), empty: 'Inga album.' },
         { label: 'Låtar', layout: 'rows', look: 'thumb', items: found.songs.map((s, i) => song(s, i, found.songs, true)), empty: 'Inga låtar.' },
       ],
     };
@@ -122,9 +122,9 @@ window.PioneerTV = window.PioneerTV || {};
 
   // The column at the left: the playlists (the start), the albums, the artists.
   const rail = () => [{ items: [
-    { label: 'Spellistor', href: '#/', key: 'rail:playlists' },
-    { label: 'Album', href: '#/albums', key: 'rail:albums' },
-    { label: 'Artister', href: '#/artists', key: 'rail:artists' },
+    { label: 'Spellistor', icon: 'playlist', href: '#/', key: 'rail:playlists' },
+    { label: 'Album', icon: 'vinyl', href: '#/albums', key: 'rail:albums' },
+    { label: 'Artister', icon: 'person', href: '#/artists', key: 'rail:artists' },
   ] }];
 
   function view([what, arg]) {

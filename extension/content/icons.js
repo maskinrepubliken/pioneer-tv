@@ -38,6 +38,25 @@ window.PioneerTV = window.PioneerTV || {};
     arrowRight: '<path d="M5 12h14"/><path d="M13 6l6 6-6 6"/>',
     film: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5v14M17 5v14M3 9h4M3 15h4M17 9h4M17 15h4"/>',
     play: '<path d="M8 6v12l10-6z"/>',
+    // The browse page's fixed ways in (its column): what was played last,
+    // the collections, the playlists, the albums, the artists.
+    clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+    stack: '<rect x="4" y="11" width="16" height="9" rx="1.2"/><path d="M6 8h12M8 5h8"/>',
+    playlist: '<path d="M4 6.5h11M4 11h11M4 15.5h6"/><path d="M17 18.5V9.5l3.5-1"/><circle cx="15.2" cy="18.5" r="1.8"/>',
+    vinyl: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2.5"/><path d="M12 5.5a6.5 6.5 0 0 1 6.5 6.5"/>',
+    person: '<circle cx="12" cy="8" r="3.8"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>',
+    heart: '<path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z"/>',
+    // Consoles, for the Spel library's column (libraries/spel.js): each by
+    // its pad or its look, drawn as plainly as the rest.
+    nes: '<rect x="2" y="6.5" width="20" height="11" rx="1.2"/><path d="M4.6 12h4M6.6 10v4"/><g fill="currentColor" stroke="none"><circle cx="15.6" cy="13.3" r="1.25"/><circle cx="18.8" cy="13.3" r="1.25"/></g>',
+    snes: '<path d="M7.5 6.5h9a5.5 5.5 0 0 1 0 11h-9a5.5 5.5 0 0 1 0-11z"/><path d="M4.8 12h4M6.8 10v4"/><g fill="currentColor" stroke="none"><circle cx="16.8" cy="9.9" r="1"/><circle cx="16.8" cy="14.1" r="1"/><circle cx="14.7" cy="12" r="1"/><circle cx="18.9" cy="12" r="1"/></g>',
+    n64: '<path d="M5 7.5h14a2 2 0 0 1 2 2.4l-1.4 5a1.4 1.4 0 0 1-2.6.3l-1.5-2.7h-1.7l-.4 5a1.4 1.4 0 0 1-2.8 0l-.4-5H8.5L7 15.2a1.4 1.4 0 0 1-2.6-.3L3 9.9a2 2 0 0 1 2-2.4z"/><circle cx="12" cy="10.3" r="1"/>',
+    genesis: '<path d="M8 6.5h8c3.6 0 6 2.4 6 5.5s-2.4 5.5-6 5.5H8c-3.6 0-6-2.4-6-5.5S4.4 6.5 8 6.5z"/><path d="M4.8 12h4M6.8 10v4"/><g fill="currentColor" stroke="none"><circle cx="13.8" cy="13.6" r="1.1"/><circle cx="16.4" cy="12.3" r="1.1"/><circle cx="19" cy="11" r="1.1"/></g>',
+    gameboy: '<path d="M6.5 2.5h11a1 1 0 0 1 1 1V18a3.5 3.5 0 0 1-3.5 3.5h-8.5a1 1 0 0 1-1-1v-17a1 1 0 0 1 1-1z"/><rect x="8.5" y="5" width="7" height="6" rx=".5"/><path d="M7.8 16.2h3M9.3 14.7v3"/><g fill="currentColor" stroke="none"><circle cx="16" cy="14.8" r="1"/><circle cx="14" cy="16.8" r="1"/></g>',
+    gba: '<rect x="2" y="6.5" width="20" height="11" rx="3.8"/><rect x="8.5" y="8.7" width="7" height="6.6" rx=".5"/><path d="M3.9 12h2.8M5.3 10.6v2.8"/><g fill="currentColor" stroke="none"><circle cx="18.6" cy="11" r="0.95"/><circle cx="17.2" cy="13.2" r="0.95"/></g>',
+    floppy: '<path d="M5 3.5h11.5L20.5 7.5V19a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19V5A1.5 1.5 0 0 1 5 3.5z"/><path d="M8 3.5v5h7v-5M13 5v2"/><rect x="7" y="13" width="10" height="7.5"/>',
+    disc: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2.2"/><path d="M12 6a6 6 0 0 0-6 6"/>',
+    arcade: '<circle cx="12" cy="6.5" r="2.5"/><path d="M12 9v6"/><path d="M5 16h14l1.5 4.5h-17z"/>',
   };
 
   function html(name, cls = '') {

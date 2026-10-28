@@ -2,18 +2,31 @@
 // each with its label, scrolling as one column. A library's start, a film
 // library, an artist, a search. A section:
 //
-//   { label, layout, items, shape, columns, look, empty }
+//   { label, layout, items, shape, columns, limit, more, look, empty }
 //
-// layout: 'row' (cards side by side, the row scrolling under the focus),
-// 'grid' (cards, columns across), 'groups' (type-only cards, wrapping),
-// 'actions' (buttons and type-only cards in a line: { button: true, label,
-// primary, run, key } for a button) or 'rows' (a list, look 'number',
-// 'thumb' or 'still'). A section without items is left out, or says empty.
+// layout: 'shelf' (covers standing on shelves, as many to a shelf as there
+// are columns, the next shelf under it: nothing scrolls sideways; 'row' and
+// 'grid' are shelves too), 'groups' (type-only cards, wrapping), 'actions'
+// (buttons and type-only cards in a line: { button: true, label, primary,
+// run, key } for a button) or 'rows' (a list, look 'number', 'thumb' or
+// 'still'). limit: one shelf only; more: a type-only card at its end (the
+// way to all of them). A section without items is left out, or says empty.
 // focus: the key the focus goes to first.
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const el = M.views.el;
   const C = M.cards;
+
+  // How many covers to a shelf, by their shape (a still is wide).
+  const COLUMNS = { box: 6, poster: 6, square: 6, round: 6, still: 4 };
+
+  // Shelves: the covers stand on them, each its own shape, bottom on the
+  // plank, the name under it (browse.css, .planks; the grid's too).
+  function planks(shape, columns) {
+    const body = el('div', `planks planks--${shape}`);
+    body.style.setProperty('--columns', String(columns));
+    return body;
+  }
 
   function section(s) {
     const box = el('section', `shelf-section shelf-section--${s.layout}`);
@@ -37,10 +50,16 @@ window.PioneerTV = window.PioneerTV || {};
         if (it.key) b.dataset.key = it.key;
         body.appendChild(b);
       }
+    } else if (s.layout === 'groups') {
+      body = el('div', 'shelf-groups');
+      items.forEach((it) => body.appendChild(C.group(it)));
     } else {
-      body = el('div', `shelf-${s.layout}`);
-      if (s.columns) body.style.setProperty('--columns', String(s.columns));
-      items.forEach((it) => body.appendChild(s.layout === 'groups' ? C.group(it) : C.card(it, s.shape)));
+      const shape = s.shape || items[0].shape || 'square';
+      const columns = s.columns || COLUMNS[shape] || 6;
+      body = planks(shape, columns);
+      const shown = s.limit ? items.slice(0, columns - (s.more ? 1 : 0)) : items;
+      shown.forEach((it) => body.appendChild(C.card(it, shape)));
+      if (s.more) body.appendChild(C.group(s.more));
     }
     box.appendChild(body);
     return box;
@@ -60,5 +79,5 @@ window.PioneerTV = window.PioneerTV || {};
     return wanted || scroll.querySelector('.card:not(.card--group), .row') || scroll.querySelector('.card, .knapp');
   }
 
-  M.shelf = { render, section };
+  M.shelf = { render, section, planks, COLUMNS };
 })(window.PioneerTV);

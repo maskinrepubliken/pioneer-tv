@@ -7,7 +7,9 @@
 //
 // A library gives its groups for where the page is, library.rail(parts):
 //
-//   [{ label, items: [{ label, href, key, active }] }]
+//   [{ label, items: [{ label, href, key, icon, active }] }]
+//
+// icon: a symbol of content/icons.js in the ring instead of the initial.
 //
 // The one whose href the page is at is marked (or the one marked active).
 // Only the rings take the focus, so the arrows go between the column and
@@ -22,7 +24,8 @@ window.PioneerTV = window.PioneerTV || {};
 
   function item(it, here) {
     const box = el('div', 'rail-item');
-    const mark = el('button', 'pioneertv-round rail-mark', initial(it.label));
+    const mark = el('button', 'pioneertv-round rail-mark', it.icon ? null : initial(it.label));
+    if (it.icon) mark.innerHTML = M.icons.html(it.icon);
     mark.type = 'button';
     mark.dataset.key = it.key || `rail:${it.href}`;
     mark.setAttribute('aria-label', it.label);

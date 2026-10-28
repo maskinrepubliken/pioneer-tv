@@ -185,9 +185,10 @@
         { name: 'Hem', url: HOME, ready: '.tiles-tile', setup: ({ P }) => daemonUp(P) },
       ] },
     { part: 'Sidor', group: 'Bläddra: hylla', files: 'launcher/browse.html · browse/page.js · browse/rail.js · browse/shelf.js · browse/cards.js · libraries/*.js',
-      used: 'Ett biblioteks början, en artist, ett filmbibliotek, en mapp, sök: sektioner med rader, rutnät och kort, för alla bibliotek. Till vänster Sök och bibliotekets vägar in, med initialen; utfälld med namnen när fokus är där.',
+      used: 'Ett biblioteks början, en artist, ett filmbibliotek, en mapp, sök: omslag på hyllor (inget skrollar i sidled), för alla bibliotek. Till vänster Sök och bibliotekets vägar in, med ikon eller initial; utfälld med namnen när fokus är där.',
       items: [
         { name: 'Spel: senast spelade', url: SPEL, ready: '.card' },
+        { name: 'Spel: samlingar', url: `${SPEL}#/collections`, ready: '.card', note: 'En hylla per samling, de första spelen och Alla. Hjärtat: en favorit (X).' },
         { name: 'Spel: kolumnen utfälld', url: SPEL, ready: '.rail-mark', setup: railOpen, note: 'Fokus i kolumnen (eller pekaren över den): konsolerna och samlingarna med namn, över vyn.' },
         { name: 'Musik: blanda allt och spellistor', url: MUSIK, ready: '.card' },
         { name: 'Musik: kolumnen utfälld', url: MUSIK, ready: '.rail-mark', setup: railOpen },
@@ -200,8 +201,8 @@
         { name: 'Film: en mapp', url: `${FILM}#/folder/mapp1`, ready: '.card' },
         { name: 'Film: sök', url: `${FILM}#/search/s`, ready: '.card' },
       ] },
-    { part: 'Sidor', group: 'Bläddra: rutnät', files: 'launcher/browse.html · browse/grid.js · browse/cards.js · libraries/*.js',
-      used: 'Långa samlingar: bara raderna runt fokus i sidan, L1/R1 hoppar en bokstav, sökfältet filtrerar. Infopanelen när biblioteket har en.',
+    { part: 'Sidor', group: 'Bläddra: rutnät', files: 'launcher/browse.html · browse/grid.js · browse/shelf.js (planks) · browse/cards.js · libraries/*.js',
+      used: 'Långa samlingar, på hyllor: bara raderna runt fokus i sidan, L1/R1 hoppar en bokstav, sökfältet filtrerar, X gör ett spel till favorit. Infopanelen när biblioteket har en.',
       items: [
         { name: 'Spel: en konsol', url: `${SPEL}#/platform/1`, ready: '.grid .card' },
         { name: 'Spel: en samling', url: `${SPEL}#/collection/own/1`, ready: '.grid .card' },
