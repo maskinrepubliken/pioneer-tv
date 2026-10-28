@@ -43,13 +43,13 @@ window.PioneerTV = window.PioneerTV || {};
     if (v.kind === 'folder') return { ...base, title: v.name, meta: v.count == null ? '' : v.count === 1 ? '1 sak' : `${v.count} saker`, style: 'prose' };
     if (v.kind === 'movie' || v.kind === 'series') {
       const meta = v.kind === 'series' && v.count ? [v.year, v.count === 1 ? '1 säsong' : `${v.count} säsonger`].filter(Boolean).join(' · ') : v.year;
-      return { ...base, title: v.name, meta: meta ? String(meta) : '', picture: v.poster, shape: 'poster' };
+      return { ...base, title: v.name, meta: meta ? String(meta) : '', picture: v.poster, mock: 'dvd', shape: 'poster' };
     }
     return still(v);
   }
   function still(v) {
     return {
-      key: `v:${v.id}`, href: href(v), progress: progress(v), picture: v.still, shape: 'still',
+      key: `v:${v.id}`, href: href(v), progress: progress(v), picture: v.still, mock: 'still', shape: 'still',
       title: v.kind === 'episode' && v.series ? v.series : v.name,
       meta: v.kind === 'episode' ? [episodeCode(v), v.name].filter(Boolean).join(' · ')
         : v.position && v.seconds ? `${clock(v.seconds - v.position)} kvar` : length(v.seconds),
@@ -136,7 +136,7 @@ window.PioneerTV = window.PioneerTV || {};
     const next = episodes.find((v) => !v.played);
     return {
       kind: 'detail', title: 'Serie', legend: [['A', 'öppna']],
-      shape: 'poster', picture: show.poster, name: show.name, short: true, text: show.overview,
+      shape: 'poster', picture: show.poster, mock: 'dvd', name: show.name, short: true, text: show.overview,
       meta: [show.year, seasons.length === 1 ? '1 säsong' : `${seasons.length} säsonger`, show.genres.slice(0, 3).join(', ')].filter(Boolean).join(' · '),
       parts: seasons.map((s) => ({
         label: s.name, key: `season:${s.id}`, active: season && s.id === season.id,
@@ -145,7 +145,7 @@ window.PioneerTV = window.PioneerTV || {};
       rows: {
         look: 'still', empty: 'Inga avsnitt.',
         items: episodes.map((v) => ({
-          key: `v:${v.id}`, href: href(v), picture: v.still, progress: progress(v), played: v.played,
+          key: `v:${v.id}`, href: href(v), picture: v.still, mock: 'still', progress: progress(v), played: v.played,
           title: `${v.episode != null ? `${v.episode}. ` : ''}${v.name}`, meta: v.overview, detail: v.played ? 'Sedd' : length(v.seconds),
         })),
       },
@@ -185,7 +185,7 @@ window.PioneerTV = window.PioneerTV || {};
     return {
       kind: 'detail', title: v.kind === 'episode' ? v.series || 'Avsnitt' : v.kind === 'movie' ? 'Film' : 'Klipp',
       legend: [['A', 'välj']],
-      shape: v.kind === 'movie' ? 'poster' : 'still', picture: v.kind === 'movie' ? v.poster : v.still,
+      shape: v.kind === 'movie' ? 'poster' : 'still', picture: v.kind === 'movie' ? v.poster : v.still, mock: v.kind === 'movie' ? 'dvd' : 'still',
       name: v.name, text: v.overview,
       meta: [episodeCode(v), v.year, length(v.seconds), v.genres.slice(0, 3).join(', ')].filter(Boolean).join(' · '),
       buttons, choices, focus: 'play',

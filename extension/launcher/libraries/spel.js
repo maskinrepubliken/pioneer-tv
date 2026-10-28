@@ -36,7 +36,7 @@ window.PioneerTV = window.PioneerTV || {};
   // A game as the browse page's item: its box art, small then sharp; a
   const game = (g, meta) => ({
     key: `game:${g.id}`, id: g.id, title: g.name, meta, shape: 'box',
-    picture: g.cover, large: g.coverLarge, href: `game.html?rom=${g.id}${tv}`, game: g,
+    picture: g.cover, large: g.coverLarge, mock: M.mockups.forConsole(g.platform), href: `game.html?rom=${g.id}${tv}`, game: g,
   });
 
   // The letter a game files under, from RomM's sort key, so the jumps
@@ -104,7 +104,7 @@ window.PioneerTV = window.PioneerTV || {};
       if (!c) return;
       const games = await R.firstGames(c).catch(() => null);
       if (games) {
-        const pics = games.map((g) => ({ src: g.cover, name: g.name }));
+        const pics = games.map((g) => ({ src: g.cover, name: g.name, mock: M.mockups.forConsole(g.platform) }));
         firsts.set(key(c), pics);
         const card = document.querySelector(`.view [data-key="${CSS.escape(key(c))}"]`);
         if (card) M.cards.pile(card, pics);

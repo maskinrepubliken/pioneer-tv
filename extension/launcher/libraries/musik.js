@@ -32,7 +32,7 @@ window.PioneerTV = window.PioneerTV || {};
   const HREF = { playlist: '#/playlist/', album: '#/album/', artist: '#/artist/' };
   const group = (g) => ({
     key: `${g.kind}:${g.id}`, title: g.name, picture: g.cover, href: HREF[g.kind] + encodeURIComponent(g.id),
-    shape: g.kind === 'artist' ? 'round' : 'square',
+    shape: g.kind === 'artist' ? 'round' : 'square', mock: g.kind === 'artist' ? null : 'album',
     meta: g.kind === 'album' ? [g.artist, g.year].filter(Boolean).join(' · ') : g.kind === 'playlist' && g.count != null ? songs(g.count) : '',
   });
   const playable = (list) => list.map((s) => ({ ...s, stream: J.streamUrl(s) }));
@@ -82,7 +82,7 @@ window.PioneerTV = window.PioneerTV || {};
     const total = list.reduce((n, s) => n + (s.seconds || 0), 0);
     return {
       kind: 'detail', title: kind === 'playlist' ? 'Spellista' : 'Album', legend: [['A', 'spela']],
-      shape: 'square', picture: g.cover || (list[0] && list[0].cover), name: g.name,
+      shape: 'square', picture: g.cover || (list[0] && list[0].cover), mock: 'album', name: g.name,
       meta: [kind === 'album' ? g.artist : '', g.year, songs(list.length), clock(total)].filter(Boolean).join(' · '),
       buttons: list.length ? [
         { label: 'Spela', primary: true, key: 'play', run: () => audio.play(playable(list), 0) },

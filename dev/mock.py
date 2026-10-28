@@ -78,9 +78,10 @@ def _source(i, subs=True):
 
 def _movie(n, name, year, mins, pos=0, played=False):
     i = f"film{n}"
+    # Every third without a picture of its own: the case's mockup instead.
     return {"Id": i, "Name": name, "Type": "Movie", "ProductionYear": year, "RunTimeTicks": mins * 60 * T,
-            "Overview": LOREM + " " + LOREM, "Genres": ["Drama", "Komedi"], "ImageTags": {"Primary": "p"},
-            "BackdropImageTags": ["b"], "UserData": _ud(pos, played, mins), "MediaSources": _source(i)}
+            "Overview": LOREM + " " + LOREM, "Genres": ["Drama", "Komedi"], "ImageTags": {"Primary": "p"} if n % 3 else {},
+            "BackdropImageTags": ["b"] if n % 3 else [], "UserData": _ud(pos, played, mins), "MediaSources": _source(i)}
 
 
 MOVIES = [_movie(1, "Fyren", 2019, 112, pos=42), _movie(2, "Sommarnatt", 2021, 95), _movie(3, "Den långa vägen hem", 2004, 131, played=True),
@@ -90,7 +91,7 @@ MOVIES = [_movie(1, "Fyren", 2019, 112, pos=42), _movie(2, "Sommarnatt", 2021, 9
 SERIES = [{"Id": "serie1", "Name": "Skärgårdsdoktorn", "Type": "Series", "IsFolder": True, "ProductionYear": 1997, "ChildCount": 2,
            "Overview": LOREM, "Genres": ["Drama"], "ImageTags": {"Primary": "p"}, "UserData": {}},
           {"Id": "serie2", "Name": "Hammarkullen", "Type": "Series", "IsFolder": True, "ProductionYear": 1997, "ChildCount": 1,
-           "Overview": LOREM, "Genres": ["Drama"], "ImageTags": {"Primary": "p"}, "UserData": {}}]
+           "Overview": LOREM, "Genres": ["Drama"], "ImageTags": {}, "UserData": {}}]
 SEASONS = {s["Id"]: [{"Id": f"{s['Id']}-s{n}", "Name": f"Säsong {n}", "Type": "Season", "IsFolder": True, "SeriesId": s["Id"],
                       "IndexNumber": n, "ImageTags": {"Primary": "p"}, "UserData": {"PlayedPercentage": 40 if n == 1 else 0}}
                      for n in range(1, s["ChildCount"] + 1)] for s in SERIES}
@@ -100,7 +101,7 @@ def _episode(series, s, n, played=False, pos=0):
     i = f"{series['Id']}-s{s}e{n}"
     return {"Id": i, "Name": f"Avsnitt {n}", "Type": "Episode", "SeriesName": series["Name"], "SeriesId": series["Id"],
             "SeasonId": f"{series['Id']}-s{s}", "ParentIndexNumber": s, "IndexNumber": n, "RunTimeTicks": 44 * 60 * T,
-            "Overview": LOREM, "ImageTags": {"Primary": "p"}, "UserData": _ud(pos, played, 44), "MediaSources": _source(i)}
+            "Overview": LOREM, "ImageTags": {"Primary": "p"} if n % 4 else {}, "UserData": _ud(pos, played, 44), "MediaSources": _source(i)}
 
 
 EPISODES = {}
@@ -109,7 +110,7 @@ for _s in SERIES:
         n = _season["IndexNumber"]
         EPISODES[_season["Id"]] = [_episode(_s, n, e, played=n == 1 and e < 3, pos=12 if n == 1 and e == 3 else 0) for e in range(1, 9)]
 CLIPS = [{"Id": f"klipp{n}", "Name": f"Midsommar {2015 + n}", "Type": "Video", "RunTimeTicks": (3 + n) * 60 * T,
-          "ImageTags": {"Primary": "p"}, "UserData": {}, "MediaSources": _source(f"klipp{n}", subs=False)} for n in range(1, 7)]
+          "ImageTags": {"Primary": "p"} if n % 2 else {}, "UserData": {}, "MediaSources": _source(f"klipp{n}", subs=False)} for n in range(1, 7)]
 FOLDER = {"Id": "mapp1", "Name": "Resor", "Type": "Folder", "IsFolder": True, "ChildCount": 3, "UserData": {}}
 
 ARTISTS = [{"Id": f"artist{n}", "Name": name, "Type": "MusicArtist", "ImageTags": {"Primary": "p"} if n % 3 else {}}
@@ -117,7 +118,7 @@ ARTISTS = [{"Id": f"artist{n}", "Name": name, "Type": "MusicArtist", "ImageTags"
                                      "Veronica Maggio", "Thåström", "Ane Brun", "First Aid Kit"], 1)]
 ALBUMS = [{"Id": f"album{n}", "Name": name, "Type": "MusicAlbum", "AlbumArtist": ARTISTS[(n - 1) % len(ARTISTS)]["Name"],
            "AlbumArtists": [{"Name": ARTISTS[(n - 1) % len(ARTISTS)]["Name"], "Id": ARTISTS[(n - 1) % len(ARTISTS)]["Id"]}],
-           "ProductionYear": 1995 + n, "ChildCount": 10, "ImageTags": {"Primary": "p"}}
+           "ProductionYear": 1995 + n, "ChildCount": 10, "ImageTags": {"Primary": "p"} if n % 4 != 3 else {}}
           for n, name in enumerate(["Somebody Outside", "Isola", "Daugava", "Body Talk", "Säkert!", "Silent Shout",
                                     "Satan i gatan", "Skebokvarnsv. 209", "Spending Time with Morgan", "The Lion's Roar",
                                     "Separation Sunday", "Vapen & ammunition", "Kom", "Honey", "Fjärilar i magen",
@@ -126,13 +127,13 @@ ALBUMS = [{"Id": f"album{n}", "Name": name, "Type": "MusicAlbum", "AlbumArtist":
 
 def _song(album, n):
     return {"Id": f"{album['Id']}-l{n}", "Name": f"Låt nummer {n}", "Type": "Audio", "Album": album["Name"], "AlbumId": album["Id"],
-            "AlbumPrimaryImageTag": "p", "Artists": [album["AlbumArtist"]], "AlbumArtist": album["AlbumArtist"],
+            "AlbumPrimaryImageTag": album["ImageTags"].get("Primary"), "Artists": [album["AlbumArtist"]], "AlbumArtist": album["AlbumArtist"],
             "RunTimeTicks": (180 + n * 7) * T, "IndexNumber": n, "ImageTags": {},
             "MediaSources": [{"Container": "wav", "MediaStreams": [{"Type": "Audio", "Codec": "pcm_s16le"}]}]}
 
 
 SONGS = {a["Id"]: [_song(a, n) for n in range(1, 11)] for a in ALBUMS}
-PLAYLISTS = [{"Id": f"lista{n}", "Name": name, "Type": "Playlist", "ChildCount": 12, "ImageTags": {"Primary": "p"}}
+PLAYLISTS = [{"Id": f"lista{n}", "Name": name, "Type": "Playlist", "ChildCount": 12, "ImageTags": {"Primary": "p"} if n != 4 else {}}
              for n, name in enumerate(["Söndagsmorgon", "Middag", "Träning", "Bilresan", "Julmusik"], 1)]
 VIEWS = [{"Id": "lib-film", "Name": "Filmer", "CollectionType": "movies"}, {"Id": "lib-serier", "Name": "Serier", "CollectionType": "tvshows"},
          {"Id": "lib-musik", "Name": "Musik", "CollectionType": "music"}, {"Id": "lib-hem", "Name": "Hemvideor", "CollectionType": "homevideos"}]
@@ -212,20 +213,29 @@ PLATFORMS = [{"id": 1, "slug": "snes", "name": "Super Nintendo", "display_name":
              {"id": 2, "slug": "n64", "name": "Nintendo 64", "display_name": "Nintendo 64"},
              {"id": 3, "slug": "genesis", "name": "Sega Mega Drive", "display_name": "Mega Drive"},
              {"id": 4, "slug": "nes", "name": "NES", "display_name": "NES"},
-             {"id": 5, "slug": "dos", "name": "DOS", "display_name": "DOS"}]
+             {"id": 5, "slug": "dos", "name": "DOS", "display_name": "DOS"},
+             {"id": 6, "slug": "gba", "name": "Game Boy Advance", "display_name": "Game Boy Advance"},
+             {"id": 7, "slug": "psx", "name": "PlayStation", "display_name": "PlayStation"},
+             {"id": 8, "slug": "arcade", "name": "Arcade", "display_name": "Arcade"}]
 GAME_NAMES = {1: ["Super Mario World", "Tetris & Dr. Mario", "The Legend of Zelda: A Link to the Past", "Donkey Kong Country",
                   "Super Metroid", "F-Zero", "Chrono Trigger", "Secret of Mana", "Kirby's Dream Land 3", "Star Fox"],
               2: ["GoldenEye 007", "Super Mario 64", "Mario Kart 64", "Banjo-Kazooie", "Wave Race 64"],
               3: ["Sonic the Hedgehog", "Streets of Rage 2", "Valis III", "Gunstar Heroes"],
               4: ["Super Mario Bros.", "Contra", "Mega Man 2"],
-              5: ["Commander Keen", "Prince of Persia"]}
+              5: ["Commander Keen", "Prince of Persia", "The Secret of Monkey Island"],
+              6: ["Advance Wars", "Golden Sun"],
+              7: ["Final Fantasy VII", "Crash Bandicoot"],
+              8: ["Street Fighter II", "Metal Slug"]}
 ROMS = []
 for _pid, _names in GAME_NAMES.items():
     for _k, _n in enumerate(_names):
         _id = _pid * 100 + _k
         ROMS.append({"id": _id, "name": _n, "name_sort_key": _n.lower(), "fs_name": f"{_n}.zip",
                      "platform_id": _pid, "platform_slug": next(p["slug"] for p in PLATFORMS if p["id"] == _pid),
-                     "path_cover_small": f"/assets/cover/{_id}.svg", "path_cover_large": f"/assets/cover/{_id}.svg",
+                     # The third of a console's, and every one of the last three's, without
+                     # a cover: the console's mockup instead (shared/mockups.js).
+                     **({"path_cover_small": None, "path_cover_large": None} if _k % 3 == 2 or _pid >= 6 else
+                        {"path_cover_small": f"/assets/cover/{_id}.svg", "path_cover_large": f"/assets/cover/{_id}.svg"}),
                      "summary": LOREM, "metadatum": {"first_release_date": f"{1990 + _k}-06-01", "player_count": "1-2",
                                                       "game_modes": ["Single player", "Multiplayer"] if _k % 2 else ["Single player"],
                                                       "publishers": ["Nintendo"]},

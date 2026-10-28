@@ -98,6 +98,8 @@
 .planks--round { --paper: 1; }
 .planks--round .card .cover-paper { border-radius: 50%; }
 .planks--still { --paper: 16 / 9; }
+/* An empty box of its kind: at its own shape, as a picture would be. */
+.planks .card .cover-mock svg { width: auto; height: auto; max-width: 100%; max-height: var(--cover-h); }
 /* The label under the plank. */
 .planks .card .title {
   grid-row: 3; margin-top: 0.7rem; text-align: center; font-size: 0.92rem; line-height: 1.22; -webkit-line-clamp: 2;

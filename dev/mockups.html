@@ -1,0 +1,19 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Mockups</title>
+<link rel="stylesheet" href="/ext/content/tokens.css">
+<link rel="stylesheet" href="/ext/content/paper.css">
+<style>
+  body { margin: 0; padding: 2rem; background: var(--pioneertv-paper, #f4efe4); display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: end; }
+  figure { margin: 0; text-align: center; font: 0.8rem monospace; }
+  figure svg { display: block; height: 220px; width: auto; filter: drop-shadow(0 0.2rem 0.3rem #0004); }
+</style>
+<script src="/ext/launcher/shared/mockups.js"></script>
+<script>
+  // Every kind of dev's own page for the mockups (shared/mockups.js).
+  const kinds = ['nes', 'snes', 'n64', 'genesis', 'sms', 'dos', 'gb', 'gbc', 'gba', 'nds', 'psx', 'ps2', 'saturn', 'dc', 'neogeo', 'arcade', 'disc', 'box', 'album', 'dvd', 'still'];
+  const names = ['Super Mario Bros.', 'The Legend of Zelda: A Link to the Past', 'Mario Kart 64', 'Sonic the Hedgehog', 'Alex Kidd in Miracle World', 'The Secret of Monkey Island', 'Tetris', 'Pokémon Gold', 'Advance Wars', 'Mario Kart DS', 'Final Fantasy VII', 'Shadow of the Colossus', 'Nights into Dreams', 'Jet Set Radio', 'Metal Slug', 'Street Fighter II', 'Ett spel', 'Ett spel', 'Daugava', 'Den långa vägen hem', 'Midsommar 2018'];
+  addEventListener('DOMContentLoaded', () => {
+    document.body.innerHTML = kinds.map((k, i) => `<figure>${PioneerTV.mockups.svg(k, names[i])}<figcaption>${k}</figcaption></figure>`).join('');
+  });
+</script>

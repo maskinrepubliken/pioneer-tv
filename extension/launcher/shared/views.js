@@ -74,10 +74,16 @@ window.PioneerTV = window.PioneerTV || {};
 
   // A picture: src, and large (a sharper one, swapped in once on screen).
   // Without one, or when it fails: paper with the name, or its first letter
-  // (initial: a name that can run long, an artist's).
-  function cover(src, name, { large, initial } = {}) {
+  // (initial: a name that can run long, an artist's), or with mock, an
+  // empty box of that kind with the name on it (shared/mockups.js).
+  function cover(src, name, { large, initial, mock } = {}) {
     const box = el('span', 'cover');
     const paper = () => {
+      if (mock && M.mockups) {
+        box.className = `cover cover-mock cover-mock-${mock}`;
+        box.innerHTML = M.mockups.svg(mock, name);
+        return;
+      }
       box.className = `cover cover-paper${initial ? ' cover-initial' : ''}`;
       box.textContent = initial ? (name || '?').trim().charAt(0).toUpperCase() : name || '';
     };

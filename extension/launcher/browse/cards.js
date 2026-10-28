@@ -39,7 +39,7 @@ window.PioneerTV = window.PioneerTV || {};
   }
 
   function picture(item) {
-    const c = V.cover(item.picture, item.title, { large: item.large, initial: item.initial });
+    const c = V.cover(item.picture, item.title, { large: item.large, initial: item.initial, mock: item.mock });
     const bar = progress(item.progress);
     if (bar) c.appendChild(bar);
     return c;
@@ -67,7 +67,7 @@ window.PioneerTV = window.PioneerTV || {};
 
   // A whole (a collection, a playlist, an artist) as a card on paper: its
   // picture, or its first few in a pile, the first in front (pictures:
-  // [{ src, name }], else its own picture; null: still to come, pile(card,
+  // [{ src, name, mock }], else its own picture; null: still to come, pile(card,
   // pictures) draws them), its name and a line under it. shape: box,
   // square or round, the pictures' shape.
   function stack(item, shape = item.shape || 'square') {
@@ -75,7 +75,7 @@ window.PioneerTV = window.PioneerTV || {};
     link(a, item);
     a.dataset.shape = shape;
     a.appendChild(el('span', 'stack'));
-    pile(a, item.pictures !== undefined ? item.pictures : item.picture !== undefined ? [{ src: item.picture, name: item.title }] : []);
+    pile(a, item.pictures !== undefined ? item.pictures : item.picture !== undefined ? [{ src: item.picture, name: item.title, mock: item.mock }] : []);
     a.appendChild(el('span', 'name', item.title));
     if (item.meta) a.appendChild(el('span', 'meta', item.meta));
     return a;
@@ -89,7 +89,7 @@ window.PioneerTV = window.PioneerTV || {};
     const pics = pictures.slice(0, 3);
     box.style.setProperty('--n', String(pics.length));
     pics.forEach((p, i) => {
-      const c = V.cover(p.src, p.name, { initial: card.dataset.shape === 'round' });
+      const c = V.cover(p.src, p.name, { initial: card.dataset.shape === 'round', mock: p.mock });
       c.style.setProperty('--i', String(i));
       box.appendChild(c);
     });

@@ -41,7 +41,7 @@ window.PioneerTV = window.PioneerTV || {};
   function render(view, spec) {
     const box = el('div', 'detail');
     const side = el('div', `detail-side detail-side--${spec.shape || 'poster'}`);
-    side.appendChild(V.cover(spec.picture, spec.name));
+    side.appendChild(V.cover(spec.picture, spec.name, { mock: spec.mock }));
     box.appendChild(side);
     const main = el('div', 'detail-main');
     main.appendChild(el('h2', 'detail-name', spec.name));

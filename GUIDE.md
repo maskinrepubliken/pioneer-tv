@@ -467,6 +467,17 @@ System page in settings shows how many and how much, how the last night
 went, and can empty it. The games downloaded to play are kept up to
 `games.cache_mb` (5 GB) the same way (saves and states are not counted).
 
+A thing without a cover gets a mockup instead (`launcher/shared/mockups.js`,
+through `views.cover(..., { mock })`): empty packaging of its kind with its
+name on it, drawn in SVG. A game gets its console's own box, drawn as close
+to the real one as a drawing gets (the NES's black box with its seal, the
+SNES and N64 lying down, the Mega Drive's red grid, PlayStation's black
+spine, the Game Boys' cartons, and so on; `forConsole(slug)` maps RomM's
+platform slugs). An album gets a record in its sleeve, a film or series a
+case, an episode or clip a frame of film. `dev/mockups.html` shows them all;
+the stand-in data (`dev/mock.py`) leaves some covers out so the catalogue
+shows them in place.
+
 ## Updating the box
 
 Start → Meny → **Uppdatera systemet** checks GitHub and, only if there is
