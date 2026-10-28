@@ -1,6 +1,8 @@
 """The dispatcher's repeats: a held volume trigger repeats, stops on
 release, never runs twice for one action, and gives up on its own. And long
-presses judged by the pad's own times, however late they are handled.
+presses judged by the pad's own times, however late they are handled. And
+the TV off: a tap wakes it when let go, holding Home to switch the pad off
+does not.
 `python -m unittest tests.test_actions` from daemon/."""
 import asyncio
 import unittest
@@ -65,6 +67,54 @@ class Repeats(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(self.d._repeat_tasks, {})
         finally:
             actions.REPEAT_MAX_SECONDS = old
+
+
+
+class TvOff(unittest.IsolatedAsyncioTestCase):
+    """The TV off from the menu, then a button on the pad."""
+
+    async def asyncSetUp(self):
+        cfg = config._merge(config.DEFAULTS, {})
+        self.cec = Cec()
+        self.cec.last_power = "standby"
+        self.d = Dispatcher(cfg, vinput=None, cec=self.cec, emit=nothing)
+        self.woken = []
+
+        async def wake():
+            self.woken.append(True)
+        self.d._wake_tv = wake
+        self.fired = []
+
+        async def fire(action):
+            self.fired.append(action)
+        self.d._begin = fire
+        self.home = {"system": "menu", "long": {"system": "home"}}
+
+    async def test_a_tap_wakes_the_tv_when_let_go_and_does_nothing_else(self):
+        t0 = actions.time.time()
+        await self.d.press(self.home, t0)
+        self.assertEqual(self.woken, [])                 # not yet: it may be held
+        await self.d.release(self.home, t0 + 0.2)
+        await asyncio.sleep(0)
+        self.assertEqual(self.woken, [True])
+        self.assertEqual(self.fired, [])
+
+    async def test_holding_home_to_switch_the_pad_off_keeps_it_off(self):
+        t0 = actions.time.time()
+        await self.d.press(self.home, t0)
+        await asyncio.sleep(0.9)                         # past the long press
+        await self.d.release(self.home, t0 + 3.2)        # the pad's last word as it goes
+        await asyncio.sleep(0)
+        self.assertEqual((self.woken, self.fired), ([], []))
+
+    async def test_a_pad_gone_with_the_button_down_wakes_nothing(self):
+        await self.d.press(self.home, actions.time.time())
+        await asyncio.sleep(0.9)
+        self.assertEqual((self.woken, self.fired), ([], []))
+
+    async def test_the_remotes_cec_keys_still_act(self):
+        await self.d.press({"cec": "tv_on"})
+        self.assertEqual(self.fired, [{"cec": "tv_on"}])
 
 
 if __name__ == "__main__":

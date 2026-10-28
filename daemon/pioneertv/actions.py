@@ -19,6 +19,11 @@ REPEAT_MAX_SECONDS = 8.0
 # stays dark for a few seconds more. Input keeps being swallowed for this long
 # after a wake, or the presses that follow land on a screen nobody can see yet.
 WAKE_SETTLE_SECONDS = 4.0
+# With the TV off, a button wakes it when it is let go, and only if it was
+# not held this long: holding Home switches an 8BitDo pad off (about three
+# seconds), and that must not turn the TV back on. A pad that goes away
+# with the button down never lets go, and wakes nothing either.
+WAKE_MAX_HOLD = 1.5
 
 Action = dict[str, Any]
 MIN_KEY_HOLD = 0.06  # seconds
@@ -40,6 +45,7 @@ class Dispatcher:
         self._key_down_at: dict[int, float] = {}
         self._begun: set[int] = set()
         self._swallowed: set[int] = set()
+        self._wake_on_release: dict[int, float] = {}   # pressed with the TV off: when it went down
         self._last_input = 0.0
         self._wake_until = 0.0
         # Someone pressed something: the count to home and to the TV off
@@ -83,21 +89,18 @@ class Dispatcher:
         idle, self._last_input = now - self._last_input, now
         await self._refresh_tv_power(idle)
         self._pressed_at[aid] = time.monotonic()
-        swallow = bool(self.on_input and self.on_input())
-        # With the TV off, the first button press only turns it back on: what
-        # it would otherwise do happens on a screen nobody can see. The presses
-        # that follow while the picture comes up are dropped for the same reason.
+        # With the TV off, a button only turns it back on: what it would
+        # otherwise do happens on a screen nobody can see. It does so when it
+        # is let go, if it was not held long (release()). The presses that
+        # follow while the picture comes up are dropped for the same reason.
         if "cec" not in action and (self._tv_is_off() or now < self._wake_until):
             self._swallowed.add(aid)
             if self._tv_is_off():
-                log.info("TV is off: waking it instead of %s", action)
-                self._wake_until = now + WAKE_SETTLE_SECONDS
-                # Waking verifies and retries, which takes seconds; do not block
-                # the pad's read loop on it.
-                asyncio.create_task(self._wake_tv())
+                self._wake_on_release[aid] = down_at
             else:
                 log.debug("TV is still waking: dropped %s", action)
             return
+        swallow = bool(self.on_input and self.on_input())
         if swallow and "cec" not in action:
             self._swallowed.add(aid)
             return
@@ -113,6 +116,18 @@ class Dispatcher:
         aid = id(action)
         if aid in self._swallowed:
             self._swallowed.discard(aid)
+            if (down := self._wake_on_release.pop(aid, None)) is not None:
+                held = (at if at is not None else time.time()) - down
+                if held < WAKE_MAX_HOLD:
+                    log.info("TV is off: waking it instead of %s", action)
+                    if self.on_input:
+                        self.on_input()          # someone is here: the screensaver goes
+                    self._wake_until = time.monotonic() + WAKE_SETTLE_SECONDS
+                    # Waking verifies and retries, which takes seconds; do not
+                    # block the pad's read loop on it.
+                    asyncio.create_task(self._wake_tv())
+                else:
+                    log.info("TV is off and %s was held %.1f s (a pad switched off): it stays off", action, held)
             return
         if task := self._long_tasks.pop(aid, None):
             held = (at if at is not None else time.time()) - self._down_at.pop(aid, time.time())

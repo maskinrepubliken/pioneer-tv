@@ -201,7 +201,10 @@ the TV stay in step:
 
 - A gamepad connecting wakes the TV and switches it to the Pi's input.
 - Any pad button while the TV is off turns it on and does nothing else, so a
-  press never lands on a screen nobody can see (`cec.wake_on_input`).
+  press never lands on a screen nobody can see (`cec.wake_on_input`). It
+  does so when the button is let go, and only if it was held less than
+  1.5 seconds: holding Home switches an 8BitDo pad off, and that leaves the
+  TV off (a pad gone with the button down never lets go, and wakes nothing).
 - The TV going to standby sends the box back to the launcher and pauses any
   video, so the next time it wakes it is on the home page
   (`cec.home_on_standby`).
