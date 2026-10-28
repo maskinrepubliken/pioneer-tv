@@ -34,6 +34,8 @@
       { key: 'search', label: 'Sök', icon: 'search', round: true, run: panel('search') },
       { key: 'settings', label: 'Inställningar', icon: 'gear', round: true, run: () => b.settings() },
       { key: 'tv-off', label: 'Stäng av TV:n', icon: 'power', round: true, run: () => b.cec('tv_off') },
+      // What Home on the pad opens, with its button's mark.
+      { key: 'menu', label: 'Snabbmenyn', icon: 'padHome', round: true, run: () => b.relay('menu') },
     ];
     const next = M.tiles.sheet({ head, rows, legend: [[['arrows'], 'navigera'], [['A'], 'välj'], [['Y'], 'tangentbord']] });
     for (const it of rows.flat()) it.el.addEventListener('click', () => (it.panel ? panel(it.panel)() : open(it)));

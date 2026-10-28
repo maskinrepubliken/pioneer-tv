@@ -11,7 +11,10 @@ window.PioneerTV = window.PioneerTV || {};
     gamepad: '<path d="M7 8h10a5 5 0 0 1 4.6 6.9l-1.1 2.6a2 2 0 0 1-3.4.5L15.5 16h-7l-1.6 2a2 2 0 0 1-3.4-.5l-1.1-2.6A5 5 0 0 1 7 8z"/><path d="M8 11v3M6.5 12.5h3"/><circle cx="16" cy="11.5" r="0.9" fill="currentColor" stroke="none"/><circle cx="18" cy="13.5" r="0.9" fill="currentColor" stroke="none"/>',
     temp: '<path d="M10 14.5V5a2 2 0 0 1 4 0v9.5a3.5 3.5 0 1 1-4 0z"/><path d="M12 10v6"/>',
     home: '<path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-6h4v6"/>',
-    gear: '<circle cx="12" cy="12" r="3"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"/>',
+    gear: '<path d="M18.7 10L21 10.1L21 13.9L18.7 14L18.2 15.3L19.7 17L17 19.7L15.3 18.2L14 18.7L13.9 21L10.1 21L10 18.7L8.7 18.2L7 19.7L4.3 17L5.8 15.3L5.3 14L3 13.9L3 10.1L5.3 10L5.8 8.7L4.3 7L7 4.3L8.7 5.8L10 5.3L10.1 3L13.9 3L14 5.3L15.3 5.8L17 4.3L19.7 7L18.2 8.7z"/><circle cx="12" cy="12" r="3"/>',
+    // The pad's Home button (the 8BitDo Ultimate 2C's): a ring round
+    // 8BitDo's chequered mark.
+    padHome: '<circle cx="12" cy="12" r="9.2"/><g fill="currentColor" stroke="none"><rect x="6.4" y="6.4" width="2.8" height="2.8"/><rect x="6.4" y="12" width="2.8" height="2.8"/><rect x="9.2" y="9.2" width="2.8" height="2.8"/><rect x="9.2" y="14.8" width="2.8" height="2.8"/><rect x="12" y="6.4" width="2.8" height="2.8"/><rect x="12" y="12" width="2.8" height="2.8"/><rect x="14.8" y="9.2" width="2.8" height="2.8"/><rect x="14.8" y="14.8" width="2.8" height="2.8"/></g>',
     keyboard: '<rect x="3" y="7" width="18" height="11" rx="2"/><path d="M7 11h.01M11 11h.01M15 11h.01M7 14.5h10"/>',
     back: '<path d="M10 6l-6 6 6 6"/><path d="M4 12h16"/>',
     reload: '<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/>',

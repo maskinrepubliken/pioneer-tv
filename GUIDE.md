@@ -590,8 +590,9 @@ tried again every three seconds.
   card. The d-pad moves to the nearest choice that way on screen.
 - **The home page** (`launcher/index.html`, `home/home.js`) is a page of
   its own: the services as big tiles in two rows (config `services`; Live
-  for the channels), the status pills, and Sök, Inställningar and the TV's
-  off button as round buttons at the top. Its Live tile and Sök ask the
+  for the channels), the status pills, and Sök, Inställningar, the TV's
+  off button and the quick menu (the pad's Home mark) as round buttons at
+  the top. Its Live tile and Sök ask the
   overlay for that panel alone (`relay` with a `panel`): Live's channels,
   or the on-screen keyboard and then where to search. Inställningar, and
   its Loggar tab, is the settings page.
