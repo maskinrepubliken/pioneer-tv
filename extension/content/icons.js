@@ -11,10 +11,10 @@ window.PioneerTV = window.PioneerTV || {};
     gamepad: '<path d="M7 8h10a5 5 0 0 1 4.6 6.9l-1.1 2.6a2 2 0 0 1-3.4.5L15.5 16h-7l-1.6 2a2 2 0 0 1-3.4-.5l-1.1-2.6A5 5 0 0 1 7 8z"/><path d="M8 11v3M6.5 12.5h3"/><circle cx="16" cy="11.5" r="0.9" fill="currentColor" stroke="none"/><circle cx="18" cy="13.5" r="0.9" fill="currentColor" stroke="none"/>',
     temp: '<path d="M10 14.5V5a2 2 0 0 1 4 0v9.5a3.5 3.5 0 1 1-4 0z"/><path d="M12 10v6"/>',
     home: '<path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-6h4v6"/>',
-    gear: '<path d="M18.7 10L21 10.1L21 13.9L18.7 14L18.2 15.3L19.7 17L17 19.7L15.3 18.2L14 18.7L13.9 21L10.1 21L10 18.7L8.7 18.2L7 19.7L4.3 17L5.8 15.3L5.3 14L3 13.9L3 10.1L5.3 10L5.8 8.7L4.3 7L7 4.3L8.7 5.8L10 5.3L10.1 3L13.9 3L14 5.3L15.3 5.8L17 4.3L19.7 7L18.2 8.7z"/><circle cx="12" cy="12" r="3"/>',
-    // The pad's Home button (the 8BitDo Ultimate 2C's): a ring round
-    // 8BitDo's mark, a heart of squares set like a chequerboard.
-    padHome: '<circle cx="12" cy="12" r="9.2"/><g fill="currentColor" stroke="none"><rect x="7.95" y="6.6" width="2.4" height="2.4" rx="0.35"/><rect x="13.35" y="6.6" width="2.4" height="2.4" rx="0.35"/><rect x="5.25" y="9.3" width="2.4" height="2.4" rx="0.35"/><rect x="10.65" y="9.3" width="2.4" height="2.4" rx="0.35"/><rect x="16.05" y="9.3" width="2.4" height="2.4" rx="0.35"/><rect x="7.95" y="12" width="2.4" height="2.4" rx="0.35"/><rect x="13.35" y="12" width="2.4" height="2.4" rx="0.35"/><rect x="10.65" y="14.7" width="2.4" height="2.4" rx="0.35"/></g>',
+    gear: '<path d="M18.5 13.1L20.0 14.5L18.1 17.7L16.2 17.1L14.3 18.2L13.9 20.2L10.1 20.2L9.7 18.2L7.8 17.1L5.9 17.7L4.0 14.5L5.5 13.1L5.5 10.9L4.0 9.5L5.9 6.3L7.8 6.9L9.7 5.8L10.1 3.8L13.9 3.8L14.3 5.8L16.2 6.9L18.1 6.3L20.0 9.5L18.5 10.9z"/><circle cx="12" cy="12" r="2.5"/>',
+    // The pad's Home button (the 8BitDo Ultimate 2C's): 8BitDo's mark, a
+    // heart of squares set like a chequerboard.
+    padHome: '<g fill="currentColor" stroke="none"><rect x="7.3" y="5.7" width="3" height="3" rx="0.4"/><rect x="13.7" y="5.7" width="3" height="3" rx="0.4"/><rect x="4.1" y="8.9" width="3" height="3" rx="0.4"/><rect x="10.5" y="8.9" width="3" height="3" rx="0.4"/><rect x="16.9" y="8.9" width="3" height="3" rx="0.4"/><rect x="7.3" y="12.1" width="3" height="3" rx="0.4"/><rect x="13.7" y="12.1" width="3" height="3" rx="0.4"/><rect x="10.5" y="15.3" width="3" height="3" rx="0.4"/></g>',
     keyboard: '<rect x="3" y="7" width="18" height="11" rx="2"/><path d="M7 11h.01M11 11h.01M15 11h.01M7 14.5h10"/>',
     back: '<path d="M10 6l-6 6 6 6"/><path d="M4 12h16"/>',
     reload: '<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/>',

@@ -591,7 +591,7 @@ tried again every three seconds.
 - **The home page** (`launcher/index.html`, `home/home.js`) is a page of
   its own: the services as big tiles in two rows (config `services`; Live
   for the channels), the status pills at the top, and a column of round
-  buttons at the right: Sök, the quick menu (the pad's Home mark),
+  buttons at the left: Sök, the quick menu (the pad's Home mark),
   Inställningar and the TV's off button. Its Live tile and Sök ask the
   overlay for that panel alone (`relay` with a `panel`): Live's channels,
   or the on-screen keyboard and then where to search. Inställningar, and

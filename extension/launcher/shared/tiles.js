@@ -1,5 +1,5 @@
 // Pioneer TV tiles: the box's services as big tiles in two rows, its status
-// at the top, its buttons in a column at the right, the pad's legend at the
+// at the top, its buttons in a column at the left, the pad's legend at the
 // foot. The home page
 // (home/home.js) is this sheet; the overlay's menus (overlay/hud.js) use
 // its row of holes on a choice that opens a page. Each wires its own choices:
@@ -9,7 +9,7 @@
 //   M.tiles.sheet({ side, rows, legend }) -> the sheet
 //
 // side: [{ label, icon, round, disabled, run }] (the column of buttons at
-// the right, top to bottom); rows:
+// the left, top to bottom); rows:
 // [[{ label, art, color, disabled, run }], ...] (the tiles); legend: [[keys,
 // text], ...], a key 'arrows' for the four arrows. Each item gets its el.
 window.PioneerTV = window.PioneerTV || {};
@@ -120,12 +120,12 @@ window.PioneerTV = window.PioneerTV || {};
       row.forEach((it) => r.appendChild(tile(it, ++n)));
       main.appendChild(r);
     }
-    body.appendChild(main);
     if (side.length) {
       const column = el('nav', 'tiles-buttons');
       side.forEach((it) => column.appendChild(sideButton(it)));
       body.appendChild(column);
     }
+    body.appendChild(main);
     root.appendChild(body);
     root.appendChild(legend(keys));
     return root;

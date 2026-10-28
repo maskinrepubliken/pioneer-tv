@@ -30,7 +30,7 @@
     const row2 = second.map(service);
     if (channels.length) row2.push({ key: 'tile:live', label: S.LIVE.name, art: S.art(S.LIVE), color: S.LIVE.color, panel: 'live' });
     const rows = [first.map(service), row2];
-    // The column at the right, top to bottom.
+    // The column at the left, top to bottom.
     const side = [
       { key: 'search', label: 'Sök', icon: 'search', round: true, run: panel('search') },
       // What Home on the pad opens, with its button's mark.
