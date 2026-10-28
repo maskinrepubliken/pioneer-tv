@@ -131,7 +131,7 @@
             subtitles: [{ id: 1, label: 'Svenska' }, { id: 2, label: 'Engelska' }] }) },
       ] },
     { part: 'Komponenter', group: 'Skärmsläckaren', files: 'overlay/saver.js · overlay/saver.css · overlay/mandelbrot.js · overlay/tao.js · daemon idle.py',
-      used: 'Över allt, ritad av overlayn, när ingen handkontroll är ansluten och ingen knapp tryckts på 2 min och inget spelas. En knapp, eller en handkontroll som slås på, tar bort den.',
+      used: 'Över allt, ritad av overlayn, när ingen handkontroll är ansluten och inget spelas. En handkontroll som slås på tar bort den.',
       items: [
         { name: 'Elden och ett citat', under: HOME, url: OVERLAY, setup: ({ P }) => P.saver.show(),
           note: 'Som en öppen eld: glöd i rost och ockra, starkast nertill, som fladdrar och dallrar uppåt. En zoom tar en kvart. Ett nytt citat, så stort som skärmen tar, var tredje minut.' },

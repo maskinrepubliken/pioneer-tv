@@ -29,7 +29,7 @@ class IdleTests(unittest.IsolatedAsyncioTestCase):
         async def put_away():
             self.put.append(self.held)
             return self.held
-        self.cfg = {"ui": {"home_minutes": 10, "saver_minutes": 2, "tv_off_minutes": 5}}
+        self.cfg = {"ui": {"home_minutes": 10, "tv_off_minutes": 5}}
         self.idle = Idle(self.cfg, emit, tv_off, busy=lambda: self.busy, at_home=lambda: self.home,
                          pads=lambda: self.pads, put_away=put_away)
 
@@ -61,11 +61,7 @@ class IdleTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.put, [True])
         self.assertEqual(len(self.named("home")), 1)
 
-    async def test_no_pad_the_screensaver_then_the_tv_off_once(self):
-        self.alone(1.9)
-        await self.idle.check()
-        self.assertEqual(self.shown(), [])
-        self.alone(2.1)
+    async def test_no_pad_the_screensaver_at_once_then_the_tv_off_once(self):
         await self.idle.check()
         await self.idle.check()
         self.assertEqual(self.shown(), [True])                 # once
@@ -133,7 +129,6 @@ class IdleTests(unittest.IsolatedAsyncioTestCase):
         await self.idle.check()
         self.assertEqual(self.shown(), [])
         self.idle.page({"playing": False})
-        self.alone(3)
         await self.idle.check()
         self.assertEqual(self.shown(), [True])
 
@@ -150,10 +145,12 @@ class IdleTests(unittest.IsolatedAsyncioTestCase):
         self.assertLess(time.monotonic() - self.idle.last_input, 1)
 
     async def test_zero_is_never(self):
-        self.cfg["ui"] = {"home_minutes": 0, "saver_minutes": 0, "tv_off_minutes": 0}
+        self.cfg["ui"] = {"home_minutes": 0, "tv_off_minutes": 0}
         self.alone(600)
         await self.idle.check()
-        self.assertEqual((self.named("home"), self.shown(), self.offs), ([], [], []))
+        self.idle.saver_since = time.monotonic() - 3600
+        await self.idle.check()
+        self.assertEqual((self.named("home"), self.offs), ([], []))
 
 
 class DispatcherSwallows(unittest.IsolatedAsyncioTestCase):

@@ -232,9 +232,9 @@ vanish over the ink), and changes every three minutes. No clock, no date.
   home. A game held on its pause panel is quit on the way (its state is
   saved, as Avsluta does) and a film held on its panel is stopped (its
   position is saved); every menu in the overlay closes.
-- **With no pad connected**, after two minutes without a button, the
-  screensaver. A button takes it away and does nothing else; a pad
-  switched on takes it away too. A pad connected keeps it away (8BitDo pads
+- **With no pad connected**, the screensaver, at once (within the
+  daemon's five-second check). A pad switched on takes it away; so does a
+  button on the TV's remote, for a moment only, as no pad is there. A pad connected keeps it away (8BitDo pads
   switch themselves off after a while, and then it comes).
 - **The screensaver up five minutes**, the TV is turned off over CEC and
   the screensaver rests: "Vilar" in the full-screen message, nothing
@@ -249,8 +249,7 @@ The daemon decides (`daemon/pioneertv/idle.py`): it sees every button, the
 pointer and the pads coming and going, the pages tell it what plays and
 when a real keyboard or mouse is used (`main.js`, `playing.js`), and the
 extension tells it which page is on screen (`loaded`). The times are on the
-TV page in settings (`ui.home_minutes`, `ui.saver_minutes`,
-`ui.tv_off_minutes`; 0 is never).
+TV page in settings (`ui.home_minutes`, `ui.tv_off_minutes`; 0 is never).
 
 ## Games
 

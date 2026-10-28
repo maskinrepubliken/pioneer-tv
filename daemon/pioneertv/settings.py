@@ -39,7 +39,6 @@ SCHEMA: list[dict] = [
             {"path": "cec.osd_name", "type": "text", "label": "Namn som TV:n visar", "maxlength": 14},
             {"path": "ui.volume_toast", "type": "bool", "label": "Visa en notis vid volymändring (TV:n visar oftast volymen själv)"},
             {"path": "ui.home_minutes", "type": "number", "label": "Gå hem efter, utan knapptryck (0 = aldrig)", "min": 0, "max": 120, "step": 1, "unit": "min"},
-            {"path": "ui.saver_minutes", "type": "number", "label": "Skärmsläckare utan handkontroll, efter (0 = aldrig)", "min": 0, "max": 60, "step": 1, "unit": "min"},
             {"path": "ui.tv_off_minutes", "type": "number", "label": "Stäng av TV:n när skärmsläckaren varit på (0 = aldrig)", "min": 0, "max": 120, "step": 1, "unit": "min"},
         ],
     },

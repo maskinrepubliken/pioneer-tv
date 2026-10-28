@@ -4,8 +4,8 @@
   game held on its pause panel is quit (its state is saved, games.py) and
   a film held on its panel is stopped (its position is saved, video.py) on
   the way, and the overlay closes its menus.
-- With no pad connected and left alone for ui.saver_minutes, the
-  screensaver comes over everything (the overlay draws it: the fire and a
+- With no pad connected (and nothing playing), the screensaver comes over
+  everything at once (the overlay draws it: the fire and a
   line of the Tao Te Ching). Any button takes it away and does nothing
   else; a pad connecting does too.
 - When the screensaver has been up for ui.tv_off_minutes, the TV is turned
@@ -141,10 +141,9 @@ class Idle:
         away = self.minutes("home_minutes", 10) * 60
         if away and alone >= away and not self.sent_home and not self.at_home():
             await self.go_home()
-        saver = self.minutes("saver_minutes", 2) * 60
-        if saver and not self.showing and alone >= saver and not self.pads():
+        if not self.showing and not self.pads():
             self.saver_since = now
-            log.info("no pad and alone for %.0f min: screensaver on", alone / 60)
+            log.info("no pad: screensaver on")
             await self.emit({"type": "event", "name": "saver", "show": True})
         off = self.minutes("tv_off_minutes", 5) * 60
         if off and self.showing and now - self.saver_since >= off and not self.tv_off_sent:
