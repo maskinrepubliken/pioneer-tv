@@ -4,12 +4,10 @@
 //
 //   { label, layout, items, shape, columns, look, empty }
 //
-// layout: 'stacks' (wholes as cards: collections, playlists, artists, each
-// its picture or its first few in a pile, cards.js stack; columns, 3 if
-// not given),
-// 'shelf' (covers standing on shelves, as many to a shelf as there
-// are columns, the next shelf under it: nothing scrolls sideways; 'row' and
-// 'grid' are shelves too), 'groups' (type-only cards, wrapping), 'actions'
+// layout: 'shelf' (covers standing on shelves, planks.js; 'row' and 'grid'
+// are shelves too), 'stacks' (wholes as cards: collections, playlists,
+// artists, each its picture or its first few in a pile, cards.js stack;
+// columns, 3 if not given), 'groups' (type-only cards, wrapping), 'actions'
 // (buttons and type-only cards in a line: { button: true, label, primary,
 // run, key } for a button) or 'rows' (a list, look 'number', 'thumb' or
 // 'still'). A section without items is left out, or says empty.
@@ -18,17 +16,6 @@ window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const el = M.views.el;
   const C = M.cards;
-
-  // How many covers to a shelf, by their shape (a still is wide).
-  const COLUMNS = { box: 6, poster: 6, square: 6, round: 6, still: 4 };
-
-  // Shelves: the covers stand on them, each its own shape, bottom on the
-  // plank, the name under it (browse.css, .planks; the grid's too).
-  function planks(shape, columns) {
-    const body = el('div', `planks planks--${shape}`);
-    body.style.setProperty('--columns', String(columns));
-    return body;
-  }
 
   function section(s) {
     const box = el('section', `shelf-section shelf-section--${s.layout}`);
@@ -61,8 +48,7 @@ window.PioneerTV = window.PioneerTV || {};
       items.forEach((it) => body.appendChild(C.group(it)));
     } else {
       const shape = s.shape || items[0].shape || 'square';
-      const columns = s.columns || COLUMNS[shape] || 6;
-      body = planks(shape, columns);
+      body = M.planks.el(shape, s.columns);
       items.forEach((it) => body.appendChild(C.card(it, shape)));
     }
     box.appendChild(body);
@@ -83,5 +69,5 @@ window.PioneerTV = window.PioneerTV || {};
     return wanted || scroll.querySelector('.card:not(.card--group), .row') || scroll.querySelector('.card, .knapp');
   }
 
-  M.shelf = { render, section, planks, COLUMNS };
+  M.shelf = { render, section };
 })(window.PioneerTV);

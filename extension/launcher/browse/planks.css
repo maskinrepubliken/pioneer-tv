@@ -1,0 +1,99 @@
+/* Pioneer TV browse page: the shelves (planks.js), for the shelf view and
+   the grid alike. */
+
+/* ---- the shelves (shelf.js, planks; the grid's too): covers standing on
+   planks, each at its own shape, the name on a label under it, as many to
+   a plank as there are columns and the next plank under it. The planks are
+   drawn behind the rows, so a grid that keeps only the rows near the focus
+   (grid.js) has them all the same. A plank in the system's rust with a
+   wood grain on its front edge, seen a little from above: its top runs back to the wall, darker there, and the
+   covers stand on it a little in from its front edge, each with its
+   shadow on the top and on the wall; under the front edge, the plank's
+   own shadow on the wall. ---- */
+.planks {
+  --back: 0.9rem; --fore: 0.6rem; --front: 0.75rem; --plank-h: calc(var(--fore) + var(--front));
+  --wood: var(--pioneertv-surface-rust);
+  --wood-deep: color-mix(in srgb, var(--wood) 62%, var(--pioneertv-paper));
+  --wood-top: color-mix(in srgb, var(--wood) 26%, var(--pioneertv-paper));
+  --wood-lit: color-mix(in srgb, var(--wood) 12%, var(--pioneertv-paper));
+  --shade: color-mix(in srgb, var(--pioneertv-ink) 18%, transparent);
+  --label-h: 4.1rem; --row-gap: 1rem;
+  --row-h: calc(var(--cover-h) + var(--plank-h) + var(--label-h));
+  --period: calc(var(--row-h) + var(--row-gap));
+  --foot: var(--cover-h); --wall: calc(var(--foot) - var(--back));
+  --lip: calc(var(--foot) + var(--fore)); --end: calc(var(--lip) + var(--front));
+  display: grid; column-gap: 1.3rem; row-gap: var(--row-gap);
+  grid-template-columns: repeat(var(--columns, 6), minmax(0, 1fr));
+  grid-auto-rows: var(--row-h);
+  /* Layers, top first: the plank's shadow on the wall; its top; the wall
+     itself, everywhere but the front edge; under that the edge, the wood
+     grain (wood.png: "Purty Wood" by Richard Tabor, from
+     transparenttextures.com, turned to run along the plank) over the rust. */
+  background-color: var(--wood);
+  background-image:
+    linear-gradient(to bottom, transparent var(--end), var(--shade) var(--end), transparent calc(var(--end) + 1rem)),
+    linear-gradient(to bottom,
+      transparent var(--wall),
+      var(--wood-deep) var(--wall),
+      var(--wood-top) calc(var(--wall) + 0.45rem),
+      var(--wood-lit) var(--lip),
+      transparent var(--lip)),
+    linear-gradient(to bottom,
+      var(--pioneertv-paper) var(--lip), transparent var(--lip) var(--end), var(--pioneertv-paper) var(--end)),
+    url("wood.png");
+  background-size: 100% var(--period), 100% var(--period), 100% var(--period), 12rem auto;
+  background-repeat: repeat-y, repeat-y, repeat-y, repeat;
+  /* The grain only darkens the rust, its light flecks leave it be. */
+  background-blend-mode: normal, normal, normal, multiply;
+}
+.planks--box { --cover-h: 9.4rem; }
+.planks--poster { --cover-h: 11.5rem; }
+.planks--square { --cover-h: 8.6rem; }
+.planks--round { --cover-h: 8rem; }
+.planks--still { --cover-h: 7.6rem; }
+.planks .card {
+  height: var(--row-h); padding: 0; overflow: visible; border: 0; border-radius: 0; background: none;
+  content-visibility: visible;
+  display: grid; grid-template-rows: var(--cover-h) var(--plank-h) auto auto; justify-items: center; align-content: start;
+}
+.planks .card .band { display: none; }
+/* The cover at its own shape and no wider, its foot on the plank (so a
+   film's progress runs along its own foot). */
+.planks .card .cover {
+  grid-row: 1; align-self: end; width: fit-content; max-width: 100%; height: auto; aspect-ratio: auto; padding: 0;
+  display: block; overflow: hidden; background: none; border-radius: 0.15rem;
+  /* standing on the plank: its shadow on the top under its foot, and on the wall behind it */
+  filter: drop-shadow(0 0.22rem 0.14rem var(--shade)) drop-shadow(0.35rem -0.15rem 0.45rem var(--shade));
+}
+.planks .card .cover img {
+  display: block; width: auto; height: auto; max-width: 100%; max-height: var(--cover-h); object-fit: contain;
+  border-radius: inherit;
+}
+.planks--round .card .cover { border-radius: 50%; }
+.planks--round .card .cover img { width: var(--cover-h); height: var(--cover-h); object-fit: cover; }
+/* No picture: the paper at the shape's own proportions. */
+.planks .card .cover-paper {
+  height: var(--cover-h); width: auto; max-width: 100%; aspect-ratio: var(--paper, 3 / 4);
+  display: flex; align-items: center; justify-content: center; background: var(--pioneertv-paper-sunken);
+}
+.planks--poster { --paper: 2 / 3; }
+.planks--square { --paper: 1; }
+.planks--round { --paper: 1; }
+.planks--round .card .cover-paper { border-radius: 50%; }
+.planks--still { --paper: 16 / 9; }
+/* The label under the plank. */
+.planks .card .title {
+  grid-row: 3; margin-top: 0.7rem; text-align: center; font-size: 0.92rem; line-height: 1.15; -webkit-line-clamp: 2;
+}
+.planks .card .meta { grid-row: 4; max-width: 100%; text-align: center; }
+.planks .card .fav { display: inline-flex; vertical-align: -0.1em; margin-right: 0.3em; color: var(--pioneertv-ochre); }
+.planks .card .fav svg { fill: currentColor; }
+/* The chosen one: the ring round its cover, an ochre tag on the plank's
+   edge under it, its name in ink. */
+.planks .card.pioneertv-focus { background: none; outline: none !important; box-shadow: none !important; }
+.planks .card.pioneertv-focus .cover { overflow: visible; outline: 0.22rem solid var(--pioneertv-focus); outline-offset: 0.25rem; }
+.planks .card.pioneertv-focus::after {
+  content: ""; grid-row: 2; align-self: end; width: 2.8rem; height: 0.32rem; margin-bottom: 0.2rem;
+  border-radius: 0.16rem; background: var(--pioneertv-ochre);
+}
+.planks .card.pioneertv-focus .title { color: var(--pioneertv-ink); }

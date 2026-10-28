@@ -1,0 +1,50 @@
+/* Pioneer TV browse page: the column at the left (rail.js). */
+
+/* ---- the column at the left (browse/rail.js), on the sunken paper as on
+   the home page. At rest: Sök and a ring with each way in's initial. With
+   the focus or the pointer in it: wider, over the view, with the names. In
+   one step, as the system has no motion but the answer to a press. ---- */
+:root { --rail: 5.6rem; }
+.page { margin-left: var(--rail); padding-left: 3vw; }
+.rail {
+  position: fixed; top: 0; bottom: 0; left: 0; z-index: 5; width: var(--rail);
+  display: flex; flex-direction: column; padding: 4.5vh 0 3vh;
+  background: var(--pioneertv-paper-sunken);
+}
+.rail.open, .rail:focus-within { width: 19rem; border-right: 1px solid var(--pioneertv-line); }
+.rail-list {
+  flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none;
+  display: flex; flex-direction: column; gap: 1.1rem; padding: 1.1rem 0 0.6rem;
+}
+.rail-list::-webkit-scrollbar { display: none; }
+.rail-group { display: flex; flex-direction: column; gap: 0.6rem; }
+/* A group's name, with the names; at rest a short line between groups. */
+.rail-group-label {
+  margin: 0 0 0 calc(var(--rail) / 2 - 1.15rem); height: 1px; width: 2.3rem; overflow: hidden;
+  font: 400 0.75rem/1 var(--pioneertv-font-mono); letter-spacing: 0.1em; text-transform: uppercase;
+  color: transparent; background: var(--pioneertv-line);
+}
+.rail-group:first-child .rail-group-label:empty { display: none; }
+.rail-group-label:empty { margin-bottom: 0.2rem; }
+.rail.open .rail-group-label:not(:empty), .rail:focus-within .rail-group-label:not(:empty) {
+  height: auto; width: auto; margin-top: 0.4rem; background: none; color: var(--pioneertv-ink-faint);
+}
+/* A way in: the ring centred in the narrow column, the name after it. */
+.rail-item {
+  flex: none; display: flex; align-items: center; gap: 0.9rem; cursor: pointer;
+  padding-left: calc(var(--rail) / 2 - 1.15rem); padding-right: 1rem;
+}
+.rail-mark {
+  font: 900 0.96rem/1 var(--pioneertv-font-display); text-transform: uppercase; color: var(--pioneertv-ink);
+}
+.rail-label {
+  display: none; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font: 600 1rem/1.1 var(--pioneertv-font-ui); color: var(--pioneertv-ink-muted);
+}
+.rail.open .rail-label, .rail:focus-within .rail-label { display: block; }
+.rail-item:has(.pioneertv-focus) .rail-label { color: var(--pioneertv-ink); }
+/* Where the page is: the ring in ink. */
+.rail-item.aktiv .rail-mark { background: var(--pioneertv-ink); color: var(--pioneertv-paper); border-color: var(--pioneertv-ink); }
+.rail-item.aktiv .rail-label { color: var(--pioneertv-ink); }
+.rail-search .rail-mark { color: var(--pioneertv-ink-muted); }
+.rail-list .rail-mark .pioneertv-icon { font-size: 1.4em; }

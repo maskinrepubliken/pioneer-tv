@@ -1,61 +1,13 @@
 /* Pioneer TV browse page (browse/page.js), on base.css: the same for every
-   library. The column at the left (Sök and the library's ways in), the
-   heading (title, count, tabs, what is searched for), the shelf, the grid
-   and the detail views, and the cards and rows they are made of. Covers
-   stand on shelves (.planks), the name on a label under the plank;
-   type-only cards are Rubik capitals (or Fraunces). Focus is the ink ring
-   with air around it, and the ochre marker, switched in one step. */
+   library. The page and its three views: the heading (title, count, tabs,
+   what is searched for), the legend, the shelf (shelf.js), the grid
+   (grid.js) and the detail (detail.js). What they are made of has its own
+   file: the column at the left (rail.css), the shelves (planks.css), the
+   cards, the cards of wholes, the rows and the tabs (cards.css). Focus is
+   the ink ring with air around it, and the ochre marker, switched in one
+   step. */
 
 .view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-
-/* ---- the column at the left (browse/rail.js), on the sunken paper as on
-   the home page. At rest: Sök and a ring with each way in's initial. With
-   the focus or the pointer in it: wider, over the view, with the names. In
-   one step, as the system has no motion but the answer to a press. ---- */
-:root { --rail: 5.6rem; }
-.page { margin-left: var(--rail); padding-left: 3vw; }
-.rail {
-  position: fixed; top: 0; bottom: 0; left: 0; z-index: 5; width: var(--rail);
-  display: flex; flex-direction: column; padding: 4.5vh 0 3vh;
-  background: var(--pioneertv-paper-sunken);
-}
-.rail.open, .rail:focus-within { width: 19rem; border-right: 1px solid var(--pioneertv-line); }
-.rail-list {
-  flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none;
-  display: flex; flex-direction: column; gap: 1.1rem; padding: 1.1rem 0 0.6rem;
-}
-.rail-list::-webkit-scrollbar { display: none; }
-.rail-group { display: flex; flex-direction: column; gap: 0.6rem; }
-/* A group's name, with the names; at rest a short line between groups. */
-.rail-group-label {
-  margin: 0 0 0 calc(var(--rail) / 2 - 1.15rem); height: 1px; width: 2.3rem; overflow: hidden;
-  font: 400 0.75rem/1 var(--pioneertv-font-mono); letter-spacing: 0.1em; text-transform: uppercase;
-  color: transparent; background: var(--pioneertv-line);
-}
-.rail-group:first-child .rail-group-label:empty { display: none; }
-.rail-group-label:empty { margin-bottom: 0.2rem; }
-.rail.open .rail-group-label:not(:empty), .rail:focus-within .rail-group-label:not(:empty) {
-  height: auto; width: auto; margin-top: 0.4rem; background: none; color: var(--pioneertv-ink-faint);
-}
-/* A way in: the ring centred in the narrow column, the name after it. */
-.rail-item {
-  flex: none; display: flex; align-items: center; gap: 0.9rem; cursor: pointer;
-  padding-left: calc(var(--rail) / 2 - 1.15rem); padding-right: 1rem;
-}
-.rail-mark {
-  font: 900 0.96rem/1 var(--pioneertv-font-display); text-transform: uppercase; color: var(--pioneertv-ink);
-}
-.rail-label {
-  display: none; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  font: 600 1rem/1.1 var(--pioneertv-font-ui); color: var(--pioneertv-ink-muted);
-}
-.rail.open .rail-label, .rail:focus-within .rail-label { display: block; }
-.rail-item:has(.pioneertv-focus) .rail-label { color: var(--pioneertv-ink); }
-/* Where the page is: the ring in ink. */
-.rail-item.aktiv .rail-mark { background: var(--pioneertv-ink); color: var(--pioneertv-paper); border-color: var(--pioneertv-ink); }
-.rail-item.aktiv .rail-label { color: var(--pioneertv-ink); }
-.rail-search .rail-mark { color: var(--pioneertv-ink-muted); }
-.rail-list .rail-mark .pioneertv-icon { font-size: 1.4em; }
 
 /* ---- the legend, as on the home page: quiet, no line, no wordmark ---- */
 .legend { border-top: 0; color: var(--pioneertv-ink-faint); }
@@ -84,21 +36,6 @@
 /* Out of sight: the on-screen keyboard shows what is typed. */
 .head-search { position: absolute; left: -10000px; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 
-/* ---- tabs: a film library's libraries, a series' seasons ---- */
-.tabs { display: flex; gap: 0.5rem; overflow-x: auto; scrollbar-width: none; padding: 0.4rem; margin: -0.4rem; }
-.tabs::-webkit-scrollbar { display: none; }
-.detail-main .tabs { flex-wrap: wrap; overflow: visible; margin: 0 0 0.9rem; padding: 0.3rem 0; }
-.tab {
-  flex: none; padding: 0.55rem 1.1rem; white-space: nowrap; text-decoration: none;
-  font: 600 1rem/1 var(--pioneertv-font-ui); color: var(--pioneertv-ink-muted);
-  border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-pill);
-}
-.tab.aktiv { color: var(--pioneertv-ink); background: var(--pioneertv-paper-raised); border-color: var(--pioneertv-ink); }
-.tab.pioneertv-focus {
-  outline: 0.2rem solid var(--pioneertv-focus) !important; outline-offset: 0.2rem !important;
-  box-shadow: none !important; border-radius: var(--pioneertv-radius-pill) !important;
-}
-
 /* One scrolling column; the focus ring needs the margin. */
 .scroll {
   flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none;
@@ -112,185 +49,6 @@
 .shelf-actions { display: flex; gap: 1rem; }
 .shelf-actions .knapp { align-self: stretch; }
 .shelf-actions .card--group { min-width: 11rem; }
-
-/* ---- cards ---- */
-.card {
-  position: relative; display: flex; flex-direction: column; overflow: hidden;
-  color: var(--pioneertv-ink); text-decoration: none; border-radius: var(--pioneertv-radius-l);
-  padding: 0.4rem 0.4rem 0.6rem;
-}
-.card .band { position: absolute; top: 0; left: 0; right: 0; height: 0.4rem; background: transparent; z-index: 1; }
-.card.pioneertv-focus {
-  background: var(--pioneertv-paper-hover); border-color: var(--pioneertv-ink);
-  outline: 0.22rem solid var(--pioneertv-focus) !important; outline-offset: 0.25rem !important;
-  box-shadow: none !important; border-radius: var(--pioneertv-radius-l) !important; z-index: 2;
-}
-.card.pioneertv-focus .band { background: var(--pioneertv-ochre); }
-.card .cover { position: relative; width: 100%; border-radius: calc(var(--pioneertv-radius-l) - 0.4rem); }
-.card .title {
-  margin-top: 0.45rem; padding: 0 0.25rem; font-family: var(--pioneertv-font-prose); font-size: 1rem; line-height: 1.2;
-  display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
-}
-.card .meta {
-  margin-top: 0.2rem; padding: 0 0.25rem; font-family: var(--pioneertv-font-mono); font-size: 0.75rem; color: var(--pioneertv-ink-faint);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-
-/* Posters, stills, squares and rounds fill their picture's shape. Cards out
-   of sight are skipped (content-visibility). */
-.card--poster, .card--still, .card--square, .card--round { content-visibility: auto; contain-intrinsic-size: auto 15rem; }
-.grid .card { content-visibility: visible; }
-.card--poster .cover, .card--still .cover, .card--square .cover, .card--round .cover { flex: none; }
-.card--poster .cover img, .card--still .cover img, .card--square .cover img, .card--round .cover img { object-fit: cover; }
-.card--poster .cover { aspect-ratio: 2 / 3; }
-.card--still .cover { aspect-ratio: 16 / 9; }
-.card--square .cover, .card--round .cover { aspect-ratio: 1; }
-.card--round .cover { border-radius: 50%; }
-
-/* ---- the shelves (shelf.js, planks; the grid's too): covers standing on
-   planks, each at its own shape, the name on a label under it, as many to
-   a plank as there are columns and the next plank under it. The planks are
-   drawn behind the rows, so a grid that keeps only the rows near the focus
-   (grid.js) has them all the same. A plank in the system's rust with a
-   wood grain on its front edge, seen a little from above: its top runs back to the wall, darker there, and the
-   covers stand on it a little in from its front edge, each with its
-   shadow on the top and on the wall; under the front edge, the plank's
-   own shadow on the wall. ---- */
-.planks {
-  --back: 0.9rem; --fore: 0.6rem; --front: 0.75rem; --plank-h: calc(var(--fore) + var(--front));
-  --wood: var(--pioneertv-surface-rust);
-  --wood-deep: color-mix(in srgb, var(--wood) 62%, var(--pioneertv-paper));
-  --wood-top: color-mix(in srgb, var(--wood) 26%, var(--pioneertv-paper));
-  --wood-lit: color-mix(in srgb, var(--wood) 12%, var(--pioneertv-paper));
-  --shade: color-mix(in srgb, var(--pioneertv-ink) 18%, transparent);
-  --label-h: 4.1rem; --row-gap: 1rem;
-  --row-h: calc(var(--cover-h) + var(--plank-h) + var(--label-h));
-  --period: calc(var(--row-h) + var(--row-gap));
-  --foot: var(--cover-h); --wall: calc(var(--foot) - var(--back));
-  --lip: calc(var(--foot) + var(--fore)); --end: calc(var(--lip) + var(--front));
-  display: grid; column-gap: 1.3rem; row-gap: var(--row-gap);
-  grid-template-columns: repeat(var(--columns, 6), minmax(0, 1fr));
-  grid-auto-rows: var(--row-h);
-  /* Layers, top first: the plank's shadow on the wall; its top; the wall
-     itself, everywhere but the front edge; under that the edge, the wood
-     grain (wood.png: "Purty Wood" by Richard Tabor, from
-     transparenttextures.com, turned to run along the plank) over the rust. */
-  background-color: var(--wood);
-  background-image:
-    linear-gradient(to bottom, transparent var(--end), var(--shade) var(--end), transparent calc(var(--end) + 1rem)),
-    linear-gradient(to bottom,
-      transparent var(--wall),
-      var(--wood-deep) var(--wall),
-      var(--wood-top) calc(var(--wall) + 0.45rem),
-      var(--wood-lit) var(--lip),
-      transparent var(--lip)),
-    linear-gradient(to bottom,
-      var(--pioneertv-paper) var(--lip), transparent var(--lip) var(--end), var(--pioneertv-paper) var(--end)),
-    url("wood.png");
-  background-size: 100% var(--period), 100% var(--period), 100% var(--period), 12rem auto;
-  background-repeat: repeat-y, repeat-y, repeat-y, repeat;
-  /* The grain only darkens the rust, its light flecks leave it be. */
-  background-blend-mode: normal, normal, normal, multiply;
-}
-.planks--box { --cover-h: 9.4rem; }
-.planks--poster { --cover-h: 11.5rem; }
-.planks--square { --cover-h: 8.6rem; }
-.planks--round { --cover-h: 8rem; }
-.planks--still { --cover-h: 7.6rem; }
-.planks .card {
-  height: var(--row-h); padding: 0; overflow: visible; border: 0; border-radius: 0; background: none;
-  content-visibility: visible;
-  display: grid; grid-template-rows: var(--cover-h) var(--plank-h) auto auto; justify-items: center; align-content: start;
-}
-.planks .card .band { display: none; }
-/* The cover at its own shape and no wider, its foot on the plank (so a
-   film's progress runs along its own foot). */
-.planks .card .cover {
-  grid-row: 1; align-self: end; width: fit-content; max-width: 100%; height: auto; aspect-ratio: auto; padding: 0;
-  display: block; overflow: hidden; background: none; border-radius: 0.15rem;
-  /* standing on the plank: its shadow on the top under its foot, and on the wall behind it */
-  filter: drop-shadow(0 0.22rem 0.14rem var(--shade)) drop-shadow(0.35rem -0.15rem 0.45rem var(--shade));
-}
-.planks .card .cover img {
-  display: block; width: auto; height: auto; max-width: 100%; max-height: var(--cover-h); object-fit: contain;
-  border-radius: inherit;
-}
-.planks--round .card .cover { border-radius: 50%; }
-.planks--round .card .cover img { width: var(--cover-h); height: var(--cover-h); object-fit: cover; }
-/* No picture: the paper at the shape's own proportions. */
-.planks .card .cover-paper {
-  height: var(--cover-h); width: auto; max-width: 100%; aspect-ratio: var(--paper, 3 / 4);
-  display: flex; align-items: center; justify-content: center; background: var(--pioneertv-paper-sunken);
-}
-.planks--poster { --paper: 2 / 3; }
-.planks--square { --paper: 1; }
-.planks--round { --paper: 1; }
-.planks--round .card .cover-paper { border-radius: 50%; }
-.planks--still { --paper: 16 / 9; }
-/* The label under the plank. */
-.planks .card .title {
-  grid-row: 3; margin-top: 0.7rem; text-align: center; font-size: 0.92rem; line-height: 1.15; -webkit-line-clamp: 2;
-}
-.planks .card .meta { grid-row: 4; max-width: 100%; text-align: center; }
-.planks .card .fav { display: inline-flex; vertical-align: -0.1em; margin-right: 0.3em; color: var(--pioneertv-ochre); }
-.planks .card .fav svg { fill: currentColor; }
-/* The chosen one: the ring round its cover, an ochre tag on the plank's
-   edge under it, its name in ink. */
-.planks .card.pioneertv-focus { background: none; outline: none !important; box-shadow: none !important; }
-.planks .card.pioneertv-focus .cover { overflow: visible; outline: 0.22rem solid var(--pioneertv-focus); outline-offset: 0.25rem; }
-.planks .card.pioneertv-focus::after {
-  content: ""; grid-row: 2; align-self: end; width: 2.8rem; height: 0.32rem; margin-bottom: 0.2rem;
-  border-radius: 0.16rem; background: var(--pioneertv-ochre);
-}
-.planks .card.pioneertv-focus .title { color: var(--pioneertv-ink); }
-/* ---- wholes as cards (shelf.js and grid.js, stacks; cards.js stack):
-   collections, playlists, artists. A card on raised paper, its picture,
-   or its first few in a pile, straight, each a step behind and to the
-   right of the one before; its name in Rubik and a line under it. ---- */
-.shelf-stacks {
-  --row-h: 14.2rem;
-  display: grid; grid-template-columns: repeat(var(--columns, 3), minmax(0, 1fr)); gap: 1.4rem 1.3rem;
-  grid-auto-rows: var(--row-h);
-}
-.card--stack {
-  padding: 1.1rem 1.2rem 1rem; border: 1px solid var(--pioneertv-line); background: var(--pioneertv-paper-raised);
-  content-visibility: visible;
-}
-.stack {
-  --w: 8.6rem; --h: 8.6rem; --step: 1.3rem;
-  position: relative; display: block; flex: none; height: var(--h); margin-bottom: 1rem;
-}
-.card--stack-box .stack { --w: 6.4rem; }
-.stack .cover {
-  position: absolute; bottom: 0; width: var(--w); height: calc(var(--h) - var(--i) * 0.7rem);
-  left: calc(50% - (var(--w) + (var(--n) - 1) * var(--step)) / 2 + var(--i) * var(--step));
-  z-index: calc(3 - var(--i)); border-radius: 0.15rem;
-  box-shadow: 0.12rem 0 0 var(--pioneertv-paper-raised);
-}
-.stack .cover img { object-fit: cover; }
-.card--stack-round .stack .cover { border-radius: 50%; box-shadow: none; }
-.stack-empty {
-  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-  font: italic 1.1rem var(--pioneertv-font-prose); color: var(--pioneertv-ink-faint);
-}
-.card--stack .name {
-  font-family: var(--pioneertv-font-display); font-weight: 900; font-size: 1.15rem; line-height: 1.05; padding-top: 0.1em;
-  letter-spacing: -0.01em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.card--stack .meta { margin-top: 0.3rem; padding: 0; }
-
-/* Type only: a console, a collection, a folder. */
-.card--group { min-width: 9.5rem; padding: 0.65rem 1.2rem 0.6rem; justify-content: flex-end; }
-.card--group .name {
-  font-family: var(--pioneertv-font-display); font-weight: 900; font-size: 1.5rem; line-height: 1;
-  letter-spacing: -0.01em; text-transform: uppercase; white-space: nowrap;
-}
-.card--prose .name { font-family: var(--pioneertv-font-prose); font-weight: 400; font-size: 1.25rem; text-transform: none; letter-spacing: 0; }
-.card--group .meta { margin-top: 0.35rem; padding: 0; }
-
-/* How far into it: a thin ochre line along the foot of the picture. */
-.progress { position: absolute; left: 0; right: 0; bottom: 0; height: 0.3rem; background: var(--pioneertv-paper-sunken); }
-.progress span { display: block; height: 100%; background: var(--pioneertv-ochre); }
 
 /* ---- the grid: cards at the left, the info panel (if any) at the right ---- */
 .grid-view { flex: 1; min-height: 0; display: flex; gap: 2rem; }
@@ -333,31 +91,3 @@
 .choice { font-weight: 400; }
 .choice-label { font-family: var(--pioneertv-font-mono); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--pioneertv-ink-faint); margin-right: 0.3rem; }
 
-/* ---- rows: songs, episodes. A picture (a still, a thumb) or the number,
-   the title and a line under it, a detail at the right ---- */
-.rows { display: flex; flex-direction: column; }
-.row {
-  width: 100%; display: grid; grid-template-columns: 2.4rem minmax(0, 1fr) auto; align-items: center; gap: 1rem;
-  padding: 0.55rem 0.9rem; margin: 0; text-align: left; cursor: pointer; text-decoration: none;
-  font: inherit; color: var(--pioneertv-ink); background: none; border: 0; border-bottom: 1px solid var(--pioneertv-line);
-  border-radius: var(--pioneertv-radius-s);
-}
-.row--still { grid-template-columns: 11rem minmax(0, 1fr) auto; gap: 1.2rem; padding: 0.6rem 0.8rem; }
-.row .n { font-family: var(--pioneertv-font-mono); font-size: 0.85rem; color: var(--pioneertv-ink-faint); text-align: right; }
-.row > img { width: 2.4rem; height: 2.4rem; border-radius: var(--pioneertv-radius-s); object-fit: cover; display: block; }
-.row .cover { position: relative; aspect-ratio: 16 / 9; border-radius: var(--pioneertv-radius-s); }
-.row .cover img { object-fit: cover; }
-.row .t { min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
-.row .t b { font: 400 1.1rem/1.2 var(--pioneertv-font-prose); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.row .t span { font-size: 0.85rem; line-height: 1.35; color: var(--pioneertv-ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.row--still .t { gap: 0.25rem; }
-.row--still .t b { font-size: 1.15rem; }
-.row--still .t span { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-.row .d { font-family: var(--pioneertv-font-mono); font-size: 0.85rem; color: var(--pioneertv-ink-faint); font-variant-numeric: tabular-nums; }
-.row.played .t b { color: var(--pioneertv-ink-muted); }
-.row.playing .t b { font-weight: 600; }
-.row.playing .n { color: var(--pioneertv-ochre); }
-.row.pioneertv-focus {
-  background: var(--pioneertv-paper-hover); outline: 0.2rem solid var(--pioneertv-focus) !important; outline-offset: 0.1rem !important;
-  box-shadow: none !important; border-radius: var(--pioneertv-radius-s) !important;
-}

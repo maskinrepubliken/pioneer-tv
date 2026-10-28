@@ -17,7 +17,7 @@
 // (type only: a console, a collection, a folder; style 'prose' for a
 // name in Fraunces instead of Rubik capitals). A row: a picture (still or
 // thumb), or its number, the title and a line under it, a detail at the
-// right. Styled by browse.css.
+// right. Styled by cards.css (and planks.css on a shelf).
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const V = M.views;

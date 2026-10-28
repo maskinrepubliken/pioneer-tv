@@ -91,7 +91,7 @@ its source (`sources/romm.js`, `sources/jellyfin.js`), as views of a few
 kinds, made of items of one shape (`browse/cards.js`):
 
 - **the shelf** (`browse/shelf.js`): sections one under the other; covers
-  standing on shelves (`planks`: each at its own shape, its foot on the
+  standing on shelves (`planks.js`: each at its own shape, its foot on the
   plank, its name on a label under it, as many to a shelf as there are
   columns and the next shelf under it, so nothing scrolls sideways), and
   type-only cards and buttons; a library's start, an artist, a search;

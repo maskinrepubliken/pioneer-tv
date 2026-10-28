@@ -3,7 +3,7 @@
 // Album and Artister, Film's libraries and a library's folders), in groups.
 // At rest it is narrow and each way in is a ring with its initial; with the
 // focus (or the pointer) in it, it widens over the view and says each one's
-// name and its group's. Styled in browse.css (.rail).
+// name and its group's. Styled by rail.css.
 //
 // A library gives its groups for where the page is, library.rail(parts):
 //

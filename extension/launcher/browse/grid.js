@@ -12,7 +12,7 @@
 // Only the rows around the focus are in the page (a console can have nearly
 // a thousand games, the box 1,707 albums): with every card there, the
 // spatial navigation looked at each on every press, 110 to 160 ms. The rows
-// are shelves of one height (browse.css, .planks); the navigation moves
+// are shelves of one height (planks.js); the navigation moves
 // into the row just outside the window by geometry, and the focus moving
 // in it shifts the window around it.
 window.PioneerTV = window.PioneerTV || {};
@@ -52,7 +52,7 @@ window.PioneerTV = window.PioneerTV || {};
     const body = el('div', 'grid-view');
     const scroller = el('div', 'scroll grid-scroll');
     const stacks = spec.look === 'stacks';
-    const gridEl = stacks ? el('div', 'shelf-stacks') : M.shelf.planks(spec.shape || 'square', cols);
+    const gridEl = stacks ? el('div', 'shelf-stacks') : M.planks.el(spec.shape || 'square', cols);
     gridEl.classList.add('grid');
     gridEl.style.setProperty('--columns', String(cols));
     scroller.appendChild(gridEl);
