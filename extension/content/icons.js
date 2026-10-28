@@ -13,8 +13,8 @@ window.PioneerTV = window.PioneerTV || {};
     home: '<path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-6h4v6"/>',
     gear: '<path d="M18.7 10L21 10.1L21 13.9L18.7 14L18.2 15.3L19.7 17L17 19.7L15.3 18.2L14 18.7L13.9 21L10.1 21L10 18.7L8.7 18.2L7 19.7L4.3 17L5.8 15.3L5.3 14L3 13.9L3 10.1L5.3 10L5.8 8.7L4.3 7L7 4.3L8.7 5.8L10 5.3L10.1 3L13.9 3L14 5.3L15.3 5.8L17 4.3L19.7 7L18.2 8.7z"/><circle cx="12" cy="12" r="3"/>',
     // The pad's Home button (the 8BitDo Ultimate 2C's): a ring round
-    // 8BitDo's chequered mark.
-    padHome: '<circle cx="12" cy="12" r="9.2"/><g fill="currentColor" stroke="none"><rect x="6.4" y="6.4" width="2.8" height="2.8"/><rect x="6.4" y="12" width="2.8" height="2.8"/><rect x="9.2" y="9.2" width="2.8" height="2.8"/><rect x="9.2" y="14.8" width="2.8" height="2.8"/><rect x="12" y="6.4" width="2.8" height="2.8"/><rect x="12" y="12" width="2.8" height="2.8"/><rect x="14.8" y="9.2" width="2.8" height="2.8"/><rect x="14.8" y="14.8" width="2.8" height="2.8"/></g>',
+    // 8BitDo's mark, a heart of squares set like a chequerboard.
+    padHome: '<circle cx="12" cy="12" r="9.2"/><g fill="currentColor" stroke="none"><rect x="7.95" y="6.6" width="2.4" height="2.4" rx="0.35"/><rect x="13.35" y="6.6" width="2.4" height="2.4" rx="0.35"/><rect x="5.25" y="9.3" width="2.4" height="2.4" rx="0.35"/><rect x="10.65" y="9.3" width="2.4" height="2.4" rx="0.35"/><rect x="16.05" y="9.3" width="2.4" height="2.4" rx="0.35"/><rect x="7.95" y="12" width="2.4" height="2.4" rx="0.35"/><rect x="13.35" y="12" width="2.4" height="2.4" rx="0.35"/><rect x="10.65" y="14.7" width="2.4" height="2.4" rx="0.35"/></g>',
     keyboard: '<rect x="3" y="7" width="18" height="11" rx="2"/><path d="M7 11h.01M11 11h.01M15 11h.01M7 14.5h10"/>',
     back: '<path d="M10 6l-6 6 6 6"/><path d="M4 12h16"/>',
     reload: '<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/>',
