@@ -280,10 +280,9 @@ Samlingar, each collection as a card (its first covers in a pile, its
 name and how many), A opening it; the
 consoles in the column at the left, each by its pad (or its initial); each
 console's games with covers; a game opens `game.html`, which has it
-played. X on a game makes it a favourite, or not, a heart before its name:
-RomM's own Favourites collection (the one with `is_favorite`), made the
-first time if RomM has none. On Senast spelade, and in Favoriter, X
-instead takes the game off the list at once, one after the other;
+played. RomM's own Favourites collection (the one with `is_favorite`) is
+not listed. On Senast spelade X takes a game off the list at once, one
+after the other;
 holding X (Ctrl+Z) puts back the last one taken, then the one before.
 RomM hears of a game off Senast spelade only after a minute, or when the
 page goes away, so putting it back never touches it.
@@ -574,7 +573,7 @@ row: Fortsätt in a pause panel, Hem in the quick menu), the on-screen
 keyboard's OK (A only types; there is no holding A for OK) and the settings
 page's (`settings.js`). So a view has at most one filled button; a list's
 own buttons (a network's Anslut, a pad's Para) are outlined. Where there is
-none, X keeps the page's own meaning (a favourite, Spelas nu, pause).
+none, X keeps the page's own meaning (off Senast spelade, Spelas nu, pause).
 
 The UI follows Maskinrepubliken's design system, vendored in
 `design/maskinrepubliken/` (its brand book is `README.md` there, in Swedish).

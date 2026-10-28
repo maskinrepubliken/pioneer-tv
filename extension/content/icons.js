@@ -45,7 +45,6 @@ window.PioneerTV = window.PioneerTV || {};
     playlist: '<path d="M4 6.5h11M4 11h11M4 15.5h6"/><path d="M17 18.5V9.5l3.5-1"/><circle cx="15.2" cy="18.5" r="1.8"/>',
     vinyl: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2.5"/><path d="M12 5.5a6.5 6.5 0 0 1 6.5 6.5"/>',
     person: '<circle cx="12" cy="8" r="3.8"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>',
-    heart: '<path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z"/>',
     // Consoles, for the Spel library's column (libraries/spel.js): each by
     // its pad or its look, drawn as plainly as the rest.
     nes: '<rect x="2" y="6.5" width="20" height="11" rx="1.2"/><path d="M4.6 12h4M6.6 10v4"/><g fill="currentColor" stroke="none"><circle cx="15.6" cy="13.3" r="1.25"/><circle cx="18.8" cy="13.3" r="1.25"/></g>',

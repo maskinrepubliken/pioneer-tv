@@ -104,8 +104,6 @@
   padding-bottom: 0.15em;      /* g, j, p and y hang below the line; the clamp would cut them */
 }
 .planks .card .meta { grid-row: 4; max-width: 100%; text-align: center; }
-.planks .card .fav { display: inline-flex; vertical-align: -0.1em; margin-right: 0.3em; color: var(--pioneertv-ochre); }
-.planks .card .fav svg { fill: currentColor; }
 /* The chosen one: the ring round its cover, an ochre tag on the plank's
    edge under it, its name in ink. */
 .planks .card.pioneertv-focus { background: none; outline: none !important; box-shadow: none !important; }

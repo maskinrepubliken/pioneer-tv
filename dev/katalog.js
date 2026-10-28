@@ -210,9 +210,9 @@
       used: 'Bläddringssidan, för alla bibliotek: omslag som står på hyllplan i sin egen form, namnet under planet, hyllorna från kant till kant och inget som skrollar i sidled. Långa samlingar är rutnät: bara raderna runt fokus i sidan, L1/R1 hoppar en bokstav, sök filtrerar, infon under hyllorna.',
       items: [
         { name: 'Spel · Senast spelade', url: SPEL, ready: '.card', note: 'Lådor. X tar bort, en efter en; håll X ångrar.' },
-        { name: 'Spel · En konsol', url: `${SPEL}#/platform/1`, ready: '.grid .card', note: 'Rutnät, med det valda spelets info under hyllorna. X gör ett spel till favorit.' },
+        { name: 'Spel · En konsol', url: `${SPEL}#/platform/1`, ready: '.grid .card', note: 'Rutnät, med det valda spelets info under hyllorna.' },
         { name: 'Spel · En konsol, längre ned', url: `${SPEL}#/platform/1`, ready: '.grid .card', setup: ({ P }) => P.grid.active.focusIndex(9) },
-        { name: 'Spel · Favoriter', url: `${SPEL}#/collection/own/1`, ready: '.grid .card', note: 'Hjärtat före namnet. Här tar X bort ur favoriter; håll X ångrar.' },
+        { name: 'Spel · En samling', url: `${SPEL}#/collection/own/2`, ready: '.grid .card' },
         { name: 'Spel · Sök', url: `${SPEL}#/search/mario`, ready: '.grid .card' },
         { name: 'Spel · Sök utan träffar', url: `${SPEL}#/search/zzz`, ready: '.empty, .grid' },
         { name: 'Musik · Album', url: `${MUSIK}#/albums`, ready: '.grid .card', note: 'Kvadrater, i ett rutnät.' },

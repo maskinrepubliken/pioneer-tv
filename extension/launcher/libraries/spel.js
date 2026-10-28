@@ -4,8 +4,7 @@
 // and #/search/<words> are grids of games; the column at the left goes to
 // them, the consoles by their pad. A game opens game.html, which has the
 // daemon play it in RetroArch. X on a recently played game takes it off the
-// list, and in Favoriter off that; holding X puts back the last one taken.
-// X on any other game marks it favourite, or not (RomM's Favourites).
+// list; holding X puts back the last one taken.
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const R = M.romm;
@@ -35,9 +34,8 @@ window.PioneerTV = window.PioneerTV || {};
   }
 
   // A game as the browse page's item: its box art, small then sharp; a
-  // heart when it is a favourite (favs: the ids, R.favorites()).
-  const game = (g, meta, favs) => ({
-    key: `game:${g.id}`, id: g.id, title: g.name, meta, shape: 'box', favorite: !!favs && favs.has(g.id),
+  const game = (g, meta) => ({
+    key: `game:${g.id}`, id: g.id, title: g.name, meta, shape: 'box',
     picture: g.cover, large: g.coverLarge, href: `game.html?rom=${g.id}${tv}`, game: g,
   });
 
@@ -45,12 +43,11 @@ window.PioneerTV = window.PioneerTV || {};
   // follow the order the grid is in ("The Blues Brothers" is a B).
   const letter = (it) => M.grid.letterOf(it.game.sortKey || it.game.name);
 
-  function gridOf(title, games, filter, favs, favorites) {
+  function gridOf(title, games, filter) {
     return {
       kind: 'grid', title, filter,
-      legend: [['A', 'spela'], ...(favorites ? [['X', 'ta bort från favoriter'], ['X', 'ångra borttagning', 'håll']] : [['X', 'favorit eller inte']]),
-        ['L1', ''], ['R1', 'hoppa en bokstav']],
-      items: games.map((g) => game(g, undefined, favs)), shape: 'box', columns: 6, letter,
+      legend: [['A', 'spela'], ['L1', ''], ['R1', 'hoppa en bokstav']],
+      items: games.map((g) => game(g)), shape: 'box', columns: 6, letter,
       count: (n, all) => (n === all ? `${all} spel` : `${n} av ${all} spel`),
       empty: 'Inga spel här.',
       info: (it) => {
@@ -66,14 +63,14 @@ window.PioneerTV = window.PioneerTV || {};
   }
 
   async function start() {
-    const [recent, platforms, favs] = await Promise.all([R.recent(), R.platforms(), R.favorites().catch(() => new Set())]);
+    const [recent, platforms] = await Promise.all([R.recent(), R.platforms()]);
     const total = platforms.reduce((n, p) => n + p.count, 0);
     return {
       kind: 'shelf', title: 'Spel', count: `${platforms.length} konsoler · ${total} spel`,
       legend: [['A', 'spela · öppna'], ['X', 'ta bort från senast spelade'], ['X', 'ångra borttagning', 'håll']],
       sections: [
         { id: 'recent', label: 'Senast spelade', layout: 'shelf', shape: 'box',
-          items: recent.filter((g) => !pending.has(g.id)).map((g) => game(g, `${platformName(g.platform)} · ${when(g.lastPlayed)}`, favs)),
+          items: recent.filter((g) => !pending.has(g.id)).map((g) => game(g, `${platformName(g.platform)} · ${when(g.lastPlayed)}`)),
           empty: 'Inget spelat än. Välj en konsol till vänster.' },
       ],
     };
@@ -85,7 +82,7 @@ window.PioneerTV = window.PioneerTV || {};
   // over each (56 of them took 13 s on the box), and they are kept.
   const firsts = new Map();        // collection key -> its first games
   async function collectionsView() {
-    const collections = await R.collections();
+    const collections = (await R.collections()).filter((c) => !c.favorite);
     const key = (c) => `collection:${c.kind}:${c.id}`;
     setTimeout(() => fillCollections(collections.filter((c) => !firsts.has(key(c))), key), 0);
     return {
@@ -118,23 +115,20 @@ window.PioneerTV = window.PioneerTV || {};
   }
 
   async function view([what, a, b]) {
-    const favs = await R.favorites().catch(() => new Set());
-    inFavorites = false;
     if (what === 'platform') {
       const [{ games }, platforms] = await Promise.all([R.games({ platformId: Number(a) }), R.platforms()]);
       const p = platforms.find((x) => x.id === Number(a));
-      return gridOf(p ? (PLATFORM_SHORT[p.slug] || p.name) : 'Spel', games, true, favs);
+      return gridOf(p ? (PLATFORM_SHORT[p.slug] || p.name) : 'Spel', games, true);
     }
     if (what === 'collections') return collectionsView();
     if (what === 'collection') {
       const [{ games }, collections] = await Promise.all([R.games({ collection: { kind: a, id: b } }), R.collections()]);
       const c = collections.find((x) => x.kind === a && String(x.id) === String(b));
-      inFavorites = !!(c && c.favorite);
-      return gridOf(c ? c.name : 'Samling', games, true, favs, inFavorites);
+      return gridOf(c ? c.name : 'Samling', games, true);
     }
     if (what === 'search' && a) {
       const { games } = await R.games({ search: a });
-      return gridOf(`”${a}”`, games, false, favs);
+      return gridOf(`”${a}”`, games, false);
     }
     return start();
   }
@@ -154,31 +148,13 @@ window.PioneerTV = window.PioneerTV || {};
     ];
   }
 
-  // X on a game: favourite, or not. The heart changes at once; RomM is told
-  // after, and the heart goes back if it says no.
-  async function toggleFavorite(card) {
-    const id = Number(card.dataset.key.split(':')[1]);
-    const on = !card.classList.contains('card--fav');
-    M.cards.favorite(card, on);
-    M.hud.toast(on ? 'Favorit' : 'Inte längre favorit', 'heart');
-    try {
-      await R.setFavorite(id, on);
-    } catch (err) {
-      console.error('favourite', id, err);
-      M.cards.favorite(card, !on);
-      M.hud.toast('RomM svarar inte, prova igen', 'info');
-    }
-  }
-
   // ------------------------------------------------------------ remove + undo
-  // X takes a game off a list at once, one after the other; holding X (it
+  // X takes a game off Senast spelade at once, one after the other; holding X (it
   // arrives as Ctrl+Z) puts back the last one taken, then the one before.
-  // Off Senast spelade, RomM hears of it only after a minute, or when the
-  // page goes away, so putting it back never needs to touch RomM; off
-  // Favoriter, at once, and it is put back in the same way.
-  const pending = new Map();       // rom id -> timer, off Senast spelade
+  // RomM hears of it only after a minute, or when the page goes away, so
+  // putting it back never needs to touch RomM.
+  const pending = new Map();       // rom id -> timer
   const undos = [];                // what puts each back, the last taken last
-  let inFavorites = false;         // the view is RomM's Favourites
 
   function send(id, keepalive) {
     clearTimeout(pending.get(id));
@@ -209,25 +185,6 @@ window.PioneerTV = window.PioneerTV || {};
     M.hud.toast('Borttaget · håll X ångrar', 'gamepad');
   }
 
-  async function fromFavorites(card) {
-    const id = Number(card.dataset.key.split(':')[1]);
-    const grid = M.grid.active;
-    const out = grid.remove(card.dataset.key);
-    if (!out) return;
-    const back = () => { if (grid.alive()) grid.insert(out.item, out.at); };
-    const undo = () => { R.setFavorite(id, true).catch((e) => console.error('favourite', id, e)); back(); return true; };
-    undos.push(undo);
-    M.hud.toast('Inte längre favorit · håll X ångrar', 'heart');
-    try {
-      await R.setFavorite(id, false);
-    } catch (err) {
-      console.error('favourite', id, err);
-      undos.splice(undos.indexOf(undo), 1);
-      back();
-      M.hud.toast('RomM svarar inte, prova igen', 'info');
-    }
-  }
-
   function undo() {
     while (undos.length) {
       if (undos.pop()()) { M.hud.toast('Tillbaka', 'gamepad'); return; }
@@ -244,9 +201,8 @@ window.PioneerTV = window.PioneerTV || {};
     if (e.repeat) return true;
     const active = document.activeElement;
     const isGame = active && active.classList.contains('card') && /^game:/.test(active.dataset.key || '');
-    if (isGame && active.closest('#recent')) fromRecent(active);
-    else if (isGame && inFavorites && M.grid.active && M.grid.active.alive()) fromFavorites(active);
-    else if (isGame) toggleFavorite(active);
+    if (!isGame || !active.closest('#recent')) return false;
+    fromRecent(active);
     return true;
   }
 

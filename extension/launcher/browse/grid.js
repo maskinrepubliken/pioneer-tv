@@ -37,8 +37,7 @@ window.PioneerTV = window.PioneerTV || {};
   }
 
   // ctx: { setCount(text), savedKey }. Returns { focusFirst(), filter(words),
-  // focusIndex(i), remove(key), insert(item, at), alive() }; the grid on
-  // screen is also M.grid.active.
+  // focusIndex(i) }; the grid on screen is also M.grid.active.
   function render(view, spec, ctx) {
     const all = spec.items;
     const cols = spec.columns || 5;
@@ -163,28 +162,6 @@ window.PioneerTV = window.PioneerTV || {};
         setShown(matches());
       },
       focusIndex,
-      // Takes an item off (X on a list it can leave): the focus goes to the
-      // one now in its place. Returns { item, at } (where it was in the
-      // whole) for insert, or null.
-      remove(key) {
-        const i = shown.findIndex((it) => it.key === key);
-        if (i < 0) return null;
-        const item = shown[i];
-        const at = all.indexOf(item);
-        all.splice(at, 1);
-        setShown(matches());
-        if (shown.length) focusIndex(Math.min(i, shown.length - 1));
-        else M.nav.focus(document.getElementById('search-btn'));
-        return { item, at };
-      },
-      // Puts it back where it was, with the focus on it.
-      insert(item, at) {
-        all.splice(Math.min(at, all.length), 0, item);
-        setShown(matches());
-        const i = shown.indexOf(item);
-        if (i >= 0) focusIndex(i);
-      },
-      alive: () => gridEl.isConnected,
     };
     M.grid.active = api;
     return api;

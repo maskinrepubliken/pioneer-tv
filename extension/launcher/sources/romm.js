@@ -106,12 +106,6 @@ window.PioneerTV = window.PioneerTV || {};
     return { games: d.items.map(toGame), letters: d.char_index || {} };
   }
 
-  const form = (fields) => {
-    const f = new FormData();
-    for (const [k, v] of Object.entries(fields)) f.append(k, v);
-    return f;
-  };
-
   const props = (id, flag, keepalive) => request(`api/roms/${id}/props?${flag}=true`, {
     method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: '{}', keepalive: !!keepalive,
   });
@@ -138,38 +132,15 @@ window.PioneerTV = window.PioneerTV || {};
     // whole list, which for every collection is megabytes.
     async firstGames(collection, n = 3) { return (await list(`${listQuery({ collection })}&with_char_index=false`, n)).games; },
     search(term, opts) { return list(listQuery(opts) + `&search_term=${encodeURIComponent(term)}`); },
-    // favorite: RomM's Favourites (the one collection with is_favorite);
-    // romIds: an own collection's games, kept up to date as they change here.
+    // favorite: RomM's Favourites (the one collection with is_favorite),
+    // which the box does not list.
     collections: once(async () => {
       const [own, virtual] = await Promise.all([json('api/collections'), json('api/collections/virtual?type=all')]);
       const shape = (kind) => (c) => ({
-        kind, id: c.id, name: c.name, favorite: !!c.is_favorite, description: c.description || '',
-        romIds: c.rom_ids || [], count: c.rom_count ?? (c.rom_ids || []).length,
+        kind, id: c.id, name: c.name, favorite: !!c.is_favorite, count: c.rom_count ?? (c.rom_ids || []).length,
       });
       return [...own.map(shape('own')), ...virtual.map(shape('virtual'))];
     }),
-    // The games marked favourite: a Set of rom ids.
-    async favorites() {
-      const fav = (await this.collections()).find((c) => c.favorite);
-      return new Set(fav ? fav.romIds : []);
-    },
-    // Marks a game favourite or not, as RomM's own heart does: in or out of
-    // the Favourites collection, which is made the first time.
-    async setFavorite(id, on) {
-      const all = await this.collections();
-      let fav = all.find((c) => c.favorite);
-      if (!fav) {
-        if (!on) return;
-        const made = await json('api/collections?is_favorite=true&is_public=false', { method: 'POST', body: form({ name: 'Favourites', description: '' }) });
-        fav = { kind: 'own', id: made.id, name: made.name || 'Favourites', favorite: true, description: '', romIds: [], count: 0 };
-        all.unshift(fav);
-      }
-      const ids = fav.romIds.filter((x) => x !== id);
-      if (on) ids.push(id);
-      await request(`api/collections/${fav.id}`, { method: 'PUT', body: form({ name: fav.name, description: fav.description, rom_ids: JSON.stringify(ids) }) });
-      fav.romIds = ids;
-      fav.count = ids.length;
-    },
     async game(id) { return toGame(await json(`api/roms/${id}`)); },
     markPlayed(id) { return props(id, 'update_last_played'); },
     removeRecent(id, opts = {}) { return props(id, 'remove_last_played', opts.keepalive); },
