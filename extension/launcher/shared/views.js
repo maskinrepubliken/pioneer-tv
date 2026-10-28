@@ -103,11 +103,11 @@ window.PioneerTV = window.PioneerTV || {};
 
   // A view that has only a sentence to say says it on the whole screen, as
   // the game and the film do (shared/screen.js, a screen of its own so a
-  // film's does not take it): "Laddar…", or what is wrong and a hint, and
+  // film's does not take it, on paper as the page is): "Laddar…", or what is wrong and a hint, and
   // with retry, X tries again (browse/page.js asks key(e) first). clear()
   // gives the screen back to the view.
   let own = null;
-  const screen = () => own || (own = M.screen.in(document.body));
+  const screen = () => own || (own = M.screen.in(document.body, { paper: true }));
   let again = null;
   function message(view, text, hint, retry) {
     view.innerHTML = '';

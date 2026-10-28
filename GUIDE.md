@@ -123,9 +123,10 @@ on a field out of sight, and the words stay in the heading; over a grid they fil
 search the library. B takes a filter away first. What plays is a player's:
 `players/video.js` (mpv, through the daemon) and `players/audio.js` (in the
 page, with "Spelas nu"). `shared/` has the canvas, the buttons and the
-legend (`base.css`), the full-screen message (`screen.js`; a view that
-is loading or cannot reach its source says so on the whole screen through
-`views.js`, X tries again, B goes back) and the services' illustrations (`art.js`). The old
+legend (`base.css`), the full-screen message (`screen.js`; on ink where
+what comes next is dark, a game or a film starting or ending, Vilar; on
+paper, as the page is, where a view is loading or cannot reach its source,
+through `views.js`, X tries again, B goes back) and the services' illustrations (`art.js`). The old
 addresses `spel.html`, `musik.html` and `film.html` go on to the browse
 page.
 

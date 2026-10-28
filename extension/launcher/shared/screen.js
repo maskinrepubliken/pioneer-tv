@@ -1,19 +1,21 @@
 // Pioneer TV full-screen message: the screen given over to one sentence, a
-// line under it, on paper as the pages are. Everything that has one shows it so: the game on
+// line under it, on ink. Everything that has one shows it so: the game on
 // its way (game/game.js: "Laddar…", "Startar…", what went wrong), the film
 // (players/video.js: "Startar…", "Slut", what went wrong) and the
-// screensaver resting (overlay/saver.js: "Vilar"). Styled by screen.css.
+// screensaver resting (overlay/saver.js: "Vilar"), on ink, as what comes
+// next is dark; and on paper, as the pages are, the browse page's view that
+// is loading or cannot reach its source (views.js). Styled by screen.css.
 //
 //   M.screen.show('Startar…', 'Fyren')   the sentence and the line under it
 //   M.screen.hide()
-//   M.screen.in(parent)                  another one, drawn in parent
+//   M.screen.in(parent, { paper })       another one, drawn in parent (paper: on paper)
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
-  function make(parent) {
+  function make(parent, { paper } = {}) {
     let root = null, text = null, hint = null;
     function build() {
       root = document.createElement('section');
-      root.className = 'pioneertv-screen';
+      root.className = `pioneertv-screen${paper ? ' pioneertv-screen--paper' : ''}`;
       root.setAttribute('aria-live', 'polite');
       root.hidden = true;
       text = document.createElement('p');
