@@ -118,10 +118,11 @@ class IdleTests(unittest.IsolatedAsyncioTestCase):
         self.alone(30)
         await self.idle.check()
         self.assertEqual((self.named("home"), self.shown(), self.offs), ([], [], []))
-        # It ended: the count starts from then.
+        # It ended: the count to home starts from then; with no pad, the
+        # screensaver comes at once.
         self.busy = False
         await self.idle.check()
-        self.assertEqual(self.shown(), [])
+        self.assertEqual((self.named("home"), self.shown()), ([], [True]))
 
     async def test_never_while_a_page_plays(self):
         self.idle.page({"playing": True})
