@@ -130,6 +130,9 @@ DEFAULTS: dict[str, Any] = {
     # {"<serial>": {"name": ..., "pointer": "#rrggbb", "accent": "#rrggbb",
     # "highlight": "#rrggbb"}}: pointer fill, focus ring, and what is ochre.
     "pads": {},
+    # RomM's covers and Jellyfin's pictures kept on the box's disk
+    # (imagecache.py): up to cache_mb, the ones unused longest let go; 0: none.
+    "images": {"dir": "/var/lib/pioneer-tv/images", "cache_mb": 4000},
     "bluetooth": {"auto_connect": True, "reconnect_interval": 300},
     "services": [],
 }

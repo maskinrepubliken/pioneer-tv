@@ -14,6 +14,7 @@ what was learned on the way.
 - [Games](#games)
 - [Music](#music)
 - [Film and series](#film-and-series)
+- [Covers on the box](#covers-on-the-box)
 - [Updating the box](#updating-the-box)
 - [Logs and CEC debugging](#logs-and-cec-debugging)
 - [Working on the home screen without a Pi](#working-on-the-home-screen-without-a-pi)
@@ -425,6 +426,19 @@ Jellyfin itself.
 Measured on the box in October: a 1080p HEVC episode decoded in hardware
 (`hevc-drm`), no dropped frames, mpv at about 18 % CPU, a cache about 40
 seconds ahead.
+
+## Covers on the box
+
+The daemon keeps RomM's covers and Jellyfin's posters, stills and album
+art on the box's own disk (`daemon/pioneertv/imagecache.py`, in
+`/var/lib/pioneer-tv/images`): the first time a picture is shown it comes
+through the `/romm/` or `/jellyfin/` proxy from the server and is written
+there, and after that it comes from the disk without asking the server.
+Both servers put a version in a picture's address (RomM `?ts=`, Jellyfin
+`&tag=`), so a changed picture is fetched anew. They are kept up to
+`images.cache_mb` (4000 MB); past it the ones unused longest go. The
+System page in settings shows how many and how much, with a button to
+empty it.
 
 ## Updating the box
 

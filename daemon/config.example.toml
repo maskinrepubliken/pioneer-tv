@@ -16,6 +16,10 @@ wake_on_input = true           # any pad button while the TV is off turns it on 
 home_on_standby = true         # the TV going to standby sends the box back to the launcher
 monitor = true                 # follow TV standby and TV remote keys
 
+[images]                      # RomM's covers and Jellyfin's pictures kept on the disk
+dir      = "/var/lib/pioneer-tv/images"
+cache_mb = 4000               # the ones unused longest go past this; 0: keep none
+
 [bluetooth]
 # Dial paired, trusted pads that are not connected: every 20 s for the first
 # minutes after boot (a pad that was on during the reboot is still trying

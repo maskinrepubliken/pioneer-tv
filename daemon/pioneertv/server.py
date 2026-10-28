@@ -18,7 +18,7 @@ from urllib.parse import urlparse
 import aiohttp
 from aiohttp import WSMsgType, web
 
-from . import jellyfin, romm, settings, sysinfo, updater, wifitest
+from . import imagecache, jellyfin, romm, settings, sysinfo, updater, wifitest
 from .overlay import Router
 
 log = logging.getLogger("pioneertv.server")
@@ -40,6 +40,10 @@ class Server:
         self._tasks: set[asyncio.Task] = set()
         self.proxy_session: aiohttp.ClientSession | None = None
         self._jellyfin_user: tuple[tuple, dict] | None = None   # (url, key, wanted) -> user
+        icfg = cfg.get("images") or {}
+        self.images = (imagecache.ImageCache(Path(icfg.get("dir", "/var/lib/pioneer-tv/images")),
+                                             int(icfg["cache_mb"]) * 1024 * 1024)
+                       if icfg.get("cache_mb") else None)
         self.app = web.Application(middlewares=[self.auth_middleware])
         self.app.router.add_get("/ws", self.ws_handler)
         self.app.router.add_get("/", self.index)
@@ -76,6 +80,8 @@ class Server:
             ("GET", "/api/video", self.api_video_status),
             ("POST", "/api/video/{action}", self.api_video_action),
             ("GET", "/api/jellyfin", self.api_jellyfin),
+            ("GET", "/api/images", self.api_images),
+            ("POST", "/api/images/clear", self.api_images_clear),
         ]
         for method, path, handler in api:
             self.app.router.add_route(method, path, handler)
@@ -213,8 +219,10 @@ class Server:
             return web.json_response({"error": "not_found"}, status=404)
         if not cfg.get("api_key"):
             return web.json_response({"error": "no_key"}, status=503)
-        return await self._forward(request, target, romm.request_headers(request.headers, cfg["api_key"]),
-                                   romm.RESPONSE_HEADERS, "romm")
+        headers = romm.request_headers(request.headers, cfg["api_key"])
+        if self.images and imagecache.wanted("romm", request.method, request.match_info["path"], request.headers):
+            return await self._picture(request, target, headers, romm.RESPONSE_HEADERS, "romm")
+        return await self._forward(request, target, headers, romm.RESPONSE_HEADERS, "romm")
 
     async def jellyfin_proxy(self, request: web.Request) -> web.StreamResponse:
         # As RomM's: only the box's own pages (the Musik pages) get the key.
@@ -229,8 +237,10 @@ class Server:
             return web.json_response({"error": "not_found"}, status=404)
         if not cfg.get("api_key"):
             return web.json_response({"error": "no_key"}, status=503)
-        return await self._forward(request, target, jellyfin.request_headers(request.headers, cfg["api_key"]),
-                                   jellyfin.RESPONSE_HEADERS, "jellyfin")
+        headers = jellyfin.request_headers(request.headers, cfg["api_key"])
+        if self.images and imagecache.wanted("jellyfin", request.method, request.match_info["path"], request.headers):
+            return await self._picture(request, target, headers, jellyfin.RESPONSE_HEADERS, "jellyfin")
+        return await self._forward(request, target, headers, jellyfin.RESPONSE_HEADERS, "jellyfin")
 
     def _session(self) -> aiohttp.ClientSession:
         if self.proxy_session is None:
@@ -260,6 +270,45 @@ class Server:
         except aiohttp.ClientError as exc:
             log.warning("%s: %s %s failed: %s", name, request.method, target, exc)
             return web.json_response({"error": "unreachable"}, status=502)
+
+    async def _picture(self, request: web.Request, target: str, headers: dict, keep: frozenset,
+                       name: str) -> web.StreamResponse:
+        """A cover or a poster: from the box's disk when it is there, else from
+        the server, kept on the way (imagecache.py). Its address carries its
+        version, so the browser may keep it a long while too."""
+        k = imagecache.key(name, request.match_info["path"], request.query_string)
+        cache_control = "max-age=2592000"
+        if hit := self.images.get(k):
+            path, kind = hit
+            return web.FileResponse(path, headers={"Content-Type": kind, "Cache-Control": cache_control})
+        try:
+            async with self._session().get(target, headers={**headers, "Accept-Encoding": "identity"},
+                                           allow_redirects=False,
+                                           timeout=aiohttp.ClientTimeout(total=60, sock_connect=5)) as upstream:
+                kind = upstream.headers.get("Content-Type", "").split(";")[0].strip().lower()
+                small = upstream.content_length is None or upstream.content_length <= imagecache.MAX_ONE
+                if upstream.status == 200 and kind in imagecache.TYPES and small:
+                    body = await upstream.read()
+                    await asyncio.to_thread(self.images.put, k, body, kind)
+                    return web.Response(body=body, headers={"Content-Type": kind, "Cache-Control": cache_control})
+                # Not one to keep (an error, something else): as it came.
+                body = await upstream.read()
+                return web.Response(status=upstream.status, body=body,
+                                    headers={h: v for h, v in upstream.headers.items() if h.lower() in keep})
+        except (aiohttp.ClientError, asyncio.TimeoutError) as exc:
+            log.warning("%s: picture %s failed: %s", name, target, exc)
+            return web.json_response({"error": "unreachable"}, status=502)
+
+    async def api_images(self, _request: web.Request) -> web.Response:
+        """The pictures kept on the disk: {enabled, files, bytes, max_bytes}."""
+        if not self.images:
+            return web.json_response({"enabled": False})
+        return web.json_response({"enabled": True, **await asyncio.to_thread(self.images.stats)})
+
+    async def api_images_clear(self, _request: web.Request) -> web.Response:
+        if self.images:
+            await asyncio.to_thread(self.images.clear)
+        return web.json_response({"ok": True})
 
     async def _close_proxy_session(self, _app: web.Application) -> None:
         if self.proxy_session is not None:

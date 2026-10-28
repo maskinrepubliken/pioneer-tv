@@ -82,6 +82,7 @@
     if (path === '/api/cec/topology') return wait('Driver Info:\n\tDriver Name                : vc4_hdmi\n\tPhysical Address           : 1.0.0.0\n\tLogical Address            : 4 (Playback Device 1)\n\nTopology:\n\tSystem Information for device 0 (TV):\n\t\tVendor ID: 0x00e091 (LG)\n\t\tPower Status: On');
     if (path === '/api/cec/trace') return wait('09:20:01 >> cec-ctl --to 0 --user-control-pressed ui-cmd=volume-up\n09:20:01 >> cec-ctl --to 0 --user-control-released\n09:20:07 << Received from TV to Playback Device 1 (0 to 4): USER_CONTROL_PRESSED (0x44):\n09:20:07 <<     ui-cmd: up (0x01)\n09:20:07 << Received from TV to Playback Device 1 (0 to 4): USER_CONTROL_RELEASED (0x45)');
     if (path === '/api/cec/raw') return wait({ ok: true, output: 'Transmit from Playback Device 1 to TV (4 to 0):\n\tGIVE_DEVICE_POWER_STATUS (0x8f)\n    Received from TV (0):\n\tREPORT_POWER_STATUS (0x90):\n\t\tpwr-state: on (0x00)' }, 400);
+    if (path === '/api/images') return wait({ enabled: true, files: 2814, bytes: 412e6, max_bytes: 4000 * 1024 * 1024 });
     if (path.startsWith('/api/logs')) return wait('2026-09-10T07:00:01 pioneertv INFO pioneertv 0.1.0\n2026-09-10T07:00:02 pioneertv.cec INFO CEC registered as playback device\n');
     return wait({ ok: true, message: 'mock' });
   }
@@ -396,9 +397,28 @@
         drawUpdate(lastInfo, { running: true, log: 'Startar…' });
       };
 
+      // ---- the covers and posters kept on the disk (imagecache.py)
+      const pics = h('div', { class: 'card pioneertv-card pics' }, h('h3', {}, 'Omslag på disken'), h('p', { class: 'muted spin' }, 'Räknar…'));
+      const drawPics = async () => {
+        let st;
+        try { st = await api('GET', '/api/images'); } catch (e) { pics.replaceChildren(h('h3', {}, 'Omslag på disken'), h('p', { class: 'muted' }, e.message)); return; }
+        const mb = (b) => `${Math.round(b / 1048576).toLocaleString('sv-SE')} MB`;
+        pics.replaceChildren(
+          h('h3', {}, 'Omslag på disken'),
+          st.enabled
+            ? h('p', {}, `${st.files.toLocaleString('sv-SE')} bilder, ${mb(st.bytes)} av högst ${mb(st.max_bytes)}.`)
+            : h('p', { class: 'muted' }, 'Av (images.cache_mb är 0).'),
+          h('p', { class: 'muted' }, 'Omslag från RomM och bilder från Jellyfin sparas här första gången de visas och hämtas sedan från disken. De som inte använts på längst tid får gå när det blir fullt.'),
+          st.enabled ? h('div', { class: 'actions' }, confirmBtn('Töm', 'small', async () => {
+            try { await api('POST', '/api/images/clear'); toast('Tömt'); } catch (e) { toast(`Misslyckades: ${e.message}`); }
+            drawPics();
+          })) : '');
+      };
+
       show(
         h('h1', {}, 'System'),
         upd,
+        pics,
         h('h2', {}, 'Åtgärder'),
         h('div', { class: 'actions' },
           h('button', { onclick: () => sysAction('restart_ui') }, 'Starta om Chromium'),
@@ -408,6 +428,7 @@
         h('p', { class: 'muted' }, 'Loggarna finns under ', h('a', { href: '#logs' }, 'Loggar'), '.'),
       );
       refreshUpdate(false);
+      drawPics();
     },
   };
 
