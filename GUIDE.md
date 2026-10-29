@@ -201,8 +201,10 @@ way. The quick menu shows Wi-Fi, Tailscale (and whether the Jellyfin peer is
 online), connected gamepads with battery, and temperature at its foot.
 Its toasts are the overlay's, like every other (`POST /api/toast`).
 
-The page has: status (network, Tailscale, CEC, gamepads, thermals and power
-throttling), Wi-Fi networks with connect and forget plus saving a network that
+The page has no status tab: each part's status stands at the top of its
+own tab (the network on Wi-Fi, CEC and sound on TV, Tailscale on
+Fjärråtkomst, thermals, power throttling and memory on System, the pads in
+Bluetooth's list). It has Wi-Fi networks with connect and forget plus saving a network that
 is not in range yet, Bluetooth scan and pairing
 for any number of gamepads, the services shown on the launcher, controller
 tuning, TV behaviour, and system actions (restart Chromium, reboot, update from
@@ -914,9 +916,9 @@ over CEC; Chromium itself stays at 100 %. To check from a shell as `pi`:
 
 ## The settings page's tabs
 
-Status, Bluetooth (the devices, pairing, and whether paired pads are
-called up by themselves; it was Handkontroller, and `#gamepads` still
-leads there), Wi-Fi, Tjänster (where RomM and Jellyfin are and their API
+Bluetooth, the first (the devices, pairing, and whether paired pads are
+called up by themselves; it was Handkontroller, and `#gamepads` and the
+old `#status` lead there), Wi-Fi, Tjänster (where RomM and Jellyfin are and their API
 keys, as passwords: an empty field keeps the key set before; the home
 page's tiles are the settings file's, `/etc/pioneer-tv/settings.json`,
 and no longer edited here), TV (with the screensaver's choice and its

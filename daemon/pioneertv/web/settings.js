@@ -123,48 +123,47 @@
     ['tailscaled', 'Tailscale'], ['cec', 'CEC'],
   ];
 
-  const views = {
-    async status(show) {
-      const s = await api('GET', '/api/status');
-      const w = s.wifi, t = s.tailscale, sys = s.system;
-      const eth = (s.interfaces || []).find((i) => i.name.startsWith('e'));
-      const wifiState = w.state === 'connected' ? 'ok' : w.available ? 'warn' : 'bad';
-      const tsState = t.state === 'running' ? 'ok' : t.installed ? 'warn' : 'bad';
-      show(
-        h('h1', {}, 'Status'),
-        h('div', { class: 'cards' },
-          h('div', { class: 'card pioneertv-card' }, h('h3', {}, 'Nätverk'),
-            h('div', { class: 'big' }, dot(wifiState), w.state === 'connected' ? `${w.ssid} ` : w.available ? 'Wi-Fi ej ansluten' : 'Ingen Wi-Fi', w.signal != null ? h('span', { class: 'bars muted' }, ` ${bars(w.signal)} ${w.signal}%`) : ''),
-            kv([['Ethernet', eth && eth.addresses.length ? `${eth.addresses.join(', ')}` : 'ej ansluten'], ['Wi-Fi IP', ((s.interfaces || []).find((i) => i.name.startsWith('w')) || { addresses: [] }).addresses.join(', ') || '–']])),
-          h('div', { class: 'card pioneertv-card' }, h('h3', {}, 'Tailscale'),
-            h('div', { class: 'big' }, dot(tsState), t.state === 'running' ? 'Ansluten' : t.installed ? `Tailscale ${t.state}` : 'Ej installerat'),
-            kv([['IP', (t.ips || []).join(', ') || '–'], ['Namn', t.dns_name || '–'], [t.server_name || 'Server', t.server_online == null ? 'okänd (ingen peer med den adressen)' : t.server_online ? h('span', {}, dot('ok'), 'online') : h('span', {}, dot('bad'), 'offline')], ['Peers', `${(t.peers || []).filter((p) => p.online).length} av ${(t.peers || []).length} online`]]),
-            t.installed && t.state !== 'running' ? h('div', { class: 'actions' }, h('button', { class: 'small', onclick: () => sysAction('tailscale_up') }, 'Starta Tailscale')) : ''),
-          h('div', { class: 'card pioneertv-card' }, h('h3', {}, 'TV (HDMI-CEC)'),
-            h('div', { class: 'big' }, dot(s.cec.enabled ? (s.cec.tv_power === 'on' ? 'ok' : 'warn') : 'bad'), s.cec.enabled ? (s.cec.tv_power === 'on' ? 'TV på' : s.cec.tv_power ? `TV ${s.cec.tv_power}` : 'TV okänd') : 'CEC av'),
-            kv([['Fysisk adress', s.cec.phys_addr || '–']]),
-            h('div', { class: 'actions' },
-              h('button', { class: 'small', onclick: () => cec('tv_on') }, 'TV på'),
-              h('button', { class: 'small', onclick: () => cec('tv_off') }, 'TV av'),
-              h('button', { class: 'small', onclick: () => cec('volume_up') }, 'Vol +'),
-              h('button', { class: 'small', onclick: () => cec('volume_down') }, 'Vol −'))),
-          h('div', { class: 'card pioneertv-card' }, h('h3', {}, 'Handkontroller'),
-            s.gamepads.length ? h('div', { class: 'list' }, s.gamepads.map((g) => h('div', { class: 'item pioneertv-card-flat' }, icon('gamepad'), h('div', { class: 'grow' }, h('div', { class: 'name' }, g.name), h('div', { class: 'sub' }, g.battery != null ? `Batteri ${g.battery}%` : ''))))) : h('p', { class: 'muted' }, 'Ingen ansluten'),
-            s.keyboard_present ? h('p', { class: 'muted' }, icon('keyboard'), ' Fysiskt tangentbord anslutet') : ''),
-          h('div', { class: 'card pioneertv-card' }, h('h3', {}, 'System'),
-            h('div', { class: 'big' }, dot(sys.throttled_now ? 'bad' : sys.throttled_ever ? 'warn' : 'ok'), sys.temp_c != null ? `${sys.temp_c} °C` : sys.hostname),
-            kv([['Ström', sys.throttled == null ? 'okänd' : sys.throttled_now ? 'underspänning / strypt nu' : sys.throttled_ever ? 'har strypts sedan start' : 'ok'],
-              ['Minne', sys.mem_total_mb ? `${sys.mem_available_mb} MB ledigt av ${sys.mem_total_mb}` : '–'],
-              ['Last', sys.load1 != null ? sys.load1.toFixed(2) : '–'], ['Upptid', fmtUptime(sys.uptime_s)],
-              ['Disk', sys.disk && sys.disk.total_mb ? `${Math.round(sys.disk.free_mb / 1024)} GB ledigt` : '–'],
-              ['Ljud', !s.audio || !s.audio.available ? 'ingen ljudserver' : s.audio.sink ? `${s.audio.sink.name} · ${Math.round(s.audio.sink.volume * 100)} %` : 'ingen utgång vald'],
-              ['Visar', s.page || '–']])),
-        ),
-      );
-    },
+  // ---------------------------------------------------------------- status
+  // How each part is, shown at the top of its own tab (there is no Status
+  // tab): the network on Wi-Fi, Tailscale on Fjärråtkomst, the TV on TV,
+  // the Pi on System.
+  const status = () => api('GET', '/api/status');
+  const cards = (...c) => h('div', { class: 'cards' }, ...c);
+  function netCard(s) {
+    const w = s.wifi;
+    const eth = (s.interfaces || []).find((i) => i.name.startsWith('e'));
+    const wlan = (s.interfaces || []).find((i) => i.name.startsWith('w')) || { addresses: [] };
+    return h('div', { class: 'card pioneertv-card' }, h('h3', {}, 'Nätverk'),
+      h('div', { class: 'big' }, dot(w.state === 'connected' ? 'ok' : w.available ? 'warn' : 'bad'), w.state === 'connected' ? `${w.ssid} ` : w.available ? 'Wi-Fi ej ansluten' : 'Ingen Wi-Fi', w.signal != null ? h('span', { class: 'bars muted' }, ` ${bars(w.signal)} ${w.signal}%`) : ''),
+      kv([['Ethernet', eth && eth.addresses.length ? eth.addresses.join(', ') : 'ej ansluten'], ['Wi-Fi IP', wlan.addresses.join(', ') || '–']]));
+  }
+  function tailscaleCard(s) {
+    const t = s.tailscale;
+    return h('div', { class: 'card pioneertv-card' }, h('h3', {}, 'Tailscale'),
+      h('div', { class: 'big' }, dot(t.state === 'running' ? 'ok' : t.installed ? 'warn' : 'bad'), t.state === 'running' ? 'Ansluten' : t.installed ? `Tailscale ${t.state}` : 'Ej installerat'),
+      kv([['IP', (t.ips || []).join(', ') || '–'], ['Namn', t.dns_name || '–'], [t.server_name || 'Server', t.server_online == null ? 'okänd (ingen peer med den adressen)' : t.server_online ? h('span', {}, dot('ok'), 'online') : h('span', {}, dot('bad'), 'offline')], ['Peers', `${(t.peers || []).filter((p) => p.online).length} av ${(t.peers || []).length} online`]]),
+      t.installed && t.state !== 'running' ? h('div', { class: 'actions' }, h('button', { class: 'small', onclick: () => sysAction('tailscale_up') }, 'Starta Tailscale')) : '');
+  }
+  function cecCard(s) {
+    return h('div', { class: 'card pioneertv-card' }, h('h3', {}, 'TV (HDMI-CEC)'),
+      h('div', { class: 'big' }, dot(s.cec.enabled ? (s.cec.tv_power === 'on' ? 'ok' : 'warn') : 'bad'), s.cec.enabled ? (s.cec.tv_power === 'on' ? 'TV på' : s.cec.tv_power ? `TV ${s.cec.tv_power}` : 'TV okänd') : 'CEC av'),
+      kv([['Fysisk adress', s.cec.phys_addr || '–'], ['Ljud', !s.audio || !s.audio.available ? 'ingen ljudserver' : s.audio.sink ? `${s.audio.sink.name} · ${Math.round(s.audio.sink.volume * 100)} %` : 'ingen utgång vald']]));
+  }
+  function systemCard(s) {
+    const sys = s.system;
+    return h('div', { class: 'card pioneertv-card' }, h('h3', {}, 'Pi:n'),
+      h('div', { class: 'big' }, dot(sys.throttled_now ? 'bad' : sys.throttled_ever ? 'warn' : 'ok'), sys.temp_c != null ? `${sys.temp_c} °C` : sys.hostname),
+      kv([['Ström', sys.throttled == null ? 'okänd' : sys.throttled_now ? 'underspänning / strypt nu' : sys.throttled_ever ? 'har strypts sedan start' : 'ok'],
+        ['Minne', sys.mem_total_mb ? `${sys.mem_available_mb} MB ledigt av ${sys.mem_total_mb}` : '–'],
+        ['Last', sys.load1 != null ? sys.load1.toFixed(2) : '–'], ['Upptid', fmtUptime(sys.uptime_s)],
+        ['Disk', sys.disk && sys.disk.total_mb ? `${Math.round(sys.disk.free_mb / 1024)} GB ledigt` : '–'],
+        ['Visar', s.page || '–']]));
+  }
 
+  const views = {
     async wifi(show) {
-      show(h('h1', {}, 'Wi-Fi'), h('p', { class: 'muted spin' }, 'Söker nätverk…'));
+      const st = await status();
+      show(h('h1', {}, 'Wi-Fi'), cards(netCard(st)), h('p', { class: 'muted spin' }, 'Söker nätverk…'));
       const nets = await api('GET', '/api/wifi/networks?rescan=1');
       const list = h('div', { class: 'list' });
       for (const n of nets) {
@@ -206,7 +205,7 @@
       const addForm = h('div', {}, h('h2', {}, 'Spara ett nätverk som inte är i närheten'),
         h('p', { class: 'muted' }, 'Boxen ansluter när nätverket dyker upp, till exempel hemma efter att den satts upp någon annanstans.'),
         h('div', { class: 'inline-form' }, addSsid, addPw, h('span', { class: 'hint' }, 'Dolt'), addHidden, addBtn));
-      show(h('h1', {}, 'Wi-Fi'), h('div', { class: 'actions' }, h('button', { onclick: () => views.wifi() }, 'Sök igen')), list.childElementCount ? list : h('p', { class: 'muted' }, 'Inga nätverk hittades (Ethernet är ändå att föredra för strömning).'), addForm);
+      show(h('h1', {}, 'Wi-Fi'), cards(netCard(st)), h('div', { class: 'actions' }, h('button', { onclick: () => views.wifi() }, 'Sök igen')), list.childElementCount ? list : h('p', { class: 'muted' }, 'Inga nätverk hittades (Ethernet är ändå att föredra för strömning).'), addForm);
     },
 
     // Bluetooth: the devices (pads first among them), pairing, and whether
@@ -308,19 +307,20 @@
         h('p', { class: 'muted' }, '>> skickat av daemonen, << mottaget från bussen. Uppdateras varannan sekund.'),
         trace,
       );
-      await schemaView(show, 'tv', 'TV', debug);
+      await schemaView(show, 'tv', 'TV', debug, cards(cecCard(await status())));
       loadTopo();
       loadTrace();
     },
     async remote(show) {
-      const s = await api('GET', '/api/status');
+      const s = await status();
       const t = s.tailscale;
       const url = t.dns_name ? `https://${t.dns_name}/` : (t.ips || [])[0] ? `http://${t.ips[0]}:8765/` : null;
       return schemaView(show, 'remote', 'Fjärråtkomst', h('div', {},
         h('h2', {}, 'Via Tailscale'),
         h('p', {}, 'Enklast: kör på Pi:n ', h('code', {}, 'sudo tailscale serve --bg 8765'), '. Då nås den här sidan från alla dina Tailscale-enheter på ', url ? h('a', { href: url }, url) : 'Pi:ns Tailscale-adress', ' utan öppna portar. Åtkomstnyckeln behövs bara om du binder daemonen till 0.0.0.0 i config.toml.'),
         h('h2', {}, 'Tangentbord'),
-        h('p', { class: 'muted' }, 'Ett USB-tangentbord fungerar direkt; när ett är anslutet öppnas inte skärmtangentbordet automatiskt.')));
+        h('p', { class: 'muted' }, s.keyboard_present ? 'Ett tangentbord är anslutet, så skärmtangentbordet öppnas inte automatiskt.' : 'Ett USB-tangentbord fungerar direkt; när ett är anslutet öppnas inte skärmtangentbordet automatiskt.')),
+        cards(tailscaleCard(s)));
     },
 
     // The journal of each of the box's parts, and the CEC bus as the daemon
@@ -427,8 +427,10 @@
           })) : '');
       };
 
+      const st = await status();
       show(
         h('h1', {}, 'System'),
+        cards(systemCard(st)),
         upd,
         pics,
         h('h2', {}, 'Åtgärder'),
@@ -479,10 +481,11 @@
       placeholder: f.secret ? (f.is_set ? '•••••••• (satt)' : 'inte satt') : '', oninput: (e) => { values[f.path] = e.target.value; } });
   }
 
-  async function schemaView(show, id, title, extra) {
+  // lead: what stands before the form (the part's status).
+  async function schemaView(show, id, title, extra, lead) {
     const s = await api('GET', '/api/settings');
     const { form, save } = fieldsForm(s, [id]);
-    show(h('h1', {}, title), form, save, extra || '');
+    show(h('h1', {}, title), lead || '', form, save, extra || '');
   }
 
   async function cec(command) { try { await api('POST', '/api/cec', { command }); toast(`CEC: ${command}`); } catch (e) { toast(`CEC misslyckades: ${e.message}`); } }
@@ -490,8 +493,8 @@
 
   // ---------------------------------------------------------------- routing
   function route() {
-    let view = (location.hash || '#status').slice(1);
-    if (view === 'gamepads') view = 'bluetooth';            // the old tab's address
+    let view = (location.hash || '#bluetooth').slice(1);
+    if (view === 'gamepads' || view === 'status') view = 'bluetooth';   // old tabs' addresses
     for (const a of document.querySelectorAll('#nav a')) a.classList.toggle('active', a.dataset.view === view);
     // Each route renders into its own element, so a slow view from an earlier
     // route can never overwrite the current one.
@@ -499,7 +502,7 @@
     const el = h('div');
     mainHost.replaceChildren(el);
     const show = (...children) => { if (gen === generation) el.replaceChildren(...children); };
-    (views[view] || views.status)(show).catch((e) => { show(h('h1', {}, 'Fel'), h('p', {}, e.message)); });
+    (views[view] || views.bluetooth)(show).catch((e) => { show(h('h1', {}, 'Fel'), h('p', {}, e.message)); });
   }
   window.addEventListener('hashchange', route);
   // X (the pad's, as Space) presses the view's filled button wherever the

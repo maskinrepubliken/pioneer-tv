@@ -38,7 +38,7 @@ h2 { margin: 32px 0 12px; font: italic 400 28px/1.2 var(--pioneertv-font-prose);
 .main > p:first-of-type { margin-top: 14px; }
 
 /* ---- cards: a single column, each card one stop for the d-pad ---- */
-.cards { display: grid; grid-template-columns: 1fr; gap: 18px; margin-top: 18px; }
+.cards { display: grid; grid-template-columns: 1fr; gap: 18px; margin: 18px 0; }
 .card { padding: 18px 24px 16px; border-radius: var(--pioneertv-radius-l); }
 .card h3 {
   margin: 0 0 10px; font: 13px/1.4 var(--pioneertv-font-mono); letter-spacing: 0.1em;
@@ -127,6 +127,7 @@ pre.log {
   padding: 14px 16px; font: 14px/1.6 var(--pioneertv-font-mono); max-height: 50vh; overflow: auto; white-space: pre-wrap; margin-top: 12px;
 }
 .inline-form { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+.inline-form[hidden] { display: none; }
 .spin::before { content: "· "; }
 @media (max-width: 800px) {
   body { font-size: 17px; }
