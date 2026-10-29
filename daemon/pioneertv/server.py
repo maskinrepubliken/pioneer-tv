@@ -171,6 +171,13 @@ class Server:
                     if data.get("client") == "overlay":
                         self.router.connected(ws)
                         await self.broadcast(self.config_message())
+                        # The screensaver up before the overlay was there (the
+                        # daemon and the overlay starting together): it is told now.
+                        idle = self.hooks.get("idle")
+                        if idle and idle.showing:
+                            await self.broadcast({"type": "event", "name": "saver", "show": True})
+                            if idle.resting:
+                                await self.broadcast({"type": "event", "name": "rest", "on": True})
                 elif t in ("overlay_menu", "relay", "toast", "webvideo"):
                     for event in self.router.handle(data):
                         await self.broadcast(event)
