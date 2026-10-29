@@ -614,6 +614,15 @@ Open Font License: IBM Plex Sans for everything you press or fill in, Fraunces
 for what you read and for card titles, IBM Plex Mono for every number and
 machine word, and Rubik Black for a page heading.
 
+The legends at the foot of a page, the home page's and the on-screen
+keyboard's draw the pad's buttons as they are on the pad (`icons.js` key,
+`.pioneertv-kbd` in `paper.css`): A, B, X and Y round, L1 and R1 as
+bumpers, the d-pad as a cross with the arms meant in ink, Hem as the pad's
+round home button. They wear the colours of the pad last pressed (its
+tint and its accent from the settings' pads, `hud.js` applyPad, which
+also colours the pointer, the focus ring and the highlight), and the
+design system's until a pad is used.
+
 `dev/tokens-css.py` turns the system's `tokens.json` into
 `extension/content/tokens.css`, where every token is prefixed `--pioneertv-`
 because the same styles run inside every website the box opens.

@@ -80,11 +80,7 @@ window.PioneerTV = window.PioneerTV || {};
     const foot = el('footer', 'tiles-legend');
     for (const [keys, text] of items) {
       const s = el('span');
-      for (const k of keys) {
-        if (k === 'arrows') {
-          for (const a of ['arrowLeft', 'arrowRight', 'arrowUp', 'arrowDown']) { const i = el('i'); i.innerHTML = M.icons.html(a); s.appendChild(i); }
-        } else s.appendChild(el('kbd', 'pioneertv-kbd', k));
-      }
+      for (const k of keys) s.appendChild(M.icons.key(k));     // as on the pad (icons.js)
       s.append(` ${text}`);
       foot.appendChild(s);
     }

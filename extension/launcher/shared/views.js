@@ -30,7 +30,7 @@ window.PioneerTV = window.PioneerTV || {};
     for (const [key, text, how] of items) {
       s = s || el('span');
       if (how) s.append(`${how} `);
-      if (key) s.appendChild(el('kbd', 'pioneertv-kbd', key));
+      if (key) s.appendChild(M.icons.key(key));
       if (!text && key) continue;
       s.append(text);
       target.appendChild(s);

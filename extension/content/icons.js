@@ -69,5 +69,34 @@ window.PioneerTV = window.PioneerTV || {};
     return tpl.content.firstElementChild;
   }
 
-  P.icons = { html, svg, names: Object.keys(PATHS) };
+  // A button of the pad, drawn as it is on the pad (paper.css
+  // .pioneertv-kbd): A, B, X and Y round, L1 and R1 as bumpers, the d-pad
+  // a cross with the arms meant in ink ('◀ ▶', '▲ ▼'; 'arrows', all of it,
+  // none marked), Hem the pad's own round home button. In the colours of the pad
+  // last used (hud.js applyPad), else the design system's.
+  const ARMS = { left: 'M3 9.5h6.5v5H3z', right: 'M14.5 9.5H21v5h-6.5z', up: 'M9.5 3h5v6.5h-5z', down: 'M9.5 14.5h5V21h-5z' };
+  const DPAD = { '◀ ▶': ['left', 'right'], '▲ ▼': ['up', 'down'], '◀': ['left'], '▶': ['right'], '▲': ['up'], '▼': ['down'], arrows: [] };
+  function key(name) {
+    const k = document.createElement('kbd');
+    k.className = 'pioneertv-kbd';
+    if (/^[ABXY]$/.test(name)) {
+      k.classList.add('pioneertv-kbd--face');
+      k.textContent = name;
+    } else if (/^[LR][12]$/.test(name)) {
+      k.classList.add('pioneertv-kbd--shoulder', `pioneertv-kbd--${name[0] === 'L' ? 'left' : 'right'}`);
+      k.textContent = name;
+    } else if (DPAD[name]) {
+      k.classList.add('pioneertv-kbd--dpad');
+      k.setAttribute('aria-label', name === 'arrows' ? 'styrkorset' : name);
+      k.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path class="cross" d="M9 2.5h6v6.5h6.5v6H15v6.5H9V15H2.5V9H9z"/>'
+        + DPAD[name].map((a) => `<path class="arm" d="${ARMS[a]}"/>`).join('') + '</svg>';
+    } else if (name === 'Hem') {
+      k.classList.add('pioneertv-kbd--home');
+      k.setAttribute('aria-label', 'Hem');
+      k.innerHTML = html('padHome');
+    } else k.textContent = name;
+    return k;
+  }
+
+  P.icons = { html, svg, key, names: Object.keys(PATHS) };
 })(window.PioneerTV);

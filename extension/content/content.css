@@ -102,3 +102,5 @@ html.pioneertv-keyboard-open { scroll-padding-bottom: 320px; }
   font: 14px/1.4 var(--pioneertv-font-mono); letter-spacing: 0.1em; text-transform: uppercase;
   color: var(--pioneertv-ink-faint); text-align: right; white-space: nowrap;
 }
+.pioneertv-keyhint { display: flex; align-items: center; gap: 18px; }
+.pioneertv-keyhint span { display: inline-flex; align-items: center; gap: 7px; }

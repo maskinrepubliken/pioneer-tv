@@ -19,6 +19,9 @@ window.PioneerTV = window.PioneerTV || {};
     if (!root) return;
     const set = (name, value) => (value ? root.style.setProperty(name, value) : root.style.removeProperty(name));
     set('--pioneertv-pointer-fill', pad && pad.pointer);
+    // Its buttons as the legends draw them (icons.js key): its tint, its accent at the edge.
+    set('--pioneertv-pad-face', pad && pad.pointer);
+    set('--pioneertv-pad-edge', pad && pad.accent);
     set('--pioneertv-focus', pad && pad.accent);
     set('--pioneertv-ochre', pad && pad.highlight);
     set('--pioneertv-focus-on-dark', pad && pad.highlight);

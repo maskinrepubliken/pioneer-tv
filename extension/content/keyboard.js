@@ -132,7 +132,11 @@ window.PioneerTV = window.PioneerTV || {};
       this.field.className = 'pioneertv-keyfield';
       const hint = document.createElement('div');
       hint.className = 'pioneertv-keyhint';
-      hint.textContent = 'A skriv · X OK · B stäng';
+      for (const [k, text] of [['A', 'skriv'], ['X', 'OK'], ['B', 'stäng']]) {
+        const part = document.createElement('span');
+        part.append(M.icons.key(k), ` ${text}`);
+        hint.appendChild(part);
+      }
       top.append(this.field, hint);
       root.appendChild(top);
       const rows = LAYERS[this.layer];

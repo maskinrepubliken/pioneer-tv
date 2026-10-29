@@ -51,6 +51,34 @@
   display: inline-block; min-width: 1.7em; padding: 0.15em 0.5em; text-align: center;
   font-family: var(--pioneertv-font-mono); font-size: 0.8em; line-height: 1.3;
   letter-spacing: 0.06em; text-transform: uppercase;
-  color: var(--pioneertv-ink); background: var(--pioneertv-paper-sunken);
-  border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-pill);
+  color: var(--pioneertv-ink); background: var(--pioneertv-pad-face, var(--pioneertv-paper-sunken));
+  border: 1px solid var(--pioneertv-pad-edge, var(--pioneertv-line-strong)); border-radius: var(--pioneertv-radius-pill);
 }
+/* The pad's buttons as they are on the pad (icons.js key), in the colours
+   of the pad last used (hud.js applyPad: its light tint for the button,
+   its accent for the edge). A, B, X and Y: round, the letter in the middle. */
+.pioneertv-kbd--face {
+  display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
+  width: 2.1em; min-width: 0; height: 2.1em; padding: 0; border-radius: 50%; border-width: 0.14em;
+  font-family: var(--pioneertv-font-ui); font-weight: 600; font-size: 0.85em; letter-spacing: 0;
+}
+/* L1 and R1: a bumper, wide, rounded towards the pad's outer corner. */
+.pioneertv-kbd--shoulder {
+  display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
+  min-width: 2.9em; height: 1.75em; padding: 0 0.5em; border-width: 0.14em; letter-spacing: 0;
+}
+.pioneertv-kbd--left { border-radius: 1.1em 0.45em 0.3em 0.3em; }
+.pioneertv-kbd--right { border-radius: 0.45em 1.1em 0.3em 0.3em; }
+/* The d-pad: a cross, the arms meant in ink. */
+.pioneertv-kbd--dpad {
+  display: inline-flex; width: 2.5em; height: 2.5em; min-width: 0; padding: 0; background: none; border: 0; border-radius: 0;
+}
+.pioneertv-kbd--dpad svg { width: 100%; height: 100%; }
+.pioneertv-kbd--dpad .cross { fill: var(--pioneertv-pad-face, var(--pioneertv-paper-sunken)); stroke: var(--pioneertv-pad-edge, var(--pioneertv-line-strong)); stroke-width: 1.2; stroke-linejoin: round; }
+.pioneertv-kbd--dpad .arm { fill: var(--pioneertv-ink); }
+/* Hem: the pad's round home button with its mark. */
+.pioneertv-kbd--home {
+  display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
+  width: 2.1em; min-width: 0; height: 2.1em; padding: 0; border-radius: 50%; border-width: 0.14em; font-size: 0.85em;
+}
+.pioneertv-kbd--home .pioneertv-icon { width: 1.3em; height: 1.3em; }
