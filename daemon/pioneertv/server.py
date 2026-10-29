@@ -78,6 +78,7 @@ class Server:
             ("GET", "/api/video", self.api_video_status),
             ("POST", "/api/video/{action}", self.api_video_action),
             ("GET", "/api/jellyfin", self.api_jellyfin),
+            ("GET", "/api/services", self.api_services),
             ("GET", "/api/images", self.api_images),
             ("GET", "/api/finds", self.api_finds),
             ("POST", "/api/saver/preview", self.api_saver_preview),
@@ -365,6 +366,45 @@ class Server:
                 return web.json_response({"ok": False, "error": "no_user"})
             self._jellyfin_user = (cache_key, user)
         return web.json_response({"ok": True, "user_id": user.get("Id"), "user": user.get("Name")})
+
+    async def api_services(self, _request: web.Request) -> web.Response:
+        """Whether RomM and Jellyfin answer, and take the key: for the Tjänster
+        tab. Each {state: ok | auth | down | unset, version, ...}."""
+        async def ask(url: str, headers: dict) -> tuple[int, dict]:
+            try:
+                async with self._session().get(url, headers={**headers, "Accept-Encoding": "identity"},
+                                               timeout=aiohttp.ClientTimeout(total=6)) as resp:
+                    if resp.status != 200:
+                        return resp.status, {}
+                    data = json.loads(await resp.read())
+                    return 200, data if isinstance(data, dict) else {}
+            except (aiohttp.ClientError, asyncio.TimeoutError, ValueError):
+                return 0, {}
+
+        async def check_romm() -> dict:
+            cfg = self.cfg.get("romm") or {}
+            url, key = (cfg.get("url") or "").rstrip("/"), cfg.get("api_key", "")
+            if not url or not key:
+                return {"state": "unset"}
+            (beat, info), (me, user) = await asyncio.gather(
+                ask(f"{url}/api/heartbeat", {}), ask(f"{url}/api/users/me", {"Authorization": f"Bearer {key}"}))
+            version = (info.get("SYSTEM") or {}).get("VERSION")
+            if me == 200:
+                return {"state": "ok", "version": version, "user": user.get("username")}
+            return {"state": "auth" if me in (401, 403) else "down", "version": version}
+
+        async def check_jellyfin() -> dict:
+            cfg = self.cfg.get("jellyfin") or {}
+            url, key = (cfg.get("url") or "").rstrip("/"), cfg.get("api_key", "")
+            if not url or not key:
+                return {"state": "unset"}
+            code, info = await ask(f"{url}/System/Info", {"Authorization": jellyfin.auth_header(key)})
+            if code != 200:
+                return {"state": "auth" if code in (401, 403) else "down"}
+            return {"state": "ok", "version": info.get("Version"), "server": info.get("ServerName")}
+
+        rm, jf = await asyncio.gather(check_romm(), check_jellyfin())
+        return web.json_response({"romm": rm, "jellyfin": jf})
 
     # ------------------------------------------------------------ API
     async def _json(self, request: web.Request) -> dict:

@@ -234,8 +234,8 @@ class Games:
         return core if core and os.path.isfile(core) else None
 
     def platforms(self) -> list[str]:
-        """Consoles the box plays: switched on, RetroArch installed, a core in place."""
-        if not self.gcfg.get("enabled", True) or not shutil.which(self.gcfg.get("retroarch", "retroarch")):
+        """Consoles the box plays: RetroArch installed, a core in place."""
+        if not shutil.which(self.gcfg.get("retroarch", "retroarch")):
             return []
         return [p for p in (self.gcfg.get("cores") or {}) if self.core_for(p)]
 

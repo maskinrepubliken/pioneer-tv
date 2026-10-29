@@ -9,7 +9,6 @@ import os
 import re
 import shutil
 import time
-from urllib.parse import urlparse
 
 log = logging.getLogger("pioneertv.sysinfo")
 
@@ -135,11 +134,10 @@ async def wifi_add(ssid: str, password: str | None, hidden: bool = False, priori
     return rc == 0, out.strip()
 
 
-async def tailscale_status(server_url: str | None = None, server_name: str | None = None) -> dict:
-    """Tailscale state plus whether the media server (a service URL on the tailnet) is online."""
+async def tailscale_status() -> dict:
+    """Tailscale's state, the box's addresses on the tailnet and its peers."""
     rc, out = await run("tailscale", "status", "--json")
-    info = {"installed": rc != 127, "state": "unknown", "ips": [], "dns_name": None, "peers": [],
-            "server_name": server_name, "server_online": None}
+    info = {"installed": rc != 127, "state": "unknown", "ips": [], "dns_name": None, "peers": []}
     if rc != 0:
         info["state"] = "stopped" if rc != 127 else "not installed"
         return info
@@ -151,15 +149,9 @@ async def tailscale_status(server_url: str | None = None, server_name: str | Non
     self_ = data.get("Self") or {}
     info["ips"] = self_.get("TailscaleIPs") or []
     info["dns_name"] = (self_.get("DNSName") or "").rstrip(".") or None
-    target = (urlparse(server_url).hostname or "").lower() if server_url else ""
-    target_host = target.split(".")[0]
     for peer in (data.get("Peer") or {}).values():
-        host = peer.get("HostName") or ""
-        online = bool(peer.get("Online"))
-        ips = peer.get("TailscaleIPs") or []
-        info["peers"].append({"host": host, "online": online, "ips": ips})
-        if target and (target in ips or (target_host and host.lower() == target_host)):
-            info["server_online"] = online
+        info["peers"].append({"host": peer.get("HostName") or "", "online": bool(peer.get("Online")),
+                              "ips": peer.get("TailscaleIPs") or []})
     info["peers"].sort(key=lambda p: (not p["online"], p["host"]))
     return info
 

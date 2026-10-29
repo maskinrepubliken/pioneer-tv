@@ -20,22 +20,15 @@
   <link rel="stylesheet" href="/static/settings.css">
 </head>
 <body>
+  <!-- The column at the left, as on the browse pages: at rest a ring with
+       each tab's icon, with the focus or the pointer in it wider, with the
+       names. Up and down shows each tab as its ring gets the focus; right
+       goes into the view. Drawn by settings.js (TABS). -->
+  <aside class="rail" id="rail">
+    <div class="rail-brand">Inställningar</div>
+    <nav class="rail-list" id="nav"></nav>
+  </aside>
   <div class="app">
-    <header class="top">
-      <div class="brand">Inställningar</div>
-      <!-- One row of tabs: left/right switches view as soon as a tab gets focus,
-           down goes into the view. No sidebar to enter and leave. -->
-      <nav class="tabs" id="nav">
-        <a href="#bluetooth" data-view="bluetooth" data-pioneertv-initial>Bluetooth</a>
-        <a href="#wifi" data-view="wifi">Wi-Fi</a>
-        <a href="#services" data-view="services">Tjänster</a>
-        <a href="#tv" data-view="tv">TV</a>
-        <a href="#controls" data-view="controls">Kontroller</a>
-        <a href="#remote" data-view="remote">Fjärråtkomst</a>
-        <a href="#system" data-view="system">System</a>
-        <a href="#logs" data-view="logs">Loggar</a>
-      </nav>
-    </header>
     <main class="main" id="main">
       <p class="muted">Laddar…</p>
     </main>

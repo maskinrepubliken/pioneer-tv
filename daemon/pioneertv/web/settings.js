@@ -41,7 +41,7 @@
     const wait = (v, ms = 250) => new Promise((r) => setTimeout(() => r(v), ms));
     if (path === '/api/status') return wait({
       wifi: { available: true, device: 'wlan0', state: 'connected', ssid: 'Lyresten', signal: 72 },
-      tailscale: { installed: true, state: 'running', ips: ['100.101.102.103'], dns_name: 'pioneer-tv.tail1234.ts.net', server_name: 'Jellyfin', server_online: true,
+      tailscale: { installed: true, state: 'running', ips: ['100.101.102.103'], dns_name: 'pioneer-tv.tail1234.ts.net',
         peers: [{ host: 'jellyfin', online: true }, { host: 'laptop', online: true }, { host: 'phone', online: false }] },
       interfaces: [{ name: 'eth0', up: true, addresses: ['192.168.1.40'] }, { name: 'wlan0', up: true, addresses: ['192.168.1.41'] }],
       system: { hostname: 'pioneer-tv', temp_c: 54.3, throttled: 0, throttled_now: false, throttled_ever: false, mem_total_mb: 921, mem_available_mb: 380, uptime_s: 86400 * 3 + 3600, load1: 0.8, disk: { total_mb: 29000, free_mb: 21000 } },
@@ -52,33 +52,29 @@
     });
     if (path === '/api/settings' && method === 'GET') return wait({
       sections: [
+        { id: 'general', title: 'Allmänt', fields: [
+          { path: 'ui.screensaver', type: 'choice', label: 'Skärmsläckare', options: [['labyrint', 'Labyrint'], ['eld', 'Eld']], value: 'labyrint' },
+          { path: 'ui.home_minutes', type: 'number', label: 'Gå hem efter, utan knapptryck (0 = aldrig)', min: 0, max: 120, step: 1, unit: 'min', value: 30 },
+          { path: 'ui.auto_keyboard', type: 'bool', label: 'Öppna skärmtangentbordet automatiskt i textfält', value: true } ] },
         { id: 'controls', title: 'Kontroller', fields: [
           { path: 'mouse.max_speed', type: 'number', label: 'Pekarhastighet', min: 200, max: 3000, step: 100, unit: 'px/s', value: 1100 },
-          { path: 'gamepad.long_press_ms', type: 'number', label: 'Långtryck', min: 300, max: 2000, step: 100, unit: 'ms', value: 800 },
-          { path: 'ui.auto_keyboard', type: 'bool', label: 'Öppna skärmtangentbordet automatiskt', value: true } ] },
+          { path: 'gamepad.long_press_ms', type: 'number', label: 'Långtryck', min: 300, max: 2000, step: 100, unit: 'ms', value: 800 } ] },
         { id: 'tv', title: 'TV', fields: [
           { path: 'cec.enabled', type: 'bool', label: 'HDMI-CEC', value: true },
           { path: 'cec.osd_name', type: 'text', label: 'Namn som TV:n visar', value: 'Pioneer TV', maxlength: 14 },
-          { path: 'ui.screensaver', type: 'choice', label: 'Skärmsläckare', options: [['labyrint', 'Labyrint'], ['eld', 'Eld']], value: 'labyrint' } ] },
+          { path: 'ui.tv_off_minutes', type: 'number', label: 'Stäng av TV:n när skärmsläckaren varit på (0 = aldrig)', min: 0, max: 120, step: 1, unit: 'min', value: 20 } ] },
         { id: 'controls_bt', title: 'Bluetooth', fields: [
           { path: 'bluetooth.auto_connect', type: 'bool', label: 'Ring upp parade handkontroller som inte är anslutna', value: true } ] },
         { id: 'romm', title: 'RomM', fields: [
-          { path: 'romm.url', type: 'text', label: 'Adress till RomM', value: 'http://freakis:8080' },
-          { path: 'romm.api_key', type: 'text', label: 'API-nyckel', secret: true, value: '', is_set: true },
-          { path: 'games.enabled', type: 'bool', label: 'Spela spelen på boxen (RetroArch)', value: true } ] },
+          { path: 'romm.url', type: 'text', label: 'Adress till RomM', value: 'https://spel.example.se' },
+          { path: 'romm.api_key', type: 'text', label: 'API-nyckel', secret: true, value: '', is_set: true } ] },
         { id: 'jellyfin', title: 'Jellyfin', fields: [
-          { path: 'jellyfin.url', type: 'text', label: 'Adress till Jellyfin (utan /web/)', value: 'http://freakis:8096' },
-          { path: 'jellyfin.api_key', type: 'text', label: 'API-nyckel', secret: true, value: '', is_set: false },
+          { path: 'jellyfin.url', type: 'text', label: 'Adress till Jellyfin (utan /web/)', value: 'http://100.123.142.8:8096' },
+          { path: 'jellyfin.api_key', type: 'text', label: 'API-nyckel', secret: true, value: '', is_set: true },
           { path: 'jellyfin.user', type: 'text', label: 'Användare vars spellistor visas', value: '' } ] },
         { id: 'remote', title: 'Fjärråtkomst', fields: [
-          { path: 'remote.token', type: 'text', label: 'Åtkomstnyckel', secret: true, value: '', is_set: false } ] },
+          { path: 'remote.token', type: 'text', label: 'Åtkomstnyckel (tom = bara lokalt / Tailscale serve)', secret: true, value: '', is_set: false } ] },
       ],
-      services: [
-        { id: 'cineasterna', name: 'Cineasterna', tagline: 'Film från biblioteket', url: 'https://www.cineasterna.se/', search_url: 'https://www.cineasterna.se/sv/search?q={query}', color: '#b8940c', glyph: 'C' },
-        { id: 'svtplay', name: 'SVT Play', tagline: 'Public service', url: 'https://www.svtplay.se/', search_url: 'https://www.svtplay.se/sok?q={query}', color: '#1f7a4d', glyph: 'S' },
-        { id: 'jellyfin', name: 'Jellyfin', tagline: 'Egna filmer', url: 'http://100.123.142.8:8096/web/', color: '#7b5ea7', glyph: 'J' },
-        { id: 'spel', name: 'Spel', tagline: 'RomM', url: 'http://127.0.0.1:8765/ext/launcher/spel.html?tv=1', color: '#3b6ea5', glyph: 'S' } ],
-      service_fields: ['id', 'name', 'tagline', 'url', 'search_url', 'color', 'glyph', 'logo'],
     });
     if (path.startsWith('/api/wifi/networks')) return wait([
       { ssid: 'Lyresten', signal: 72, security: 'WPA2', active: true }, { ssid: 'Grannen', signal: 40, security: 'WPA2', active: false }, { ssid: 'Cafe', signal: 25, security: '', active: false } ], 900);
@@ -92,6 +88,8 @@
     if (path === '/api/update' && method === 'POST') return wait({ ok: true, message: 'Running as unit: pioneer-tv-update.service' });
     if (path === '/api/cec/topology') return wait('Driver Info:\n\tDriver Name                : vc4_hdmi\n\tPhysical Address           : 1.0.0.0\n\tLogical Address            : 4 (Playback Device 1)\n\nTopology:\n\tSystem Information for device 0 (TV):\n\t\tVendor ID: 0x00e091 (LG)\n\t\tPower Status: On');
     if (path === '/api/cec/trace') return wait('09:20:01 >> cec-ctl --to 0 --user-control-pressed ui-cmd=volume-up\n09:20:01 >> cec-ctl --to 0 --user-control-released\n09:20:07 << Received from TV to Playback Device 1 (0 to 4): USER_CONTROL_PRESSED (0x44):\n09:20:07 <<     ui-cmd: up (0x01)\n09:20:07 << Received from TV to Playback Device 1 (0 to 4): USER_CONTROL_RELEASED (0x45)');
+    if (path === '/api/services') return wait({ romm: { state: 'ok', version: '5.4.0', user: 'lyret' },
+      jellyfin: { state: 'down' } }, 900);
     if (path === '/api/cec/raw') return wait({ ok: true, output: 'Transmit from Playback Device 1 to TV (4 to 0):\n\tGIVE_DEVICE_POWER_STATUS (0x8f)\n    Received from TV (0):\n\tREPORT_POWER_STATUS (0x90):\n\t\tpwr-state: on (0x00)' }, 400);
     if (path === '/api/images') return wait({ enabled: true, files: 2814, bytes: 412e6, max_bytes: 10240 * 1024 * 1024, max_px: 600, prefetch_at: '03:30',
       last_night: { new: 2810, had: 4, failed: 0, seconds: 1460, time: Date.now() / 1000 - 30000 } });
@@ -125,8 +123,8 @@
 
   // ---------------------------------------------------------------- status
   // How each part is, shown at the top of its own tab (there is no Status
-  // tab): the network on Wi-Fi, Tailscale on Fjärråtkomst, the TV on TV,
-  // the Pi on System.
+  // tab): the network on Wi-Fi, Tailscale with the services on Tjänster,
+  // the TV on TV, the Pi on System.
   const status = () => api('GET', '/api/status');
   const cards = (...c) => h('div', { class: 'cards' }, ...c);
   function netCard(s) {
@@ -139,15 +137,27 @@
   }
   function tailscaleCard(s) {
     const t = s.tailscale;
-    return h('div', { class: 'card pioneertv-card' }, h('h3', {}, 'Tailscale'),
+    return h('div', { class: 'card pioneertv-card' }, h('h3', {}, 'Anslutning'),
       h('div', { class: 'big' }, dot(t.state === 'running' ? 'ok' : t.installed ? 'warn' : 'bad'), t.state === 'running' ? 'Ansluten' : t.installed ? `Tailscale ${t.state}` : 'Ej installerat'),
-      kv([['IP', (t.ips || []).join(', ') || '–'], ['Namn', t.dns_name || '–'], [t.server_name || 'Server', t.server_online == null ? 'okänd (ingen peer med den adressen)' : t.server_online ? h('span', {}, dot('ok'), 'online') : h('span', {}, dot('bad'), 'offline')], ['Peers', `${(t.peers || []).filter((p) => p.online).length} av ${(t.peers || []).length} online`]]),
+      kv([['IP', (t.ips || []).join(', ') || '–'], ['Namn', t.dns_name || '–'], ['Peers', `${(t.peers || []).filter((p) => p.online).length} av ${(t.peers || []).length} online`]]),
       t.installed && t.state !== 'running' ? h('div', { class: 'actions' }, h('button', { class: 'small', onclick: () => sysAction('tailscale_up') }, 'Starta Tailscale')) : '');
   }
   function cecCard(s) {
     return h('div', { class: 'card pioneertv-card' }, h('h3', {}, 'TV (HDMI-CEC)'),
       h('div', { class: 'big' }, dot(s.cec.enabled ? (s.cec.tv_power === 'on' ? 'ok' : 'warn') : 'bad'), s.cec.enabled ? (s.cec.tv_power === 'on' ? 'TV på' : s.cec.tv_power ? `TV ${s.cec.tv_power}` : 'TV okänd') : 'CEC av'),
       kv([['Fysisk adress', s.cec.phys_addr || '–'], ['Ljud', !s.audio || !s.audio.available ? 'ingen ljudserver' : s.audio.sink ? `${s.audio.sink.name} · ${Math.round(s.audio.sink.volume * 100)} %` : 'ingen utgång vald']]));
+  }
+  // RomM's or Jellyfin's: whether it answers and takes the key (/api/services).
+  const SERVICE_STATE = { ok: ['ok', 'Ansluten'], auth: ['bad', 'Nyckeln godtas inte'], down: ['bad', 'Svarar inte'], unset: ['warn', 'Adress eller nyckel saknas'] };
+  function serviceCard(st) {
+    if (!st) return h('div', { class: 'card pioneertv-card' }, h('h3', {}, 'Anslutning'), h('div', { class: 'big muted spin' }, 'Frågar…'));
+    const [cls, text] = SERVICE_STATE[st.state] || ['bad', st.state];
+    const rows = [];
+    if (st.server) rows.push(['Server', st.server]);
+    if (st.version) rows.push(['Version', st.version]);
+    if (st.user) rows.push(['Användare', st.user]);
+    return h('div', { class: 'card pioneertv-card' }, h('h3', {}, 'Anslutning'),
+      h('div', { class: 'big' }, dot(cls), text), rows.length ? kv(rows) : '');
   }
   function systemCard(s) {
     const sys = s.system;
@@ -245,20 +255,44 @@
       draw(await api('GET', '/api/bluetooth/devices'), false);
     },
 
-    // Tjänster: where the box's sources are and their keys, as passwords
-    // (left empty, a key set before is kept). The home page's tiles are
-    // the settings file's (/etc/pioneer-tv/settings.json), not set here.
+    // Tjänster: Tailscale, and where the box's sources are, whether they
+    // answer, and their keys, as passwords (left empty, a key set before is
+    // kept). The home page's tiles are the settings file's
+    // (/etc/pioneer-tv/settings.json), not set here.
     async services(show) {
-      const s = await api('GET', '/api/settings');
-      const { form, save } = fieldsForm(s, ['romm', 'jellyfin'], true);
+      const [s, st] = await Promise.all([api('GET', '/api/settings'), status()]);
+      const at = { romm: h('div', { class: 'cards' }, serviceCard()), jellyfin: h('div', { class: 'cards' }, serviceCard()) };
+      const { form, save } = fieldsForm(s, ['romm', 'jellyfin'], true, at);
       show(
         h('h1', {}, 'Tjänster'),
-        h('p', { class: 'muted' }, 'Adresser och nycklar till spelen (RomM) och filmerna och musiken (Jellyfin). Nycklarna visas inte; lämna fältet tomt för att behålla den som är satt. Rutorna på startsidan står i /etc/pioneer-tv/settings.json.'),
+        h('p', { class: 'muted' }, 'Spelen kommer från RomM, filmerna och musiken från Jellyfin. Nycklarna visas inte; lämna fältet tomt för att behålla den som är satt. Rutorna på startsidan står i /etc/pioneer-tv/settings.json.'),
+        h('h2', {}, 'Tailscale'),
+        cards(tailscaleCard(st)),
         form, save,
       );
+      const svc = await api('GET', '/api/services').catch(() => ({}));
+      at.romm.replaceChildren(serviceCard(svc.romm || { state: 'down' }));
+      at.jellyfin.replaceChildren(serviceCard(svc.jellyfin || { state: 'down' }));
     },
 
-    async controls(show) { return schemaView(show, 'controls', 'Kontroller', h('p', { class: 'muted' }, 'Fullständig knappmappning finns i /etc/pioneer-tv/config.toml.')); },
+    // Allmänt: how the box behaves on the screen, the screensaver first.
+    async general(show) {
+      const preview = (kind) => api('POST', '/api/saver/preview', { kind }).catch((e) => toast(`Misslyckades: ${e.message}`));
+      return schemaView(show, 'general', 'Allmänt', h('div', {},
+        h('h2', {}, 'Förhandsgranska skärmsläckaren'),
+        h('p', { class: 'muted' }, 'Visa den nu på TV:n; nästa knapptryck tar bort den.'),
+        h('div', { class: 'actions' },
+          h('button', { onclick: () => preview('labyrint') }, 'Labyrint'),
+          h('button', { onclick: () => preview('eld') }, 'Eld'))));
+    },
+
+    async controls(show) {
+      const st = await status();
+      return schemaView(show, 'controls', 'Kontroller', h('div', {},
+        h('h2', {}, 'Tangentbord'),
+        h('p', { class: 'muted' }, st.keyboard_present ? 'Ett tangentbord är anslutet, så skärmtangentbordet öppnas inte automatiskt.' : 'Ett USB-tangentbord fungerar direkt; när ett är anslutet öppnas inte skärmtangentbordet automatiskt.'),
+        h('p', { class: 'muted' }, 'Fullständig knappmappning finns i /etc/pioneer-tv/config.toml.')));
+    },
     async tv(show) {
       const topo = h('pre', { class: 'log small' }, 'Hämtar…');
       const trace = h('pre', { class: 'log small' }, 'Hämtar…');
@@ -281,13 +315,7 @@
         loadTrace();
       };
       rawIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') runRaw(); });
-      const preview = (kind) => api('POST', '/api/saver/preview', { kind }).catch((e) => toast(`Misslyckades: ${e.message}`));
       const debug = h('div', {},
-        h('h2', {}, 'Skärmsläckaren'),
-        h('p', { class: 'muted' }, 'Visa den nu; nästa knapptryck tar bort den.'),
-        h('div', { class: 'actions' },
-          h('button', { onclick: () => preview('labyrint') }, 'Förhandsgranska Labyrint'),
-          h('button', { onclick: () => preview('eld') }, 'Förhandsgranska Eld')),
         h('h2', {}, 'Testa'),
         h('div', { class: 'actions' },
           h('button', { onclick: () => cec('tv_on') }, 'TV på'), h('button', { onclick: () => cec('tv_off') }, 'TV av'),
@@ -311,18 +339,6 @@
       loadTopo();
       loadTrace();
     },
-    async remote(show) {
-      const s = await status();
-      const t = s.tailscale;
-      const url = t.dns_name ? `https://${t.dns_name}/` : (t.ips || [])[0] ? `http://${t.ips[0]}:8765/` : null;
-      return schemaView(show, 'remote', 'Fjärråtkomst', h('div', {},
-        h('h2', {}, 'Via Tailscale'),
-        h('p', {}, 'Enklast: kör på Pi:n ', h('code', {}, 'sudo tailscale serve --bg 8765'), '. Då nås den här sidan från alla dina Tailscale-enheter på ', url ? h('a', { href: url }, url) : 'Pi:ns Tailscale-adress', ' utan öppna portar. Åtkomstnyckeln behövs bara om du binder daemonen till 0.0.0.0 i config.toml.'),
-        h('h2', {}, 'Tangentbord'),
-        h('p', { class: 'muted' }, s.keyboard_present ? 'Ett tangentbord är anslutet, så skärmtangentbordet öppnas inte automatiskt.' : 'Ett USB-tangentbord fungerar direkt; när ett är anslutet öppnas inte skärmtangentbordet automatiskt.')),
-        cards(tailscaleCard(s)));
-    },
-
     // The journal of each of the box's parts, and the CEC bus as the daemon
     // sees it. A picks a part (and fetches it again); the daemon's log and
     // the CEC trace follow live while they are on screen.
@@ -427,12 +443,19 @@
           })) : '');
       };
 
-      const st = await status();
+      // ---- reached from elsewhere: over Tailscale, or with the key
+      const [st, s] = await Promise.all([status(), api('GET', '/api/settings')]);
+      const t = st.tailscale;
+      const url = t.dns_name ? `https://${t.dns_name}/` : (t.ips || [])[0] ? `http://${t.ips[0]}:8765/` : null;
+      const remote = fieldsForm(s, ['remote']);
       show(
         h('h1', {}, 'System'),
         cards(systemCard(st)),
         upd,
         pics,
+        h('h2', {}, 'Fjärråtkomst'),
+        h('p', { class: 'muted' }, 'Enklast: kör på Pi:n ', h('code', {}, 'sudo tailscale serve --bg 8765'), '. Då nås den här sidan från alla dina Tailscale-enheter på ', url ? h('a', { href: url }, url) : 'Pi:ns Tailscale-adress', ' utan öppna portar. Åtkomstnyckeln behövs bara om du binder daemonen till 0.0.0.0 i config.toml.'),
+        remote.form, remote.save,
         h('h2', {}, 'Åtgärder'),
         h('div', { class: 'actions' },
           h('button', { onclick: () => sysAction('restart_ui') }, 'Starta om Chromium'),
@@ -447,14 +470,15 @@
   };
 
   // The fields of some sections of the settings' schema as a form, and
-  // its Spara: { form, save }. titled: each section under its own heading.
-  function fieldsForm(s, ids, titled) {
+  // its Spara: { form, save }. titled: each section under its own heading,
+  // and what at[id] holds after it.
+  function fieldsForm(s, ids, titled, at = {}) {
     const values = {};
     const form = h('div');
     for (const id of ids) {
       const section = s.sections.find((x) => x.id === id);
       if (!section) continue;
-      if (titled) form.append(h('h2', {}, section.title));
+      if (titled) form.append(h('h2', {}, section.title), at[id] || '');
       for (const f of section.fields) form.append(h('div', { class: 'field' }, h('label', {}, f.label), control(f, values)));
     }
     const save = h('div', { class: 'actions' }, h('button', { class: 'primary', onclick: async () => {
@@ -491,18 +515,64 @@
   async function cec(command) { try { await api('POST', '/api/cec', { command }); toast(`CEC: ${command}`); } catch (e) { toast(`CEC misslyckades: ${e.message}`); } }
   async function sysAction(action) { toast('Kör…'); try { const r = await api('POST', '/api/system', { action }); toast(r.ok ? 'Klart' : r.message); } catch (e) { toast(`Misslyckades: ${e.message}`); } }
 
+  // ---------------------------------------------------------------- the column
+  // The tabs, in groups: [group, [[view, name, icon]]]. Bluetooth first, and
+  // where the page opens.
+  const TABS = [
+    ['Anslutet', [['bluetooth', 'Bluetooth', 'gamepad'], ['wifi', 'Wi-Fi', 'wifi'], ['services', 'Tjänster', 'link']]],
+    ['Boxen', [['general', 'Allmänt', 'home'], ['tv', 'TV', 'tv'], ['controls', 'Kontroller', 'keyboard']]],
+    ['Underhåll', [['system', 'System', 'gear'], ['logs', 'Loggar', 'pulse']]],
+  ];
+  // Old tabs' addresses.
+  const MOVED = { gamepads: 'bluetooth', status: 'bluetooth', remote: 'system' };
+  const rail = $('#rail'), nav = $('#nav');
+  for (const [group, tabs] of TABS) {
+    nav.append(h('section', { class: 'rail-group' }, h('h2', { class: 'rail-group-label' }, group),
+      tabs.map(([view, name, ic]) => {
+        const mark = h('button', { class: 'pioneertv-round rail-mark', type: 'button', 'aria-label': name, 'data-view': view, 'data-icon': ic });
+        return h('div', { class: 'rail-item', 'data-view': view, onclick: () => { location.hash = '#' + view; } }, mark, h('span', { class: 'rail-label' }, name));
+      })));
+  }
+  // The icons, once icons.js is in (it loads beside this, see settings.html).
+  const icons = () => {
+    if (!(window.PioneerTV && PioneerTV.icons)) return;
+    for (const m of nav.querySelectorAll('.rail-mark:empty')) m.innerHTML = PioneerTV.icons.html(m.dataset.icon);
+  };
+  icons();
+  window.addEventListener('load', icons);
+  // The pointer opens it too, as on the browse pages.
+  rail.addEventListener('mousemove', (e) => { if (e.movementX || e.movementY) rail.classList.add('open'); });
+  rail.addEventListener('mouseover', (e) => { if (!e.isTrusted) rail.classList.add('open'); });
+  rail.addEventListener('mouseout', (e) => { if (!rail.contains(e.relatedTarget)) rail.classList.remove('open'); });
+  // Into the column from the view: to the tab shown, wherever the arrow
+  // pointed. Within it, a tab's ring with the focus shows that tab, so up
+  // and down go through them.
+  nav.addEventListener('focusin', (e) => {
+    const view = e.target && e.target.dataset && e.target.dataset.view;
+    if (!view) return;
+    if (!nav.contains(e.relatedTarget)) {
+      const here = nav.querySelector('.rail-item.active .rail-mark');
+      if (here && here !== e.target) { here.focus(); return; }
+    }
+    if (location.hash !== '#' + view) location.hash = '#' + view;
+  });
+
   // ---------------------------------------------------------------- routing
   function route() {
     let view = (location.hash || '#bluetooth').slice(1);
-    if (view === 'gamepads' || view === 'status') view = 'bluetooth';   // old tabs' addresses
-    for (const a of document.querySelectorAll('#nav a')) a.classList.toggle('active', a.dataset.view === view);
+    view = MOVED[view] || (views[view] ? view : 'bluetooth');
+    for (const it of nav.querySelectorAll('.rail-item')) {
+      it.classList.toggle('active', it.dataset.view === view);
+      // The page opens with the focus on the tab shown.
+      it.firstChild.toggleAttribute('data-pioneertv-initial', it.dataset.view === view);
+    }
     // Each route renders into its own element, so a slow view from an earlier
     // route can never overwrite the current one.
     const gen = ++generation;
     const el = h('div');
     mainHost.replaceChildren(el);
     const show = (...children) => { if (gen === generation) el.replaceChildren(...children); };
-    (views[view] || views.bluetooth)(show).catch((e) => { show(h('h1', {}, 'Fel'), h('p', {}, e.message)); });
+    views[view](show).catch((e) => { show(h('h1', {}, 'Fel'), h('p', {}, e.message)); });
   }
   window.addEventListener('hashchange', route);
   // X (the pad's, as Space) presses the view's filled button wherever the
@@ -519,11 +589,6 @@
     if (!button) return;
     e.preventDefault();
     button.click();
-  });
-  // Focusing a tab shows its view, so the d-pad only ever moves along the row.
-  document.getElementById('nav').addEventListener('focusin', (e) => {
-    const view = e.target && e.target.dataset && e.target.dataset.view;
-    if (view && location.hash !== '#' + view) location.hash = '#' + view;
   });
   route();
   api('GET', '/api/status').then((s) => { $('#foot').textContent = `Maskinrepubliken · ${s.system.hostname} · ${s.git && s.git.commit ? s.git.commit : 'v' + s.version}${MOCK ? ' · mock' : ''}`; }).catch(() => {});

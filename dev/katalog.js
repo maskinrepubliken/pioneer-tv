@@ -23,7 +23,7 @@
   const STATUS = {
     type: 'status',
     wifi: { state: 'connected', ssid: 'Småhusbyn', signal: 62 },
-    tailscale: { state: 'running', server_online: true, server_name: 'Film & serier', ips: ['100.127.191.97'] },
+    tailscale: { state: 'running', ips: ['100.127.191.97'] },
     interfaces: [], system: { temp_c: 54 },
     gamepads: [{ name: 'Rosa handkontroll', battery: 80 }],
   };

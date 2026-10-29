@@ -6,7 +6,6 @@ import asyncio
 import logging
 import signal
 import time
-from urllib.parse import urlparse
 
 from . import __version__, bluetooth, config, settings, sysinfo, updater
 from .actions import Dispatcher
@@ -84,28 +83,13 @@ async def amain(cfg: dict) -> None:
     status_lock = asyncio.Lock()
     status_at = 0.0
 
-    def media_server() -> tuple[str | None, str | None]:
-        """The service that lives on the tailnet (Jellyfin, Plex, ...): its URL and name.
-        Jellyfin's own address when it is set: the Film & serier tile opens
-        our page on the box, not the server."""
-        jellyfin_url = (cfg.get("jellyfin") or {}).get("url")
-        if jellyfin_url:
-            tile = next((s for s in cfg.get("services", []) if s.get("id") == "jellyfin"), {})
-            return jellyfin_url, tile.get("name") or "Jellyfin"
-        for s in cfg.get("services", []):
-            url = s.get("url") or ""
-            host = (urlparse(url).hostname or "").lower()
-            if host.startswith("100.") or host.endswith(".ts.net") or s.get("id") in ("jellyfin", "plex"):
-                return url, s.get("name")
-        return None, None
-
     async def status(force: bool = False) -> dict:
         nonlocal status_at
         async with status_lock:
             if not force and last_status and time.monotonic() - status_at < 3:
                 return last_status
             wifi, ts, ifaces, sysstat, ver, audio = await asyncio.gather(
-                sysinfo.wifi_status(), sysinfo.tailscale_status(*media_server()), sysinfo.interfaces(), sysinfo.system_status(),
+                sysinfo.wifi_status(), sysinfo.tailscale_status(), sysinfo.interfaces(), sysinfo.system_status(),
                 updater.version(), sysinfo.audio_status(),
             )
             batteries = sysinfo.gamepad_batteries()

@@ -134,9 +134,7 @@ color = "#3b6ea5"
 glyph = "S"
 
 # Games are played on the box in RetroArch (GUIDE.md, Games); the cores are
-# installed and built by pioneer-tv-cores.service. Off with:
-# [games]
-# enabled = false
+# installed and built by pioneer-tv-cores.service.
 
 [romm]
 # Base URL of RomM and a client API token (RomM: Settings → Client API Tokens)

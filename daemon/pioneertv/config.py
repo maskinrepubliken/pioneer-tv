@@ -102,7 +102,6 @@ DEFAULTS: dict[str, Any] = {
     # offered when its core is in place; pioneer-tv-cores.service installs
     # Debian's and builds the rest (system/build-cores.sh).
     "games": {
-        "enabled": True,
         "retroarch": "/usr/bin/retroarch",
         "user": "pi",
         "wayland_display": "",          # empty: the compositor's socket, found in runtime_dir

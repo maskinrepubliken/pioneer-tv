@@ -57,7 +57,7 @@ window.PioneerTV = window.PioneerTV || {};
   function pills() {
     const box = el('div', 'tiles-pills');
     const s = b.state.status || {};
-    const w = s.wifi || {}, t = s.tailscale || {};
+    const w = s.wifi || {};
     const eth = (s.interfaces || []).find((i) => i.name.startsWith('e') && i.addresses.length);
     const pill = (icon, text, on, warn) => {
       const p = el('span', 'tiles-pill' + (on ? ' on' : '') + (warn ? ' warn' : ''));
@@ -68,7 +68,6 @@ window.PioneerTV = window.PioneerTV || {};
     if (w.state === 'connected') pill('wifi', w.ssid || 'Wi-Fi', true);
     else if (eth) pill('ethernet', 'Ethernet', true);
     else pill('wifi', 'Inget nätverk', false);
-    pill('link', 'Tailscale', t.state === 'running', t.state === 'running' && t.server_online === false);
     const pads = s.gamepads || [];
     pill('gamepad', pads.length > 1 ? `${pads.length} handkontroller` : pads.length ? pads[0].name : 'Ingen handkontroll', pads.length > 0);
     pill('daemon', b.state.daemonConnected ? 'Daemon' : 'Ingen daemon', b.state.daemonConnected);

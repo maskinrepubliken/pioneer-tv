@@ -1,8 +1,10 @@
 """User-editable settings: a JSON overlay saved next to config.toml.
 
 config.toml stays the place for advanced things (full button maps). The
-settings page edits the fields declared in SCHEMA plus the services list;
-those are written to settings.json and merged in-place into the live config.
+settings page edits the fields declared in SCHEMA (and the pads' names and
+colours); those are written to settings.json and merged in-place into the
+live config. The home page's tiles ("services") are the file's too, written
+by hand.
 """
 from __future__ import annotations
 
@@ -18,6 +20,16 @@ log = logging.getLogger("pioneertv.settings")
 
 SCHEMA: list[dict] = [
     {
+        "id": "general", "title": "Allmänt",
+        "fields": [
+            {"path": "ui.screensaver", "type": "choice", "label": "Skärmsläckare",
+             "options": [["labyrint", "Labyrint"], ["eld", "Eld"]]},
+            {"path": "ui.home_minutes", "type": "number", "label": "Gå hem efter, utan knapptryck (0 = aldrig)", "min": 0, "max": 120, "step": 1, "unit": "min"},
+            {"path": "ui.volume_toast", "type": "bool", "label": "Visa en notis vid volymändring (TV:n visar oftast volymen själv)"},
+            {"path": "ui.auto_keyboard", "type": "bool", "label": "Öppna skärmtangentbordet automatiskt i textfält"},
+        ],
+    },
+    {
         "id": "controls", "title": "Kontroller",
         "fields": [
             {"path": "mouse.max_speed", "type": "number", "label": "Pekarhastighet", "min": 200, "max": 3000, "step": 100, "unit": "px/s"},
@@ -25,7 +37,6 @@ SCHEMA: list[dict] = [
             {"path": "gamepad.stick_deadzone", "type": "number", "label": "Spak som styrkors, tröskel", "min": 0.2, "max": 0.9, "step": 0.05},
             {"path": "gamepad.long_press_ms", "type": "number", "label": "Långtryck", "min": 300, "max": 2000, "step": 100, "unit": "ms"},
             {"path": "gamepad.repeat_ms", "type": "number", "label": "Volymrepetition", "min": 100, "max": 600, "step": 20, "unit": "ms"},
-            {"path": "ui.auto_keyboard", "type": "bool", "label": "Öppna skärmtangentbordet automatiskt i textfält"},
         ],
     },
     {
@@ -37,11 +48,7 @@ SCHEMA: list[dict] = [
             {"path": "cec.home_on_standby", "type": "bool", "label": "Gå till startsidan när TV:n stängs av"},
             {"path": "cec.monitor", "type": "bool", "label": "Lyssna på TV:ns fjärrkontroll och standby"},
             {"path": "cec.osd_name", "type": "text", "label": "Namn som TV:n visar", "maxlength": 14},
-            {"path": "ui.volume_toast", "type": "bool", "label": "Visa en notis vid volymändring (TV:n visar oftast volymen själv)"},
-            {"path": "ui.home_minutes", "type": "number", "label": "Gå hem efter, utan knapptryck (0 = aldrig)", "min": 0, "max": 120, "step": 1, "unit": "min"},
             {"path": "ui.tv_off_minutes", "type": "number", "label": "Stäng av TV:n när skärmsläckaren varit på (0 = aldrig)", "min": 0, "max": 120, "step": 1, "unit": "min"},
-            {"path": "ui.screensaver", "type": "choice", "label": "Skärmsläckare",
-             "options": [["labyrint", "Labyrint"], ["eld", "Eld"]]},
         ],
     },
     {
@@ -61,7 +68,6 @@ SCHEMA: list[dict] = [
         "fields": [
             {"path": "romm.url", "type": "text", "label": "Adress till RomM"},
             {"path": "romm.api_key", "type": "text", "label": "API-nyckel", "secret": True},
-            {"path": "games.enabled", "type": "bool", "label": "Spela spelen på boxen (RetroArch)"},
         ],
     },
     {
@@ -74,7 +80,6 @@ SCHEMA: list[dict] = [
     },
 ]
 
-SERVICE_FIELDS = ["id", "name", "tagline", "url", "search_url", "color", "glyph", "logo", "mode", "fullscreen", "row", "kind"]
 
 
 def overlay_path(cfg: dict) -> Path:
@@ -185,7 +190,7 @@ def describe(cfg: dict) -> dict:
             item["is_set"] = bool(v) if f.get("secret") else None
             fields.append(item)
         sections.append({"id": section["id"], "title": section["title"], "fields": fields})
-    return {"sections": sections, "services": cfg.get("services", []), "service_fields": SERVICE_FIELDS}
+    return {"sections": sections}
 
 
 def update(cfg: dict, payload: dict) -> dict:
@@ -201,16 +206,6 @@ def update(cfg: dict, payload: dict) -> dict:
         value = _coerce(field, raw)
         values[path] = value
         set_path(cfg, path, value)
-    if "services" in payload:
-        services = []
-        for s in payload["services"] or []:
-            if not isinstance(s, dict) or not s.get("name") or not s.get("url"):
-                continue
-            clean = {k: str(s[k]).strip() for k in SERVICE_FIELDS if s.get(k) not in (None, "")}
-            clean.setdefault("id", clean["name"].lower().replace(" ", "-"))
-            services.append(clean)
-        overlay["services"] = services
-        cfg["services"] = services
     if isinstance(payload.get("pads"), dict):
         # Pads by USB serial: a name and two colours each (see config.py).
         pads = {}

@@ -197,18 +197,16 @@ The daemon serves a settings page at `http://127.0.0.1:8765/`. On the TV it is
 reached from the quick menu or the home page (Inställningar), where the spatial
 navigation and on-screen keyboard work like on any other page; a USB keyboard
 works too, and while one is plugged in the on-screen keyboard stays out of the
-way. The quick menu shows Wi-Fi, Tailscale (and whether the Jellyfin peer is
-online), connected gamepads with battery, and temperature at its foot.
+way. The quick menu shows the network, connected gamepads with battery, and
+temperature at its foot; Tailscale is on the settings page only.
 Its toasts are the overlay's, like every other (`POST /api/toast`).
 
-The page has no status tab: each part's status stands at the top of its
-own tab (the network on Wi-Fi, CEC and sound on TV, Tailscale on
-Fjärråtkomst, thermals, power throttling and memory on System, the pads in
-Bluetooth's list). It has Wi-Fi networks with connect and forget plus saving a network that
-is not in range yet, Bluetooth scan and pairing
-for any number of gamepads, the services shown on the launcher, controller
-tuning, TV behaviour, and system actions (restart Chromium, reboot, update from
-git, logs). Changes are saved to `/etc/pioneer-tv/settings.json` and applied
+Its tabs are in a column at the left, as on the browse pages (see "The
+settings page's tabs"). There is no status tab: each part's status stands at
+the top of its own tab (the network on Wi-Fi, Tailscale and whether RomM and
+Jellyfin answer and take their keys on Tjänster, CEC and sound on TV,
+thermals, power throttling and memory on System, the pads in Bluetooth's
+list). Changes are saved to `/etc/pioneer-tv/settings.json` and applied
 without a restart; `config.toml` remains the place for the full button map.
 
 To design the settings page without a Pi, open
@@ -223,7 +221,7 @@ sudo tailscale serve --bg 8765
 
 Then the page is at `https://<pi-name>.<tailnet>.ts.net/` from any of your
 devices, with Tailscale doing the authentication. If you instead bind the daemon
-to `0.0.0.0` in `config.toml`, set an access key under Fjärråtkomst; non-local
+to `0.0.0.0` in `config.toml`, set an access key under System → Fjärråtkomst; non-local
 requests must then carry it (`?token=` once, stored as a cookie).
 
 ## The TV (HDMI-CEC)
@@ -342,8 +340,8 @@ itself: no menu, notices or logo, only the game. The design is in
   on the N64 A and B do, and on the Mega Drive A and B do and C is on X. A real
   keyboard plugged in goes to DOS games; RetroArch's own hotkeys are off.
 - **Saves** stay on the box (`/var/lib/pioneer-tv/games/states`, `points`,
-  `saves`), not in RomM. Inställningar → RomM → *Spela spelen på boxen*
-  switches it all off.
+  `saves`), not in RomM. Games are always played on the box; there is no
+  switch for it.
 
 Pages the daemon serves under `/ext/` carry their own copies of the shell
 scripts, so the manifest keeps the extension's content scripts off them, and
@@ -916,10 +914,24 @@ over CEC; Chromium itself stays at 100 %. To check from a shell as `pi`:
 
 ## The settings page's tabs
 
-Bluetooth, the first (the devices, pairing, and whether paired pads are
-called up by themselves; it was Handkontroller, and `#gamepads` and the
-old `#status` lead there), Wi-Fi, Tjänster (where RomM and Jellyfin are and their API
-keys, as passwords: an empty field keeps the key set before; the home
-page's tiles are the settings file's, `/etc/pioneer-tv/settings.json`,
-and no longer edited here), TV (with the screensaver's choice and its
-previews), Kontroller, Fjärråtkomst, System, Loggar.
+In a column at the left, as on the browse pages: at rest a ring with each
+tab's icon, with the focus or the pointer in it wider, with the names and
+the groups'. Coming in from the view, the focus lands on the tab shown; up
+and down show each tab as its ring gets the focus. The page opens on
+Bluetooth.
+
+- **Anslutet.** Bluetooth (the devices, pairing, and whether paired pads
+  are called up by themselves), Wi-Fi (the network, then the networks in
+  range), Tjänster (Tailscale; RomM and Jellyfin, each whether it answers
+  and takes the key (`GET /api/services`), its address and its API key, as
+  a password: an empty field keeps the key set before).
+- **Boxen.** Allmänt (the screensaver and its previews, going home when
+  idle, the volume notice, the on-screen keyboard), TV (only the set
+  itself: CEC, its name, turning it off after the screensaver, and CEC's
+  tests and trace), Kontroller.
+- **Underhåll.** System (the Pi, the software, the covers on disk,
+  Fjärråtkomst, restarts), Loggar.
+
+Old addresses lead on: `#gamepads` and `#status` to Bluetooth, `#remote`
+to System. The home page's tiles are the settings file's,
+`/etc/pioneer-tv/settings.json`, written by hand, not edited on the page.

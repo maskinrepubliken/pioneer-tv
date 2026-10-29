@@ -113,7 +113,7 @@ window.PioneerTV = window.PioneerTV || {};
       it.el = el;
       return el;
     },
-    // Compact status rows at the foot: Wi-Fi, Tailscale, pads, temperature.
+    // Compact status rows at the foot: the network, pads, temperature.
     statusBlock(s, connected) {
       const box = document.createElement('div');
       box.className = 'pioneertv-menu-status';
@@ -125,14 +125,11 @@ window.PioneerTV = window.PioneerTV || {};
         box.appendChild(r);
       };
       if (!connected || !s) { row('bad', connected ? 'Väntar på status…' : 'Ingen daemon (designläge)'); return box; }
-      const w = s.wifi || {}, t = s.tailscale || {}, sys = s.system || {};
+      const w = s.wifi || {}, sys = s.system || {};
       const eth = (s.interfaces || []).find((i) => i.name.startsWith('e') && i.addresses.length);
       if (w.state === 'connected') row('ok', `${w.ssid}${w.signal != null ? ` ${w.signal}%` : ''}`);
       else if (eth) row('ok', `Ethernet ${eth.addresses[0]}`);
       else row('bad', 'Inget nätverk');
-      const srv = t.server_name || 'Server';
-      if (t.state === 'running') row(t.server_online === false ? 'warn' : 'ok', `Tailscale${t.server_online != null ? (t.server_online ? ` · ${srv} online` : ` · ${srv} offline`) : ''}`);
-      else row(t.installed ? 'warn' : 'bad', t.installed ? `Tailscale ${t.state}` : 'Tailscale saknas');
       const pads = s.gamepads || [];
       // One pad: its name (and battery). Several: just how many, since two
       // of the same model would only repeat one long name.

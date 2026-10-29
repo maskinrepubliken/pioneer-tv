@@ -102,10 +102,8 @@ class GamesTests(unittest.IsolatedAsyncioTestCase):
     def tearDown(self):
         self.dir.cleanup()
 
-    def test_platforms_need_a_core_and_the_switch(self):
+    def test_platforms_need_a_core(self):
         self.assertEqual(self.games.platforms(), ["snes"])
-        self.cfg["games"]["enabled"] = False
-        self.assertEqual(self.games.platforms(), [])
 
     def test_player_one_is_the_pad_last_used(self):
         joy, names = self.games._players()
