@@ -27,8 +27,8 @@ window.PioneerTV = window.PioneerTV || {};
   // Videor), each opening the film pages on its own section
   // (libraries/film.js ?section=), from the one Film & serier service.
   const SPLIT = [
-    { section: 'movies', id: 'film', name: 'Film' },
-    { section: 'tvshows', id: 'serier', name: 'Serier', color: '#2e6b6b' },
+    { section: 'movies', id: 'film', name: 'Film', color: '#2e6b6b' },
+    { section: 'tvshows', id: 'serier', name: 'Serier' },          // the old tile's colour and shelf
     { section: 'homevideos', id: 'videor', name: 'Videor', color: '#b0643a' },
   ];
   const withSection = (url, section) => url && url.replace('library=film', `library=film&section=${section}`);

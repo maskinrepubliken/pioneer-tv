@@ -393,8 +393,9 @@ administrator, the user whose playlists to show under Inställningar → Jellyfi
 ## Film and series
 
 The home page shows the Film & serier service as three tiles, Film,
-Serier and Videor (`shared/services.js` split, each with its own
-illustration), each opening the film pages on one section of Jellyfin
+Serier and Videor (`shared/services.js` split; Film a clapperboard and a
+reel, Serier the old tile's shelf of cases in its colour, Videor a globe
+with a play button, videos off the internet), each opening the film pages on one section of Jellyfin
 (`browse.html?library=film&section=movies`, `tvshows`, `homevideos`: the
 libraries of that kind, the rest counted as videos). A section starts on
 Upptäck: Fortsätt titta; for series Nästa avsnitt first (`Shows/NextUp`);
