@@ -52,7 +52,7 @@ window.PioneerTV = window.PioneerTV || {};
   async function start() {
     const playlists = await J.playlists();
     return {
-      kind: 'shelf', title: 'Musik', legend: [['A', 'öppna · spela']],
+      kind: 'shelf', title: 'Musik', legend: [['A', 'öppna']],
       actions: [{ label: 'Blanda allt', icon: 'shuffle', primary: true, key: 'shuffle', run: tryPlay(() => J.shuffleAll(), false) }],
       sections: [
         { label: 'Spellistor', layout: 'stacks', columns: 4, shape: 'square', items: playlists.map(group),
@@ -95,7 +95,7 @@ window.PioneerTV = window.PioneerTV || {};
     const [who, albums] = await Promise.all([J.item(id), J.albums({ artistId: id })]);
     const all = () => J.songs({ kind: 'artist', id });
     return {
-      kind: 'shelf', title: who.name, legend: [['A', 'öppna · spela']],
+      kind: 'shelf', title: who.name, legend: [['A', 'öppna']],
       actions: [
         { label: 'Blanda allt', icon: 'shuffle', primary: true, key: 'shuffle', run: tryPlay(all, true) },
         { label: 'Spela allt', icon: 'play', key: 'play', run: tryPlay(all, false) },
