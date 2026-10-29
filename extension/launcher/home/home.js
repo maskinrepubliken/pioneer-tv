@@ -46,6 +46,7 @@
     if (sheet) sheet.replaceWith(next); else document.body.appendChild(next);
     sheet = next;
     M.tiles.fitNames(sheet);
+    M.art.fit(sheet);
     if (document.fonts) document.fonts.ready.then(() => M.tiles.fitNames(sheet));
     const again = (focused && sheet.querySelector(`[data-key="${CSS.escape(focused)}"]`)) || sheet.querySelector('.tiles-tile');
     requestAnimationFrame(() => M.nav.focus(again, { scroll: false }));

@@ -350,11 +350,66 @@ window.PioneerTV = window.PioneerTV || {};
   ART.bilder = ART.immich;
   ART.live = ART.svt1;           // the start page's Live tile: the mast with its signal
 
+  // What of a drawing is seen, in its own units: { x, y, width, height }.
+  const K = 3;                     // canvas pixels to a unit
+  function seen(svg) {
+    const copy = svg.cloneNode(true);
+    copy.querySelectorAll(':scope > ellipse').forEach((e) => e.remove());
+    const g = copy.querySelector('g[filter]');
+    if (g) { g.removeAttribute('filter'); g.removeAttribute('transform'); }
+    copy.setAttribute('width', String(160 * K));
+    copy.setAttribute('height', String(110 * K));
+    copy.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(copy)], { type: 'image/svg+xml' }));
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const c = document.createElement('canvas');
+        c.width = 160 * K; c.height = 110 * K;
+        const cx = c.getContext('2d');
+        cx.drawImage(img, 0, 0);
+        const { data } = cx.getImageData(0, 0, c.width, c.height);
+        let x0 = c.width, y0 = c.height, x1 = -1, y1 = -1;
+        for (let y = 0; y < c.height; y++) {
+          for (let x = 0; x < c.width; x++) {
+            if (data[(y * c.width + x) * 4 + 3] > 40) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+          }
+        }
+        if (x1 < 0) return reject(new Error('empty'));
+        resolve({ x: x0 / K, y: y0 / K, width: (x1 - x0 + 1) / K, height: (y1 - y0 + 1) / K });
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('svg')); };
+      img.src = url;
+    });
+  }
+
   P.art = {
     html(id, color) {
       const fn = ART[id] || ART.default;
       return fn(color || INK);
     },
     has(id) { return !!ART[id]; },
+    // Each drawing as large as the others and in the middle of its place:
+    // drawn by hand, they fill the 160x110 differently (a mast tall, a
+    // turntable wide). Once on the page each is measured by what of it is
+    // seen (drawn to a canvas, its ground left out: an outline's box counts
+    // what does not show), then scaled to the same area (a wide one and a
+    // tall one weigh alike) within the same box, centred, standing on the
+    // same ground, its shadow under it.
+    async fit(root) {
+      for (const svg of root.querySelectorAll('svg.art-svg:not([data-fitted])')) {
+        svg.dataset.fitted = '1';
+        const body = svg.querySelector('g[filter]');
+        const ground = svg.querySelector(':scope > ellipse');
+        if (!body) continue;
+        const bb = await seen(svg).catch(() => null) || (() => { try { return body.getBBox(); } catch { return null; } })();
+        if (!bb || !bb.width || !bb.height) continue;
+        const s = Math.min(124 / bb.width, 80 / bb.height, Math.sqrt((124 * 80 * 0.72) / (bb.width * bb.height)));
+        const tx = 80 - (bb.x + bb.width / 2) * s, ty = 100 - (bb.y + bb.height) * s;
+        body.setAttribute('transform', `translate(${tx.toFixed(2)} ${ty.toFixed(2)}) scale(${s.toFixed(4)})`);
+        if (ground) { ground.setAttribute('cy', '102'); ground.setAttribute('rx', String(Math.max(30, bb.width * s * 0.5).toFixed(1))); }
+      }
+    },
   };
 })(window.PioneerTV);
