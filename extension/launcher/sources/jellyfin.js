@@ -118,12 +118,12 @@ window.PioneerTV = window.PioneerTV || {};
   function toVideo(i) {
     const type = i.Type;
     const kind = type === 'Movie' ? 'movie' : type === 'Series' ? 'series' : type === 'Season' ? 'season'
-      : type === 'Episode' ? 'episode' : i.IsFolder ? 'folder' : 'video';
+      : type === 'Episode' ? 'episode' : type === 'BoxSet' ? 'collection' : i.IsFolder ? 'folder' : 'video';
     const tags = i.ImageTags || {};
     const ud = i.UserData || {};
     const src = (i.MediaSources || [])[0];
     const streams = (src && src.MediaStreams) || [];
-    const portrait = ['movie', 'series', 'season'].includes(kind);
+    const portrait = ['movie', 'series', 'season', 'collection'].includes(kind);
     // Sized for the 1280x720 screen: a poster is at most 16rem wide (256 px,
     // on the detail page), a still 24rem (384 px). Larger only costs the
     // Pi decoding time while the grid scrolls.
@@ -249,6 +249,11 @@ window.PioneerTV = window.PioneerTV || {};
       const kind = { movies: 'Movie', tvshows: 'Series' }[lib.type];
       return items({ ParentId: lib.id, IncludeItemTypes: kind, GenreIds: ids.join(','), SortBy: 'SortName',
         Fields: VIDEO_FIELDS, EnableImageTypes: 'Primary,Thumb,Backdrop' }, toVideo);
+    },
+    // Jellyfin's collections (box sets), the empty left out.
+    collections() {
+      return items({ IncludeItemTypes: 'BoxSet', SortBy: 'SortName', Fields: VIDEO_FIELDS, EnableImageTypes: 'Primary' }, toVideo)
+        .then((all) => all.filter((c) => c.count !== 0));
     },
     // A library's genres: [{ id, name }].
     async genres(lib) {

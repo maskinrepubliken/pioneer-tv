@@ -121,6 +121,8 @@ for _s in SERIES:
 CLIPS = [{"Id": f"klipp{n}", "Name": f"Midsommar {2015 + n}", "Type": "Video", "RunTimeTicks": (3 + n) * 60 * T,
           "ImageTags": {"Primary": "p"} if n % 2 else {}, "UserData": {}, "MediaSources": _source(f"klipp{n}", subs=False)} for n in range(1, 7)]
 FOLDER = {"Id": "mapp1", "Name": "Resor", "Type": "Folder", "IsFolder": True, "ChildCount": 3, "UserData": {}}
+BOXSETS = [{"Id": "samling1", "Name": "Bergman", "Type": "BoxSet", "IsFolder": True, "ChildCount": 3, "ImageTags": {"Primary": "p"}, "UserData": {}},
+           {"Id": "samling2", "Name": "Sommarfilmer", "Type": "BoxSet", "IsFolder": True, "ChildCount": 2, "ImageTags": {}, "UserData": {}}]
 CHANNELS = [{"Id": f"kanal{n}", "Name": name, "Type": "Folder", "IsFolder": True, "ChildCount": 3 + n, "UserData": {}}
             for n, name in enumerate(["Every Frame a Painting", "Alt Shift X", "Design Theory", "Dunderpatrullen", "exurb1a"], 1)]
 
@@ -148,7 +150,7 @@ PLAYLISTS = [{"Id": f"lista{n}", "Name": name, "Type": "Playlist", "ChildCount":
              for n, name in enumerate(["Söndagsmorgon", "Middag", "Träning", "Bilresan", "Julmusik"], 1)]
 VIEWS = [{"Id": "lib-film", "Name": "Filmer", "CollectionType": "movies"}, {"Id": "lib-serier", "Name": "Serier", "CollectionType": "tvshows"},
          {"Id": "lib-musik", "Name": "Musik", "CollectionType": "music"}, {"Id": "lib-hem", "Name": "Hemvideor", "CollectionType": "homevideos"}]
-ALL = {x["Id"]: x for x in MOVIES + SERIES + sum(SEASONS.values(), []) + sum(EPISODES.values(), []) + CLIPS + [FOLDER] + CHANNELS
+ALL = {x["Id"]: x for x in MOVIES + SERIES + sum(SEASONS.values(), []) + sum(EPISODES.values(), []) + CLIPS + [FOLDER] + CHANNELS + BOXSETS
        + ARTISTS + ALBUMS + sum(SONGS.values(), []) + PLAYLISTS}
 
 
@@ -161,12 +163,15 @@ def _items(q: dict) -> list:
     if parent:
         if parent in SONGS:
             return SONGS[parent]
-        pool = {"lib-film": MOVIES, "lib-serier": SERIES, "lib-hem": [FOLDER] + CHANNELS + CLIPS[:3], "mapp1": CLIPS[3:]}.get(parent, [])
+        pool = {"lib-film": MOVIES, "lib-serier": SERIES, "lib-hem": [FOLDER] + CHANNELS + CLIPS[:3], "mapp1": CLIPS[3:],
+                "samling1": MOVIES[6:9], "samling2": MOVIES[1:3]}.get(parent, [])
         genres = q.get("genreids")
         if genres:
             wanted = set(genres.split(","))
             pool = [x for x in pool if wanted & {g["Id"] for g in x.get("GenreItems", [])}]
         return pool
+    if "BoxSet" in types:
+        return BOXSETS
     if "MusicAlbum" in types:
         artist = q.get("albumartistids")
         return [a for a in ALBUMS if not artist or a["AlbumArtists"][0]["Id"] == artist]

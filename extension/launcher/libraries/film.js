@@ -1,22 +1,18 @@
-// Pioneer TV library Film & serier: Jellyfin's films, series and clips
-// (sources/jellyfin.js), drawn by the browse page (browse/page.js) and
-// played on the box in mpv (players/video.js).
+// Pioneer TV libraries Film, Serier and Videor: Jellyfin's films, series
+// and clips (sources/jellyfin.js), drawn by the browse page (browse/page.js)
+// and played on the box in mpv (players/video.js).
 //
-// ?section= (the home page's Film, Serier and Videor tiles) keeps to the
-// libraries of one kind: movies, tvshows or homevideos (and any other).
-// Then #/ is what to watch (Fortsätt titta, Nästa avsnitt, Senast
-// tillagt, Jellyfin's recommendations, a video library's folders),
-// #/all every film or series in a grid, #/genre/<name> those of a genre;
-// the column at the left has them, each genre with its icon. Without a
-// section, all of Jellyfin's video libraries, as below.
-//
-// #/ (the first library) and #/lib/<id>: "Fortsätt titta", then the
-// library's films, series or clips; the libraries and a library's folders
-// in the column at the left (Jellyfin's own, music left out, so a new one
-// appears by itself); #/folder/<id>;
-// #/series/<id>[/<season id>]: the series, its seasons as tabs, a season's
-// episodes; #/item/<id>: a film, an episode or a clip, with Spela, sound
-// and subtitles; #/search/<words>.
+// ?section= (the home page's Film, Serier and Videor tiles; none: films)
+// keeps to the libraries of one kind: movies, tvshows, or homevideos (and
+// any other kind of video). #/ is what to watch (Fortsätt titta, Nästa
+// avsnitt, Senast tillagt, Jellyfin's recommendations, a video library's
+// folders); #/all every film or series in a grid; #/genre/<name> those of a
+// genre; #/collections Jellyfin's collections (box sets), when there are
+// any; the column at the left has them, each with its icon. #/lib/<id> a
+// library (when the section has more than one); #/folder/<id> a folder or
+// a collection; #/series/<id>[/<season id>]: the series, its seasons as
+// tabs, a season's episodes; #/item/<id>: a film, an episode or a clip,
+// with Spela, sound and subtitles; #/search/<words>, in the section.
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const J = M.jellyfin;
@@ -40,6 +36,7 @@ window.PioneerTV = window.PioneerTV || {};
   function href(v) {
     if (v.kind === 'series') return `#/series/${encodeURIComponent(v.id)}`;
     if (v.kind === 'season') return `#/series/${encodeURIComponent(v.seriesId)}/${encodeURIComponent(v.id)}`;
+    if (v.kind === 'collection') return `#/folder/${encodeURIComponent(v.id)}`;
     if (v.kind === 'folder') return `#/folder/${encodeURIComponent(v.id)}`;
     return `#/item/${encodeURIComponent(v.id)}`;
   }
@@ -48,6 +45,7 @@ window.PioneerTV = window.PioneerTV || {};
   // begun: a 16:9 still. A folder: type only.
   function item(v) {
     const base = { key: `v:${v.id}`, href: href(v), progress: progress(v) };
+    if (v.kind === 'collection') return { ...base, title: v.name, meta: v.count == null ? '' : v.count === 1 ? '1 film' : `${v.count} filmer`, picture: v.poster, mock: 'dvd', shape: 'poster' };
     if (v.kind === 'folder') return { ...base, title: v.name, meta: v.count == null ? '' : v.count === 1 ? '1 sak' : `${v.count} saker`, style: 'prose' };
     if (v.kind === 'movie' || v.kind === 'series') {
       const meta = v.kind === 'series' && v.count ? [v.year, v.count === 1 ? '1 säsong' : `${v.count} säsonger`].filter(Boolean).join(' · ') : v.year;
@@ -85,7 +83,9 @@ window.PioneerTV = window.PioneerTV || {};
     tvshows: { name: 'Serier', all: 'Alla serier', search: 'Sök serie eller avsnitt…', types: 'Series,Episode', mock: 'dvd' },
     homevideos: { name: 'Videor', all: null, search: 'Sök video…', types: 'Video', mock: 'still' },
   };
-  const SEC = SECTIONS[SECTION] || null;
+  // No section asked for (an old address): films.
+  const SEC = SECTIONS[SECTION] || SECTIONS.movies;
+  const SECTION_KEY = SECTIONS[SECTION] ? SECTION : 'movies';
   // The section a library belongs to: films, series, and the rest videos.
   const sectionOf = (lib) => (lib.type === 'movies' || lib.type === 'tvshows' ? lib.type : 'homevideos');
   const LIB_ICON = { movies: 'film', tvshows: 'tv', homevideos: 'camera' };
@@ -112,7 +112,7 @@ window.PioneerTV = window.PioneerTV || {};
   async function libs() {
     if (!libraries) {
       const all = await J.libraries();
-      libraries = SEC ? all.filter((l) => sectionOf(l) === SECTION) : all;
+      libraries = all.filter((l) => sectionOf(l) === SECTION_KEY);
     }
     return libraries;
   }
@@ -145,37 +145,27 @@ window.PioneerTV = window.PioneerTV || {};
     return held.get(lib.id);
   }
 
-  // The library a folder is in: the one whose folders hold it (a folder in
-  // a folder: none, the column then marks only the library's own).
-  async function libraryOf(folderId) {
-    for (const lib of await libs()) {
-      if ((await browse(lib)).some((v) => v.id === folderId)) return lib;
-    }
-    return null;
+  // Jellyfin's collections (box sets), for films, kept.
+  let boxsets = null;
+  function collections() {
+    if (!boxsets) boxsets = SECTION_KEY === 'movies' ? J.collections().catch(() => []) : Promise.resolve([]);
+    return boxsets;
   }
 
-  // The column at the left: the libraries, and the folders of the one the
-  // page is in (in one of its folders too).
+  // The column at the left: what to watch, all of it, the collections when
+  // there are any, the genres, and the libraries when there are more than one.
   async function rail([what, id]) {
-    const all = await libs();
-    const libItem = (l, active) => ({ label: l.name, icon: LIB_ICON[sectionOf(l)], href: `#/lib/${encodeURIComponent(l.id)}`, key: `lib:${l.id}`, active });
-    // A section: what to watch, all of it, the genres (and its libraries,
-    // when it has more than one).
-    if (SEC) {
-      const top = [{ label: 'Upptäck', icon: 'spark', href: '#/', key: 'rail:start', active: !what }];
-      if (SEC.all) top.push({ label: SEC.all, icon: 'grid', href: '#/all', key: 'rail:all' });
-      const groups = [{ items: top }];
-      if (all.length > 1) groups.push({ label: 'Bibliotek', items: all.map((l) => libItem(l, what === 'lib' && l.id === id)) });
-      const gs = await genres();
-      if (gs.length) groups.push({ label: 'Genrer', items: gs.map((g) => ({ label: g.name, icon: g.icon, href: `#/genre/${encodeURIComponent(g.key)}`, key: `genre:${g.key}` })) });
-      return groups;
+    const [all, gs, cs] = await Promise.all([libs(), genres(), collections()]);
+    const top = [{ label: 'Upptäck', icon: 'spark', href: '#/', key: 'rail:start', active: !what }];
+    if (SEC.all) top.push({ label: SEC.all, icon: 'grid', href: '#/all', key: 'rail:all' });
+    if (cs.length) top.push({ label: 'Samlingar', icon: 'stack', href: '#/collections', key: 'rail:collections' });
+    const groups = [{ items: top }];
+    if (all.length > 1) {
+      groups.push({ label: 'Bibliotek', items: all.map((l) => ({ label: l.name, icon: LIB_ICON[sectionOf(l)],
+        href: `#/lib/${encodeURIComponent(l.id)}`, key: `lib:${l.id}`, active: what === 'lib' && l.id === id })) });
     }
-    const lib = what === 'lib' ? all.find((l) => l.id === id) : !what ? all[0] : what === 'folder' ? await libraryOf(id) : null;
-    const folders = lib ? (await browse(lib)).filter((v) => v.kind === 'folder') : [];
-    return [
-      { label: 'Bibliotek', items: all.map((l) => libItem(l, lib ? l.id === lib.id : false)) },
-      { label: 'Mappar', items: folders.map((v) => ({ label: v.name, icon: 'folder', href: href(v), key: `v:${v.id}` })) },
-    ];
+    if (gs.length) groups.push({ label: 'Genrer', items: gs.map((g) => ({ label: g.name, icon: g.icon, href: `#/genre/${encodeURIComponent(g.key)}`, key: `genre:${g.key}` })) });
+    return groups;
   }
 
   // A section's start: what to watch now. Films: begun, added lately,
@@ -193,15 +183,15 @@ window.PioneerTV = window.PioneerTV || {};
     const each = async (fn) => (await Promise.all(all.map((l) => fn(l).catch(() => [])))).flat();
     const [begun, latest] = await Promise.all([each((l) => J.resume(l)), each((l) => J.latest(l, 12))]);
     const sections = [];
-    if (SECTION === 'tvshows') {
+    if (SECTION_KEY === 'tvshows') {
       const next = await each((l) => J.nextUp(l));
       const nextIds = new Set(next.map((v) => v.id));
       sections.push({ label: 'Nästa avsnitt', layout: 'shelf', shape: 'still', items: next.map(still) });
       sections.push({ label: 'Fortsätt titta', layout: 'shelf', shape: 'still', items: begun.filter((v) => !nextIds.has(v.id)).map(still) });
     } else sections.push({ label: 'Fortsätt titta', layout: 'shelf', shape: 'still', items: begun.map(still) });
-    const shape = SECTION === 'homevideos' ? 'still' : 'poster';
+    const shape = SECTION_KEY === 'homevideos' ? 'still' : 'poster';
     sections.push({ label: 'Senast tillagt', layout: 'shelf', shape, items: latest.slice(0, 12).map(shape === 'still' ? still : item) });
-    if (SECTION === 'movies') {
+    if (SECTION_KEY === 'movies') {
       const recs = await each((l) => J.recommendations(l));
       for (const r of recs) {
         if (!r.items.length) continue;
@@ -209,7 +199,7 @@ window.PioneerTV = window.PioneerTV || {};
         sections.push({ label, layout: 'shelf', shape: 'poster', items: r.items.slice(0, 12).map(item) });
       }
     }
-    if (SECTION === 'homevideos') {
+    if (SECTION_KEY === 'homevideos') {
       const folders = (await each((l) => browse(l))).filter((v) => v.kind === 'folder');
       sections.push({ label: 'Kanaler', layout: 'groups', items: folders.map(item) });
     }
@@ -234,7 +224,11 @@ window.PioneerTV = window.PioneerTV || {};
   async function everything() {
     const found = (await Promise.all((await libs()).map((l) => browse(l)))).flat().filter((v) => v.kind !== 'folder');
     found.sort((a, b) => a.name.localeCompare(b.name, 'sv'));
-    return gridOf(SEC ? SEC.all : 'Alla', found);
+    return gridOf(SEC.all || 'Alla', found);
+  }
+  async function collectionsView() {
+    const cs = await collections();
+    return { ...gridOf('Samlingar', cs), empty: 'Inga samlingar i Jellyfin.' };
   }
   async function genre(key) {
     const g = (await genres()).find((x) => x.key === key);
@@ -261,7 +255,7 @@ window.PioneerTV = window.PioneerTV || {};
   }
 
   async function search(term) {
-    const found = await J.searchVideos(term, SEC ? SEC.types : undefined);
+    const found = await J.searchVideos(term, SEC.types);
     const head = { kind: 'shelf', title: M.views.searchTitle(term), count: M.views.hits(found.length), legend: [['A', 'öppna']] };
     if (!found.length) return { ...head, none: M.views.NONE };
     return { ...head, sections: sections(found, null) };
@@ -338,18 +332,19 @@ window.PioneerTV = window.PioneerTV || {};
     if (what === 'series' && arg) return series(arg, arg2 || null);
     if (what === 'folder' && arg) return folder(arg);
     if (what === 'search' && arg) return search(arg);
-    if (SEC && what === 'all') return everything();
-    if (SEC && what === 'genre' && arg) return genre(arg);
-    if (SEC && what !== 'lib') return start();
-    return library(what === 'lib' ? arg : null);
+    if (what === 'all') return everything();
+    if (what === 'genre' && arg) return genre(arg);
+    if (what === 'collections') return collectionsView();
+    if (what === 'lib' && arg) return library(arg);
+    return start();
   }
 
   M.libraries = M.libraries || {};
   M.libraries.film = {
-    name: SEC ? SEC.name : 'Film & serier', source: 'Jellyfin', search: SEC ? SEC.search : 'Sök film eller serie…',
-    // B leaves the page from any library tab (a section: from its start; its
-    // other views go back, as Spel's consoles do).
-    isRoot: ([what]) => !what || (!SEC && what === 'lib'),
+    name: SEC.name, source: 'Jellyfin', search: SEC.search,
+    // B leaves the page from its start; its other views go back, as Spel's
+    // consoles do.
+    isRoot: ([what]) => !what,
     view, rail,
   };
 })(window.PioneerTV);

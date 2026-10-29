@@ -405,17 +405,15 @@ for videos the folders, its channels. Its column has Upptäck, Alla filmer
 or Alla serier (a grid with letter jumps and the text under the shelves)
 and the genres (`Genres`), by their Swedish name with an icon each, one
 genre where Jellyfin has it under two names (Comedy and Komedi); a genre
-is a grid as Alla is. Sök keeps to the section. Without a section, as below:
-
-The Film & serier tile opens the browse page on top of Jellyfin
-(`browse.html?library=film`), served by the daemon like Musik
+is a grid as Alla is; Samlingar, Jellyfin's collections (box sets), when
+it has any. Sök keeps to the section, and the overlay's Sök offers the
+three. An address without a section is Film. The pages are served by the
+daemon like Musik
 (`http://127.0.0.1:8765/ext/launcher/browse.html?library=film`); the installer moved a tile
-that still opened Jellyfin's web UI over to it once. The column at the left
-has Jellyfin's own libraries (`UserViews`, each with the icon of its kind),
-music, photos and books left out, so a library added in Jellyfin appears
-by itself, and the folders of the library the page is in. Each library starts with "Fortsätt titta"
-(what was begun) and then holds the library's films or series as posters, or
-a home video library's clips. A on a film, an episode or a clip
+that still opened Jellyfin's web UI over to it once. A section's libraries
+are Jellyfin's own (`UserViews`) of its kind, music, photos and books left
+out, so a library added in Jellyfin appears by itself; with more than one
+the column lists them too. A on a film, an episode or a clip
 opens its page: the picture, year, length and overview, Spela or "Fortsätt
 från …" and "Spela från början", and, when there is a choice, Ljud and
 Undertexter (A steps through them). Which sound and subtitles are chosen

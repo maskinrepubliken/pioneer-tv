@@ -6,9 +6,11 @@ window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const b = M.bridge;
 
+  // The services as configured, Film & serier as three (split below):
+  // the home page's tiles and the overlay's Sök alike.
   function list() {
     const s = b.state.config && b.state.config.services;
-    return Array.isArray(s) && s.length ? s : (M.defaultServices || []);
+    return (Array.isArray(s) && s.length ? s : (M.defaultServices || [])).flatMap(split);
   }
 
   // A relative url is a page of the launcher (the radio player).
@@ -39,7 +41,7 @@ window.PioneerTV = window.PioneerTV || {};
   }
 
   function rows() {
-    const all = list().flatMap(split);
+    const all = list();
     const order = (s) => (s.kind === 'radio' ? 1 : 0);
     return {
       first: all.filter((s) => s.row !== 'second' && s.row !== 'live'),

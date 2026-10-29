@@ -48,7 +48,9 @@
   const HOME = `${L}index.html?tv=1`;
   const SPEL = `${L}browse.html?library=spel&tv=1`;
   const MUSIK = `${L}browse.html?library=musik&tv=1`;
-  const FILM = `${L}browse.html?library=film&tv=1`;
+  const FILM = `${L}browse.html?library=film&section=movies&tv=1`;
+  const SERIER = `${L}browse.html?library=film&section=tvshows&tv=1`;
+  const VIDEOR = `${L}browse.html?library=film&section=homevideos&tv=1`;
   const GAME = `${L}game.html?rom=101`;
   // A song playing, muted (the catalogue makes no sound).
   // A grid filtered as Y and the keyboard would: the words in the search field.
@@ -183,8 +185,9 @@
         { name: 'I vila (Spel, en konsol)', url: `${SPEL}#/platform/2`, ready: '.rail-mark', note: 'Bara ikonerna och initialerna; den man är i i bläck.' },
         { name: 'Utfälld: Spel', url: SPEL, ready: '.rail-mark', setup: railOpen, note: 'Senast spelade, Samlingar, och konsolerna med sin handkontroll.' },
         { name: 'Utfälld: Musik', url: MUSIK, ready: '.rail-mark', setup: railOpen },
-        { name: 'Utfälld: Film, genrer', url: `${L}browse.html?library=film&section=movies&tv=1`, ready: '.rail-mark', setup: railOpen, note: 'Upptäck, Alla filmer och genrerna, var och en med sin ikon.' },
-        { name: 'Utfälld: Film, med mappar', url: `${FILM}#/lib/lib-hem`, ready: '.rail-item:nth-child(2)', setup: railOpen, note: 'Biblioteken, och mapparna i det man är i (också inne i en mapp).' },
+        { name: 'Utfälld: Film', url: FILM, ready: '.rail-mark', setup: railOpen, note: 'Upptäck, Alla filmer, Samlingar (när Jellyfin har några) och genrerna, var och en med sin ikon.' },
+        { name: 'Utfälld: Serier', url: SERIER, ready: '.rail-mark', setup: railOpen },
+        { name: 'Utfälld: Videor', url: VIDEOR, ready: '.rail-mark', setup: railOpen, note: 'Upptäck; kanalerna (mapparna) står på sidan.' },
       ] },
     { part: 'Komponenter', group: 'Spelas nu', files: 'launcher/players/audio.js · launcher/players/audio.css',
       used: 'Musik: en låt spelar i sidan; Spelas nu täcker den, och i rubriken medan man bläddrar.',
@@ -208,9 +211,10 @@
         { name: 'Arkad', url: `${SPEL}#/platform/8`, ready: '.grid .card' },
         { name: 'Album', url: `${MUSIK}#/albums`, ready: '.grid .card' },
         { name: 'Ett album utan omslag', url: `${MUSIK}#/album/album3`, ready: '.row' },
-        { name: 'Filmer och klipp', url: FILM, ready: '.card' },
+        { name: 'Filmer', url: FILM, ready: '.card' },
+        { name: 'Videor', url: VIDEOR, ready: '.card' },
         { name: 'En film utan affisch', url: `${FILM}#/item/film3`, ready: '.knapp.primar' },
-        { name: 'En serie utan affisch, avsnitt utan bild', url: `${FILM}#/series/serie2`, ready: '.row' },
+        { name: 'En serie utan affisch, avsnitt utan bild', url: `${SERIER}#/series/serie2`, ready: '.row' },
       ] },
 
     { part: 'Sidor', group: 'Hem', files: 'launcher/index.html · home/home.js · home/home.css · shared/tiles.js · shared/tiles.css · shared/services.js',
@@ -232,16 +236,17 @@
         { name: 'Musik · Album', url: `${MUSIK}#/albums`, ready: '.grid .card', note: 'Kvadrater, i ett rutnät.' },
         { name: 'Musik · Album, filtrerade', url: `${MUSIK}#/albums`, ready: '.grid .card', setup: filterGrid('s'), note: 'Y skriver; rutnätet visar bara det som matchar, medan man skriver.' },
         { name: 'Musik · En artist', url: `${MUSIK}#/artist/artist2`, ready: '.card', note: 'Blanda allt (X) och Spela allt, runda till höger i rubriken, och artistens album på en hylla.' },
-        { name: 'Film · Upptäck', url: `${L}browse.html?library=film&section=movies&tv=1`, ready: '.card', note: 'Hemsidans Film: Fortsätt titta, Senast tillagt och Jellyfins rekommendationer (Eftersom du såg …, Med …).' },
-        { name: 'Film · Alla filmer', url: `${L}browse.html?library=film&section=movies&tv=1#/all`, ready: '.grid .card', note: 'Rutnät med bokstavshopp och filmens text under hyllorna.' },
-        { name: 'Film · En genre', url: `${L}browse.html?library=film&section=movies&tv=1#/genre/komedi`, ready: '.grid .card', note: 'Komedi: Jellyfins Comedy och Komedi som en.' },
-        { name: 'Serier · Upptäck', url: `${L}browse.html?library=film&section=tvshows&tv=1`, ready: '.card', note: 'Nästa avsnitt, Fortsätt titta, Senast tillagt.' },
-        { name: 'Videor · Upptäck', url: `${L}browse.html?library=film&section=homevideos&tv=1`, ready: '.card', note: 'Fortsätt titta, Senast tillagt och kanalerna (mapparna).' },
-        { name: 'Film · Fortsätt titta och filmer', url: FILM, ready: '.card', note: 'Stillbilder och affischer; hur långt in: ockra längs omslagets fot.' },
-        { name: 'Film · Serier', url: `${FILM}#/lib/lib-serier`, ready: '.card' },
-        { name: 'Film · Hemvideor och klipp', url: `${FILM}#/lib/lib-hem`, ready: '.card' },
-        { name: 'Film · En mapp', url: `${FILM}#/folder/mapp1`, ready: '.card' },
-        { name: 'Film · Sök', url: `${FILM}#/search/s`, ready: '.card' },
+        { name: 'Film · Upptäck', url: FILM, ready: '.card', note: 'Hemsidans Film: Fortsätt titta, Senast tillagt och Jellyfins rekommendationer (Eftersom du såg …, Med …).' },
+        { name: 'Film · Alla filmer', url: `${FILM}#/all`, ready: '.grid .card', note: 'Rutnät med bokstavshopp och filmens text under hyllorna.' },
+        { name: 'Film · En genre', url: `${FILM}#/genre/komedi`, ready: '.grid .card', note: 'Komedi: Jellyfins Comedy och Komedi som en.' },
+        { name: 'Film · Samlingar', url: `${FILM}#/collections`, ready: '.grid .card', note: 'Jellyfins samlingar (box sets); syns i kolumnen bara när det finns några.' },
+        { name: 'Film · En samling', url: `${FILM}#/folder/samling1`, ready: '.card' },
+        { name: 'Serier · Upptäck', url: SERIER, ready: '.card', note: 'Nästa avsnitt, Fortsätt titta, Senast tillagt.' },
+        { name: 'Serier · Alla serier', url: `${SERIER}#/all`, ready: '.grid .card' },
+        { name: 'Videor · Upptäck', url: VIDEOR, ready: '.card', note: 'Fortsätt titta, Senast tillagt och kanalerna (mapparna).' },
+        { name: 'Videor · En kanal', url: `${VIDEOR}#/folder/mapp1`, ready: '.card' },
+        { name: 'Film · Sök', url: `${FILM}#/search/s`, ready: '.card', note: 'Bara filmer: sökningen håller sig i sektionen.' },
+        { name: 'Serier · Sök', url: `${SERIER}#/search/avsnitt`, ready: '.card' },
       ] },
     { part: 'Sidor', group: 'Kort', files: 'launcher/browse.html · browse/cards.js (stack) · browse/cards.css (.card--stack) · browse/shelf.js · browse/grid.js · libraries/*.js',
       used: 'Bläddringssidan: en helhet som ett kort, dess bild eller de första i en hög, namnet och en rad under. Samlingar, spellistor och artister.',
@@ -258,9 +263,9 @@
       used: 'Bläddringssidan, en sak: bilden till vänster, namn, text, knappar, val, flikar och en lista bredvid.',
       items: [
         { name: 'Film · En film', url: `${FILM}#/item/film1`, ready: '.knapp.primar' },
-        { name: 'Film · Ett avsnitt, påbörjat', url: `${FILM}#/item/serie1-s1e3`, ready: '.knapp.primar' },
-        { name: 'Film · Ett klipp, utan undertexter', url: `${FILM}#/item/klipp1`, ready: '.knapp.primar' },
-        { name: 'Film · En serie, säsonger och avsnitt', url: `${FILM}#/series/serie1`, ready: '.row' },
+        { name: 'Serier · Ett avsnitt, påbörjat', url: `${SERIER}#/item/serie1-s1e3`, ready: '.knapp.primar' },
+        { name: 'Videor · Ett klipp, utan undertexter', url: `${VIDEOR}#/item/klipp1`, ready: '.knapp.primar' },
+        { name: 'Serier · En serie, säsonger och avsnitt', url: `${SERIER}#/series/serie1`, ready: '.row' },
         { name: 'Musik · Ett album', url: `${MUSIK}#/album/album1`, ready: '.row' },
         { name: 'Musik · En spellista', url: `${MUSIK}#/playlist/lista1`, ready: '.row' },
       ] },
