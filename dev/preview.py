@@ -21,7 +21,11 @@ JELLYFIN_URL, JELLYFIN_API_KEY and JELLYFIN_USER (or jellyfin.env).
 Without those settings, stand-ins answer instead (dev/mock.py): a small
 library of films, series, music and games with drawn covers, and the
 daemon's API. That is what the catalogue of every view uses
-(http://localhost:5178/katalog, dev/katalog.html)."""
+(http://localhost:5178/katalog, dev/katalog.html).
+
+The simulator (http://localhost:5178/sim, dev/sim.html) is the box on one
+screen: the page and the overlay on top of it, a stand-in daemon behind them
+on /ws (dev/sim.py), and the Mac's keys as the pad."""
 import http.server
 import json
 import os
@@ -35,6 +39,7 @@ sys.path.insert(0, str(ROOT / "daemon"))
 from pioneertv import jellyfin, romm  # noqa: E402  (stdlib only)
 sys.path.insert(0, str(ROOT / "dev"))
 import mock  # noqa: E402
+import sim  # noqa: E402
 ROUTES = {                      # URL prefix -> folder
     "/ext/": ROOT / "extension",
     "/static/": ROOT / "daemon" / "pioneertv" / "web",
@@ -69,6 +74,7 @@ REDIRECTS = {
     "/musik": "/ext/launcher/browse.html?library=musik&tv=1",
     "/film": "/ext/launcher/browse.html?library=film&tv=1",
     "/katalog": "/dev/katalog.html",
+    "/sim": "/dev/sim.html",
 }
 
 
@@ -104,6 +110,9 @@ INDEX = """<!doctype html><html lang="sv"><meta charset="utf-8">
 <h1>Pioneer TV – förhandsvisning</h1>
 <p>Sidorna läses direkt från repot. Spara en fil och ladda om.
 Piltangenter navigerar, Enter väljer, Escape stänger. Layouten är ritad för 1280×720.</p>
+<h2>Simulatorn</h2>
+<ul><li><a href="/sim">Boxen på en skärm</a>: sidan och overlayn ovanpå, en låtsasdaemon bakom, och tangentbordet som handkontroll
+(pilar, Enter = A, Esc = B, mellanslag = X, Tab = L1/R1, H = Hem, Y = tangentbordet).</li></ul>
 <h2>Katalog</h2>
 <ul><li><a href="/katalog">Alla vyer</a>: varje skärm, meny, panel och notis i sina lägen, med låtsasdata. Ritar om det som syns när en fil sparas.</li></ul>
 <h2>Hem och overlayn</h2>
@@ -163,6 +172,16 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         api = path.startswith("/api/") and not (path == "/api/jellyfin" and jellyfin_settings()[0])
         if not (jf or rm or api):
             return False
+        if api:
+            length = int(self.headers.get("Content-Length") or 0)
+            try:
+                body = json.loads(self.rfile.read(length) or b"{}") if length else {}
+            except ValueError:
+                body = {}
+            answer = sim.DAEMON.api(self.command, path, body if isinstance(body, dict) else {})
+            if answer is not None:
+                self.send_json(200 if answer.get("ok", True) else 409, answer)
+                return True
         err = mock.error_for(self.headers.get("Referer"))
         if err and path == "/api/jellyfin":
             return self.send_json(200, {"ok": False, "error": "no_key" if err[0] == 503 else "auth" if err[0] == 401 else "down"}) or True
@@ -246,8 +265,20 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def do_HEAD(self):
         self.proxy() if self.proxied() else super().do_HEAD()
 
+    def websocket(self) -> None:
+        """/ws: the stand-in daemon (dev/sim.py), as the pages and the overlay find the real one."""
+        # Written out: the handler speaks HTTP/1.0, and a WebSocket needs 1.1.
+        accept = sim.Socket.accept_key(self.headers.get("Sec-WebSocket-Key", ""))
+        self.wfile.write(("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n"
+                          f"Sec-WebSocket-Accept: {accept}\r\n\r\n").encode())
+        self.wfile.flush()
+        self.close_connection = True
+        sim.DAEMON.serve(sim.Socket(self.connection), f"http://{self.headers.get('Host', 'localhost')}/")
+
     def do_GET(self):
         clean = self.path.split("?", 1)[0]
+        if clean == "/ws" and self.headers.get("Upgrade", "").lower() == "websocket":
+            return self.websocket()
         if self.proxied():
             return self.proxy()
         if clean.startswith("/api/") and self.mocked():
@@ -266,7 +297,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             return
         if clean in REDIRECTS:
             self.send_response(302)
-            self.send_header("Location", REDIRECTS[clean])
+            query = self.path.partition("?")[2]
+            target = REDIRECTS[clean]
+            self.send_header("Location", target + (("&" if "?" in target else "?") + query if query else ""))
             self.end_headers()
             return
         super().do_GET()
@@ -284,5 +317,6 @@ if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 5178
     host = sys.argv[2] if len(sys.argv) > 2 else "127.0.0.1"
     server = http.server.ThreadingHTTPServer((host, port), Handler)
+    server.daemon_threads = True
     print(f"Pioneer TV preview on http://{host}:{port}/", flush=True)
     server.serve_forever()

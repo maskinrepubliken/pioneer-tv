@@ -589,6 +589,27 @@ of the Maskinrepubliken design system in its three themes. The design system
 is vendored in `design/maskinrepubliken/`; after pulling a new `tokens.json`,
 run `python3 dev/tokens-css.py` to regenerate `tokens.css`.
 
+**The simulator** (`http://localhost:5178/sim`, `dev/sim.html`) is the box on
+one screen, to try whole flows rather than single views. The page (Chromium
+on the box) and the overlay (its own window on the box) are two frames, one
+over the other, at 1920×1080 scaled to fit; behind them a stand-in daemon on
+the preview server's `/ws` (`dev/sim.py`), which routes as the daemon does
+(it uses `pioneertv/overlay.py` itself) and plays the music, the radio, a
+film and a game on a clock of its own, with the same events. The simulator
+window does what the extension's background worker does (home, back,
+navigate, settings for the page) and hands the keys to the overlay while
+its menu is open, as on the box.
+
+The Mac's keys are the pad: the arrows, Enter (A), Esc (B), Space (X), Tab
+and Shift+Tab (L1/R1) are the keyboard's own, and reach the page or the
+overlay as real presses (the pages only act on those). H is Home (held, the
+home page), Y the on-screen keyboard, held Esc is holding B, `[` and `]` are
+L2/R2. The side panel draws the pad (lighting up what is pressed), and has
+the screensaver, the TV off and on, the green or the pink pad, and a toast;
+under it, every event the daemon sends. Another site (SVT Play, ...) cannot
+be framed and shows as a stand-in page; `?page=` opens the simulator on a
+page of its own (`/sim?page=/ext/launcher/game.html?rom=100`).
+
 **The catalogue of every view** is at http://localhost:5178/katalog
 (`dev/katalog.html`, `katalog.js`): every screen, menu, panel and toast,
 each in the states it can be in (loading, starting, playing, paused, the

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="sv" class="pioneertv-own">
+<head>
+  <meta charset="utf-8">
+  <title>En annan sajt – simulatorn</title>
+  <link rel="stylesheet" href="/ext/fonts/fonts.css">
+  <link rel="stylesheet" href="/ext/content/tokens.css">
+  <style>
+    html, body { margin: 0; height: 100%; }
+    body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; padding: 0 12vw;
+      background: var(--pioneertv-paper); color: var(--pioneertv-ink); font: 28px/1.4 var(--pioneertv-font-prose); text-align: center; }
+    h1 { margin: 0; font: 900 64px/1 var(--pioneertv-font-display); text-transform: uppercase; }
+    code { font: 22px var(--pioneertv-font-mono); color: var(--pioneertv-ink-muted); word-break: break-all; }
+  </style>
+</head>
+<body>
+  <!-- Another site (SVT Play, Cineasterna, ...): it cannot be shown in a
+       frame here, and the extension's content scripts are the box's. B goes
+       back. -->
+  <h1>En annan sajt</h1>
+  <code id="url"></code>
+  <p>Sajter utanför boxen kan inte visas i simulatorn. B (Esc) går tillbaka; Hem (H) öppnar snabbmenyn.</p>
+  <script>
+    document.getElementById('url').textContent = new URLSearchParams(location.search).get('url') || '';
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') history.back(); });
+  </script>
+</body>
+</html>

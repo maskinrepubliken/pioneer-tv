@@ -1,0 +1,66 @@
+/* The simulator (dev/sim.html): a bar, the TV, a side panel. */
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  display: flex; flex-direction: column; overflow: hidden;
+  font: 14px/1.4 var(--pioneertv-font-ui, system-ui), sans-serif; color: var(--pioneertv-ink, #1c1613);
+  background: #2b2622;
+}
+button { font: inherit; cursor: pointer; }
+kbd { font: 11px var(--pioneertv-font-mono, monospace); padding: 1px 5px; border-radius: 4px; background: rgba(0, 0, 0, 0.08); }
+
+.bar {
+  flex: none; display: flex; align-items: center; gap: 16px; padding: 8px 16px;
+  background: var(--pioneertv-paper, #f4efe4); border-bottom: 1px solid var(--pioneertv-line, #ccc);
+}
+.go { display: flex; gap: 6px; }
+.go button, .buttons button {
+  padding: 5px 12px; border-radius: 999px; border: 1px solid var(--pioneertv-line-strong, #999); background: transparent; color: inherit;
+}
+.go button:hover, .buttons button:hover { background: var(--pioneertv-paper-hover, #e9e2d4); }
+.where { margin-left: auto; font: 12px var(--pioneertv-font-mono, monospace); color: var(--pioneertv-ink-muted, #666); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 45vw; }
+
+.room { flex: 1; min-height: 0; display: flex; }
+.tv { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; padding: 16px; }
+/* The screen is drawn at 1920×1080 and scaled to what there is (sim.js). */
+.screen { position: relative; width: 1920px; height: 1080px; flex: none; transform-origin: center; background: #000; box-shadow: 0 0 0 10px #111; }
+.screen iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; }
+#page { background: var(--pioneertv-paper, #f4efe4); }
+#overlay { pointer-events: none; }
+#overlay.keys { pointer-events: auto; }
+
+.side {
+  flex: none; width: 330px; display: flex; flex-direction: column; gap: 4px; overflow: auto;
+  background: var(--pioneertv-paper, #f4efe4); border-left: 1px solid var(--pioneertv-line, #ccc);
+}
+.side section { padding: 12px 16px; border-bottom: 1px solid var(--pioneertv-line, #ddd); }
+.side section.grow { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.side h2 { margin: 0 0 8px; font: 600 11px var(--pioneertv-font-mono, monospace); letter-spacing: 0.1em; text-transform: uppercase; color: var(--pioneertv-ink-faint, #888); }
+.hint { margin: 10px 0 0; font-size: 12px; color: var(--pioneertv-ink-muted, #666); }
+.keys-to { margin: 0 0 10px; font-size: 13px; }
+.buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* The pad: buttons the daemon handles are buttons (clicked, they press);
+   the rest only light up when their key is pressed. */
+.pad { display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 28px; background: var(--pioneertv-paper-sunken, #e9e2d4); }
+.pad-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.pad button, .pad span[data-show] {
+  display: inline-flex; align-items: center; gap: 4px; justify-content: center; padding: 4px 8px; border-radius: 999px;
+  border: 1px solid var(--pioneertv-line-strong, #999); background: var(--pioneertv-paper, #f4efe4); color: inherit; font-size: 12px; font-weight: 600;
+}
+.pad-top button { flex: 1; }
+.pad .small { font-weight: 400; font-size: 11px; }
+.dpad { position: relative; width: 84px; height: 84px; }
+.dpad span { position: absolute; width: 28px; height: 28px; padding: 0 !important; border-radius: 6px !important; }
+.dpad .up { left: 28px; top: 0; } .dpad .down { left: 28px; bottom: 0; } .dpad .left { left: 0; top: 28px; } .dpad .right { right: 0; top: 28px; }
+.mid { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.mid .home { border-radius: 50% !important; width: 58px; height: 58px; flex-direction: column; }
+.face { display: grid; grid-template-columns: repeat(3, 34px); grid-template-rows: repeat(3, 28px); gap: 2px; }
+.face > * { padding: 0 !important; font-size: 11px !important; }
+.face kbd { display: none; }
+.face .y { grid-column: 2; grid-row: 1; } .face .x { grid-column: 1; grid-row: 2; } .face .b { grid-column: 3; grid-row: 2; } .face .a { grid-column: 2; grid-row: 3; }
+.pad .down-now { background: var(--pioneertv-ochre, #f5cf5a) !important; border-color: var(--pioneertv-ochre, #f5cf5a) !important; }
+
+.log { flex: 1; min-height: 120px; margin: 0; padding: 0; list-style: none; overflow: auto; font: 11px/1.5 var(--pioneertv-font-mono, monospace); color: var(--pioneertv-ink-muted, #555); }
+.log li { padding: 2px 0; border-bottom: 1px solid rgba(0, 0, 0, 0.05); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.log li b { color: var(--pioneertv-ink, #1c1613); font-weight: 600; }

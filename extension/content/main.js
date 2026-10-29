@@ -1,8 +1,10 @@
 // Pioneer TV content entry point: wires bridge events to the overlays.
 (function (M) {
   // Main frame only, except a page the catalogue of views (dev/katalog.js)
-  // shows in a frame of its own, marked ?katalog.
-  if (window.top !== window && !new URLSearchParams(location.search).has('katalog')) return;
+  // shows in a frame of its own, marked ?katalog, and the page on the
+  // simulator's screen (dev/sim.html), whatever page it goes on to.
+  const simulated = () => { try { return window.parent.location.pathname === '/dev/sim.html'; } catch { return false; } };
+  if (window.top !== window && !new URLSearchParams(location.search).has('katalog') && !simulated()) return;
   if (M._started) return;
   M._started = true;
 

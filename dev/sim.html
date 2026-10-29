@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pioneer TV – simulatorn</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/ext/fonts/fonts.css">
+  <link rel="stylesheet" href="/ext/content/tokens.css">
+  <link rel="stylesheet" href="/dev/sim.css">
+</head>
+<body>
+  <!-- The box on one screen (dev/sim.js): the page (Chromium) with the
+       overlay (its own WebKit on the box) over it, both 1920×1080 and
+       scaled to fit; the stand-in daemon behind them on /ws (dev/sim.py). -->
+  <header class="bar">
+    <b>Pioneer TV · simulatorn</b>
+    <nav class="go">
+      <button data-go="/ext/launcher/index.html?tv=1">Hem</button>
+      <button data-go="/ext/launcher/browse.html?library=spel&amp;tv=1">Spel</button>
+      <button data-go="/ext/launcher/browse.html?library=musik&amp;tv=1">Musik</button>
+      <button data-go="/ext/launcher/browse.html?library=film&amp;tv=1">Film</button>
+      <button data-go="/ext/launcher/radio.html?channel=132&amp;name=P1&amp;tv=1">P1</button>
+      <button data-go="/static/settings.html?mock=1">Inställningar</button>
+    </nav>
+    <span class="where" id="where"></span>
+  </header>
+  <main class="room">
+    <div class="tv" id="tv">
+      <div class="screen" id="screen">
+        <iframe id="page" title="Sidan"></iframe>
+        <iframe id="overlay" title="Overlayn" src="/ext/overlay/index.html"></iframe>
+      </div>
+    </div>
+    <aside class="side">
+      <section>
+        <h2>Handkontrollen</h2>
+        <p class="keys-to" id="keys-to">Tangenterna går till <b>sidan</b></p>
+        <div class="pad" id="pad">
+          <div class="pad-row pad-top">
+            <button data-show="Shift+Tab">L1 <kbd>⇧⇥</kbd></button>
+            <button data-sys="vol_down">L2 <kbd>[</kbd></button>
+            <button data-sys="vol_up">R2 <kbd>]</kbd></button>
+            <button data-show="Tab">R1 <kbd>⇥</kbd></button>
+          </div>
+          <div class="pad-row">
+            <div class="dpad">
+              <span data-show="ArrowUp" class="up">▲</span><span data-show="ArrowLeft" class="left">◀</span>
+              <span data-show="ArrowRight" class="right">▶</span><span data-show="ArrowDown" class="down">▼</span>
+            </div>
+            <div class="mid">
+              <button data-sys="menu" class="home" title="Hem: snabbmenyn (H). Håll H: hemsidan.">Hem <kbd>H</kbd></button>
+              <button data-sys="home" class="small">håll Hem</button>
+            </div>
+            <div class="face">
+              <button data-sys="keyboard" class="y">Y <kbd>Y</kbd></button>
+              <span data-show=" " class="x">X <kbd>␣</kbd></span>
+              <span data-show="Escape" class="b">B <kbd>esc</kbd></span>
+              <span data-show="Enter" class="a">A <kbd>⏎</kbd></span>
+            </div>
+          </div>
+          <div class="pad-row">
+            <button data-sys="back" class="small">håll B</button>
+          </div>
+        </div>
+        <p class="hint">Pilar, Enter (A), Esc (B), mellanslag (X) och Tab (L1/R1) är tangentbordets egna. Håll H för hemsidan, håll Esc för att gå tillbaka. Klicka i TV:n för att ge den tangenterna igen.</p>
+      </section>
+      <section>
+        <h2>Boxen</h2>
+        <div class="buttons">
+          <button data-api="/api/sim/saver">Skärmsläckare</button>
+          <button data-api="/api/sim/tv">TV av / på</button>
+          <button data-pad="gron">Grön handkontroll</button>
+          <button data-pad="rosa">Rosa handkontroll</button>
+          <button data-api="/api/sim/toast">En notis</button>
+        </div>
+      </section>
+      <section class="grow">
+        <h2>Händelser</h2>
+        <ol class="log" id="log"></ol>
+      </section>
+    </aside>
+  </main>
+  <script src="/dev/sim.js"></script>
+</body>
+</html>
