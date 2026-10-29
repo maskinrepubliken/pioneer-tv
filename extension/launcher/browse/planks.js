@@ -17,8 +17,8 @@ window.PioneerTV = window.PioneerTV || {};
   }
 
   // Nothing to stand on it (a search that found nothing, an empty
-  // collection): one bare plank, dust along its top, a cobweb in the corner
-  // above with its spider, and the line in big type on the wall.
+  // collection): one bare plank, dust along its top, a cobweb under it at
+  // its end with its spider, and the line in big type on the wall.
   function dusty(text) {
     const box = planks('box', 6);
     box.classList.add('planks--dusty');

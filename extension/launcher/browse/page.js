@@ -95,7 +95,7 @@ window.PioneerTV = window.PioneerTV || {};
       // words, and how many in it match (the grid tells, as it filters).
       const shown = (n, all, words) => {
         titleEl.textContent = words ? V.searchTitle(words) : spec.title || library.name;
-        countEl.textContent = words ? `${V.hits(n)} i ${spec.title || library.name}` : spec.count ? spec.count(n, all) : '';
+        countEl.textContent = words ? (n ? `${V.hits(n)} i ${spec.title || library.name}` : `i ${spec.title || library.name}`) : spec.count ? spec.count(n, all) : '';
       };
       grid = M.grid.render(view, spec, { shown, savedKey: lastFocus[here()] });
       // Nothing found: the focus is left be (the column would open over the

@@ -122,8 +122,9 @@ button, as on every page of ours (`pioneertv-round` in
 on a field out of sight; over a grid they filter it, elsewhere they
 search the library. Either way the heading is the same: the words as the
 title and how many were found beside them ("3 träffar", over a grid "2
-träffar i SNES"), and when nothing was found a bare dusty plank, a cobweb
-in its corner, says "Inga träffar. Bara damm." in big type (`planks.js`
+träffar i SNES"), and when nothing was found only the words (and "i
+SNES") and a bare dusty plank, a cobweb under its end, saying "Inga
+träffar" in big type (`planks.js`
 dusty, also for a grid with nothing in it). B takes a filter away first. What plays is a player's:
 `players/video.js` (mpv, through the daemon) and `players/audio.js` (in the
 page, with "Spelas nu"). `shared/` has the canvas, the buttons and the

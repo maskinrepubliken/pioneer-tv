@@ -147,8 +147,9 @@ window.PioneerTV = window.PioneerTV || {};
   // filter: the words as the title, how many were found beside them; and
   // when none, a bare shelf says so (planks.js dusty).
   const searchTitle = (words) => `”${words}”`;
-  const hits = (n) => (n === 0 ? 'inga träffar' : n === 1 ? '1 träff' : `${n} träffar`);
-  const NONE = 'Inga träffar. Bara damm.';
+  // None: nothing beside the words, the bare plank says it.
+  const hits = (n) => (n === 0 ? '' : n === 1 ? '1 träff' : `${n} träffar`);
+  const NONE = 'Inga träffar';
 
   M.views = { el, button, legend, cover, message, loading, clear, key, error, searchTitle, hits, NONE };
 })(window.PioneerTV);
