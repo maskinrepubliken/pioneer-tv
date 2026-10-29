@@ -81,12 +81,14 @@ window.PioneerTV = window.PioneerTV || {};
     return a;
   }
 
-  // A card of a whole's pictures, in its pile (null: none yet, an empty place).
+  // A card of a whole's pictures, in its pile, up to six (a collection's
+  // first games; null: none yet, an empty place).
+  const PILE = 6;
   function pile(card, pictures) {
     const box = card.querySelector('.stack');
     box.innerHTML = '';
     if (pictures === null) return;
-    const pics = pictures.slice(0, 3);
+    const pics = pictures.slice(0, PILE);
     box.style.setProperty('--n', String(pics.length));
     pics.forEach((p, i) => {
       const c = V.cover(p.src, p.name, { initial: card.dataset.shape === 'round', mock: p.mock });

@@ -57,9 +57,9 @@
 }
 .card--stack-box .stack { --w: 6.4rem; }
 .stack .cover {
-  position: absolute; bottom: 0; width: var(--w); height: calc(var(--h) - var(--i) * 0.7rem);
+  position: absolute; bottom: 0; width: var(--w); height: calc(var(--h) - var(--i) * 0.45rem);
   left: calc(50% - (var(--w) + (var(--n) - 1) * var(--step)) / 2 + var(--i) * var(--step));
-  z-index: calc(3 - var(--i)); border-radius: 0.15rem;
+  z-index: calc(6 - var(--i)); border-radius: 0.15rem;
   box-shadow: 0.12rem 0 0 var(--pioneertv-paper-raised);
 }
 .stack .cover img { object-fit: cover; }

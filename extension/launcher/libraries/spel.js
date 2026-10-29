@@ -102,7 +102,7 @@ window.PioneerTV = window.PioneerTV || {};
     const next = async () => {
       const c = todo.shift();
       if (!c) return;
-      const games = await R.firstGames(c).catch(() => null);
+      const games = await R.firstGames(c, 6).catch(() => null);
       if (games) {
         const pics = games.map((g) => ({ src: g.cover, name: g.name, mock: M.mockups.forConsole(g.platform) }));
         firsts.set(key(c), pics);

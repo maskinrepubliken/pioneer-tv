@@ -285,7 +285,7 @@ TV page in settings (`ui.home_minutes`, `ui.tv_off_minutes`; 0 is never).
 
 The Spel tile opens the browse page on top of [RomM](https://github.com/rommapp/romm)
 (`browse.html?library=spel`, [The pages](#the-pages)): recently played;
-Samlingar, each collection as a card (its first covers in a pile, its
+Samlingar, each collection as a card (its first six covers in a pile, its
 name and how many), A opening it; the
 consoles in the column at the left, each by its pad (or its initial); each
 console's games with covers; a game opens `game.html`, which has it

@@ -267,8 +267,8 @@ for _pid, _names in GAME_NAMES.items():
                                                       "game_modes": ["Single player", "Multiplayer"] if _k % 2 else ["Single player"],
                                                       "publishers": ["Nintendo"]},
                      "rom_user": {"last_played": f"2026-10-{20 + _k % 7}T18:00:00Z"} if _k < 2 else {}, "files": [{}]})
-COLLECTIONS = [{"id": 1, "name": "Favoriter", "is_favorite": True, "rom_ids": [100, 101, 200]}, {"id": 2, "name": "Två spelare", "rom_ids": [102, 300, 301]}]
-VIRTUAL = [{"id": "plattformsspel", "name": "Plattformsspel", "rom_ids": [100, 201, 300]}]
+COLLECTIONS = [{"id": 1, "name": "Favoriter", "is_favorite": True, "rom_ids": [100, 101, 200]}, {"id": 2, "name": "Två spelare", "rom_ids": [102, 300, 301, 103, 302, 401, 500, 104]}]
+VIRTUAL = [{"id": "plattformsspel", "name": "Plattformsspel", "rom_ids": [100, 201, 300, 303, 400, 105]}]
 
 
 def romm(path: str, query: str, method: str) -> tuple[int, str, bytes]:
