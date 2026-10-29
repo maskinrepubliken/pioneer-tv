@@ -17,9 +17,11 @@ from urllib.parse import unquote
 
 # Path prefixes (lower case: Jellyfin's routes ignore case) and the methods
 # each allows.
-# userviews, useritems/ and shows/ are for the Film & serier pages: the
-# libraries, what was begun, and a series' seasons and episodes.
-READ_PREFIXES = ("items", "users/", "playlists/", "artists", "search/hints", "audio/", "userviews", "useritems/", "shows/")
+# userviews, useritems/, shows/, genres and movies/ are for the Film, Serier
+# and Videor pages: the libraries, what was begun, a series' seasons and
+# episodes and what is next, the genres, and Jellyfin's recommendations.
+READ_PREFIXES = ("items", "users/", "playlists/", "artists", "search/hints", "audio/", "userviews", "useritems/", "shows/",
+                 "genres", "movies/recommendations")
 # The reports come from the API key, which is no user: a song played to its
 # end is marked played for the user too (userplayeditems/), so play counts
 # follow the box.

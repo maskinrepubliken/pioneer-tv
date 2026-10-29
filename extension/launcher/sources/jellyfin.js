@@ -242,12 +242,47 @@ window.PioneerTV = window.PioneerTV || {};
         Fields: VIDEO_FIELDS, EnableImageTypes: 'Primary,Thumb,Backdrop' })}`);
       return (d.Items || []).map(toVideo);
     },
+    // What a library holds of one kind (films, series), in some genres
+    // (ids: a genre can be there twice, under its English and its Swedish
+    // name), by name.
+    byGenre(lib, ids) {
+      const kind = { movies: 'Movie', tvshows: 'Series' }[lib.type];
+      return items({ ParentId: lib.id, IncludeItemTypes: kind, GenreIds: ids.join(','), SortBy: 'SortName',
+        Fields: VIDEO_FIELDS, EnableImageTypes: 'Primary,Thumb,Backdrop' }, toVideo);
+    },
+    // A library's genres: [{ id, name }].
+    async genres(lib) {
+      const kind = { movies: 'Movie', tvshows: 'Series' }[lib.type];
+      const d = await json(`Genres?${q({ userId: await user(), ParentId: lib.id, IncludeItemTypes: kind, Recursive: 'true', SortBy: 'SortName' })}`);
+      return (d.Items || []).map((g) => ({ id: g.Id, name: g.Name }));
+    },
+    // Added lately, newest first (a series: once, for its new episodes).
+    async latest(lib, limit = 18) {
+      const d = await json(`Items/Latest?${q({ userId: await user(), ParentId: lib.id, Limit: limit,
+        Fields: VIDEO_FIELDS, EnableImageTypes: 'Primary,Thumb,Backdrop' })}`);
+      return (Array.isArray(d) ? d : d.Items || []).map(toVideo);
+    },
+    // Jellyfin's suggestions for a film library, from what was watched:
+    // [{ type, because, items }] (type: SimilarToRecentlyPlayed,
+    // SimilarToLikedItem, HasDirectorFromRecentlyPlayed,
+    // HasActorFromRecentlyPlayed, ...; because: the film or person).
+    async recommendations(lib) {
+      const d = await json(`Movies/Recommendations?${q({ userId: await user(), ParentId: lib.id, categoryLimit: 3, itemLimit: 12,
+        Fields: VIDEO_FIELDS, EnableImageTypes: 'Primary,Thumb,Backdrop' })}`);
+      return (Array.isArray(d) ? d : []).map((c) => ({ type: c.RecommendationType, because: c.BaselineItemName, items: (c.Items || []).map(toVideo) }));
+    },
+    // The next episode of each series begun.
+    async nextUp(lib) {
+      const d = await json(`Shows/NextUp?${q({ userId: await user(), ParentId: lib.id, Limit: 16,
+        Fields: VIDEO_FIELDS, EnableImageTypes: 'Primary,Thumb,Backdrop' })}`);
+      return (d.Items || []).map(toVideo);
+    },
     async video(id) {
       return toVideo(await json(`Items/${id}?${q({ userId: await user(), Fields: `${VIDEO_FIELDS},MediaSources,Genres` })}`));
     },
     // Films, series, episodes and clips whose name holds the words.
-    searchVideos(term) {
-      return items({ searchTerm: term, IncludeItemTypes: 'Movie,Series,Episode,Video', Limit: 60,
+    searchVideos(term, types = 'Movie,Series,Episode,Video') {
+      return items({ searchTerm: term, IncludeItemTypes: types, Limit: 60,
         Fields: VIDEO_FIELDS, EnableImageTypes: 'Primary,Thumb,Backdrop' }, toVideo);
     },
     async seasons(seriesId) {

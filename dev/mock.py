@@ -76,11 +76,19 @@ def _source(i, subs=True):
     return [{"Id": i, "DefaultAudioStreamIndex": 1, "DefaultSubtitleStreamIndex": -1, "MediaStreams": streams}]
 
 
+# Some under their English name as well as their Swedish (Comedy, Komedi),
+# as Jellyfin's are: the pages show them as one.
+MOVIE_GENRES = [["Drama", "Comedy"], ["Komedi"], ["Thriller", "Kriminal"], ["Science Fiction"], ["Dokumentär"],
+                ["Familj", "Animerat"], ["Drama", "Romantik"], ["Äventyr", "Fantasy"], ["Skräck"], ["Västern"], ["Krig", "Historisk"], ["Action"]]
+
+
 def _movie(n, name, year, mins, pos=0, played=False):
     i = f"film{n}"
     # Every third without a picture of its own: the case's mockup instead.
     return {"Id": i, "Name": name, "Type": "Movie", "ProductionYear": year, "RunTimeTicks": mins * 60 * T,
-            "Overview": LOREM + " " + LOREM, "Genres": ["Drama", "Komedi"], "ImageTags": {"Primary": "p"} if n % 3 else {},
+            "Overview": LOREM + " " + LOREM, "Genres": MOVIE_GENRES[(n - 1) % len(MOVIE_GENRES)],
+            "GenreItems": [{"Name": g, "Id": f"g-{g}"} for g in MOVIE_GENRES[(n - 1) % len(MOVIE_GENRES)]],
+            "ImageTags": {"Primary": "p"} if n % 3 else {},
             "BackdropImageTags": ["b"] if n % 3 else [], "UserData": _ud(pos, played, mins), "MediaSources": _source(i)}
 
 
@@ -89,9 +97,10 @@ MOVIES = [_movie(1, "Fyren", 2019, 112, pos=42), _movie(2, "Sommarnatt", 2021, 9
           _movie(7, "Vinterljus", 1963, 81), _movie(8, "Skärgårdsnätter", 1999, 102), _movie(9, "Den sista sommaren", 2015, 118),
           _movie(10, "Stationen", 2008, 90), _movie(11, "Brev från Berlin", 1987, 99), _movie(12, "Fjällen", 2022, 107)]
 SERIES = [{"Id": "serie1", "Name": "Skärgårdsdoktorn", "Type": "Series", "IsFolder": True, "ProductionYear": 1997, "ChildCount": 2,
-           "Overview": LOREM, "Genres": ["Drama"], "ImageTags": {"Primary": "p"}, "UserData": {}},
+           "Overview": LOREM, "Genres": ["Drama"], "GenreItems": [{"Name": "Drama", "Id": "g-Drama"}], "ImageTags": {"Primary": "p"}, "UserData": {}},
           {"Id": "serie2", "Name": "Hammarkullen", "Type": "Series", "IsFolder": True, "ProductionYear": 1997, "ChildCount": 1,
-           "Overview": LOREM, "Genres": ["Drama"], "ImageTags": {}, "UserData": {}}]
+           "Overview": LOREM, "Genres": ["Drama", "Komedi"], "GenreItems": [{"Name": "Drama", "Id": "g-Drama"}, {"Name": "Komedi", "Id": "g-Komedi"}],
+           "ImageTags": {}, "UserData": {}}]
 SEASONS = {s["Id"]: [{"Id": f"{s['Id']}-s{n}", "Name": f"Säsong {n}", "Type": "Season", "IsFolder": True, "SeriesId": s["Id"],
                       "IndexNumber": n, "ImageTags": {"Primary": "p"}, "UserData": {"PlayedPercentage": 40 if n == 1 else 0}}
                      for n in range(1, s["ChildCount"] + 1)] for s in SERIES}
@@ -112,6 +121,8 @@ for _s in SERIES:
 CLIPS = [{"Id": f"klipp{n}", "Name": f"Midsommar {2015 + n}", "Type": "Video", "RunTimeTicks": (3 + n) * 60 * T,
           "ImageTags": {"Primary": "p"} if n % 2 else {}, "UserData": {}, "MediaSources": _source(f"klipp{n}", subs=False)} for n in range(1, 7)]
 FOLDER = {"Id": "mapp1", "Name": "Resor", "Type": "Folder", "IsFolder": True, "ChildCount": 3, "UserData": {}}
+CHANNELS = [{"Id": f"kanal{n}", "Name": name, "Type": "Folder", "IsFolder": True, "ChildCount": 3 + n, "UserData": {}}
+            for n, name in enumerate(["Every Frame a Painting", "Alt Shift X", "Design Theory", "Dunderpatrullen", "exurb1a"], 1)]
 
 ARTISTS = [{"Id": f"artist{n}", "Name": name, "Type": "MusicArtist", "ImageTags": {"Primary": "p"} if n % 3 else {}}
            for n, name in enumerate(["Anna Ternheim", "Kent", "Lars Winnerbäck", "Robyn", "Säkert!", "The Knife",
@@ -137,7 +148,7 @@ PLAYLISTS = [{"Id": f"lista{n}", "Name": name, "Type": "Playlist", "ChildCount":
              for n, name in enumerate(["Söndagsmorgon", "Middag", "Träning", "Bilresan", "Julmusik"], 1)]
 VIEWS = [{"Id": "lib-film", "Name": "Filmer", "CollectionType": "movies"}, {"Id": "lib-serier", "Name": "Serier", "CollectionType": "tvshows"},
          {"Id": "lib-musik", "Name": "Musik", "CollectionType": "music"}, {"Id": "lib-hem", "Name": "Hemvideor", "CollectionType": "homevideos"}]
-ALL = {x["Id"]: x for x in MOVIES + SERIES + sum(SEASONS.values(), []) + sum(EPISODES.values(), []) + CLIPS + [FOLDER]
+ALL = {x["Id"]: x for x in MOVIES + SERIES + sum(SEASONS.values(), []) + sum(EPISODES.values(), []) + CLIPS + [FOLDER] + CHANNELS
        + ARTISTS + ALBUMS + sum(SONGS.values(), []) + PLAYLISTS}
 
 
@@ -150,7 +161,12 @@ def _items(q: dict) -> list:
     if parent:
         if parent in SONGS:
             return SONGS[parent]
-        return {"lib-film": MOVIES, "lib-serier": SERIES, "lib-hem": [FOLDER] + CLIPS[:3], "mapp1": CLIPS[3:]}.get(parent, [])
+        pool = {"lib-film": MOVIES, "lib-serier": SERIES, "lib-hem": [FOLDER] + CHANNELS + CLIPS[:3], "mapp1": CLIPS[3:]}.get(parent, [])
+        genres = q.get("genreids")
+        if genres:
+            wanted = set(genres.split(","))
+            pool = [x for x in pool if wanted & {g["Id"] for g in x.get("GenreItems", [])}]
+        return pool
     if "MusicAlbum" in types:
         artist = q.get("albumartistids")
         return [a for a in ALBUMS if not artist or a["AlbumArtists"][0]["Id"] == artist]
@@ -180,6 +196,17 @@ def jellyfin(path: str, query: str, method: str) -> tuple[int, str, bytes]:
         return 200, "audio/wav", silence()
     if p == "userviews":
         return js({"Items": VIEWS})
+    if p == "genres":
+        pool = {"lib-film": MOVIES, "lib-serier": SERIES}.get(q.get("parentid"), MOVIES + SERIES)
+        names = sorted({g for x in pool for g in x.get("Genres", [])})
+        return js({"Items": [{"Id": f"g-{g}", "Name": g} for g in names], "TotalRecordCount": len(names)})
+    if p == "items/latest":
+        return js({"lib-film": list(reversed(MOVIES))[:8], "lib-serier": SERIES, "lib-hem": CLIPS}.get(q.get("parentid"), []))
+    if p == "movies/recommendations":
+        return js([{"RecommendationType": "SimilarToRecentlyPlayed", "BaselineItemName": MOVIES[0]["Name"], "Items": MOVIES[3:9]},
+                   {"RecommendationType": "HasActorFromRecentlyPlayed", "BaselineItemName": "Stellan Skarsgård", "Items": MOVIES[8:11]}])
+    if p == "shows/nextup":
+        return js({"Items": [EPISODES["serie1-s1"][3], EPISODES["serie2-s1"][0]]})
     if p == "useritems/resume":
         lib = q.get("parentid")
         return js({"Items": [MOVIES[0]] if lib == "lib-film" else [EPISODES["serie1-s1"][2]] if lib == "lib-serier" else []})

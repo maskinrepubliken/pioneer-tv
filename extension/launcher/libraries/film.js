@@ -2,6 +2,14 @@
 // (sources/jellyfin.js), drawn by the browse page (browse/page.js) and
 // played on the box in mpv (players/video.js).
 //
+// ?section= (the home page's Film, Serier and Videor tiles) keeps to the
+// libraries of one kind: movies, tvshows or homevideos (and any other).
+// Then #/ is what to watch (Fortsätt titta, Nästa avsnitt, Senast
+// tillagt, Jellyfin's recommendations, a video library's folders),
+// #/all every film or series in a grid, #/genre/<name> those of a genre;
+// the column at the left has them, each genre with its icon. Without a
+// section, all of Jellyfin's video libraries, as below.
+//
 // #/ (the first library) and #/lib/<id>: "Fortsätt titta", then the
 // library's films, series or clips; the libraries and a library's folders
 // in the column at the left (Jellyfin's own, music left out, so a new one
@@ -70,11 +78,64 @@ window.PioneerTV = window.PioneerTV || {};
     ];
   }
 
+  // ------------------------------------------------------------ sections
+  const SECTION = new URLSearchParams(location.search).get('section');
+  const SECTIONS = {
+    movies: { name: 'Film', all: 'Alla filmer', search: 'Sök film…', types: 'Movie', mock: 'dvd' },
+    tvshows: { name: 'Serier', all: 'Alla serier', search: 'Sök serie eller avsnitt…', types: 'Series,Episode', mock: 'dvd' },
+    homevideos: { name: 'Videor', all: null, search: 'Sök video…', types: 'Video', mock: 'still' },
+  };
+  const SEC = SECTIONS[SECTION] || null;
+  // The section a library belongs to: films, series, and the rest videos.
+  const sectionOf = (lib) => (lib.type === 'movies' || lib.type === 'tvshows' ? lib.type : 'homevideos');
+  const LIB_ICON = { movies: 'film', tvshows: 'tv', homevideos: 'camera' };
+
+  // Genres by their Swedish name, with an icon: Jellyfin has some under
+  // both their English and their Swedish name, and they are one here.
+  const GENRES = [
+    [/^action/i, 'Action', 'bolt'], [/^anim/i, 'Animerat', 'pencil'], [/^(äventyr|adventure)/i, 'Äventyr', 'compass'],
+    [/^(komedi|comedy)/i, 'Komedi', 'smile'], [/^(dokument|documentary)/i, 'Dokumentär', 'eye'], [/^drama/i, 'Drama', 'masks'],
+    [/^(familj|family|kids|barn)/i, 'Familj', 'family'], [/^fantasy/i, 'Fantasy', 'wand'], [/^(histor)/i, 'Historisk', 'column'],
+    [/^(krig|war)/i, 'Krig', 'helmet'], [/^(kriminal|crime)/i, 'Kriminal', 'fingerprint'], [/^(music|musik)/i, 'Musik', 'note'],
+    [/^(myst)/i, 'Mystik', 'keyhole'], [/^(roman)/i, 'Romantik', 'heart'], [/^(science fiction|sci-fi)/i, 'Science fiction', 'rocket'],
+    [/^(skräck|horror)/i, 'Skräck', 'ghost'], [/^thriller/i, 'Thriller', 'pulse'], [/^(tv-film|tv movie)/i, 'TV-film', 'tv'],
+    [/^(västern|western)/i, 'Västern', 'hat'],
+  ];
+  function genreOf(name) {
+    const g = GENRES.find(([re]) => re.test(name));
+    return g ? { name: g[1], icon: g[2] } : { name, icon: null };
+  }
+  const slug = (name) => name.toLocaleLowerCase('sv-SE').replace(/\s+/g, '-');
+
   // ------------------------------------------------------------ views
   let libraries = null;
   async function libs() {
-    if (!libraries) libraries = await J.libraries();
+    if (!libraries) {
+      const all = await J.libraries();
+      libraries = SEC ? all.filter((l) => sectionOf(l) === SECTION) : all;
+    }
     return libraries;
+  }
+
+  // The section's genres, merged by their Swedish name, over its libraries:
+  // [{ name, icon, key, ids: [[lib, ids]] }].
+  let genreList = null;
+  async function genres() {
+    if (genreList) return genreList;
+    const by = new Map();
+    for (const lib of await libs()) {
+      if (lib.type !== 'movies' && lib.type !== 'tvshows') continue;
+      for (const g of await J.genres(lib).catch(() => [])) {
+        const { name, icon } = genreOf(g.name);
+        const key = slug(name);
+        if (!by.has(key)) by.set(key, { name, icon, key, ids: new Map() });
+        const one = by.get(key);
+        if (!one.ids.has(lib)) one.ids.set(lib, []);
+        one.ids.get(lib).push(g.id);
+      }
+    }
+    genreList = [...by.values()].sort((a, b) => a.name.localeCompare(b.name, 'sv'));
+    return genreList;
   }
 
   // What a library holds, kept for the column at the left (its folders).
@@ -97,12 +158,90 @@ window.PioneerTV = window.PioneerTV || {};
   // page is in (in one of its folders too).
   async function rail([what, id]) {
     const all = await libs();
+    const libItem = (l, active) => ({ label: l.name, icon: LIB_ICON[sectionOf(l)], href: `#/lib/${encodeURIComponent(l.id)}`, key: `lib:${l.id}`, active });
+    // A section: what to watch, all of it, the genres (and its libraries,
+    // when it has more than one).
+    if (SEC) {
+      const top = [{ label: 'Upptäck', icon: 'spark', href: '#/', key: 'rail:start', active: !what }];
+      if (SEC.all) top.push({ label: SEC.all, icon: 'grid', href: '#/all', key: 'rail:all' });
+      const groups = [{ items: top }];
+      if (all.length > 1) groups.push({ label: 'Bibliotek', items: all.map((l) => libItem(l, what === 'lib' && l.id === id)) });
+      const gs = await genres();
+      if (gs.length) groups.push({ label: 'Genrer', items: gs.map((g) => ({ label: g.name, icon: g.icon, href: `#/genre/${encodeURIComponent(g.key)}`, key: `genre:${g.key}` })) });
+      return groups;
+    }
     const lib = what === 'lib' ? all.find((l) => l.id === id) : !what ? all[0] : what === 'folder' ? await libraryOf(id) : null;
     const folders = lib ? (await browse(lib)).filter((v) => v.kind === 'folder') : [];
     return [
-      { label: 'Bibliotek', items: all.map((l) => ({ label: l.name, href: `#/lib/${encodeURIComponent(l.id)}`, key: `lib:${l.id}`, active: lib ? l.id === lib.id : false })) },
-      { label: 'Mappar', items: folders.map((v) => ({ label: v.name, href: href(v), key: `v:${v.id}` })) },
+      { label: 'Bibliotek', items: all.map((l) => libItem(l, lib ? l.id === lib.id : false)) },
+      { label: 'Mappar', items: folders.map((v) => ({ label: v.name, icon: 'folder', href: href(v), key: `v:${v.id}` })) },
     ];
+  }
+
+  // A section's start: what to watch now. Films: begun, added lately,
+  // Jellyfin's suggestions from what was watched. Series: the next episode
+  // of each begun, begun, added lately. Videos: begun, added lately, and
+  // the libraries' folders (channels).
+  const BECAUSE = {
+    SimilarToRecentlyPlayed: (x) => `Eftersom du såg ${x}`, SimilarToLikedItem: (x) => `Liknar ${x}`,
+    HasDirectorFromRecentlyPlayed: (x) => `Regi av ${x}`, HasDirectorFromLikedItem: (x) => `Regi av ${x}`,
+    HasActorFromRecentlyPlayed: (x) => `Med ${x}`, HasActorFromLikedItem: (x) => `Med ${x}`,
+  };
+  async function start() {
+    const all = await libs();
+    if (!all.length) return { kind: 'message', text: `Inga bibliotek med ${SEC.name.toLowerCase()}`, hint: 'Lägg till ett i Jellyfin.' };
+    const each = async (fn) => (await Promise.all(all.map((l) => fn(l).catch(() => [])))).flat();
+    const [begun, latest] = await Promise.all([each((l) => J.resume(l)), each((l) => J.latest(l, 12))]);
+    const sections = [];
+    if (SECTION === 'tvshows') {
+      const next = await each((l) => J.nextUp(l));
+      const nextIds = new Set(next.map((v) => v.id));
+      sections.push({ label: 'Nästa avsnitt', layout: 'shelf', shape: 'still', items: next.map(still) });
+      sections.push({ label: 'Fortsätt titta', layout: 'shelf', shape: 'still', items: begun.filter((v) => !nextIds.has(v.id)).map(still) });
+    } else sections.push({ label: 'Fortsätt titta', layout: 'shelf', shape: 'still', items: begun.map(still) });
+    const shape = SECTION === 'homevideos' ? 'still' : 'poster';
+    sections.push({ label: 'Senast tillagt', layout: 'shelf', shape, items: latest.slice(0, 12).map(shape === 'still' ? still : item) });
+    if (SECTION === 'movies') {
+      const recs = await each((l) => J.recommendations(l));
+      for (const r of recs) {
+        if (!r.items.length) continue;
+        const label = (BECAUSE[r.type] || ((x) => `Liknar ${x}`))(r.because);
+        sections.push({ label, layout: 'shelf', shape: 'poster', items: r.items.slice(0, 12).map(item) });
+      }
+    }
+    if (SECTION === 'homevideos') {
+      const folders = (await each((l) => browse(l))).filter((v) => v.kind === 'folder');
+      sections.push({ label: 'Kanaler', layout: 'groups', items: folders.map(item) });
+    }
+    return { kind: 'shelf', title: SEC.name, legend: [['A', 'öppna']], sections };
+  }
+
+  // Every film or series of the section, or those of a genre, in a grid
+  // (L1/R1 a letter, Sök filters, the chosen one's text under the shelves).
+  function gridOf(title, found) {
+    return {
+      kind: 'grid', title, filter: true, shape: 'poster', columns: 6,
+      legend: [['A', 'öppna'], ['L1', ''], ['R1', 'hoppa en bokstav']],
+      items: found.map(item), empty: 'Här finns inget än.',
+      count: (n, all) => (n === all ? `${all} st` : `${n} av ${all}`),
+      info: (it) => {
+        const v = found.find((x) => `v:${x.id}` === it.key);
+        if (!v) return null;
+        return { title: v.name, meta: [v.year, v.kind === 'series' && v.count ? (v.count === 1 ? '1 säsong' : `${v.count} säsonger`) : length(v.seconds), v.genres.slice(0, 3).join(', ')].filter(Boolean).join(' · '), text: v.overview };
+      },
+    };
+  }
+  async function everything() {
+    const found = (await Promise.all((await libs()).map((l) => browse(l)))).flat().filter((v) => v.kind !== 'folder');
+    found.sort((a, b) => a.name.localeCompare(b.name, 'sv'));
+    return gridOf(SEC ? SEC.all : 'Alla', found);
+  }
+  async function genre(key) {
+    const g = (await genres()).find((x) => x.key === key);
+    if (!g) return gridOf(key, []);
+    const found = (await Promise.all([...g.ids].map(([lib, ids]) => J.byGenre(lib, ids)))).flat();
+    found.sort((a, b) => a.name.localeCompare(b.name, 'sv'));
+    return gridOf(g.name, found);
   }
 
   async function library(id) {
@@ -122,7 +261,7 @@ window.PioneerTV = window.PioneerTV || {};
   }
 
   async function search(term) {
-    const found = await J.searchVideos(term);
+    const found = await J.searchVideos(term, SEC ? SEC.types : undefined);
     const head = { kind: 'shelf', title: M.views.searchTitle(term), count: M.views.hits(found.length), legend: [['A', 'öppna']] };
     if (!found.length) return { ...head, none: M.views.NONE };
     return { ...head, sections: sections(found, null) };
@@ -199,14 +338,18 @@ window.PioneerTV = window.PioneerTV || {};
     if (what === 'series' && arg) return series(arg, arg2 || null);
     if (what === 'folder' && arg) return folder(arg);
     if (what === 'search' && arg) return search(arg);
+    if (SEC && what === 'all') return everything();
+    if (SEC && what === 'genre' && arg) return genre(arg);
+    if (SEC && what !== 'lib') return start();
     return library(what === 'lib' ? arg : null);
   }
 
   M.libraries = M.libraries || {};
   M.libraries.film = {
-    name: 'Film & serier', source: 'Jellyfin', search: 'Sök film eller serie…',
-    // B leaves the page from any library tab.
-    isRoot: ([what]) => !what || what === 'lib',
+    name: SEC ? SEC.name : 'Film & serier', source: 'Jellyfin', search: SEC ? SEC.search : 'Sök film eller serie…',
+    // B leaves the page from any library tab (a section: from its start; its
+    // other views go back, as Spel's consoles do).
+    isRoot: ([what]) => !what || (!SEC && what === 'lib'),
     view, rail,
   };
 })(window.PioneerTV);

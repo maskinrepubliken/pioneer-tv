@@ -392,13 +392,27 @@ administrator, the user whose playlists to show under Inställningar → Jellyfi
 
 ## Film and series
 
+The home page shows the Film & serier service as three tiles, Film,
+Serier and Videor (`shared/services.js` split, each with its own
+illustration), each opening the film pages on one section of Jellyfin
+(`browse.html?library=film&section=movies`, `tvshows`, `homevideos`: the
+libraries of that kind, the rest counted as videos). A section starts on
+Upptäck: Fortsätt titta; for series Nästa avsnitt first (`Shows/NextUp`);
+Senast tillagt (`Items/Latest`); for films Jellyfin's recommendations from
+what was watched ("Eftersom du såg …", "Med …", `Movies/Recommendations`);
+for videos the folders, its channels. Its column has Upptäck, Alla filmer
+or Alla serier (a grid with letter jumps and the text under the shelves)
+and the genres (`Genres`), by their Swedish name with an icon each, one
+genre where Jellyfin has it under two names (Comedy and Komedi); a genre
+is a grid as Alla is. Sök keeps to the section. Without a section, as below:
+
 The Film & serier tile opens the browse page on top of Jellyfin
 (`browse.html?library=film`), served by the daemon like Musik
 (`http://127.0.0.1:8765/ext/launcher/browse.html?library=film`); the installer moved a tile
 that still opened Jellyfin's web UI over to it once. The column at the left
-has Jellyfin's own libraries (`UserViews`), music, photos and books left
-out, so a library added in Jellyfin appears by itself, and the folders of
-the library the page is in. Each library starts with "Fortsätt titta"
+has Jellyfin's own libraries (`UserViews`, each with the icon of its kind),
+music, photos and books left out, so a library added in Jellyfin appears
+by itself, and the folders of the library the page is in. Each library starts with "Fortsätt titta"
 (what was begun) and then holds the library's films or series as posters, or
 a home video library's clips. A on a film, an episode or a clip
 opens its page: the picture, year, length and overview, Spela or "Fortsätt

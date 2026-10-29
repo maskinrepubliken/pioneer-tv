@@ -280,6 +280,84 @@ window.PioneerTV = window.PioneerTV || {};
     },
 
     // Default: a cinema ticket with a torn stub, lying at an angle.
+    // Film: a clapperboard standing a little open, its arm striped in the
+    // service colour, a reel of film lying beside it.
+    film: (c) => wrap('film', c, `
+      <linearGradient id="slate-U" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="#4a423a"/><stop offset="1" stop-color="#1f1a16"/></linearGradient>
+      <linearGradient id="arm-U" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a423a"/><stop offset="1" stop-color="#26201b"/></linearGradient>
+      <radialGradient id="reel-U" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="${light(c, 0.45)}"/><stop offset="1" stop-color="${dark(c, 0.3)}"/></radialGradient>`, `
+      <!-- the reel, lying flat at the right -->
+      <ellipse cx="118" cy="84" rx="26" ry="10" fill="${dark(c, 0.45)}" stroke="${INK}" stroke-width="1.2"/>
+      <ellipse cx="118" cy="80" rx="26" ry="10" fill="url(#reel-U)" stroke="${INK}" stroke-width="1.2"/>
+      <ellipse cx="118" cy="80" rx="18" ry="6.6" fill="none" stroke="${INK}" stroke-width="0.8" opacity="0.45"/>
+      <ellipse cx="118" cy="80" rx="4" ry="1.6" fill="${INK}"/>
+      <path d="M108 77 h0.01 M128 77 h0.01 M110 84 h0.01 M126 84 h0.01" stroke="${INK}" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+      <!-- the film running off it to the front -->
+      <path d="M138 84 Q148 90 140 96 L120 98" fill="none" stroke="#2a241f" stroke-width="5" stroke-linecap="round"/>
+      <path d="M138 84 Q148 90 140 96 L120 98" fill="none" stroke="#d9cfb8" stroke-width="1.2" stroke-dasharray="1.5 2.5" stroke-linecap="round"/>
+      <!-- the slate -->
+      <rect x="24" y="46" width="70" height="46" rx="3" fill="url(#slate-U)" stroke="${INK}" stroke-width="1.4"/>
+      <rect x="24" y="46" width="70" height="10" fill="${PAPER}" stroke="${INK}" stroke-width="1.2"/>
+      <path d="M32 46 l-6 10 M46 46 l-6 10 M60 46 l-6 10 M74 46 l-6 10 M88 46 l-6 10" stroke="${c}" stroke-width="6"/>
+      <rect x="24" y="46" width="70" height="10" fill="none" stroke="${INK}" stroke-width="1.2"/>
+      <path d="M32 66 h54 M32 76 h54 M58 60 v24" stroke="${PAPER}" stroke-width="1.2" opacity="0.55"/>
+      <!-- the arm, lifted -->
+      <g transform="rotate(-18 26 44)">
+        <rect x="24" y="34" width="70" height="10" rx="1.5" fill="${PAPER}" stroke="${INK}" stroke-width="1.2"/>
+        <path d="M30 34 l6 10 M44 34 l6 10 M58 34 l6 10 M72 34 l6 10 M86 34 l6 10" stroke="${c}" stroke-width="6"/>
+        <rect x="24" y="34" width="70" height="10" rx="1.5" fill="none" stroke="${INK}" stroke-width="1.2"/>
+      </g>
+      <circle cx="27" cy="45" r="2.2" fill="#d9cfb8" stroke="${INK}" stroke-width="0.9"/>
+    `),
+
+    // Serier: a season box set, three cases on their side in a slipcase,
+    // their spines numbered.
+    serier: (c) => wrap('serier', c, `
+      <linearGradient id="slip-U" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${light(c, 0.35)}"/><stop offset="1" stop-color="${dark(c, 0.3)}"/></linearGradient>
+      <linearGradient id="top-U" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${light(c, 0.55)}"/><stop offset="1" stop-color="${light(c, 0.2)}"/></linearGradient>`, `
+      <!-- the slipcase: its top in perspective, then its side -->
+      <path d="M30 40 L112 40 L132 30 L50 30 Z" fill="url(#top-U)" stroke="${INK}" stroke-width="1.3" stroke-linejoin="round"/>
+      <path d="M112 40 L132 30 L132 82 L112 92 Z" fill="${dark(c, 0.4)}" stroke="${INK}" stroke-width="1.3" stroke-linejoin="round"/>
+      <rect x="30" y="40" width="82" height="52" fill="url(#slip-U)" stroke="${INK}" stroke-width="1.3"/>
+      <!-- the cases' spines, out of the open front -->
+      <rect x="36" y="45" width="70" height="13" rx="1.5" fill="${PAPER}" stroke="${INK}" stroke-width="1.1"/>
+      <rect x="36" y="60" width="70" height="13" rx="1.5" fill="#e9dfc6" stroke="${INK}" stroke-width="1.1"/>
+      <rect x="36" y="75" width="70" height="13" rx="1.5" fill="${PAPER}" stroke="${INK}" stroke-width="1.1"/>
+      <path d="M44 51.5 h34 M44 66.5 h34 M44 81.5 h34" stroke="${INK}" stroke-width="1.6" opacity="0.4" stroke-linecap="round"/>
+      <circle cx="96" cy="51.5" r="4" fill="${c}" stroke="${INK}" stroke-width="0.9"/>
+      <circle cx="96" cy="66.5" r="4" fill="${c}" stroke="${INK}" stroke-width="0.9"/>
+      <circle cx="96" cy="81.5" r="4" fill="${c}" stroke="${INK}" stroke-width="0.9"/>
+      <text x="96" y="53.6" text-anchor="middle" font-size="5.6" font-weight="700" fill="${PAPER}" font-family="Arial, sans-serif">1</text>
+      <text x="96" y="68.6" text-anchor="middle" font-size="5.6" font-weight="700" fill="${PAPER}" font-family="Arial, sans-serif">2</text>
+      <text x="96" y="83.6" text-anchor="middle" font-size="5.6" font-weight="700" fill="${PAPER}" font-family="Arial, sans-serif">3</text>
+      <path d="M32 42 L110 42" stroke="#ffffff" stroke-width="1" opacity="0.35"/>
+    `),
+
+    // Videor: a handheld video camera, its lens to the left, the screen
+    // folded out, a red light on.
+    videor: (c) => wrap('videor', c, `
+      <linearGradient id="cam-U" x1="0" y1="0" x2="0.5" y2="1"><stop offset="0" stop-color="${light(c, 0.4)}"/><stop offset="0.55" stop-color="${c}"/><stop offset="1" stop-color="${dark(c, 0.4)}"/></linearGradient>
+      <radialGradient id="glass-U" cx="35%" cy="35%" r="70%"><stop offset="0" stop-color="#7d8fa0"/><stop offset="0.5" stop-color="#2a3440"/><stop offset="1" stop-color="#11161c"/></radialGradient>
+      <linearGradient id="screen-U" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9fc0cf"/><stop offset="1" stop-color="#3f6476"/></linearGradient>`, `
+      <!-- the body -->
+      <rect x="44" y="44" width="76" height="40" rx="9" fill="url(#cam-U)" stroke="${INK}" stroke-width="1.4"/>
+      <path d="M50 47 Q 80 43 112 47" stroke="#ffffff" stroke-width="1.6" opacity="0.3" fill="none" stroke-linecap="round"/>
+      <!-- the strap -->
+      <path d="M58 84 Q80 92 104 84" fill="none" stroke="${INK}" stroke-width="5" stroke-linecap="round"/>
+      <path d="M58 84 Q80 92 104 84" fill="none" stroke="#5a4a3a" stroke-width="3" stroke-linecap="round"/>
+      <!-- the lens -->
+      <rect x="26" y="50" width="22" height="28" rx="4" fill="#2b2622" stroke="${INK}" stroke-width="1.3"/>
+      <ellipse cx="26" cy="64" rx="7" ry="13" fill="url(#glass-U)" stroke="${INK}" stroke-width="1.3"/>
+      <ellipse cx="24" cy="59" rx="2" ry="4" fill="#ffffff" opacity="0.35"/>
+      <!-- the screen, folded out -->
+      <path d="M120 50 L142 44 L142 76 L120 72 Z" fill="#2b2622" stroke="${INK}" stroke-width="1.3" stroke-linejoin="round"/>
+      <path d="M123 53 L139 48.5 L139 72 L123 69 Z" fill="url(#screen-U)"/>
+      <!-- the red light and a button -->
+      <circle cx="108" cy="52" r="3" fill="#d23a2a" stroke="${INK}" stroke-width="0.8"/>
+      <circle cx="107.3" cy="51.3" r="0.9" fill="#ffffff" opacity="0.7"/>
+      <rect x="64" y="38" width="22" height="7" rx="3" fill="${dark(c, 0.3)}" stroke="${INK}" stroke-width="1.1"/>
+    `),
+
     default: (c) => wrap('ticket', c, `
       <linearGradient id="tk-U" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${light(c, 0.45)}"/><stop offset="1" stop-color="${dark(c, 0.15)}"/></linearGradient>`, `
       <g transform="rotate(-8 80 60)">
