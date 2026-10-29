@@ -337,7 +337,9 @@ def daemon(path: str, query: str, method: str) -> tuple[int, str, bytes] | None:
                   "recent": bool(r["rom_user"])} for r in ROMS if r["path_cover_large"]]
         films = [{"title": m["Name"], "kind": "film", "url": f"/jellyfin/Items/{m['Id']}/Images/Primary?tag=p", "kept": False,
                   "recent": m["Id"] == "film1"} for m in MOVIES if m["ImageTags"]]
-        found = games + films
+        albums = [{"title": a["Name"], "kind": "album", "url": f"/jellyfin/Items/{a['Id']}/Images/Primary?tag=p", "kept": False,
+                   "recent": False} for a in ALBUMS[:4] if a["ImageTags"]]
+        found = games + films + albums
         found.sort(key=lambda f: not f["recent"])
         return js({"finds": found})
     if path == "/api/video":

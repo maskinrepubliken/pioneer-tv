@@ -143,7 +143,12 @@
       items: [
         { name: 'Labyrinten', under: HOME, url: OVERLAY, setup: ({ P }) => { P.saver.as('labyrint'); P.saver.show(); },
           note: 'Standard. En labyrint utan slut i Ultima-stil som vandras av sig själv; omslagen som finns på boxen ligger där och plockas upp, med namn.' },
-        { name: 'Labyrinten, ett fynd', under: HOME, url: OVERLAY, setup: async ({ P }) => { P.saver.as('labyrint'); P.saver.show(); await new Promise((r) => setTimeout(r, 9000)); } },
+        { name: 'Labyrinten: pelarsalen', under: HOME, url: OVERLAY, setup: ({ P }) => { P.saver.as('labyrint'); P.saver.show(); P.saver.maze.visit('hall'); } },
+        { name: 'Labyrinten: trädgården', under: HOME, url: OVERLAY, setup: ({ P }) => { P.saver.as('labyrint'); P.saver.show(); P.saver.maze.visit('garden'); },
+          note: 'Gräs, häckar och stjärnhimmel.' },
+        { name: 'Labyrinten: balsalen', under: HOME, url: OVERLAY, setup: ({ P }) => { P.saver.as('labyrint'); P.saver.show(); P.saver.maze.visit('ballroom'); } },
+        { name: 'Labyrinten: skattkammaren', under: HOME, url: OVERLAY, setup: ({ P }) => { P.saver.as('labyrint'); P.saver.show(); P.saver.maze.visit('treasury'); },
+          note: 'Här ligger mycket; ett fynd sägs i en vanlig notis.' },
         { name: 'Elden och ett citat', under: HOME, url: OVERLAY, setup: ({ P }) => { P.saver.as('eld'); P.saver.show(); },
           note: 'Som en öppen eld: glöd i rost och ockra, starkast nertill, som fladdrar och dallrar uppåt. En zoom tar en kvart. Ett nytt citat, så stort som skärmen tar, var tredje minut.' },
         { name: 'Djupt inne', under: HOME, url: OVERLAY, setup: ({ P }) => { P.saver.as('eld'); P.saver.show(); P.saver.jump(0.5); },

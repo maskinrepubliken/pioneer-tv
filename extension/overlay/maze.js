@@ -1,7 +1,8 @@
 // Pioneer TV screensaver: a maze without end, walked by itself, in the
-// manner of the old dungeon games (Ultima Underworld): stone walls, a
-// flagstone floor, a ceiling of blocks, all of it dark but for the torch
-// one carries, which flickers. Along the way lie the covers kept on the
+// manner of the old dungeon games (Ultima Underworld): parts of it in
+// their own stones (walls, floors, ceilings), now and then a room (a hall
+// of pillars, a garden under the stars, a ballroom, a treasury), all of it
+// dark but for the torch one carries, which flickers. Along the way lie the covers kept on the
 // box, games', films', series' and albums' (the daemon's /api/finds); the
 // walker goes and picks each up, and the screen says what was found.
 //
@@ -20,13 +21,31 @@ window.PioneerTV = window.PioneerTV || {};
   const W = 320, H = 180;                // the picture, in pixels
   const FPS = 20;
   const TEX = 64;                        // a texture's side
-  const T_WALLS = 4, T_FLOOR = 4, T_CEIL = 5, T_DOOR = 6;
   const SHADES = 24;                     // steps of darkness
   const CHUNK = 8, SIDE = CHUNK * 2;     // cells, tiles to a chunk
   const FOV = 0.7;                       // the camera plane's half width
   // Unhurried: a slow stroll, slow turns, now and then a find.
   const SPEED = 0.8;                     // tiles a second
   const TURN = 1.1;                      // radians a second
+
+  // The textures (maze/textures.png, one under the other).
+  const T = {
+    stone: 0, moss: 1, dirt: 2, sand: 3, flags: 4, blocks: 5, door: 6, slate: 7, brick: 8,
+    tiles: 9, planks: 10, marble: 11, grass: 12, hedge: 13, sky: 14, beams: 15,
+  };
+  // Parts of the maze, each in its own stones: walls (one of these per
+  // wall), its floor and its ceiling. A zone is 5 by 5 cells.
+  const THEMES = [
+    { walls: [T.stone, T.brick], floor: T.flags, ceil: T.blocks },
+    { walls: [T.moss, T.dirt], floor: T.flags, ceil: T.beams },
+    { walls: [T.sand], floor: T.planks, ceil: T.beams },
+    { walls: [T.slate, T.brick], floor: T.tiles, ceil: T.blocks },
+    { walls: [T.dirt, T.stone], floor: T.planks, ceil: T.blocks },
+  ];
+  // Rooms that turn up now and then, a chunk's open middle: a hall of
+  // pillars, a garden under the stars with hedges round it, a ballroom
+  // floored in marble, a treasury with many things lying about.
+  const ROOMS = ['hall', 'garden', 'ballroom', 'treasury'];
 
   // ------------------------------------------------------------ chance
   // A number from a few others, the same every time.
@@ -39,27 +58,45 @@ window.PioneerTV = window.PioneerTV || {};
     let s = seed >>> 0 || 1;
     return () => { s ^= s << 13; s ^= s >>> 17; s ^= s << 5; return (s >>> 0) / 4294967296; };
   }
+  const themeOf = (ci, cj) => THEMES[Math.floor(hash(Math.floor(ci / 5), Math.floor(cj / 5), 3) * THEMES.length)];
 
   // ------------------------------------------------------------ the maze
-  // A chunk's tiles: 0 open, 1-4 a wall of that stone, 7 a wooden door
-  // set in a wall. Its west column and north row are its borders.
+  // A chunk: per tile its wall (0 open, else a texture + 1), its floor and
+  // its ceiling; and its room, if it has one. Its west column and north
+  // row are its borders.
   const chunks = new Map();
+  const keyOf = (cx, cy) => (cx + 32768) * 65536 + (cy + 32768);
+  let lastKey = NaN, lastChunk = null;
   function chunk(cx, cy) {
-    const k = `${cx},${cy}`;
+    const k = keyOf(cx, cy);
+    if (k === lastKey) return lastChunk;
     let c = chunks.get(k);
-    if (c) return c;
-    c = new Uint8Array(SIDE * SIDE);
-    const stone = 1 + Math.floor(hash(cx, cy, 1) * T_WALLS);
-    c.fill(stone);
+    if (!c) { c = make(cx, cy); chunks.set(k, c); if (chunks.size > 64) forget(); }
+    lastKey = k; lastChunk = c;
+    return c;
+  }
+  function make(cx, cy) {
+    const wall = new Uint8Array(SIDE * SIDE), floor = new Uint8Array(SIDE * SIDE), ceil = new Uint8Array(SIDE * SIDE);
     const rand = rng(Math.floor(hash(cx, cy, 2) * 4294967295));
+    // Every tile in its zone's stones.
+    for (let ly = 0; ly < SIDE; ly++) {
+      for (let lx = 0; lx < SIDE; lx++) {
+        const tx = cx * SIDE + lx, ty = cy * SIDE + ly;
+        const th = themeOf(Math.floor(tx / 2), Math.floor(ty / 2));
+        const i = ly * SIDE + lx;
+        wall[i] = 1 + th.walls[Math.floor(hash(tx, ty, 4) * th.walls.length)];
+        floor[i] = th.floor; ceil[i] = th.ceil;
+      }
+    }
     // A perfect maze over its cells (tiles 1, 3 .. 15).
     const seen = new Uint8Array(CHUNK * CHUNK);
-    const stack = [[Math.floor(rand() * CHUNK), Math.floor(rand() * CHUNK)]];
-    seen[stack[0][1] * CHUNK + stack[0][0]] = 1;
-    c[(stack[0][1] * 2 + 1) * SIDE + stack[0][0] * 2 + 1] = 0;
+    const start = [Math.floor(rand() * CHUNK), Math.floor(rand() * CHUNK)];
+    const stack = [start];
+    seen[start[1] * CHUNK + start[0]] = 1;
+    wall[(start[1] * 2 + 1) * SIDE + start[0] * 2 + 1] = 0;
     while (stack.length) {
       const [x, y] = stack[stack.length - 1];
-      const next = [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([dx, dy]) => {
+      const next = DIRS.filter(([dx, dy]) => {
         const nx = x + dx, ny = y + dy;
         return nx >= 0 && ny >= 0 && nx < CHUNK && ny < CHUNK && !seen[ny * CHUNK + nx];
       });
@@ -67,49 +104,80 @@ window.PioneerTV = window.PioneerTV || {};
       const [dx, dy] = next[Math.floor(rand() * next.length)];
       const nx = x + dx, ny = y + dy;
       seen[ny * CHUNK + nx] = 1;
-      c[(ny * 2 + 1) * SIDE + nx * 2 + 1] = 0;
-      c[(y * 2 + 1 + dy) * SIDE + x * 2 + 1 + dx] = 0;
+      wall[(ny * 2 + 1) * SIDE + nx * 2 + 1] = 0;
+      wall[(y * 2 + 1 + dy) * SIDE + x * 2 + 1 + dx] = 0;
       stack.push([nx, ny]);
     }
     // A few walls knocked through, so there are loops and not only dead ends.
     for (let i = 0; i < 6; i++) {
       const x = 1 + Math.floor(rand() * (SIDE - 2)), y = 1 + Math.floor(rand() * (SIDE - 2));
-      if ((x + y) % 2 === 1) c[y * SIDE + x] = 0;
+      if ((x + y) % 2 === 1) wall[y * SIDE + x] = 0;
+    }
+    // Now and then a room in the middle, its walls inside taken away.
+    let room = null;
+    if (!(cx === 0 && cy === 0) && hash(cx, cy, 6) < 0.45) {
+      const kind = ROOMS[Math.floor(hash(cx, cy, 7) * ROOMS.length)];
+      const w = 3 + Math.floor(rand() * 2), h = 3 + Math.floor(rand() * 2);
+      const x0 = 1 + Math.floor(rand() * (CHUNK - w - 1)), y0 = 1 + Math.floor(rand() * (CHUNK - h - 1));
+      room = { kind, x0: cx * CHUNK + x0, y0: cy * CHUNK + y0, x1: cx * CHUNK + x0 + w - 1, y1: cy * CHUNK + y0 + h - 1 };
+      // Its tiles, and the ring of wall round it.
+      for (let ly = y0 * 2; ly <= (y0 + h - 1) * 2 + 2; ly++) {
+        for (let lx = x0 * 2; lx <= (x0 + w - 1) * 2 + 2; lx++) {
+          const i = ly * SIDE + lx;
+          const inside = lx > x0 * 2 && ly > y0 * 2 && lx < (x0 + w - 1) * 2 + 2 && ly < (y0 + h - 1) * 2 + 2;
+          if (inside) {
+            const pillar = lx % 2 === 0 && ly % 2 === 0;
+            wall[i] = kind === 'hall' && pillar ? 1 + T.stone : 0;
+          } else if (wall[i]) {
+            wall[i] = 1 + ({ garden: T.hedge, ballroom: T.sand, hall: T.stone, treasury: T.brick })[kind];
+          }
+          floor[i] = ({ garden: T.grass, ballroom: T.marble, hall: T.flags, treasury: T.tiles })[kind];
+          ceil[i] = ({ garden: T.sky, ballroom: T.beams, hall: T.blocks, treasury: T.blocks })[kind];
+        }
+      }
     }
     // Doors to the chunk west and the chunk north: two each.
     for (const side of [0, 1]) {
       for (let d = 0; d < 2; d++) {
         const at = Math.floor(hash(cx, cy, 10 + side * 2 + d) * CHUNK) * 2 + 1;
-        if (side === 0) c[at * SIDE] = 0; else c[at] = 0;
+        if (side === 0) wall[at * SIDE] = 0; else wall[at] = 0;
       }
     }
     // Here and there a wooden door in a wall, for the look of it.
-    for (let i = 0; i < SIDE * SIDE; i++) if (c[i] && rand() < 0.025) c[i] = 7;
-    chunks.set(k, c);
-    if (chunks.size > 64) forget();
-    return c;
+    for (let i = 0; i < SIDE * SIDE; i++) if (wall[i] && wall[i] !== 1 + T.hedge && rand() < 0.02) wall[i] = 1 + T.door;
+    return { wall, floor, ceil, room };
   }
   // The chunks far behind go.
   let here = [0, 0];
   function forget() {
     for (const k of chunks.keys()) {
-      const [x, y] = k.split(',').map(Number);
+      const x = Math.floor(k / 65536) - 32768, y = (k % 65536) - 32768;
       if (Math.abs(x - here[0]) > 3 || Math.abs(y - here[1]) > 3) chunks.delete(k);
     }
+    lastKey = NaN;
   }
-  function tile(tx, ty) {
-    const cx = Math.floor(tx / SIDE), cy = Math.floor(ty / SIDE);
-    return chunk(cx, cy)[(ty - cy * SIDE) * SIDE + (tx - cx * SIDE)];
-  }
+  // A tile's wall, floor or ceiling (tx, ty whole numbers: >> 4 is a
+  // chunk, & 15 a tile in it, negative ones too).
+  const tile = (tx, ty) => chunk(tx >> 4, ty >> 4).wall[(ty & 15) * SIDE + (tx & 15)];
+  const floorAt = (tx, ty) => chunk(tx >> 4, ty >> 4).floor[(ty & 15) * SIDE + (tx & 15)];
+  const ceilAt = (tx, ty) => chunk(tx >> 4, ty >> 4).ceil[(ty & 15) * SIDE + (tx & 15)];
   // Cells are the odd tiles; two cells meet where the tile between is open.
-  const open = (ci, cj, dx, dy) => tile(ci * 2 + 1 + dx, cj * 2 + 1 + dy) === 0;
   const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  const open = (ci, cj, dx, dy) => tile(ci * 2 + 1 + dx, cj * 2 + 1 + dy) === 0;
+  const roomAt = (ci, cj) => {
+    const r = chunk((ci * 2 + 1) >> 4, (cj * 2 + 1) >> 4).room;
+    return r && ci >= r.x0 && ci <= r.x1 && cj >= r.y0 && cj <= r.y1 ? r : null;
+  };
 
   // ------------------------------------------------------------ the finds
-  // About one cell in thirty has something lying in it; what, comes from
-  // the list in turn as the cell is first seen (what was played or watched
-  // lately comes first in it).
-  const hasFind = (ci, cj) => !(ci === 0 && cj === 0) && hash(ci, cj, 5) < 0.033;
+  // About one cell in thirty has something lying in it, and many in a
+  // treasury; what, comes from the list in turn as the cell is first seen
+  // (what was played or watched lately comes first in it).
+  const hasFind = (ci, cj) => {
+    if (ci === 0 && cj === 0) return false;
+    const r = roomAt(ci, cj);
+    return hash(ci, cj, 5) < (r && r.kind === 'treasury' ? 0.5 : 0.033);
+  };
   const placed = new Map();              // "ci,cj" -> find (or null: taken)
   let finds = [], nextFind = 0;
   function findAt(ci, cj) {
@@ -271,18 +339,22 @@ window.PioneerTV = window.PioneerTV || {};
       // A little bob as one walks.
       const bob = Math.round(Math.sin(t * 4) * (path.length && pause <= 0 ? 0.6 : 0));
       const horizon = half + bob;
-      // Floor and ceiling, a row at a time.
-      const floorT = tex[T_FLOOR], ceilT = tex[T_CEIL];
+      // Floor and ceiling, a row at a time, each tile its own (a room's
+      // marble or grass; the stars over a garden lit by themselves).
       for (let y = 0; y < H; y++) {
         const below = y > horizon;
         const p = below ? y - horizon : horizon - y;
         if (p < 1) { for (let x = 0; x < W; x++) px[y * W + x] = 0xff000000; continue; }
         const rowDist = half / p;
-        const levels = (below ? floorT : ceilT)[shadeOf(rowDist, light)];
+        const shade = shadeOf(rowDist, light);
+        const at = below ? floorAt : ceilAt;
         let fx = me.x + rowDist * (dirX - planeX), fy = me.y + rowDist * (dirY - planeY);
         const sx = (rowDist * 2 * planeX) / W, sy = (rowDist * 2 * planeY) / W;
         const row = y * W;
+        let lastT = -1, levels = null;
         for (let x = 0; x < W; x++) {
+          const t = at(Math.floor(fx), Math.floor(fy));
+          if (t !== lastT) { lastT = t; levels = tex[t][t === T.sky ? Math.min(shade, 6) : shade]; }
           const u = (fx * TEX) & (TEX - 1), v = (fy * TEX) & (TEX - 1);
           px[row + x] = levels[v * TEX + u];
           fx += sx; fy += sy;
@@ -310,7 +382,7 @@ window.PioneerTV = window.PioneerTV || {};
         wx -= Math.floor(wx);
         let u = Math.floor(wx * TEX);
         if ((side === 0 && rx > 0) || (side === 1 && ry < 0)) u = TEX - 1 - u;
-        const which = hit === 7 ? T_DOOR : (hit || 1) - 1;
+        const which = (hit || 1) - 1;
         // The sides facing north and south a little darker, as walls in the old games were.
         const levels = tex[which][Math.min(SHADES - 1, shadeOf(dist, light) + side * 2)];
         const step = TEX / lineH;
@@ -361,9 +433,9 @@ window.PioneerTV = window.PioneerTV || {};
         if (ty <= 0.2) continue;
         const screenX = Math.floor((W / 2) * (1 + tx / ty));
         const ratio = im.naturalWidth / im.naturalHeight;
-        const h = Math.floor((H / ty) * 0.5);
+        const h = Math.floor((H / ty) * 0.7);
         const w = Math.floor(h * ratio);
-        const lift = (H / ty) * (0.06 + 0.012 * Math.sin(t * 0.9 + s.i * 1.3 + s.j));
+        const lift = (H / ty) * (0.04 + 0.01 * Math.sin(t * 0.9 + s.i * 1.3 + s.j));
         const y0 = Math.floor(horizon + (H / ty) / 2 - h - lift);
         const x0 = screenX - Math.floor(w / 2);
         const dark = 1 - Math.min(1, (1 - shadeOf(ty, light) / SHADES) ** 1.4);
@@ -408,6 +480,24 @@ window.PioneerTV = window.PioneerTV || {};
     if (first) me.a = Math.atan2(first[1], first[0]);
     load();
     start();
-    return { start, stop, debug: () => ({ ...me, path: path.slice(0, 4), pause, cost }) };
+    // Straight into a room of a kind (the catalogue of views, tests): the
+    // nearest chunk that has one, in its middle.
+    function visit(kind) {
+      for (let r = 1; r < 12; r++) {
+        for (let cy = -r; cy <= r; cy++) {
+          for (let cx = -r; cx <= r; cx++) {
+            const room = chunk(cx, cy).room;
+            if (!room || room.kind !== kind) continue;
+            me.ci = Math.floor((room.x0 + room.x1) / 2); me.cj = Math.floor((room.y0 + room.y1) / 2);
+            me.x = me.ci * 2 + 1.5; me.y = me.cj * 2 + 1.5; me.a = 0.4;
+            path = []; pause = 0;
+            arrive();
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+    return { start, stop, visit, debug: () => ({ ...me, path: path.slice(0, 4), pause, cost }) };
   };
 })(window.PioneerTV);

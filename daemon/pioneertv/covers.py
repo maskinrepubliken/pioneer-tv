@@ -140,7 +140,7 @@ class Covers:
     # ------------------------------------------------------------ the maze
     async def finds(self, n: int = 40) -> list[dict]:
         """Things for the maze screensaver to find (overlay/maze.js): games'
-        and films' (and series') covers with their names. First what was
+        and films' (and series', a few albums') covers with their names. First what was
         played or watched lately (recent: true), then others at random, the
         ones kept on the box before the rest: [{title, kind, url, kept,
         recent}], url a path the overlay asks the /romm/ or /jellyfin/ proxy for."""
@@ -198,7 +198,7 @@ class Covers:
             sid, tag, name, kind = item.get("SeriesId"), item.get("SeriesPrimaryImageTag"), item.get("SeriesName"), "serie"
         else:
             sid, tag, name = item.get("Id"), (item.get("ImageTags") or {}).get("Primary"), item.get("Name")
-            kind = "serie" if item.get("Type") == "Series" else "film"
+            kind = {"Series": "serie", "MusicAlbum": "album"}.get(item.get("Type"), "film")
         if not sid or not tag:
             return None
         path, query = f"Items/{sid}/Images/Primary", f"tag={tag}"
@@ -222,8 +222,10 @@ class Covers:
         begun = await self._json(f"{base}/UserItems/Resume?userId={user['Id']}&MediaTypes=Video&Limit=20&Fields=ImageTags", headers)
         seen = await self._json(f"{items}&IncludeItemTypes=Movie,Episode&Filters=IsPlayed&SortBy=DatePlayed&SortOrder=Descending&Limit=20", headers)
         some = await self._json(f"{items}&IncludeItemTypes=Movie,Series&ImageTypes=Primary&SortBy=Random&Limit={n}", headers)
+        # Albums too, fewer: a sixth as many.
+        albums = await self._json(f"{items}&IncludeItemTypes=MusicAlbum&ImageTypes=Primary&SortBy=Random&Limit={max(2, n // 6)}", headers)
         recent = [f for i in (begun.get("Items") or []) + (seen.get("Items") or []) if (f := self._jellyfin_find(i, True))]
-        other = [f for i in some.get("Items") or [] if (f := self._jellyfin_find(i, False))]
+        other = [f for i in (some.get("Items") or []) + (albums.get("Items") or []) if (f := self._jellyfin_find(i, False))]
         return recent, other
 
     # ------------------------------------------------------------ at night

@@ -32,28 +32,11 @@
 .pioneertv-saver.resting .fractal, .pioneertv-saver.resting .tao { display: none; }
 
 /* ---- the maze (maze.js): its small picture scaled up, its pixels kept
-   square; what was just found said at the foot on a slip of paper, the
-   cover beside the words; the last few found carried in a row at the
-   left, small. ---- */
+   square; the last few found carried in a row at the top left, small (what
+   was just found is said in a notice). ---- */
 .pioneertv-saver .maze {
   position: absolute; inset: 0; width: 100%; height: 100%; display: block;
   image-rendering: pixelated; image-rendering: crisp-edges;
-}
-.pioneertv-saver .maze-said {
-  position: absolute; left: 50%; bottom: 5vh; transform: translateX(-50%); margin: 0;
-  display: flex; align-items: center; gap: 1.6vw; max-width: 70vw; padding: 1.2vw 2.2vw 1.2vw 1.2vw;
-  background: var(--pioneertv-paper); color: var(--pioneertv-ink);
-  border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-l);
-}
-.pioneertv-saver .maze-said[hidden] { display: none; }
-.pioneertv-saver .maze-said img { flex: none; height: 9vw; max-width: 12vw; object-fit: contain; border-radius: 0.3vw; }
-.pioneertv-saver .maze-said figcaption { display: flex; flex-direction: column; gap: 0.5vw; min-width: 0; }
-.pioneertv-saver .maze-said-what {
-  font: 1vw/1 var(--pioneertv-font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--pioneertv-ink-faint);
-}
-.pioneertv-saver .maze-said-name {
-  font: italic 400 2.6vw/1.2 var(--pioneertv-font-prose); padding-bottom: 0.1em;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 .pioneertv-saver .maze-carried {
   position: absolute; left: 3vw; top: 4vh; display: flex; gap: 0.6vw; align-items: flex-end;
@@ -62,4 +45,4 @@
   height: 5.2vw; max-width: 7vw; object-fit: contain; border-radius: 0.2vw;
   border: 0.15vw solid var(--pioneertv-paper);
 }
-.pioneertv-saver.resting .maze, .pioneertv-saver.resting .maze-said, .pioneertv-saver.resting .maze-carried { display: none; }
+.pioneertv-saver.resting .maze, .pioneertv-saver.resting .maze-carried { display: none; }

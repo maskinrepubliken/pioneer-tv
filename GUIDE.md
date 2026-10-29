@@ -742,22 +742,28 @@ tried again every three seconds.
   - **Labyrint** (the default, `overlay/maze.js`): a maze without end in
     the manner of Ultima Underworld, walked by itself. A raycaster on a
     320x180 canvas scaled up with square pixels, twenty frames a second
-    (about 1.5 ms a frame on a laptop): textured stone walls, a flagstone
-    floor and a ceiling of blocks, dark but for a flickering torch. The maze
-    comes in chunks of 8x8 cells, each a perfect maze of its own (a seeded
-    backtracker, a few walls knocked through) with two doors to the chunks
-    west and north of it, so the whole is one maze, made as it is walked
-    into and forgotten behind. The walker steers by a point a little ahead
+    (about 2 ms a frame on a laptop; on the box the overlay's WebKit about
+    10 % of a core), dark but for a flickering torch. Its parts (zones of
+    5x5 cells) are each in their own stones: walls, floor and ceiling per
+    tile, from sixteen textures. The maze comes in chunks of 8x8 cells, each
+    a perfect maze of its own (a seeded backtracker, a few walls knocked
+    through) with two doors to the chunks west and north of it, so the
+    whole is one maze, made as it is walked into and forgotten behind.
+    Nearly half the chunks have a room in their middle: a hall of pillars,
+    a garden of grass and hedges under the stars, a ballroom floored in
+    marble, or a treasury where many things lie (`visit(kind)` goes
+    straight to one, for the catalogue). The walker steers by a point a little ahead
     along its way (round corners, no turning on the spot facing a wall),
     goes for a thing lying near, else the nearest cell not yet
-    walked; slowly, a stroll. About one cell in thirty has a cover: a
-    game's, a film's or a series' from the daemon's `/api/finds`
+    walked; slowly, a stroll. About one cell in thirty has a cover, large,
+    standing on the floor: a game's, a film's or a series' (a few albums')
+    from the daemon's `/api/finds`
     (`covers.py` finds: first what was played lately, RomM's last played and
     Jellyfin's begun and seen, then others at random, those kept on the box
     first), standing on the floor; it is come upon, not hunted (only one a
-    few cells off is gone for). Picked up, a slip at the foot says "Du
-    hittade ett spel du spelat nyss" and its name, for a while, and the last
-    four are carried in a row at the top left. The
+    few cells off is gone for). Picked up, a notice says so ("Hittade
+    GoldenEye 007 · spelat nyss", its kind's icon), and the last four are
+    carried in a row at the top left. The
     textures are Screaming Brain Studios' [Tiny Texture Pack
     1](https://opengameart.org/content/tiny-texture-pack-1) (CC0), made
     64 px and fewer colours (`overlay/maze/textures.png`).

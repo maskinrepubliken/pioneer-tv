@@ -3,7 +3,7 @@
 //
 //   labyrint (the default): a maze without end, walked by itself, where
 //   the covers kept on the box lie to be found and picked up (maze.js);
-//   what was found is said at the foot, and the last few are carried in a
+//   what was found is said in a notice, and the last few are carried in a
 //   row at the left.
 //   eld: the Mandelbrot set like an open fire (mandelbrot.js) and a line of
 //   the Tao Te Ching (tao.js).
@@ -17,14 +17,14 @@
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const LINE_MS = 3 * 60 * 1000;        // a new line every three minutes
-  const SAID_MS = 7000;                 // what was found, said this long
+  const SAID_MS = 5000;                 // what was found, said this long
   let root = null, rest = null;
   let kind = null;                      // the one drawn: 'labyrint' or 'eld'
   let drawer = null;                    // its { start, stop }
   // The fire's parts.
   let quote = null, where = null, box = null, order = [], lineTimer = null;
   // The maze's.
-  let said = null, carried = null, saidTimer = null;
+  let carried = null;
 
   let chosen = null;                    // as(): the catalogue's choice over the settings'
   const wanted = () => {
@@ -59,36 +59,22 @@ window.PioneerTV = window.PioneerTV || {};
       drawer = M.mandelbrot(canvas);
     } else {
       canvas.className = 'maze';
-      said = document.createElement('figure');
-      said.className = 'maze-said';
-      said.hidden = true;
       carried = document.createElement('div');
       carried.className = 'maze-carried';
-      root.prepend(canvas, carried, said);
+      root.prepend(canvas, carried);
       drawer = M.maze(canvas, { found: tell });
       saver.maze = drawer;               // its debug(), for the catalogue and tests
     }
   }
 
   // ---------------------------------------------------------- the maze's words
-  const KIND = { spel: 'ett spel', film: 'en film', serie: 'en serie', album: 'ett album' };
+  // What was found is said as any notice is (hud.js toast), its icon its
+  // kind's; the last four found are carried in a row at the top left.
+  const ICON = { spel: 'gamepad', film: 'film', serie: 'tv', album: 'vinyl' };
+  const LATELY = { spel: 'spelat nyss', album: 'spelat nyss' };
   function tell(f, all) {
-    said.innerHTML = '';
-    const pic = document.createElement('img');
-    pic.alt = '';
-    pic.src = f.url;
-    const words = document.createElement('figcaption');
-    const small = document.createElement('span');
-    small.className = 'maze-said-what';
-    small.textContent = `Du hittade ${KIND[f.kind] || 'något'}${f.recent ? (f.kind === 'spel' ? ' du spelat nyss' : ' du sett nyss') : ''}`;
-    const name = document.createElement('span');
-    name.className = 'maze-said-name';
-    name.textContent = f.title;
-    words.append(small, name);
-    said.append(pic, words);
-    said.hidden = false;
-    clearTimeout(saidTimer);
-    saidTimer = setTimeout(() => { said.hidden = true; }, SAID_MS);
+    const when = f.recent ? ` · ${LATELY[f.kind] || 'sett nyss'}` : '';
+    M.hud.toast(`Hittade ${f.title}${when}`, ICON[f.kind] || 'stack', SAID_MS);
     carried.innerHTML = '';
     for (const c of all.slice(-4)) {
       const im = document.createElement('img');
