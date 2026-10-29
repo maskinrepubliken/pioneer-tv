@@ -68,7 +68,7 @@ window.PioneerTV = window.PioneerTV || {};
     const folders = withFolders ? found.filter((v) => v.kind === 'folder').map(item) : [];
     const posters = found.filter((v) => v.kind === 'movie' || v.kind === 'series').map(item);
     const stills = found.filter((v) => !['folder', 'movie', 'series'].includes(v.kind)).map(item);
-    if (!found.length || (!folders.length && found.every((v) => v.kind === 'folder'))) return [{ label, items: [], empty: 'Här finns inget än.' }];
+    if (!found.length || (!folders.length && found.every((v) => v.kind === 'folder'))) return [{ label, items: [], empty: 'Inget hittades' }];
     return [
       { label, layout: 'groups', items: folders },
       { label: folders.length ? null : label, layout: 'shelf', shape: 'poster', items: posters },
@@ -212,7 +212,7 @@ window.PioneerTV = window.PioneerTV || {};
     return {
       kind: 'grid', title, filter: true, shape: 'poster', columns: 6,
       legend: [['A', 'öppna'], ['L1', ''], ['R1', 'hoppa en bokstav']],
-      items: found.map(item), empty: 'Här finns inget än.',
+      items: found.map(item), empty: 'Inget hittades',
       count: (n, all) => (n === all ? `${all} st` : `${n} av ${all}`),
       info: (it) => {
         const v = found.find((x) => `v:${x.id}` === it.key);
