@@ -600,9 +600,11 @@ window does what the extension's background worker does (home, back,
 navigate, settings for the page) and hands the keys to the overlay while
 its menu is open, as on the box.
 
-The Mac's keys are the pad: the arrows, Enter (A), Esc (B), Space (X), Tab
-and Shift+Tab (L1/R1) are the keyboard's own, and reach the page or the
-overlay as real presses (the pages only act on those). H is Home (held, the
+Every button on the drawn pad can be clicked, or the Mac's keys are the
+pad: the arrows, Enter (A), Esc (B), Space (X), Tab and Shift+Tab (L1/R1)
+are the keyboard's own and reach the page or the overlay as real presses; a
+click sends the same key, marked `pioneertvPad` (spatial-nav.js lets those
+through, as it does real presses, and not the on-screen keyboard's own). H is Home (held, the
 home page), Y the on-screen keyboard, held Esc is holding B, `[` and `]` are
 L2/R2. The side panel draws the pad (lighting up what is pressed), and has
 the screensaver, the TV off and on, the green or the pink pad, and a toast;

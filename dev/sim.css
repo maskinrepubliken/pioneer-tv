@@ -44,14 +44,14 @@ kbd { font: 11px var(--pioneertv-font-mono, monospace); padding: 1px 5px; border
    the rest only light up when their key is pressed. */
 .pad { display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 28px; background: var(--pioneertv-paper-sunken, #e9e2d4); }
 .pad-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-.pad button, .pad span[data-show] {
+.pad button {
   display: inline-flex; align-items: center; gap: 4px; justify-content: center; padding: 4px 8px; border-radius: 999px;
   border: 1px solid var(--pioneertv-line-strong, #999); background: var(--pioneertv-paper, #f4efe4); color: inherit; font-size: 12px; font-weight: 600;
 }
 .pad-top button { flex: 1; }
 .pad .small { font-weight: 400; font-size: 11px; }
 .dpad { position: relative; width: 84px; height: 84px; }
-.dpad span { position: absolute; width: 28px; height: 28px; padding: 0 !important; border-radius: 6px !important; }
+.dpad button { position: absolute; width: 28px; height: 28px; padding: 0 !important; border-radius: 6px !important; }
 .dpad .up { left: 28px; top: 0; } .dpad .down { left: 28px; bottom: 0; } .dpad .left { left: 0; top: 28px; } .dpad .right { right: 0; top: 28px; }
 .mid { display: flex; flex-direction: column; gap: 6px; align-items: center; }
 .mid .home { border-radius: 50% !important; width: 58px; height: 58px; flex-direction: column; }

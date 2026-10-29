@@ -29,8 +29,9 @@
   // ------------------------------------------------------------ the daemon
   const post = (path, body) => fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) }).catch(() => {});
   const press = (name) => { log(`<b>knapp</b> ${name}`); post('/api/sim/button', { name }); };
+  let sock = null;
   function connect() {
-    const ws = new WebSocket(`ws://${location.host}/ws`);
+    const ws = sock = new WebSocket(`ws://${location.host}/ws`);
     ws.onopen = () => ws.send(JSON.stringify({ type: 'hello', client: 'simulator' }));
     ws.onmessage = (m) => {
       let msg;
@@ -75,6 +76,9 @@
     $('where').textContent = w.location.pathname + w.location.search + w.location.hash;
     w.addEventListener('hashchange', () => { $('where').textContent = w.location.pathname + w.location.search + w.location.hash; });
     pad(w);
+    // Which page is on screen, as the extension says it at every load (the
+    // menu that opened it closes on it; the settings page has no bridge here).
+    if (sock && sock.readyState === WebSocket.OPEN) sock.send(JSON.stringify({ type: 'loaded', url: w.location.href }));
     const M = w.PioneerTV;
     if (M) M.launcherUrl = LAUNCHER;
     const b = M && M.bridge;
@@ -148,6 +152,43 @@
     }, true);
   }
   pad(window);
+
+  // A click on A, B, X, the d-pad or L1/R1: the key, to the window that has
+  // the keys, as a press the pages take for the pad's (spatial-nav.js lets a
+  // press marked pioneertvPad through; other synthetic keys are the
+  // on-screen keyboard's own). What the browser does by itself with a real
+  // key (a button's click on Enter or Space, Tab's next field) it does not
+  // do for these, so that is done here.
+  function sendKey(key, shift) {
+    const frame = overlayKeys ? overlay : page;
+    let w, doc;
+    try { w = frame.contentWindow; doc = w.document; } catch { return; }
+    const el = doc.activeElement && doc.activeElement !== doc.documentElement ? doc.activeElement : doc.body;
+    const code = { ' ': 'Space', Enter: 'Enter', Escape: 'Escape', Tab: 'Tab' }[key] || key;
+    const fire = (type) => {
+      const ev = new w.KeyboardEvent(type, { key, code, shiftKey: !!shift, bubbles: true, cancelable: true, composed: true });
+      Object.defineProperty(ev, 'pioneertvPad', { value: true });
+      el.dispatchEvent(ev);
+      return ev;
+    };
+    const down = fire('keydown');
+    fire('keyup');
+    if (down.defaultPrevented) return;
+    const pressable = el.matches && el.matches('button, a[href], summary, [role="button"], [role="switch"], input[type="checkbox"]');
+    if ((key === 'Enter' || key === ' ') && pressable) el.click();
+    else if (key === 'Tab') {
+      const all = [...doc.querySelectorAll('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])')].filter((n) => !n.disabled && n.offsetParent);
+      const next = all[(all.indexOf(el) + (shift ? -1 : 1) + all.length) % all.length];
+      if (next) next.focus();
+    }
+  }
+  document.querySelectorAll('[data-key]').forEach((b) => b.addEventListener('click', () => {
+    b.classList.add('down-now');
+    setTimeout(() => b.classList.remove('down-now'), 150);
+    sendKey(b.dataset.key, b.hasAttribute('data-shift'));
+  }));
+  // A click on the panel takes no focus from the TV, so the keys stay there.
+  document.querySelectorAll('.side button').forEach((b) => b.addEventListener('mousedown', (e) => e.preventDefault()));
   document.querySelectorAll('[data-sys]').forEach((b) => b.addEventListener('click', () => { press(b.dataset.sys); setTimeout(() => keysTo(overlayKeys), 0); }));
   document.querySelectorAll('[data-api]').forEach((b) => b.addEventListener('click', () => { post(b.dataset.api); setTimeout(() => keysTo(overlayKeys), 0); }));
   document.querySelectorAll('[data-pad]').forEach((b) => b.addEventListener('click', () => { post('/api/sim/pad', { pad: b.dataset.pad }); setTimeout(() => keysTo(overlayKeys), 0); }));

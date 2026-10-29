@@ -38,15 +38,15 @@
         <p class="keys-to" id="keys-to">Tangenterna går till <b>sidan</b></p>
         <div class="pad" id="pad">
           <div class="pad-row pad-top">
-            <button data-show="Shift+Tab">L1 <kbd>⇧⇥</kbd></button>
+            <button data-key="Tab" data-shift data-show="Shift+Tab">L1 <kbd>⇧⇥</kbd></button>
             <button data-sys="vol_down">L2 <kbd>[</kbd></button>
             <button data-sys="vol_up">R2 <kbd>]</kbd></button>
-            <button data-show="Tab">R1 <kbd>⇥</kbd></button>
+            <button data-key="Tab" data-show="Tab">R1 <kbd>⇥</kbd></button>
           </div>
           <div class="pad-row">
             <div class="dpad">
-              <span data-show="ArrowUp" class="up">▲</span><span data-show="ArrowLeft" class="left">◀</span>
-              <span data-show="ArrowRight" class="right">▶</span><span data-show="ArrowDown" class="down">▼</span>
+              <button data-key="ArrowUp" data-show="ArrowUp" class="up">▲</button><button data-key="ArrowLeft" data-show="ArrowLeft" class="left">◀</button>
+              <button data-key="ArrowRight" data-show="ArrowRight" class="right">▶</button><button data-key="ArrowDown" data-show="ArrowDown" class="down">▼</button>
             </div>
             <div class="mid">
               <button data-sys="menu" class="home" title="Hem: snabbmenyn (H). Håll H: hemsidan.">Hem <kbd>H</kbd></button>
@@ -54,16 +54,16 @@
             </div>
             <div class="face">
               <button data-sys="keyboard" class="y">Y <kbd>Y</kbd></button>
-              <span data-show=" " class="x">X <kbd>␣</kbd></span>
-              <span data-show="Escape" class="b">B <kbd>esc</kbd></span>
-              <span data-show="Enter" class="a">A <kbd>⏎</kbd></span>
+              <button data-key=" " data-show=" " class="x">X <kbd>␣</kbd></button>
+              <button data-key="Escape" data-show="Escape" class="b">B <kbd>esc</kbd></button>
+              <button data-key="Enter" data-show="Enter" class="a">A <kbd>⏎</kbd></button>
             </div>
           </div>
           <div class="pad-row">
             <button data-sys="back" class="small">håll B</button>
           </div>
         </div>
-        <p class="hint">Pilar, Enter (A), Esc (B), mellanslag (X) och Tab (L1/R1) är tangentbordets egna. Håll H för hemsidan, håll Esc för att gå tillbaka. Klicka i TV:n för att ge den tangenterna igen.</p>
+        <p class="hint">Varje knapp går att klicka. Eller tangentbordet: pilar, Enter (A), Esc (B), mellanslag (X), Tab (L1/R1), H (Hem; håll: hemsidan), Y, [ och ] (volym); håll Esc för att gå tillbaka. Klicka i TV:n om den tappar tangenterna.</p>
       </section>
       <section>
         <h2>Boxen</h2>

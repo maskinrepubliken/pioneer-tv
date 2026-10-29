@@ -269,7 +269,9 @@ window.PioneerTV = window.PioneerTV || {};
     },
 
     onKeyDown(e) {
-      if (!e.isTrusted) return;            // synthetic events come from our own keyboard
+      // Synthetic events come from our own keyboard; the simulator's pad
+      // (dev/sim.js) marks its presses as the pad's.
+      if (!e.isTrusted && !e.pioneertvPad) return;
       // In a game the page gets the keys (enabled is off), but an overlay
       // opened over it (the keyboard) still needs the d-pad.
       if (!this.enabled && !this.captured) return;
@@ -357,7 +359,7 @@ window.PioneerTV = window.PioneerTV || {};
     // Consume a key press and remember it, so its release is consumed too.
     eat(e) { this.stop(e); this._eaten.add(e.key); },
     onKeyUp(e) {
-      if (!e.isTrusted || (!this.enabled && !this.captured)) return;
+      if ((!e.isTrusted && !e.pioneertvPad) || (!this.enabled && !this.captured)) return;
       if (this.captured && (this.captured.captureAll !== false || PAD_KEYS.has(e.key))) {
         // The layer sees the release first (the keyboard types on it), then
         // it is swallowed so the page underneath never gets half a press.
