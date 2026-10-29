@@ -22,16 +22,21 @@ window.PioneerTV = window.PioneerTV || {};
   }
 
   // [[key, text, how], ...]: the pad's buttons and what they do here (how:
-  // "håll", said before the key), and the wordmark at the right.
+  // "håll", said before the key), and the wordmark at the right. A key
+  // without a text shares the next one's, beside it (L1 R1 hoppa en bokstav).
   function legend(target, items) {
     target.innerHTML = '';
+    let s = null;
     for (const [key, text, how] of items) {
-      const s = el('span');
+      s = s || el('span');
       if (how) s.append(`${how} `);
-      if (key) { s.appendChild(el('kbd', 'pioneertv-kbd', key)); s.append(' '); }
+      if (key) s.appendChild(el('kbd', 'pioneertv-kbd', key));
+      if (!text && key) continue;
       s.append(text);
       target.appendChild(s);
+      s = null;
     }
+    if (s) target.appendChild(s);
     const credit = el('span', 'credit');
     const img = el('img');
     img.src = 'shared/ordbild-en-rad-black.svg';
