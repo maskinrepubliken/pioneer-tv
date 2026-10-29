@@ -228,7 +228,7 @@ window.PioneerTV = window.PioneerTV || {};
   }
   async function collectionsView() {
     const cs = await collections();
-    return { ...gridOf('Samlingar', cs), empty: 'Inga samlingar i Jellyfin.' };
+    return { ...gridOf('Samlingar', cs), empty: 'Inget hittades' };
   }
   async function genre(key) {
     const g = (await genres()).find((x) => x.key === key);
