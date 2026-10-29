@@ -401,7 +401,9 @@ libraries of that kind, the rest counted as videos). A section starts on
 Upptäck: Fortsätt titta; for series Nästa avsnitt first (`Shows/NextUp`);
 Senast tillagt (`Items/Latest`); for films Jellyfin's recommendations from
 what was watched ("Eftersom du såg …", "Med …", `Movies/Recommendations`);
-for videos the folders, its channels. Its column has Upptäck, Alla filmer
+and videos have Kanaler in the column, their folders as Spel's
+collections are (a card each, its newest clips in a pile; opened, the
+clips in a grid). Its column has Upptäck, Alla filmer
 or Alla serier (a grid with letter jumps and the text under the shelves)
 and the genres (`Genres`), by their Swedish name with an icon each, one
 genre where Jellyfin has it under two names (Comedy and Komedi); a genre

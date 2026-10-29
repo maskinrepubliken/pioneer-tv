@@ -164,7 +164,8 @@ def _items(q: dict) -> list:
         if parent in SONGS:
             return SONGS[parent]
         pool = {"lib-film": MOVIES, "lib-serier": SERIES, "lib-hem": [FOLDER] + CHANNELS + CLIPS[:3], "mapp1": CLIPS[3:],
-                "samling1": MOVIES[6:9], "samling2": MOVIES[1:3]}.get(parent, [])
+                "samling1": MOVIES[6:9], "samling2": MOVIES[1:3],
+                **{c["Id"]: CLIPS[(i % 3):(i % 3) + 3 + i % 2] for i, c in enumerate(CHANNELS)}}.get(parent, [])
         genres = q.get("genreids")
         if genres:
             wanted = set(genres.split(","))

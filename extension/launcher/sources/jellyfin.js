@@ -250,6 +250,11 @@ window.PioneerTV = window.PioneerTV || {};
       return items({ ParentId: lib.id, IncludeItemTypes: kind, GenreIds: ids.join(','), SortBy: 'SortName',
         Fields: VIDEO_FIELDS, EnableImageTypes: 'Primary,Thumb,Backdrop' }, toVideo);
     },
+    // A folder's newest few videos (a channel's card, its pile).
+    firstVideos(folderId, n = 6) {
+      return items({ ParentId: folderId, IncludeItemTypes: 'Video,Movie,Episode', SortBy: 'DateCreated,SortName', SortOrder: 'Descending',
+        Limit: n, Fields: VIDEO_FIELDS, EnableImageTypes: 'Primary,Thumb,Backdrop' }, toVideo);
+    },
     // Jellyfin's collections (box sets), the empty left out.
     collections() {
       return items({ IncludeItemTypes: 'BoxSet', SortBy: 'SortName', Fields: VIDEO_FIELDS, EnableImageTypes: 'Primary' }, toVideo)

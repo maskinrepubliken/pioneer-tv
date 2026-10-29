@@ -8,7 +8,7 @@
 // avsnitt, Senast tillagt, Jellyfin's recommendations, a video library's
 // folders); #/all every film or series in a grid; #/genre/<name> those of a
 // genre; #/collections Jellyfin's collections (box sets), when there are
-// any; the column at the left has them, each with its icon. #/lib/<id> a
+// any; #/channels a video library's folders, as Spel's collections; the column at the left has them, each with its icon. #/lib/<id> a
 // library (when the section has more than one); #/folder/<id> a folder or
 // a collection; #/series/<id>[/<season id>]: the series, its seasons as
 // tabs, a season's episodes; #/item/<id>: a film, an episode or a clip,
@@ -159,6 +159,7 @@ window.PioneerTV = window.PioneerTV || {};
     const top = [{ label: 'Upptäck', icon: 'spark', href: '#/', key: 'rail:start', active: !what }];
     if (SEC.all) top.push({ label: SEC.all, icon: 'grid', href: '#/all', key: 'rail:all' });
     if (cs.length) top.push({ label: 'Samlingar', icon: 'stack', href: '#/collections', key: 'rail:collections' });
+    if (SECTION_KEY === 'homevideos') top.push({ label: 'Kanaler', icon: 'stack', href: '#/channels', key: 'rail:channels' });
     const groups = [{ items: top }];
     if (all.length > 1) {
       groups.push({ label: 'Bibliotek', items: all.map((l) => ({ label: l.name, icon: LIB_ICON[sectionOf(l)],
@@ -199,10 +200,6 @@ window.PioneerTV = window.PioneerTV || {};
         sections.push({ label, layout: 'shelf', shape: 'poster', items: r.items.slice(0, 12).map(item) });
       }
     }
-    if (SECTION_KEY === 'homevideos') {
-      const folders = (await each((l) => browse(l))).filter((v) => v.kind === 'folder');
-      sections.push({ label: 'Kanaler', layout: 'groups', items: folders.map(item) });
-    }
     return { kind: 'shelf', title: SEC.name, legend: [['A', 'öppna']], sections };
   }
 
@@ -226,6 +223,39 @@ window.PioneerTV = window.PioneerTV || {};
     found.sort((a, b) => a.name.localeCompare(b.name, 'sv'));
     return gridOf(SEC.all || 'Alla', found);
   }
+  // Videos' folders, their channels, as Spel's collections are: a card
+  // each, its newest few clips in a pile (fetched after, four at a time,
+  // kept), its name and how many; opened, its clips in a grid.
+  const piles = new Map();
+  async function channels() {
+    const folders = (await Promise.all((await libs()).map((l) => browse(l)))).flat().filter((v) => v.kind === 'folder');
+    const items = folders.map((f) => ({
+      key: `v:${f.id}`, title: f.name, href: href(f), meta: f.count == null ? '' : f.count === 1 ? '1 video' : `${f.count} videor`,
+      pictures: piles.has(f.id) ? piles.get(f.id) : null, folder: f.id,
+    }));
+    setTimeout(() => fillPiles(items.filter((it) => it.pictures === null)), 0);
+    return {
+      kind: 'grid', title: 'Kanaler', filter: true, look: 'stacks', shape: 'still', columns: 3,
+      legend: [['A', 'öppna'], ['L1', ''], ['R1', 'hoppa en bokstav']],
+      items, empty: 'Inget hittades', count: (n, all) => (n === all ? `${all} kanaler` : `${n} av ${all}`),
+    };
+  }
+  async function fillPiles(todo) {
+    const next = async () => {
+      const it = todo.shift();
+      if (!it) return;
+      const found = await J.firstVideos(it.folder, 6).catch(() => null);
+      if (found) {
+        it.pictures = found.map((v) => ({ src: v.still, name: v.name, mock: 'still' }));
+        piles.set(it.folder, it.pictures);
+        const card = document.querySelector(`.view [data-key="${CSS.escape(it.key)}"]`);
+        if (card) M.cards.pile(card, it.pictures);
+      }
+      return next();
+    };
+    await Promise.all([next(), next(), next(), next()]);
+  }
+
   async function collectionsView() {
     const cs = await collections();
     return { ...gridOf('Samlingar', cs), empty: 'Inget hittades' };
@@ -249,9 +279,15 @@ window.PioneerTV = window.PioneerTV || {};
     };
   }
 
+  // A folder: a channel of clips (videos), or a collection of films, in a
+  // grid; one with folders in it as its library is.
   async function folder(id) {
     const [what, found] = await Promise.all([J.video(id), J.browse({ id, type: 'mixed' })]);
-    return { kind: 'shelf', title: what.name, legend: [['A', 'öppna']], sections: sections(found, null) };
+    if (found.some((v) => v.kind === 'folder')) return { kind: 'shelf', title: what.name, legend: [['A', 'öppna']], sections: sections(found, null) };
+    const stills = SECTION_KEY === 'homevideos';
+    const word = stills ? 'videor' : 'filmer';
+    return { ...gridOf(what.name, found), shape: stills ? 'still' : 'poster', columns: stills ? 4 : 6,
+      count: (n, all) => (n === all ? `${all} ${word}` : `${n} av ${all} ${word}`) };
   }
 
   async function search(term) {
@@ -335,6 +371,7 @@ window.PioneerTV = window.PioneerTV || {};
     if (what === 'all') return everything();
     if (what === 'genre' && arg) return genre(arg);
     if (what === 'collections') return collectionsView();
+    if (what === 'channels') return channels();
     if (what === 'lib' && arg) return library(arg);
     return start();
   }
