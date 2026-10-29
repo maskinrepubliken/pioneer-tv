@@ -738,7 +738,10 @@ tried again every three seconds.
 - **The screensaver** (`overlay/saver.js`), over everything when no pad is
   connected and nobody has pressed anything ([The TV
   (HDMI-CEC)](#the-tv-hdmi-cec) above); it closes every menu. One of two,
-  chosen under Inställningar → TV (`ui.screensaver`):
+  chosen under Inställningar → TV (`ui.screensaver`), where Förhandsgranska
+  Labyrint and Förhandsgranska Eld put it up at once (`POST
+  /api/saver/preview`; the next press takes it away, the press that asked
+  is let be, and the TV is not turned off for it):
   - **Labyrint** (the default, `overlay/maze.js`): a maze without end in
     the manner of Ultima Underworld, walked by itself. A raycaster on a
     320x180 canvas scaled up with square pixels, twenty frames a second
@@ -908,3 +911,13 @@ over CEC; Chromium itself stays at 100 %. To check from a shell as `pi`:
 
 - Jellyfin Web's search route is `/web/#/search.html?query=` on 10.9 and 10.10.
 - SVT Play's is `/sok?q=`.
+
+## The settings page's tabs
+
+Status, Bluetooth (the devices, pairing, and whether paired pads are
+called up by themselves; it was Handkontroller, and `#gamepads` still
+leads there), Wi-Fi, Tjänster (where RomM and Jellyfin are and their API
+keys, as passwords: an empty field keeps the key set before; the home
+page's tiles are the settings file's, `/etc/pioneer-tv/settings.json`,
+and no longer edited here), TV (with the screensaver's choice and its
+previews), Kontroller, Fjärråtkomst, System, Loggar.

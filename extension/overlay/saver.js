@@ -27,8 +27,9 @@ window.PioneerTV = window.PioneerTV || {};
   let carried = null;
 
   let chosen = null;                    // as(): the catalogue's choice over the settings'
+  let once = null;                      // show(kind): a preview's, this time only
   const wanted = () => {
-    if (chosen) return chosen;
+    if (chosen || once) return chosen || once;
     const ui = (M.bridge.state.config && M.bridge.state.config.ui) || {};
     return ui.screensaver === 'eld' ? 'eld' : 'labyrint';
   };
@@ -111,8 +112,15 @@ window.PioneerTV = window.PioneerTV || {};
 
   const saver = {
     isOpen() { return !!root && root.isConnected; },
-    show() {
-      if (this.isOpen()) return;
+    // ask: the settings' preview asks for a kind, this time only (one
+    // already up of the other kind is put away first).
+    show(ask) {
+      if (ask === 'labyrint' || ask === 'eld') once = ask;
+      if (this.isOpen()) {
+        if (wanted() === kind) return;
+        this.hide();
+        once = ask;
+      }
       if (!root) build();
       if (kind !== wanted()) make(wanted()); else drawer.start();
       M.bridge.mount(root);
@@ -120,6 +128,7 @@ window.PioneerTV = window.PioneerTV || {};
       if (document.fonts) document.fonts.ready.then(() => this.isOpen() && fit());
     },
     hide() {
+      once = null;
       if (!this.isOpen()) return;
       this.rest(false);
       drawer.stop();

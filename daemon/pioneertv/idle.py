@@ -30,6 +30,7 @@ from typing import Callable, Coroutine
 log = logging.getLogger("pioneertv.idle")
 
 CHECK_SECONDS = 5
+PREVIEW_GRACE = 1.5          # s after a preview is asked for: presses (the asking one's) let be
 PLAYING_FOR = 75        # a page's "playing" holds this long; pages repeat it every 30 s
 HOME_SETTLE = 2.0       # a quit game's page goes back first; home comes after it
 
@@ -53,6 +54,7 @@ class Idle:
         self.saver_since: float | None = None   # the screensaver is up
         self.tv_off_sent = False
         self.resting = False                # the screensaver says "Vilar"
+        self.previewing = 0.0               # put up from the settings (preview), since
 
     def minutes(self, key: str, fallback: float) -> float:
         try:
@@ -71,6 +73,10 @@ class Idle:
     def input(self) -> bool:
         """Someone is here. True when the screensaver was up: the press only
         takes it away (the dispatcher swallows it)."""
+        # The press that asked for a preview is not the one that ends it.
+        if self.previewing and time.monotonic() - self.previewing < PREVIEW_GRACE:
+            return False
+        self.previewing = 0.0
         self.last_input = time.monotonic()
         self.sent_home = False
         self.tv_off_sent = False
@@ -83,6 +89,18 @@ class Idle:
             self.later({"type": "event", "name": "saver", "show": False})
             return True
         return False
+
+    def preview(self, kind: str) -> None:
+        """The settings' Förhandsgranska: the screensaver up now, as kind
+        ("labyrint" or "eld"), until the next press; the TV is not turned off
+        for it."""
+        now = time.monotonic()
+        self.last_input = now
+        self.previewing = now
+        self.saver_since = now
+        self.tv_off_sent = False
+        log.info("screensaver: preview (%s)", kind)
+        self.later({"type": "event", "name": "saver", "show": True, "kind": kind})
 
     def page(self, data: dict) -> None:
         """A page's report: {"input": true} for a key or the mouse of a real
@@ -146,7 +164,7 @@ class Idle:
             log.info("no pad: screensaver on")
             await self.emit({"type": "event", "name": "saver", "show": True})
         off = self.minutes("tv_off_minutes", 5) * 60
-        if off and self.showing and now - self.saver_since >= off and not self.tv_off_sent:
+        if off and self.showing and not self.previewing and now - self.saver_since >= off and not self.tv_off_sent:
             self.tv_off_sent = True
             log.info("screensaver up for %.0f min: the TV goes off", (now - self.saver_since) / 60)
             try:

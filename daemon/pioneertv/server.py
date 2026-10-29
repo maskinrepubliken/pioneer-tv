@@ -80,6 +80,7 @@ class Server:
             ("GET", "/api/jellyfin", self.api_jellyfin),
             ("GET", "/api/images", self.api_images),
             ("GET", "/api/finds", self.api_finds),
+            ("POST", "/api/saver/preview", self.api_saver_preview),
             ("POST", "/api/images/clear", self.api_images_clear),
         ]
         for method, path, handler in api:
@@ -312,6 +313,17 @@ class Server:
         except ValueError:
             n = 40
         return web.json_response({"finds": await self.covers.finds(n)})
+
+    async def api_saver_preview(self, request: web.Request) -> web.Response:
+        """The settings' Förhandsgranska: the screensaver up at once, as the
+        kind asked for, until the next press."""
+        data = await self._json(request)
+        kind = data.get("kind") if data.get("kind") in ("labyrint", "eld") else "labyrint"
+        idle = self.hooks.get("idle")
+        if not idle:
+            return web.json_response({"ok": False, "message": "ingen skärmsläckare"}, status=503)
+        idle.preview(kind)
+        return web.json_response({"ok": True})
 
     async def api_images_clear(self, _request: web.Request) -> web.Response:
         if self.covers.cache:

@@ -211,7 +211,7 @@ window.PioneerTV = window.PioneerTV || {};
   // going, the volume, the screensaver (saver.js) and the pad's colours.
   hud.listen = function (b) {
     b.on('toast', (e) => hud.toast(e.text, e.icon || '', e.ms || 1800));
-    b.on('saver', (e) => (e.show ? M.saver.show() : M.saver.hide()));
+    b.on('saver', (e) => (e.show ? M.saver.show(e.kind) : M.saver.hide()));
     b.on('rest', (e) => M.saver.rest(!!e.on));
     b.on('gamepad', (e) => hud.toast(`${e.label || 'Handkontroll'} ${e.connected ? 'ansluten' : 'frånkopplad'}`, 'gamepad'));
     b.on('keyboard_present', (e) => hud.toast(e.present ? 'Tangentbord anslutet' : 'Tangentbord frånkopplat', 'keyboard'));

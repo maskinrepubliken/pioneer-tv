@@ -58,7 +58,18 @@
           { path: 'ui.auto_keyboard', type: 'bool', label: 'Öppna skärmtangentbordet automatiskt', value: true } ] },
         { id: 'tv', title: 'TV', fields: [
           { path: 'cec.enabled', type: 'bool', label: 'HDMI-CEC', value: true },
-          { path: 'cec.osd_name', type: 'text', label: 'Namn som TV:n visar', value: 'Pioneer TV', maxlength: 14 } ] },
+          { path: 'cec.osd_name', type: 'text', label: 'Namn som TV:n visar', value: 'Pioneer TV', maxlength: 14 },
+          { path: 'ui.screensaver', type: 'choice', label: 'Skärmsläckare', options: [['labyrint', 'Labyrint'], ['eld', 'Eld']], value: 'labyrint' } ] },
+        { id: 'controls_bt', title: 'Bluetooth', fields: [
+          { path: 'bluetooth.auto_connect', type: 'bool', label: 'Ring upp parade handkontroller som inte är anslutna', value: true } ] },
+        { id: 'romm', title: 'RomM', fields: [
+          { path: 'romm.url', type: 'text', label: 'Adress till RomM', value: 'http://freakis:8080' },
+          { path: 'romm.api_key', type: 'text', label: 'API-nyckel', secret: true, value: '', is_set: true },
+          { path: 'games.enabled', type: 'bool', label: 'Spela spelen på boxen (RetroArch)', value: true } ] },
+        { id: 'jellyfin', title: 'Jellyfin', fields: [
+          { path: 'jellyfin.url', type: 'text', label: 'Adress till Jellyfin (utan /web/)', value: 'http://freakis:8096' },
+          { path: 'jellyfin.api_key', type: 'text', label: 'API-nyckel', secret: true, value: '', is_set: false },
+          { path: 'jellyfin.user', type: 'text', label: 'Användare vars spellistor visas', value: '' } ] },
         { id: 'remote', title: 'Fjärråtkomst', fields: [
           { path: 'remote.token', type: 'text', label: 'Åtkomstnyckel', secret: true, value: '', is_set: false } ] },
       ],
@@ -198,7 +209,11 @@
       show(h('h1', {}, 'Wi-Fi'), h('div', { class: 'actions' }, h('button', { onclick: () => views.wifi() }, 'Sök igen')), list.childElementCount ? list : h('p', { class: 'muted' }, 'Inga nätverk hittades (Ethernet är ändå att föredra för strömning).'), addForm);
     },
 
-    async gamepads(show) {
+    // Bluetooth: the devices (pads first among them), pairing, and whether
+    // paired pads are called up by themselves.
+    async bluetooth(show) {
+      const s = await api('GET', '/api/settings');
+      const settings = fieldsForm(s, ['controls_bt']);
       const draw = (devices, scanning) => {
         const list = h('div', { class: 'list' });
         for (const d of devices) {
@@ -213,10 +228,12 @@
           ));
         }
         show(
-          h('h1', {}, 'Handkontroller'),
+          h('h1', {}, 'Bluetooth'),
           h('p', { class: 'muted' }, 'Sätt kontrollen i parningsläge (PS: håll Share + PS. Xbox: håll parningsknappen. 8BitDo: håll Select), sök sedan.'),
           h('div', { class: 'actions' }, h('button', { class: 'primary' + (scanning ? ' spin' : ''), disabled: scanning ? '' : null, onclick: scan }, scanning ? 'Söker (8 s)…' : 'Sök efter enheter')),
           list.childElementCount ? list : h('p', { class: 'muted' }, 'Inga Bluetooth-enheter kända.'),
+          h('h2', {}, 'Inställningar'),
+          settings.form, settings.save,
         );
       };
       const scan = async () => { draw(await api('GET', '/api/bluetooth/devices'), true); draw(await api('POST', '/api/bluetooth/scan', { seconds: 8 }), false); };
@@ -229,29 +246,16 @@
       draw(await api('GET', '/api/bluetooth/devices'), false);
     },
 
+    // Tjänster: where the box's sources are and their keys, as passwords
+    // (left empty, a key set before is kept). The home page's tiles are
+    // the settings file's (/etc/pioneer-tv/settings.json), not set here.
     async services(show) {
       const s = await api('GET', '/api/settings');
-      const services = s.services.map((x) => ({ ...x }));
-      const fields = s.service_fields;
-      const labels = { id: 'Id', name: 'Namn', tagline: 'Undertext', url: 'Startsida', search_url: 'Sök-URL ({query})', color: 'Färg (#hex)', glyph: 'Bokstav', logo: 'Logotyp-URL', mode: 'Läge (tomt eller "game": kontrollen går direkt till spelet)', fullscreen: 'Helskärm (1 = fyll TV:n direkt)', row: 'Rad ("live" = andra raden, direkt-tv och radio)', kind: 'Slag (tv eller radio)' };
-      const wrap = h('div');
-      const draw = () => {
-        wrap.replaceChildren(...services.map((svc, i) => h('div', { class: 'service pioneertv-card', style: `--service-color:${svc.color || '#444'}` },
-          fields.map((f) => h('div', {}, h('label', {}, labels[f] || f), h('input', { type: 'text', value: svc[f] || '', oninput: (e) => { svc[f] = e.target.value; if (f === 'color') e.target.closest('.service').style.setProperty('--service-color', svc.color); } }))),
-          h('div', { class: 'svc-actions' },
-            h('button', { class: 'small', disabled: i === 0 ? '' : null, onclick: () => { services.splice(i - 1, 0, services.splice(i, 1)[0]); draw(); } }, '▲'),
-            h('button', { class: 'small', disabled: i === services.length - 1 ? '' : null, onclick: () => { services.splice(i + 1, 0, services.splice(i, 1)[0]); draw(); } }, '▼'),
-            h('button', { class: 'small danger', onclick: () => { services.splice(i, 1); draw(); } }, 'Ta bort')),
-        )));
-      };
-      draw();
+      const { form, save } = fieldsForm(s, ['romm', 'jellyfin'], true);
       show(
         h('h1', {}, 'Tjänster'),
-        h('p', { class: 'muted' }, 'Rutorna på startsidan. Ordningen här är ordningen på skärmen.'),
-        wrap,
-        h('div', { class: 'actions' },
-          h('button', { onclick: () => { services.push({ name: '', url: 'https://', color: '#3a86ff', glyph: '' }); draw(); } }, '+ Lägg till'),
-          h('button', { class: 'primary', onclick: async () => { try { await api('PUT', '/api/settings', { services }); toast('Sparat'); } catch (e) { toast(`Misslyckades: ${e.message}`); } } }, 'Spara')),
+        h('p', { class: 'muted' }, 'Adresser och nycklar till spelen (RomM) och filmerna och musiken (Jellyfin). Nycklarna visas inte; lämna fältet tomt för att behålla den som är satt. Rutorna på startsidan står i /etc/pioneer-tv/settings.json.'),
+        form, save,
       );
     },
 
@@ -278,7 +282,13 @@
         loadTrace();
       };
       rawIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') runRaw(); });
+      const preview = (kind) => api('POST', '/api/saver/preview', { kind }).catch((e) => toast(`Misslyckades: ${e.message}`));
       const debug = h('div', {},
+        h('h2', {}, 'Skärmsläckaren'),
+        h('p', { class: 'muted' }, 'Visa den nu; nästa knapptryck tar bort den.'),
+        h('div', { class: 'actions' },
+          h('button', { onclick: () => preview('labyrint') }, 'Förhandsgranska Labyrint'),
+          h('button', { onclick: () => preview('eld') }, 'Förhandsgranska Eld')),
         h('h2', {}, 'Testa'),
         h('div', { class: 'actions' },
           h('button', { onclick: () => cec('tv_on') }, 'TV på'), h('button', { onclick: () => cec('tv_off') }, 'TV av'),
@@ -434,33 +444,45 @@
     },
   };
 
-  async function schemaView(show, id, title, extra) {
-    const s = await api('GET', '/api/settings');
-    const section = s.sections.find((x) => x.id === id);
+  // The fields of some sections of the settings' schema as a form, and
+  // its Spara: { form, save }. titled: each section under its own heading.
+  function fieldsForm(s, ids, titled) {
     const values = {};
     const form = h('div');
-    for (const f of section.fields) {
-      let control;
-      if (f.type === 'bool') {
-        control = h('button', { class: 'toggle', role: 'switch', 'aria-checked': String(!!f.value), onclick: (e) => { const v = e.currentTarget.getAttribute('aria-checked') !== 'true'; e.currentTarget.setAttribute('aria-checked', String(v)); values[f.path] = v; } });
-      } else if (f.type === 'choice') {
-        // One of a few: a button each, the chosen one pressed.
-        const buttons = f.options.map(([value, label]) => h('button', { class: 'small choice', 'aria-pressed': String(f.value === value),
-          onclick: (e) => { values[f.path] = value; for (const b of buttons) b.setAttribute('aria-pressed', String(b === e.currentTarget)); } }, label));
-        control = h('div', { class: 'choices' }, ...buttons);
-      } else if (f.type === 'number') {
-        const num = h('input', { type: 'number', min: f.min, max: f.max, step: f.step, value: f.value, oninput: (e) => { values[f.path] = Number(e.target.value); } });
-        control = h('div', {}, num, f.unit ? h('span', { class: 'hint' }, ` ${f.unit}`) : '');
-      } else {
-        control = h('input', { type: f.secret ? 'password' : 'text', value: f.value ?? '', maxlength: f.maxlength, placeholder: f.secret && f.is_set ? '•••••••• (satt)' : '', oninput: (e) => { values[f.path] = e.target.value; } });
-      }
-      form.append(h('div', { class: 'field' }, h('label', {}, f.label), control));
+    for (const id of ids) {
+      const section = s.sections.find((x) => x.id === id);
+      if (!section) continue;
+      if (titled) form.append(h('h2', {}, section.title));
+      for (const f of section.fields) form.append(h('div', { class: 'field' }, h('label', {}, f.label), control(f, values)));
     }
-    show(
-      h('h1', {}, title), form,
-      h('div', { class: 'actions' }, h('button', { class: 'primary', onclick: async () => { try { await api('PUT', '/api/settings', { values }); toast('Sparat'); } catch (e) { toast(`Misslyckades: ${e.message}`); } } }, 'Spara')),
-      extra || '',
-    );
+    const save = h('div', { class: 'actions' }, h('button', { class: 'primary', onclick: async () => {
+      try { await api('PUT', '/api/settings', { values }); toast('Sparat'); } catch (e) { toast(`Misslyckades: ${e.message}`); }
+    } }, 'Spara'));
+    return { form, save };
+  }
+  // A field's control; what is changed goes into values.
+  function control(f, values) {
+    if (f.type === 'bool') {
+      return h('button', { class: 'toggle', role: 'switch', 'aria-checked': String(!!f.value), onclick: (e) => { const v = e.currentTarget.getAttribute('aria-checked') !== 'true'; e.currentTarget.setAttribute('aria-checked', String(v)); values[f.path] = v; } });
+    }
+    if (f.type === 'choice') {
+      // One of a few: a button each, the chosen one pressed.
+      const buttons = f.options.map(([value, label]) => h('button', { class: 'small choice', 'aria-pressed': String(f.value === value),
+        onclick: (e) => { values[f.path] = value; for (const b of buttons) b.setAttribute('aria-pressed', String(b === e.currentTarget)); } }, label));
+      return h('div', { class: 'choices' }, ...buttons);
+    }
+    if (f.type === 'number') {
+      const num = h('input', { type: 'number', min: f.min, max: f.max, step: f.step, value: f.value, oninput: (e) => { values[f.path] = Number(e.target.value); } });
+      return h('div', {}, num, f.unit ? h('span', { class: 'hint' }, ` ${f.unit}`) : '');
+    }
+    return h('input', { type: f.secret ? 'password' : 'text', value: f.value ?? '', maxlength: f.maxlength, autocomplete: f.secret ? 'new-password' : 'off',
+      placeholder: f.secret ? (f.is_set ? '•••••••• (satt)' : 'inte satt') : '', oninput: (e) => { values[f.path] = e.target.value; } });
+  }
+
+  async function schemaView(show, id, title, extra) {
+    const s = await api('GET', '/api/settings');
+    const { form, save } = fieldsForm(s, [id]);
+    show(h('h1', {}, title), form, save, extra || '');
   }
 
   async function cec(command) { try { await api('POST', '/api/cec', { command }); toast(`CEC: ${command}`); } catch (e) { toast(`CEC misslyckades: ${e.message}`); } }
@@ -468,7 +490,8 @@
 
   // ---------------------------------------------------------------- routing
   function route() {
-    const view = (location.hash || '#status').slice(1);
+    let view = (location.hash || '#status').slice(1);
+    if (view === 'gamepads') view = 'bluetooth';            // the old tab's address
     for (const a of document.querySelectorAll('#nav a')) a.classList.toggle('active', a.dataset.view === view);
     // Each route renders into its own element, so a slow view from an earlier
     // route can never overwrite the current one.
