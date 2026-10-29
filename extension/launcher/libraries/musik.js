@@ -111,12 +111,15 @@ window.PioneerTV = window.PioneerTV || {};
 
   async function search(term) {
     const found = await J.search(term);
+    const n = found.artists.length + found.albums.length + found.songs.length;
+    const head = { kind: 'shelf', title: M.views.searchTitle(term), count: M.views.hits(n), legend: [['A', 'spela · öppna']] };
+    if (!n) return { ...head, none: M.views.NONE };
     return {
-      kind: 'shelf', title: 'Sök', legend: [['A', 'spela · öppna']],
+      ...head,
       sections: [
-        { label: 'Artister', layout: 'stacks', columns: 4, shape: 'round', items: found.artists.map(group), empty: 'Inga artister.' },
-        { label: 'Album', layout: 'shelf', items: found.albums.map(group), empty: 'Inga album.' },
-        { label: 'Låtar', layout: 'rows', look: 'thumb', items: found.songs.map((s, i) => song(s, i, found.songs, true)), empty: 'Inga låtar.' },
+        { label: 'Artister', layout: 'stacks', columns: 4, shape: 'round', items: found.artists.map(group) },
+        { label: 'Album', layout: 'shelf', items: found.albums.map(group) },
+        { label: 'Låtar', layout: 'rows', look: 'thumb', items: found.songs.map((s, i) => song(s, i, found.songs, true)) },
       ],
     };
   }

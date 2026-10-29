@@ -115,3 +115,16 @@
   border-radius: 0.16rem; background: var(--pioneertv-ochre);
 }
 .planks .card.pioneertv-focus .title { color: var(--pioneertv-ink); }
+
+/* ---- nothing on it (planks.js dusty): one bare plank in its dust, a
+   cobweb in the corner above, the line in big type on the wall ---- */
+.planks--dusty .dusty { grid-column: 1 / -1; position: relative; height: var(--row-h); }
+.dusty-dust {
+  position: absolute; left: calc(-1 * var(--side-l, 0px)); right: calc(-1 * var(--side-r, 0px));
+  top: calc(var(--wall) + 0.1rem); width: calc(100% + var(--side-l, 0px) + var(--side-r, 0px)); height: calc(var(--lip) - var(--wall) - 0.1rem);
+}
+.dusty-web { position: absolute; right: calc(-1 * var(--side-r, 0px)); top: 0; width: 9rem; height: auto; }
+.dusty-text {
+  position: absolute; left: 0; right: 0; top: calc(var(--wall) * 0.32); margin: 0; text-align: center;
+  font: italic 400 2.6rem/1.2 var(--pioneertv-font-prose); color: var(--pioneertv-ink-muted);
+}

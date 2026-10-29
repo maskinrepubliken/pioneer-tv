@@ -6,7 +6,9 @@
 // look: 'stacks' for cards of wholes (cards.js stack: the artists), else
 // covers on shelves. info(item): { title, meta, text, foot } for a strip
 // under the cards that follows the focus; letter(item): the letter it
-// files under, for L1/R1 jumps; count(shown, all): the heading's count. The page's search field filters it while it is on screen.
+// files under, for L1/R1 jumps; count(shown, all): the heading's count;
+// empty: what the bare plank says when there is nothing at all. The page's
+// search field filters it while it is on screen.
 //
 // Only the rows around the focus are in the page (a console can have nearly
 // a thousand games, the box 1,707 albums): with every card there, the
@@ -36,7 +38,8 @@ window.PioneerTV = window.PioneerTV || {};
     return /^[a-z]$/.test(base) ? base : '#';
   }
 
-  // ctx: { setCount(text), savedKey }. Returns { focusFirst(), filter(words),
+  // ctx: { setCount(text), shown(n, all, words), savedKey } (shown, when
+  // given, instead of setCount: the page heads a filtered grid itself). Returns { focusFirst(), filter(words),
   // focusIndex(i) }; the grid on screen is also M.grid.active.
   function render(view, spec, ctx) {
     const all = spec.items;
@@ -98,12 +101,23 @@ window.PioneerTV = window.PioneerTV || {};
       M.nav.focus(nodes.get(i));
     }
 
+    // Nothing to show (nothing matches, or nothing there at all): a bare
+    // dusty plank in the grid's place (planks.js dusty).
+    let bare = null;
     function setShown(list) {
       shown = list;
       for (const node of nodes.values()) node.remove();
       nodes.clear();
       windowStart = -1;
-      if (spec.count) ctx.setCount(spec.count(list.length, all.length));
+      if (ctx.shown) ctx.shown(list.length, all.length, words.trim());
+      else if (spec.count) ctx.setCount(spec.count(list.length, all.length));
+      const none = !list.length;
+      gridEl.style.display = none ? 'none' : '';
+      if (bare) { bare.remove(); bare = null; }
+      if (none) {
+        bare = M.planks.dusty(words.trim() || !spec.empty ? M.views.NONE : spec.empty);
+        scroller.appendChild(bare);
+      }
       if (list.length) renderWindow(0);
       showInfo(list[0]);
     }
@@ -145,7 +159,6 @@ window.PioneerTV = window.PioneerTV || {};
       M.hud.toast(letter(shown[i]).toUpperCase(), '', 700);
     });
 
-    if (!all.length && spec.empty) scroller.appendChild(el('p', 'empty', spec.empty));
     setShown(all);
     const matches = () => {
       const q = fold(words.trim());

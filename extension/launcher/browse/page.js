@@ -28,7 +28,6 @@ window.PioneerTV = window.PioneerTV || {};
   const search = $('search');
   const searchBtn = $('search-btn');
   const searchItem = $('search-item');
-  const queryEl = $('query');
   const legendEl = $('legend');
   M.launcherUrl = new URL('index.html?tv=1', location.href).href;
 
@@ -92,13 +91,21 @@ window.PioneerTV = window.PioneerTV || {};
     // While typing in the field (a search, a filter) the focus stays there.
     const typing = document.activeElement === search;
     if (spec.kind === 'grid') {
-      grid = M.grid.render(view, spec, { setCount: (t) => { countEl.textContent = t; }, savedKey: lastFocus[here()] });
-      if (!typing && !grid.focusFirst()) M.nav.focus(searchBtn);
+      // A grid filtered by the search field is headed as a search is: the
+      // words, and how many in it match (the grid tells, as it filters).
+      const shown = (n, all, words) => {
+        titleEl.textContent = words ? V.searchTitle(words) : spec.title || library.name;
+        countEl.textContent = words ? `${V.hits(n)} i ${spec.title || library.name}` : spec.count ? spec.count(n, all) : '';
+      };
+      grid = M.grid.render(view, spec, { shown, savedKey: lastFocus[here()] });
+      // Nothing found: the focus is left be (the column would open over the
+      // heading); the first arrow finds Sök.
+      if (!typing) grid.focusFirst();
       if (!spec.filter) grid = null;
       return;
     }
     const first = spec.kind === 'detail' ? M.detail.render(view, spec) : M.shelf.render(view, spec);
-    if (!typing) restoreFocus(first || searchBtn);
+    if (!typing && !spec.none) restoreFocus(first || searchBtn);   // nothing found: as a grid, the focus is left be
   }
 
   // ------------------------------------------------------------ routing
@@ -148,9 +155,11 @@ window.PioneerTV = window.PioneerTV || {};
   searchBtn.appendChild(M.icons.svg('search'));
   searchItem.addEventListener('click', () => M.keyboard.open(search));
   M.keyboard.searchField = search;
+  // While the words are typed outside a grid, the heading says them at
+  // once (a grid heads itself as it filters; a search's view when it comes).
   function showQuery() {
     const q = search.value.trim();
-    queryEl.textContent = q ? `”${q}”` : '';
+    if (!grid && q && document.activeElement === search) { titleEl.textContent = V.searchTitle(q); countEl.textContent = ''; }
   }
   // The keyboard closed (OK, or B): the focus goes to what was found.
   b.on('keyboard:close', () => setTimeout(() => {

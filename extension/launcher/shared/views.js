@@ -143,5 +143,12 @@ window.PioneerTV = window.PioneerTV || {};
     return message(view, `${source} svarar inte`, 'Kontrollera att servern är igång.', retry);
   }
 
-  M.views = { el, button, legend, cover, message, loading, clear, key, error };
+  // A search's heading, the same for every library and for a shelf's own
+  // filter: the words as the title, how many were found beside them; and
+  // when none, a bare shelf says so (planks.js dusty).
+  const searchTitle = (words) => `”${words}”`;
+  const hits = (n) => (n === 0 ? 'inga träffar' : n === 1 ? '1 träff' : `${n} träffar`);
+  const NONE = 'Inga träffar. Bara damm.';
+
+  M.views = { el, button, legend, cover, message, loading, clear, key, error, searchTitle, hits, NONE };
 })(window.PioneerTV);

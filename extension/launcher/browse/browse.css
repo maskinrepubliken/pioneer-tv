@@ -13,7 +13,7 @@
 .legend { border-top: 0; color: var(--pioneertv-ink-faint); }
 .legend .credit { display: none; }
 
-/* ---- the heading: title and count at the left, tabs and what is searched for at the right ---- */
+/* ---- the heading: title and count at the left, tabs at the right (a search: its words as the title) ---- */
 .head { flex: none; display: flex; align-items: center; gap: 1.6rem; margin-bottom: 1.2rem; min-height: 2.6rem; }
 .head-title {
   margin: 0; min-width: 0; flex: 0 1 auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -29,10 +29,6 @@
 }
 .head-tabs { flex: 0 1 auto; min-width: 0; }
 .head-tabs[hidden] { display: none; }
-.head-query {
-  flex: 0 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  font: italic 1.1rem var(--pioneertv-font-prose); color: var(--pioneertv-ink-muted);
-}
 /* Out of sight: the on-screen keyboard shows what is typed. */
 .head-search { position: absolute; left: -10000px; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 

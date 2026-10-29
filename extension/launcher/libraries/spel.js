@@ -128,7 +128,7 @@ window.PioneerTV = window.PioneerTV || {};
     }
     if (what === 'search' && a) {
       const { games } = await R.games({ search: a });
-      return gridOf(`”${a}”`, games, false);
+      return { ...gridOf(M.views.searchTitle(a), games, false), count: (n) => M.views.hits(n), empty: M.views.NONE };
     }
     return start();
   }

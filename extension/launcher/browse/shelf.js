@@ -11,7 +11,8 @@
 // (buttons and type-only cards in a line: { button: true, label, primary,
 // run, key } for a button) or 'rows' (a list, look 'number', 'thumb' or
 // 'still'). A section without items is left out, or says empty.
-// focus: the key the focus goes to first.
+// focus: the key the focus goes to first. none: in place of the sections,
+// a bare dusty plank saying it (planks.js dusty).
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const el = M.views.el;
@@ -58,7 +59,9 @@ window.PioneerTV = window.PioneerTV || {};
   // Draws the view into the page's view; returns where the focus goes first.
   function render(view, spec) {
     const scroll = el('div', 'scroll shelf');
-    for (const s of spec.sections) {
+    // Nothing at all (a search that found nothing): the bare dusty plank.
+    if (spec.none) scroll.appendChild(M.planks.dusty(spec.none));
+    for (const s of spec.sections || []) {
       const node = section(s);
       if (node) scroll.appendChild(node);
     }

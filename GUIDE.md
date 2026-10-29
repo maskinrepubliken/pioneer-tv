@@ -119,8 +119,12 @@ pointer moving over it, it widens over the view and gives their names;
 left from the view lands on the one the page is at. Search is a round
 button, as on every page of ours (`pioneertv-round` in
 `content/paper.css`): A on it, or Y anywhere, opens the on-screen keyboard
-on a field out of sight, and the words stay in the heading; over a grid they filter it, elsewhere they
-search the library. B takes a filter away first. What plays is a player's:
+on a field out of sight; over a grid they filter it, elsewhere they
+search the library. Either way the heading is the same: the words as the
+title and how many were found beside them ("3 träffar", over a grid "2
+träffar i SNES"), and when nothing was found a bare dusty plank, a cobweb
+in its corner, says "Inga träffar. Bara damm." in big type (`planks.js`
+dusty, also for a grid with nothing in it). B takes a filter away first. What plays is a player's:
 `players/video.js` (mpv, through the daemon) and `players/audio.js` (in the
 page, with "Spelas nu"). `shared/` has the canvas, the buttons and the
 legend (`base.css`), the full-screen message (`screen.js`; on ink where

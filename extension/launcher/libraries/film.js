@@ -123,7 +123,9 @@ window.PioneerTV = window.PioneerTV || {};
 
   async function search(term) {
     const found = await J.searchVideos(term);
-    return { kind: 'shelf', title: 'Sök', legend: [['A', 'öppna']], sections: sections(found, `Träffar för ”${term}”`) };
+    const head = { kind: 'shelf', title: M.views.searchTitle(term), count: M.views.hits(found.length), legend: [['A', 'öppna']] };
+    if (!found.length) return { ...head, none: M.views.NONE };
+    return { ...head, sections: sections(found, null) };
   }
 
   // A series: its poster and overview, the seasons as tabs, a season's episodes.
