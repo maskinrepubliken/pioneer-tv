@@ -64,6 +64,7 @@ class Server:
             ("POST", "/api/bluetooth/{action}", self.api_bt_action),
             ("POST", "/api/cec", self.api_cec),
             ("POST", "/api/toast", self.api_toast),
+            ("POST", "/api/home", self.api_home),
             ("GET", "/api/cec/trace", self.api_cec_trace),
             ("GET", "/api/input/events", self.api_input_events),
             ("GET", "/api/cec/topology", self.api_cec_topology),
@@ -492,6 +493,11 @@ class Server:
         data = await self._json(request)
         for event in self.router.handle({**data, "type": "toast"}):
             await self.broadcast(event)
+        return web.json_response({"ok": True})
+
+    async def api_home(self, _request: web.Request) -> web.Response:
+        """B on the settings page, with nowhere further up: the home page, as Home held."""
+        await self.broadcast({"type": "event", "name": "home"})
         return web.json_response({"ok": True})
 
     async def api_input_events(self, request: web.Request) -> web.Response:

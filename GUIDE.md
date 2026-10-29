@@ -37,7 +37,7 @@ what was learned on the way.
 | D-pad, left stick | Move focus (arrow keys) |
 | A / Cross | Select (Enter) |
 | B / Circle | Escape: closes an overlay, releases an engaged slider, leaves a text field. Hold: one page back |
-| X / Square | The filled button, wherever there is one: on the box's pages (Spela, Blanda allt, Försök igen, the settings page's Spara), the overlay's menus (Fortsätt, Hem) and the on-screen keyboard (OK); unmarked (one learns it), the browse page's legend says it. Elsewhere play, pause (Space) or the page's own use. Hold: undo (Ctrl+Z), e.g. what X took off a list |
+| X / Square | The filled button, wherever there is one: on the box's pages (Spela, Blanda allt, Försök igen, the settings page's Sök efter enheter), the overlay's menus (Fortsätt, Hem) and the on-screen keyboard (OK); unmarked (one learns it), the browse page's legend says it. Elsewhere play, pause (Space) or the page's own use. Hold: undo (Ctrl+Z), e.g. what X took off a list |
 | Y / Triangle | On-screen keyboard (on a pad without Home, hold: quick menu) |
 | L1, R1 | Shift+Tab, Tab (previous, next focusable) |
 | L2, R2 | TV volume down, up (CEC, repeats while held) |
@@ -916,23 +916,44 @@ over CEC; Chromium itself stays at 100 %. To check from a shell as `pi`:
 ## The settings page's tabs
 
 In a column at the left, as on the browse pages: at rest a ring with each
-tab's icon, with the focus or the pointer in it wider, with the names and
-the groups'. Coming in from the view, the focus lands on the tab shown; up
-and down show each tab as its ring gets the focus. The page opens on
-Bluetooth.
+tab's icon (the tab shown in ink; the one with the focus filled ochre, as
+everything chosen is), with the focus or the pointer in it wider, with the
+names and the groups'. The page opens on Allmänt.
 
-- **Anslutet.** Bluetooth (the devices, pairing, and whether paired pads
-  are called up by themselves), Wi-Fi (the network, then the networks in
-  range), Tjänster (Tailscale; RomM and Jellyfin, each whether it answers
-  and takes the key (`GET /api/services`), its address and its API key, as
-  a password: an empty field keeps the key set before).
+The view is one column of rows, as in the overlay's menus: each row the
+view's full width and one stop for the d-pad. Status cards, headings and
+text are only read. The page owns the d-pad (settings.js, registered before
+the extension's spatial navigation, which guessed by distance and went from
+a row to the column and back):
+
+- In the column, up and down go through the tabs and show each; right goes
+  into the view, to the row one was last on there.
+- In the view, up and down go row by row, in order. Left goes to the
+  column; on a row marked ◀ ▶ (a number, a choice, the TV's volume, the
+  log shown) left and right change its value instead. A does the row: a
+  switch turns, a choice steps, a field opens the on-screen keyboard.
+- B in the view goes to the column; in the column, home (`POST /api/home`,
+  as Home held). X presses the view's filled row (Sök efter enheter).
+- A value is saved as soon as it changes (a number once it has stood still
+  a moment); there is no Spara. A row that cannot be undone (Ta bort, Glöm,
+  Starta om Pi:n) asks for a second A.
+
+The tabs:
+
 - **Boxen.** Allmänt (the screensaver and its previews, going home when
   idle, the volume notice, the on-screen keyboard), TV (only the set
   itself: CEC, its name, turning it off after the screensaver, and CEC's
   tests and trace), Kontroller.
+- **Anslutet.** Bluetooth (each device a row whose A does what it needs:
+  para, anslut, koppla från; and whether paired pads are called up by
+  themselves), Wi-Fi (the network, then the networks in range: A joins
+  one, a locked one asks for its password in a row below), Tjänster
+  (Tailscale; RomM and Jellyfin, each whether it answers and takes the key
+  (`GET /api/services`), its address and its API key, as a password: an
+  empty field keeps the key set before).
 - **Underhåll.** System (the Pi, the software, the covers on disk,
   Fjärråtkomst, restarts), Loggar.
 
-Old addresses lead on: `#gamepads` and `#status` to Bluetooth, `#remote`
-to System. The home page's tiles are the settings file's,
+Old addresses lead on: `#gamepads` to Bluetooth, `#status` to Allmänt,
+`#remote` to System. The home page's tiles are the settings file's,
 `/etc/pioneer-tv/settings.json`, written by hand, not edited on the page.

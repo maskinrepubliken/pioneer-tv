@@ -43,8 +43,9 @@
 }
 .rail.open .rail-label, .rail:focus-within .rail-label { display: block; }
 .rail-item:has(.pioneertv-focus) .rail-label { color: var(--pioneertv-ink); }
-/* Where the page is: the ring in ink. */
-.rail-item.aktiv .rail-mark { background: var(--pioneertv-ink); color: var(--pioneertv-paper); border-color: var(--pioneertv-ink); }
+/* Where the page is: the ring in ink; with the focus it fills ochre, as
+   everything chosen does (paper.css). */
+.rail-item.aktiv .rail-mark:not(.pioneertv-focus) { background: var(--pioneertv-ink); color: var(--pioneertv-paper); border-color: var(--pioneertv-ink); }
 .rail-item.aktiv .rail-label { color: var(--pioneertv-ink); }
 .rail-search .rail-mark { color: var(--pioneertv-ink-muted); }
 .rail-list .rail-mark .pioneertv-icon { font-size: 1.4em; }

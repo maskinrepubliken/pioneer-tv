@@ -97,21 +97,156 @@
     return wait({ ok: true, message: 'mock' });
   }
 
+
   // ---------------------------------------------------------------- helpers
   const bars = (sig) => sig == null ? '' : '▂▄▆█'.slice(0, Math.max(1, Math.round(sig / 25))).padEnd(4, '·');
-  const icon = (name) => (window.PioneerTV && PioneerTV.icons) ? h('span', { class: 'item-icon' }, PioneerTV.icons.svg(name)) : h('span', { class: 'item-icon' }, '·');
   const dot = (cls) => h('span', { class: `dot ${cls}` });
   const fmtUptime = (s) => s == null ? '–' : (s >= 86400 ? `${Math.floor(s / 86400)} d ` : '') + `${Math.floor((s % 86400) / 3600)} h ${Math.floor((s % 3600) / 60)} min`;
   const kv = (pairs) => h('dl', { class: 'kv' }, pairs.map(([k, v]) => [h('dt', {}, k), h('dd', {}, v)]));
+  const iconHtml = (name) => (window.PioneerTV && PioneerTV.icons ? PioneerTV.icons.html(name) : '');
 
-  function confirmBtn(label, cls, fn) {
-    let armed = false;
-    const b = h('button', { class: cls, onclick: async () => {
-      if (!armed) { armed = true; b.textContent = `${label} – tryck igen`; setTimeout(() => { armed = false; b.textContent = label; }, 4000); return; }
-      armed = false; b.textContent = label; await fn();
-    } }, label);
-    return b;
+  // ---------------------------------------------------------------- rows
+  // The view is one column of rows, each the view's full width and each one
+  // stop for the d-pad: up and down go from one to the next in order, left
+  // goes to the column of tabs (or steps a value, on a row marked ◀ ▶).
+  // Everything else (a status card, a heading, a line of text) is only read.
+  //
+  // row({ label, sub, detail, run, step, primary, key }): a button. run is
+  // A; step(dir) is left and right (-1, 1). key names it across a redraw,
+  // so the focus stays on it (else its label does).
+  function row({ label, sub, detail, run, step, primary, disabled, key }) {
+    const det = h('span', { class: 'row-detail' });
+    if (detail && detail.nodeType) det.append(detail); else if (detail != null) det.textContent = detail;
+    const el = h('button', { class: `row stop${primary ? ' primary' : ''}${step ? ' row-step' : ''}`, type: 'button', disabled: disabled ? '' : null, 'data-key': key || label },
+      h('span', { class: 'row-text' }, h('span', { class: 'row-label' }, label), sub ? h('span', { class: 'row-sub' }, sub) : ''),
+      det);
+    if (run) el.addEventListener('click', () => run(el));
+    if (step) el.step = step;
+    el.say = (text) => { det.textContent = text; };
+    return el;
   }
+  // One that asks twice: the first A says "tryck A igen", the second does it.
+  function confirmRow(opts, fn) {
+    let armed = 0;
+    const r = row({ ...opts, detail: opts.detail || '', run: async () => {
+      if (!armed) { armed = setTimeout(() => { armed = 0; r.say(opts.detail || ''); }, 4000); r.say('tryck A igen'); return; }
+      clearTimeout(armed); armed = 0; r.say(opts.detail || ''); await fn();
+    } });
+    return r;
+  }
+  // A text field as a row: its label, the field at the right (A opens the
+  // on-screen keyboard); the field is the stop.
+  function inputRow(label, input, sub) {
+    input.classList.add('stop');
+    input.dataset.key = label;
+    return h('label', { class: 'row row-input' },
+      h('span', { class: 'row-text' }, h('span', { class: 'row-label' }, label), sub ? h('span', { class: 'row-sub' }, sub) : ''), input);
+  }
+  // A long text to read (a log), as a stop so the page can be scrolled to it.
+  const logBox = (text, cls = '') => h('pre', { class: `log stop ${cls}`, tabindex: '0' }, text);
+  const rows = (...r) => h('div', { class: 'rows' }, ...r);
+
+  // ---------------------------------------------------------------- settings
+  // Each field of the settings' schema as a row, saved when it is changed
+  // (a number once it has stood still a moment).
+  const saveTimers = {};
+  function save(path, value, later) {
+    clearTimeout(saveTimers[path]);
+    const go = async () => {
+      try { await api('PUT', '/api/settings', { values: { [path]: value } }); toast('Sparat'); }
+      catch (e) { toast(`Misslyckades: ${e.message}`); }
+    };
+    if (later) saveTimers[path] = setTimeout(go, 700); else go();
+  }
+  function fieldRow(f) {
+    if (f.type === 'bool') {
+      let on = !!f.value;
+      const sw = h('span', { class: 'switch', 'aria-checked': String(on) });
+      const r = row({ label: f.label, detail: sw, run: () => { on = !on; sw.setAttribute('aria-checked', String(on)); save(f.path, on); } });
+      r.setAttribute('role', 'switch');
+      return r;
+    }
+    if (f.type === 'choice') {
+      let at = Math.max(0, f.options.findIndex(([v]) => v === f.value));
+      const text = () => `◀ ${f.options[at][1]} ▶`;
+      const turn = (dir) => { at = (at + dir + f.options.length) % f.options.length; r.say(text()); save(f.path, f.options[at][0]); };
+      const r = row({ label: f.label, detail: text(), run: () => turn(1), step: turn });
+      return r;
+    }
+    if (f.type === 'number') {
+      let v = Number(f.value) || 0;
+      const places = String(f.step || 1).split('.')[1]?.length || 0;
+      const text = () => `◀ ${v.toFixed(places).replace('.', ',')}${f.unit ? ` ${f.unit}` : ''} ▶`;
+      const r = row({ label: f.label, detail: text(), step: (dir) => {
+        const next = Math.min(f.max ?? Infinity, Math.max(f.min ?? -Infinity, +(v + dir * (f.step || 1)).toFixed(places)));
+        if (next === v) return;
+        v = next; r.say(text()); save(f.path, v, true);
+      } });
+      return r;
+    }
+    const input = h('input', { type: f.secret ? 'password' : 'text', value: f.value ?? '', maxlength: f.maxlength, autocomplete: f.secret ? 'new-password' : 'off',
+      placeholder: f.secret ? (f.is_set ? '•••••••• (satt)' : 'inte satt') : '' });
+    input.addEventListener('change', () => {
+      if (f.secret && !input.value) return;            // empty: the key set before stays
+      save(f.path, input.value);
+      if (f.secret) { input.value = ''; input.placeholder = '•••••••• (satt)'; }
+    });
+    return inputRow(f.label, input);
+  }
+  const fieldRows = (s, id) => {
+    const section = s.sections.find((x) => x.id === id);
+    return section ? section.fields.map(fieldRow) : [];
+  };
+  const settings = () => api('GET', '/api/settings');
+
+  // ---------------------------------------------------------------- status
+  // How each part is, read at the top of its own tab: the network on Wi-Fi,
+  // Tailscale and the services on Tjänster, the TV on TV, the Pi on System.
+  const status = () => api('GET', '/api/status');
+  const card = (title, ...c) => h('div', { class: 'card pioneertv-card' }, h('h3', {}, title), ...c);
+  function netCard(s) {
+    const w = s.wifi;
+    const eth = (s.interfaces || []).find((i) => i.name.startsWith('e'));
+    const wlan = (s.interfaces || []).find((i) => i.name.startsWith('w')) || { addresses: [] };
+    return card('Nätverk',
+      h('div', { class: 'big' }, dot(w.state === 'connected' ? 'ok' : w.available ? 'warn' : 'bad'), w.state === 'connected' ? `${w.ssid} ` : w.available ? 'Wi-Fi ej ansluten' : 'Ingen Wi-Fi', w.signal != null ? h('span', { class: 'bars muted' }, ` ${bars(w.signal)} ${w.signal}%`) : ''),
+      kv([['Ethernet', eth && eth.addresses.length ? eth.addresses.join(', ') : 'ej ansluten'], ['Wi-Fi IP', wlan.addresses.join(', ') || '–']]));
+  }
+  function tailscaleCard(s) {
+    const t = s.tailscale;
+    return card('Anslutning',
+      h('div', { class: 'big' }, dot(t.state === 'running' ? 'ok' : t.installed ? 'warn' : 'bad'), t.state === 'running' ? 'Ansluten' : t.installed ? `Tailscale ${t.state}` : 'Ej installerat'),
+      kv([['IP', (t.ips || []).join(', ') || '–'], ['Namn', t.dns_name || '–'], ['Peers', `${(t.peers || []).filter((p) => p.online).length} av ${(t.peers || []).length} online`]]));
+  }
+  function cecCard(s) {
+    return card('TV (HDMI-CEC)',
+      h('div', { class: 'big' }, dot(s.cec.enabled ? (s.cec.tv_power === 'on' ? 'ok' : 'warn') : 'bad'), s.cec.enabled ? (s.cec.tv_power === 'on' ? 'TV på' : s.cec.tv_power ? `TV ${s.cec.tv_power}` : 'TV okänd') : 'CEC av'),
+      kv([['Fysisk adress', s.cec.phys_addr || '–'], ['Ljud', !s.audio || !s.audio.available ? 'ingen ljudserver' : s.audio.sink ? `${s.audio.sink.name} · ${Math.round(s.audio.sink.volume * 100)} %` : 'ingen utgång vald']]));
+  }
+  // RomM's or Jellyfin's: whether it answers and takes the key (/api/services).
+  const SERVICE_STATE = { ok: ['ok', 'Ansluten'], auth: ['bad', 'Nyckeln godtas inte'], down: ['bad', 'Svarar inte'], unset: ['warn', 'Adress eller nyckel saknas'] };
+  function serviceCard(st) {
+    if (!st) return card('Anslutning', h('div', { class: 'big muted spin' }, 'Frågar…'));
+    const [cls, text] = SERVICE_STATE[st.state] || ['bad', st.state];
+    const pairs = [];
+    if (st.server) pairs.push(['Server', st.server]);
+    if (st.version) pairs.push(['Version', st.version]);
+    if (st.user) pairs.push(['Användare', st.user]);
+    return card('Anslutning', h('div', { class: 'big' }, dot(cls), text), pairs.length ? kv(pairs) : '');
+  }
+  function systemCard(s) {
+    const sys = s.system;
+    return card('Pi:n',
+      h('div', { class: 'big' }, dot(sys.throttled_now ? 'bad' : sys.throttled_ever ? 'warn' : 'ok'), sys.temp_c != null ? `${sys.temp_c} °C` : sys.hostname),
+      kv([['Ström', sys.throttled == null ? 'okänd' : sys.throttled_now ? 'underspänning / strypt nu' : sys.throttled_ever ? 'har strypts sedan start' : 'ok'],
+        ['Minne', sys.mem_total_mb ? `${sys.mem_available_mb} MB ledigt av ${sys.mem_total_mb}` : '–'],
+        ['Last', sys.load1 != null ? sys.load1.toFixed(2) : '–'], ['Upptid', fmtUptime(sys.uptime_s)],
+        ['Disk', sys.disk && sys.disk.total_mb ? `${Math.round(sys.disk.free_mb / 1024)} GB ledigt` : '–'],
+        ['Visar', s.page || '–']]));
+  }
+
+  async function cec(command) { try { await api('POST', '/api/cec', { command }); toast(`CEC: ${command}`); } catch (e) { toast(`CEC misslyckades: ${e.message}`); } }
+  async function sysAction(action) { toast('Kör…'); try { const r = await api('POST', '/api/system', { action }); toast(r.ok ? 'Klart' : r.message); } catch (e) { toast(`Misslyckades: ${e.message}`); } }
 
   // ---------------------------------------------------------------- views
   // The parts whose journal the Loggar tab shows, and the CEC bus.
@@ -121,129 +256,97 @@
     ['tailscaled', 'Tailscale'], ['cec', 'CEC'],
   ];
 
-  // ---------------------------------------------------------------- status
-  // How each part is, shown at the top of its own tab (there is no Status
-  // tab): the network on Wi-Fi, Tailscale with the services on Tjänster,
-  // the TV on TV, the Pi on System.
-  const status = () => api('GET', '/api/status');
-  const cards = (...c) => h('div', { class: 'cards' }, ...c);
-  function netCard(s) {
-    const w = s.wifi;
-    const eth = (s.interfaces || []).find((i) => i.name.startsWith('e'));
-    const wlan = (s.interfaces || []).find((i) => i.name.startsWith('w')) || { addresses: [] };
-    return h('div', { class: 'card pioneertv-card' }, h('h3', {}, 'Nätverk'),
-      h('div', { class: 'big' }, dot(w.state === 'connected' ? 'ok' : w.available ? 'warn' : 'bad'), w.state === 'connected' ? `${w.ssid} ` : w.available ? 'Wi-Fi ej ansluten' : 'Ingen Wi-Fi', w.signal != null ? h('span', { class: 'bars muted' }, ` ${bars(w.signal)} ${w.signal}%`) : ''),
-      kv([['Ethernet', eth && eth.addresses.length ? eth.addresses.join(', ') : 'ej ansluten'], ['Wi-Fi IP', wlan.addresses.join(', ') || '–']]));
-  }
-  function tailscaleCard(s) {
-    const t = s.tailscale;
-    return h('div', { class: 'card pioneertv-card' }, h('h3', {}, 'Anslutning'),
-      h('div', { class: 'big' }, dot(t.state === 'running' ? 'ok' : t.installed ? 'warn' : 'bad'), t.state === 'running' ? 'Ansluten' : t.installed ? `Tailscale ${t.state}` : 'Ej installerat'),
-      kv([['IP', (t.ips || []).join(', ') || '–'], ['Namn', t.dns_name || '–'], ['Peers', `${(t.peers || []).filter((p) => p.online).length} av ${(t.peers || []).length} online`]]),
-      t.installed && t.state !== 'running' ? h('div', { class: 'actions' }, h('button', { class: 'small', onclick: () => sysAction('tailscale_up') }, 'Starta Tailscale')) : '');
-  }
-  function cecCard(s) {
-    return h('div', { class: 'card pioneertv-card' }, h('h3', {}, 'TV (HDMI-CEC)'),
-      h('div', { class: 'big' }, dot(s.cec.enabled ? (s.cec.tv_power === 'on' ? 'ok' : 'warn') : 'bad'), s.cec.enabled ? (s.cec.tv_power === 'on' ? 'TV på' : s.cec.tv_power ? `TV ${s.cec.tv_power}` : 'TV okänd') : 'CEC av'),
-      kv([['Fysisk adress', s.cec.phys_addr || '–'], ['Ljud', !s.audio || !s.audio.available ? 'ingen ljudserver' : s.audio.sink ? `${s.audio.sink.name} · ${Math.round(s.audio.sink.volume * 100)} %` : 'ingen utgång vald']]));
-  }
-  // RomM's or Jellyfin's: whether it answers and takes the key (/api/services).
-  const SERVICE_STATE = { ok: ['ok', 'Ansluten'], auth: ['bad', 'Nyckeln godtas inte'], down: ['bad', 'Svarar inte'], unset: ['warn', 'Adress eller nyckel saknas'] };
-  function serviceCard(st) {
-    if (!st) return h('div', { class: 'card pioneertv-card' }, h('h3', {}, 'Anslutning'), h('div', { class: 'big muted spin' }, 'Frågar…'));
-    const [cls, text] = SERVICE_STATE[st.state] || ['bad', st.state];
-    const rows = [];
-    if (st.server) rows.push(['Server', st.server]);
-    if (st.version) rows.push(['Version', st.version]);
-    if (st.user) rows.push(['Användare', st.user]);
-    return h('div', { class: 'card pioneertv-card' }, h('h3', {}, 'Anslutning'),
-      h('div', { class: 'big' }, dot(cls), text), rows.length ? kv(rows) : '');
-  }
-  function systemCard(s) {
-    const sys = s.system;
-    return h('div', { class: 'card pioneertv-card' }, h('h3', {}, 'Pi:n'),
-      h('div', { class: 'big' }, dot(sys.throttled_now ? 'bad' : sys.throttled_ever ? 'warn' : 'ok'), sys.temp_c != null ? `${sys.temp_c} °C` : sys.hostname),
-      kv([['Ström', sys.throttled == null ? 'okänd' : sys.throttled_now ? 'underspänning / strypt nu' : sys.throttled_ever ? 'har strypts sedan start' : 'ok'],
-        ['Minne', sys.mem_total_mb ? `${sys.mem_available_mb} MB ledigt av ${sys.mem_total_mb}` : '–'],
-        ['Last', sys.load1 != null ? sys.load1.toFixed(2) : '–'], ['Upptid', fmtUptime(sys.uptime_s)],
-        ['Disk', sys.disk && sys.disk.total_mb ? `${Math.round(sys.disk.free_mb / 1024)} GB ledigt` : '–'],
-        ['Visar', s.page || '–']]));
-  }
-
   const views = {
-    async wifi(show) {
-      const st = await status();
-      show(h('h1', {}, 'Wi-Fi'), cards(netCard(st)), h('p', { class: 'muted spin' }, 'Söker nätverk…'));
-      const nets = await api('GET', '/api/wifi/networks?rescan=1');
-      const list = h('div', { class: 'list' });
-      for (const n of nets) {
-        const item = h('div', { class: 'item pioneertv-card' });
-        const connectForm = h('div', { class: 'inline-form' });
-        connectForm.hidden = true;
-        const pw = h('input', { type: 'password', placeholder: 'Lösenord' });
-        const connect = async () => {
-          btn.disabled = true; btn.textContent = 'Ansluter…';
-          try { const r = await api('POST', '/api/wifi/connect', { ssid: n.ssid, password: pw.value }); toast(r.ok ? `Ansluten till ${n.ssid}` : r.message); views.wifi(); }
-          catch (e) { toast(`Misslyckades: ${e.message}`); btn.disabled = false; btn.textContent = 'Anslut'; }
-        };
-        pw.addEventListener('keydown', (e) => { if (e.key === 'Enter') connect(); });
-        connectForm.append(pw, h('button', { class: 'primary small', onclick: connect }, 'Anslut'));
-        const btn = h('button', { class: 'small', onclick: () => {
-          if (n.active) return;
-          if (!n.security) return connect();
-          connectForm.hidden = !connectForm.hidden;
-          if (!connectForm.hidden) pw.focus();
-        } }, n.active ? 'Ansluten' : 'Anslut');
-        item.append(
-          h('span', { class: 'bars' }, bars(n.signal)),
-          h('div', { class: 'grow' }, h('div', { class: 'name' }, n.ssid), h('div', { class: 'sub' }, `${n.signal}% · ${n.security || 'öppet'}`), connectForm),
-          btn,
-          n.active ? h('button', { class: 'small danger', onclick: async () => { await api('POST', '/api/wifi/forget', { ssid: n.ssid }); toast('Glömt'); views.wifi(); } }, 'Glöm') : '',
-        );
-        list.append(item);
-      }
-      // Save a network that is not in range right now (home Wi-Fi before the box moves).
-      const addSsid = h('input', { type: 'text', placeholder: 'Nätverkets namn (SSID)' });
-      const addPw = h('input', { type: 'password', placeholder: 'Lösenord' });
-      const addHidden = h('button', { class: 'toggle', role: 'switch', 'aria-checked': 'false', title: 'Dolt nätverk', onclick: (e) => e.currentTarget.setAttribute('aria-checked', String(e.currentTarget.getAttribute('aria-checked') !== 'true')) });
-      const addBtn = h('button', { class: 'small', onclick: async () => {
-        if (!addSsid.value.trim()) { toast('Skriv nätverkets namn'); return; }
-        addBtn.disabled = true;
-        try { const r = await api('POST', '/api/wifi/add', { ssid: addSsid.value.trim(), password: addPw.value, hidden: addHidden.getAttribute('aria-checked') === 'true' }); toast(r.ok ? `Sparade ${addSsid.value.trim()}` : r.message); views.wifi(); }
-        catch (e) { toast(`Misslyckades: ${e.message}`); addBtn.disabled = false; }
-      } }, 'Spara');
-      const addForm = h('div', {}, h('h2', {}, 'Spara ett nätverk som inte är i närheten'),
-        h('p', { class: 'muted' }, 'Boxen ansluter när nätverket dyker upp, till exempel hemma efter att den satts upp någon annanstans.'),
-        h('div', { class: 'inline-form' }, addSsid, addPw, h('span', { class: 'hint' }, 'Dolt'), addHidden, addBtn));
-      show(h('h1', {}, 'Wi-Fi'), cards(netCard(st)), h('div', { class: 'actions' }, h('button', { onclick: () => views.wifi() }, 'Sök igen')), list.childElementCount ? list : h('p', { class: 'muted' }, 'Inga nätverk hittades (Ethernet är ändå att föredra för strömning).'), addForm);
+    // Allmänt: how the box behaves on the screen, the screensaver first.
+    async general(show) {
+      const s = await settings();
+      const preview = (kind) => api('POST', '/api/saver/preview', { kind }).catch((e) => toast(`Misslyckades: ${e.message}`));
+      show(h('h1', {}, 'Allmänt'),
+        rows(...fieldRows(s, 'general')),
+        h('h2', {}, 'Förhandsgranska skärmsläckaren'),
+        h('p', { class: 'muted' }, 'Visas på TV:n nu; nästa knapptryck tar bort den.'),
+        rows(row({ label: 'Visa Labyrint', key: 'preview-labyrint', run: () => preview('labyrint') }),
+          row({ label: 'Visa Eld', key: 'preview-eld', run: () => preview('eld') })));
     },
 
-    // Bluetooth: the devices (pads first among them), pairing, and whether
-    // paired pads are called up by themselves.
+    // TV: the set itself. Its state, CEC, and CEC's tests and trace.
+    async tv(show) {
+      const [s, st] = await Promise.all([settings(), status()]);
+      const topo = logBox('Hämtar…', 'small');
+      const trace = logBox('Hämtar…', 'small');
+      const rawOut = logBox('', 'small');
+      rawOut.hidden = true;
+      const rawIn = h('input', { type: 'text', placeholder: '--to 0 --give-device-power-status' });
+      let traceTimer = null;
+      const loadTopo = async () => { topo.textContent = await api('GET', '/api/cec/topology').catch((e) => `Fel: ${e.message}`); };
+      const loadTrace = async () => {
+        clearTimeout(traceTimer);
+        if (!trace.isConnected) return;
+        trace.textContent = (await api('GET', '/api/cec/trace').catch((e) => `Fel: ${e.message}`)) || '(inget ännu)';
+        trace.scrollTop = trace.scrollHeight;
+        traceTimer = setTimeout(loadTrace, 2000);
+      };
+      const runRaw = async (args) => {
+        rawOut.hidden = false; rawOut.textContent = 'Kör…';
+        try { const r = await api('POST', '/api/cec/raw', { args }); rawOut.textContent = r.output || '(inget svar)'; }
+        catch (e) { rawOut.textContent = `Fel: ${e.message}`; }
+        loadTrace();
+      };
+      rawIn.addEventListener('change', () => { if (rawIn.value.trim()) runRaw(rawIn.value); });
+      show(h('h1', {}, 'TV'),
+        cecCard(st),
+        rows(...fieldRows(s, 'tv')),
+        h('h2', {}, 'Testa'),
+        rows(
+          row({ label: 'TV på', run: () => cec('tv_on') }),
+          row({ label: 'TV av', run: () => cec('tv_off') }),
+          row({ label: 'Volym', detail: '◀ ▶ · A: ljud av', run: () => cec('mute'), step: (dir) => cec(dir > 0 ? 'volume_up' : 'volume_down') }),
+          row({ label: 'Byt till Pi-ingången', run: () => cec('active_source') }),
+          row({ label: 'Fråga TV:n om strömmen', run: () => runRaw('--to 0 --give-device-power-status') })),
+        rawOut,
+        h('h2', {}, 'Felsökning'),
+        h('p', { class: 'muted' }, 'Bussen enligt cec-ctl. Pi:n ska stå som Playback Device och TV:n som logisk adress 0.'),
+        rows(row({ label: 'Läs om topologin', run: loadTopo })),
+        topo,
+        h('h2', {}, 'Rått kommando'),
+        h('p', { class: 'muted' }, 'Argument till cec-ctl (enheten läggs till automatiskt), till exempel ', h('code', {}, '--to 0 --image-view-on'), '. Körs när fältet är ifyllt.'),
+        rows(inputRow('Kommando', rawIn)),
+        h('h2', {}, 'CEC-spår'),
+        h('p', { class: 'muted' }, '>> skickat av daemonen, << mottaget från bussen. Tryck på TV:ns fjärrkontroll och se om tryckningarna dyker upp.'),
+        trace);
+      loadTopo();
+      loadTrace();
+    },
+
+    async controls(show) {
+      const [s, st] = await Promise.all([settings(), status()]);
+      show(h('h1', {}, 'Kontroller'),
+        rows(...fieldRows(s, 'controls')),
+        h('h2', {}, 'Tangentbord'),
+        h('p', { class: 'muted' }, st.keyboard_present ? 'Ett tangentbord är anslutet, så skärmtangentbordet öppnas inte automatiskt.' : 'Ett USB-tangentbord fungerar direkt; när ett är anslutet öppnas inte skärmtangentbordet automatiskt.'),
+        h('p', { class: 'muted' }, 'Hela knappmappningen står i /etc/pioneer-tv/config.toml.'));
+    },
+
+    // Bluetooth: the devices (pads first among them), each a row whose A
+    // does what it needs (para, anslut, koppla från), and whether paired
+    // pads are called up by themselves.
     async bluetooth(show) {
-      const s = await api('GET', '/api/settings');
-      const settings = fieldsForm(s, ['controls_bt']);
+      const s = await settings();
       const draw = (devices, scanning) => {
-        const list = h('div', { class: 'list' });
+        const list = [];
         for (const d of devices) {
           const state = d.connected ? 'Ansluten' : d.paired ? 'Parad, ej ansluten' : 'Ny enhet';
-          list.append(h('div', { class: 'item pioneertv-card' },
-            icon(d.icon === 'input-gaming' ? 'gamepad' : 'link'),
-            h('div', { class: 'grow' }, h('div', { class: 'name' }, d.name), h('div', { class: 'sub' }, `${state} · ${d.mac}${d.battery != null ? ` · batteri ${d.battery}%` : ''}`)),
-            !d.paired ? h('button', { class: 'small', onclick: () => bt('pair', d, 'Parar…') }, 'Para') : '',
-            d.paired && !d.connected ? h('button', { class: 'small', onclick: () => bt('connect', d, 'Ansluter…') }, 'Anslut') : '',
-            d.connected ? h('button', { class: 'small', onclick: () => bt('disconnect', d) }, 'Koppla från') : '',
-            d.paired ? confirmBtn('Ta bort', 'small danger', () => bt('remove', d)) : '',
-          ));
+          const sub = `${state}${d.battery != null ? ` · batteri ${d.battery}%` : ''} · ${d.mac}`;
+          const [action, word, busy] = d.connected ? ['disconnect', 'Koppla från'] : d.paired ? ['connect', 'Anslut', 'Ansluter…'] : ['pair', 'Para', 'Parar…'];
+          list.push(row({ label: d.name, sub, detail: word, key: d.mac, run: () => bt(action, d, busy) }));
+          if (d.paired) list.push(confirmRow({ label: `Ta bort ${d.name}`, key: `remove-${d.mac}` }, () => bt('remove', d)));
         }
-        show(
-          h('h1', {}, 'Bluetooth'),
+        show(h('h1', {}, 'Bluetooth'),
           h('p', { class: 'muted' }, 'Sätt kontrollen i parningsläge (PS: håll Share + PS. Xbox: håll parningsknappen. 8BitDo: håll Select), sök sedan.'),
-          h('div', { class: 'actions' }, h('button', { class: 'primary' + (scanning ? ' spin' : ''), disabled: scanning ? '' : null, onclick: scan }, scanning ? 'Söker (8 s)…' : 'Sök efter enheter')),
-          list.childElementCount ? list : h('p', { class: 'muted' }, 'Inga Bluetooth-enheter kända.'),
+          rows(row({ label: scanning ? 'Söker (8 s)…' : 'Sök efter enheter', key: 'scan', primary: true, disabled: scanning, run: scan })),
+          list.length ? rows(...list) : h('p', { class: 'muted' }, 'Inga Bluetooth-enheter kända.'),
           h('h2', {}, 'Inställningar'),
-          settings.form, settings.save,
-        );
+          rows(...fieldRows(s, 'controls_bt')));
       };
       const scan = async () => { draw(await api('GET', '/api/bluetooth/devices'), true); draw(await api('POST', '/api/bluetooth/scan', { seconds: 8 }), false); };
       const bt = async (action, d, busy) => {
@@ -255,163 +358,105 @@
       draw(await api('GET', '/api/bluetooth/devices'), false);
     },
 
+    // Wi-Fi: the network, then the networks in range, each a row (A joins
+    // it; a locked one asks for its password in a row below first), and
+    // one to save that is not in range.
+    async wifi(show) {
+      const st = await status();
+      show(h('h1', {}, 'Wi-Fi'), netCard(st), h('p', { class: 'muted spin' }, 'Söker nätverk…'));
+      const nets = await api('GET', '/api/wifi/networks?rescan=1');
+      const list = [];
+      for (const n of nets) {
+        const connect = async (password) => {
+          toast(`Ansluter till ${n.ssid}…`);
+          try { const r = await api('POST', '/api/wifi/connect', { ssid: n.ssid, password }); toast(r.ok ? `Ansluten till ${n.ssid}` : r.message); views.wifi(show); }
+          catch (e) { toast(`Misslyckades: ${e.message}`); }
+        };
+        const pw = h('input', { type: 'password', placeholder: 'skriv och anslut' });
+        pw.addEventListener('change', () => { if (pw.value) connect(pw.value); });
+        const pwRow = inputRow(`Lösenord till ${n.ssid}`, pw);
+        pwRow.hidden = true;
+        list.push(row({ label: n.ssid, sub: `${n.signal}% · ${n.security || 'öppet'}`, detail: n.active ? 'Ansluten' : bars(n.signal), key: `net-${n.ssid}`,
+          run: () => {
+            if (n.active) return;
+            if (!n.security) return connect('');
+            pwRow.hidden = false;
+            focusStop(pw);
+          } }), pwRow);
+        if (n.active) list.push(confirmRow({ label: `Glöm ${n.ssid}`, key: `forget-${n.ssid}` }, async () => { await api('POST', '/api/wifi/forget', { ssid: n.ssid }); toast('Glömt'); views.wifi(show); }));
+      }
+      // Save a network that is not in range right now (home Wi-Fi before the box moves).
+      const addSsid = h('input', { type: 'text' });
+      const addPw = h('input', { type: 'password' });
+      let hidden = false;
+      const sw = h('span', { class: 'switch', 'aria-checked': 'false' });
+      show(h('h1', {}, 'Wi-Fi'), netCard(st),
+        rows(row({ label: 'Sök igen', key: 'rescan', run: () => views.wifi(show) }), ...list),
+        nets.length ? '' : h('p', { class: 'muted' }, 'Inga nätverk hittades (Ethernet är ändå att föredra för strömning).'),
+        h('h2', {}, 'Spara ett nätverk som inte är i närheten'),
+        h('p', { class: 'muted' }, 'Boxen ansluter när nätverket dyker upp, till exempel hemma efter att den satts upp någon annanstans.'),
+        rows(inputRow('Nätverkets namn', addSsid), inputRow('Lösenord', addPw),
+          row({ label: 'Dolt nätverk', detail: sw, run: () => { hidden = !hidden; sw.setAttribute('aria-checked', String(hidden)); } }),
+          row({ label: 'Spara nätverket', key: 'add', run: async () => {
+            if (!addSsid.value.trim()) { toast('Skriv nätverkets namn'); return; }
+            try { const r = await api('POST', '/api/wifi/add', { ssid: addSsid.value.trim(), password: addPw.value, hidden }); toast(r.ok ? `Sparade ${addSsid.value.trim()}` : r.message); views.wifi(show); }
+            catch (e) { toast(`Misslyckades: ${e.message}`); }
+          } })));
+    },
+
     // Tjänster: Tailscale, and where the box's sources are, whether they
     // answer, and their keys, as passwords (left empty, a key set before is
     // kept). The home page's tiles are the settings file's
     // (/etc/pioneer-tv/settings.json), not set here.
     async services(show) {
-      const [s, st] = await Promise.all([api('GET', '/api/settings'), status()]);
-      const at = { romm: h('div', { class: 'cards' }, serviceCard()), jellyfin: h('div', { class: 'cards' }, serviceCard()) };
-      const { form, save } = fieldsForm(s, ['romm', 'jellyfin'], true, at);
-      show(
-        h('h1', {}, 'Tjänster'),
-        h('p', { class: 'muted' }, 'Spelen kommer från RomM, filmerna och musiken från Jellyfin. Nycklarna visas inte; lämna fältet tomt för att behålla den som är satt. Rutorna på startsidan står i /etc/pioneer-tv/settings.json.'),
+      const [s, st] = await Promise.all([settings(), status()]);
+      const at = { romm: h('div', {}, serviceCard()), jellyfin: h('div', {}, serviceCard()) };
+      const t = st.tailscale;
+      show(h('h1', {}, 'Tjänster'),
+        h('p', { class: 'muted' }, 'Spelen kommer från RomM, filmerna och musiken från Jellyfin. Nycklarna visas inte; ett tomt fält behåller den som är satt. Rutorna på startsidan står i /etc/pioneer-tv/settings.json.'),
         h('h2', {}, 'Tailscale'),
-        cards(tailscaleCard(st)),
-        form, save,
-      );
+        tailscaleCard(st),
+        t.installed && t.state !== 'running' ? rows(row({ label: 'Starta Tailscale', run: () => sysAction('tailscale_up') })) : '',
+        h('h2', {}, 'RomM'), at.romm, rows(...fieldRows(s, 'romm')),
+        h('h2', {}, 'Jellyfin'), at.jellyfin, rows(...fieldRows(s, 'jellyfin')));
       const svc = await api('GET', '/api/services').catch(() => ({}));
       at.romm.replaceChildren(serviceCard(svc.romm || { state: 'down' }));
       at.jellyfin.replaceChildren(serviceCard(svc.jellyfin || { state: 'down' }));
     },
 
-    // Allmänt: how the box behaves on the screen, the screensaver first.
-    async general(show) {
-      const preview = (kind) => api('POST', '/api/saver/preview', { kind }).catch((e) => toast(`Misslyckades: ${e.message}`));
-      return schemaView(show, 'general', 'Allmänt', h('div', {},
-        h('h2', {}, 'Förhandsgranska skärmsläckaren'),
-        h('p', { class: 'muted' }, 'Visa den nu på TV:n; nästa knapptryck tar bort den.'),
-        h('div', { class: 'actions' },
-          h('button', { onclick: () => preview('labyrint') }, 'Labyrint'),
-          h('button', { onclick: () => preview('eld') }, 'Eld'))));
-    },
-
-    async controls(show) {
-      const st = await status();
-      return schemaView(show, 'controls', 'Kontroller', h('div', {},
-        h('h2', {}, 'Tangentbord'),
-        h('p', { class: 'muted' }, st.keyboard_present ? 'Ett tangentbord är anslutet, så skärmtangentbordet öppnas inte automatiskt.' : 'Ett USB-tangentbord fungerar direkt; när ett är anslutet öppnas inte skärmtangentbordet automatiskt.'),
-        h('p', { class: 'muted' }, 'Fullständig knappmappning finns i /etc/pioneer-tv/config.toml.')));
-    },
-    async tv(show) {
-      const topo = h('pre', { class: 'log small' }, 'Hämtar…');
-      const trace = h('pre', { class: 'log small' }, 'Hämtar…');
-      const rawIn = h('input', { type: 'text', placeholder: '--to 0 --give-device-power-status', style: 'min-width:360px' });
-      const rawOut = h('pre', { class: 'log small' });
-      rawOut.hidden = true;
-      let traceTimer = null;
-      const loadTopo = async () => { topo.textContent = await api('GET', '/api/cec/topology').catch((e) => `Fel: ${e.message}`); };
-      const loadTrace = async () => {
-        clearTimeout(traceTimer);
-        if (!trace.isConnected) return;
-        trace.textContent = (await api('GET', '/api/cec/trace').catch((e) => `Fel: ${e.message}`)) || '(inget ännu)';
-        trace.scrollTop = trace.scrollHeight;
-        traceTimer = setTimeout(loadTrace, 2000);
-      };
-      const runRaw = async () => {
-        rawOut.hidden = false; rawOut.textContent = 'Kör…';
-        try { const r = await api('POST', '/api/cec/raw', { args: rawIn.value }); rawOut.textContent = r.output || '(inget svar)'; }
-        catch (e) { rawOut.textContent = `Fel: ${e.message}`; }
-        loadTrace();
-      };
-      rawIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') runRaw(); });
-      const debug = h('div', {},
-        h('h2', {}, 'Testa'),
-        h('div', { class: 'actions' },
-          h('button', { onclick: () => cec('tv_on') }, 'TV på'), h('button', { onclick: () => cec('tv_off') }, 'TV av'),
-          h('button', { onclick: () => cec('volume_up') }, 'Volym +'), h('button', { onclick: () => cec('volume_down') }, 'Volym −'),
-          h('button', { onclick: () => cec('mute') }, 'Ljud av'),
-          h('button', { onclick: () => cec('active_source') }, 'Byt till Pi-ingången'),
-          h('button', { onclick: async () => { rawIn.value = '--to 0 --give-device-power-status'; runRaw(); } }, 'Fråga TV om ström')),
-        h('h2', {}, 'Felsökning'),
-        h('p', { class: 'muted' }, 'Bussen enligt cec-ctl. Pi:n ska stå som Playback Device och TV:n som logisk adress 0. Tryck på TV:ns fjärrkontroll och se om tryckningarna dyker upp i spåret nedan.'),
-        h('div', { class: 'actions' }, h('button', { class: 'small', onclick: loadTopo }, 'Läs om topologin')),
-        topo,
-        h('h2', {}, 'Rått kommando'),
-        h('p', { class: 'muted' }, 'Argument till cec-ctl (enheten läggs till automatiskt). Exempel: ', h('code', {}, '--to 0 --image-view-on'), ', ', h('code', {}, '--to 0 --user-control-pressed ui-cmd=volume-up'), '.'),
-        h('div', { class: 'inline-form' }, rawIn, h('button', { class: 'small', onclick: runRaw }, 'Kör')),
-        rawOut,
-        h('h2', {}, 'CEC-spår'),
-        h('p', { class: 'muted' }, '>> skickat av daemonen, << mottaget från bussen. Uppdateras varannan sekund.'),
-        trace,
-      );
-      await schemaView(show, 'tv', 'TV', debug, cards(cecCard(await status())));
-      loadTopo();
-      loadTrace();
-    },
-    // The journal of each of the box's parts, and the CEC bus as the daemon
-    // sees it. A picks a part (and fetches it again); the daemon's log and
-    // the CEC trace follow live while they are on screen.
-    async logs(show) {
-      const pre = h('pre', { class: 'log log-full' }, 'Hämtar…');
-      let timer = null;
-      let unit = LOG_UNITS[0][0];
-      const load = async () => {
-        clearTimeout(timer);
-        const now = unit;
-        try {
-          const text = await api('GET', now === 'cec' ? '/api/cec/trace' : `/api/logs?unit=${encodeURIComponent(now)}&lines=200`);
-          if (!pre.isConnected || now !== unit) return;
-          pre.textContent = text || '(tomt)';
-        } catch (e) {
-          if (!pre.isConnected) return;
-          pre.textContent = `Kunde inte hämta loggen: ${e.message}`;
-        }
-        pre.scrollTop = pre.scrollHeight;
-        if (pre.isConnected && (now === 'pioneer-tv-daemon' || now === 'cec')) timer = setTimeout(load, now === 'cec' ? 2000 : 5000);
-      };
-      const buttons = LOG_UNITS.map(([id, label]) => h('button', {
-        class: `small${id === unit ? ' active' : ''}`,
-        onclick: (e) => {
-          unit = id;
-          for (const b of buttons) b.classList.toggle('active', b === e.currentTarget);
-          pre.textContent = 'Hämtar…';
-          load();
-        },
-      }, label));
-      show(h('h1', {}, 'Loggar'), h('div', { class: 'actions log-units' }, buttons), pre);
-      load();
-    },
-
     async system(show) {
       // ---- update from the git repo
-      const upd = h('div', { class: 'card pioneertv-card update' });
+      const upd = h('div');
       let pollTimer = null;
       let lastInfo = null;
       const drawUpdate = (info, st) => {
         clearTimeout(pollTimer);
         const running = st && st.running;
-        const rows = [h('h3', {}, 'Programvara')];
+        const lines = [];
         if (!info || info.available === false) {
-          rows.push(h('p', { class: 'muted' }, (info && info.error) || 'Ingen git-utcheckning hittad. Installera med system/install.sh från ett klonat repo.'));
+          lines.push(h('p', { class: 'muted' }, (info && info.error) || 'Ingen git-utcheckning hittad. Installera med system/install.sh från ett klonat repo.'));
         } else {
-          rows.push(h('div', { class: 'big' }, `Version ${info.commit}`, h('span', { class: 'hint' }, ` · ${info.branch} · ${info.date}`)));
-          rows.push(h('p', { class: 'muted' }, info.subject));
-          if (info.error) rows.push(h('p', { class: 'muted' }, dot('bad'), info.error));
+          lines.push(h('div', { class: 'big' }, `Version ${info.commit}`, h('span', { class: 'hint' }, ` · ${info.branch} · ${info.date}`)));
+          lines.push(h('p', { class: 'muted' }, info.subject));
+          if (info.error) lines.push(h('p', { class: 'muted' }, dot('bad'), info.error));
           else if (info.behind > 0) {
-            rows.push(h('p', {}, dot('warn'), `${info.behind} ${info.behind === 1 ? 'ny ändring' : 'nya ändringar'} på GitHub:`));
-            rows.push(h('ul', { class: 'commits' }, info.commits.map((c) => h('li', {}, c))));
-          } else if (info.remote) rows.push(h('p', {}, dot('ok'), 'Senaste versionen.'));
-          if (info.dirty) rows.push(h('p', { class: 'muted' }, 'Lokala ändringar i repot; uppdateringen kräver en ren utcheckning.'));
+            lines.push(h('p', {}, dot('warn'), `${info.behind} ${info.behind === 1 ? 'ny ändring' : 'nya ändringar'} på GitHub:`));
+            lines.push(h('ul', { class: 'commits' }, info.commits.map((c) => h('li', {}, c))));
+          } else if (info.remote) lines.push(h('p', {}, dot('ok'), 'Senaste versionen.'));
+          if (info.dirty) lines.push(h('p', { class: 'muted' }, 'Lokala ändringar i repot; uppdateringen kräver en ren utcheckning.'));
         }
-        if (st && st.last) {
-          const d = new Date(st.last.time * 1000);
-          rows.push(h('p', { class: 'hint' }, `Senaste körning ${d.toLocaleString('sv-SE')}: ${st.last.message} (${st.last.status})`));
-        }
-        rows.push(h('div', { class: 'actions' },
-          h('button', { class: 'small', disabled: running ? '' : null, onclick: () => refreshUpdate(true) }, 'Sök efter uppdatering'),
-          h('button', { class: 'small primary', disabled: running || !(info && info.behind > 0) ? '' : null, onclick: () => startUpdate() }, running ? 'Uppdaterar…' : 'Installera uppdatering'),
-          confirmBtn('Installera om ändå', 'small', () => startUpdate(true))));
-        if (st && (running || st.log)) {
-          const pre = h('pre', { class: 'log small' }, st.log || '');
-          rows.push(pre);
-          pre.scrollTop = pre.scrollHeight;
-        }
-        upd.replaceChildren(...rows);
+        if (st && st.last) lines.push(h('p', { class: 'hint' }, `Senaste körning ${new Date(st.last.time * 1000).toLocaleString('sv-SE')}: ${st.last.message} (${st.last.status})`));
+        upd.replaceChildren(card('Programvara', ...lines),
+          rows(row({ label: 'Sök efter uppdatering', disabled: running, run: () => refreshUpdate(true) }),
+            row({ label: running ? 'Uppdaterar…' : 'Installera uppdatering', key: 'install', primary: true, disabled: running || !(info && info.behind > 0), run: () => startUpdate() }),
+            confirmRow({ label: 'Installera om ändå', disabled: running }, () => startUpdate(true))),
+          st && (running || st.log) ? logBox(st.log || '', 'small') : '');
+        const pre = upd.querySelector('pre');
+        if (pre) pre.scrollTop = pre.scrollHeight;
         if (running) pollTimer = setTimeout(async () => drawUpdate(info, await api('GET', '/api/update/status').catch(() => ({ running: true, log: 'Daemonen startar om…' }))), 2000);
       };
       const refreshUpdate = async (fetch) => {
-        upd.replaceChildren(h('h3', {}, 'Programvara'), h('p', { class: 'muted spin' }, fetch ? 'Hämtar från GitHub…' : 'Läser version…'));
+        if (fetch) toast('Hämtar från GitHub…');
         try {
           const [info, st] = await Promise.all([api('GET', `/api/update?fetch=${fetch ? 1 : 0}`), api('GET', '/api/update/status')]);
           lastInfo = info;
@@ -425,106 +470,81 @@
       };
 
       // ---- the covers and posters kept on the disk (imagecache.py)
-      const pics = h('div', { class: 'card pioneertv-card pics' }, h('h3', {}, 'Omslag på disken'), h('p', { class: 'muted spin' }, 'Räknar…'));
+      const pics = h('div', {}, card('Omslag på disken', h('p', { class: 'muted spin' }, 'Räknar…')));
       const drawPics = async () => {
         let st;
-        try { st = await api('GET', '/api/images'); } catch (e) { pics.replaceChildren(h('h3', {}, 'Omslag på disken'), h('p', { class: 'muted' }, e.message)); return; }
+        try { st = await api('GET', '/api/images'); } catch (e) { pics.replaceChildren(card('Omslag på disken', h('p', { class: 'muted' }, e.message))); return; }
         const mb = (b) => `${Math.round(b / 1048576).toLocaleString('sv-SE')} MB`;
-        pics.replaceChildren(
-          h('h3', {}, 'Omslag på disken'),
-          st.enabled
-            ? h('p', {}, `${st.files.toLocaleString('sv-SE')} bilder, ${mb(st.bytes)} av högst ${mb(st.max_bytes)}.`)
-            : h('p', { class: 'muted' }, 'Av (images.cache_mb är 0).'),
+        pics.replaceChildren(card('Omslag på disken',
+          st.enabled ? h('p', {}, `${st.files.toLocaleString('sv-SE')} bilder, ${mb(st.bytes)} av högst ${mb(st.max_bytes)}.`) : h('p', { class: 'muted' }, 'Av (images.cache_mb är 0).'),
           h('p', { class: 'muted' }, `Omslag från RomM och bilder från Jellyfin, krympta till högst ${st.max_px || 600} px. De sparas första gången de visas${st.prefetch_at ? `, och alla hämtas varje natt kl ${st.prefetch_at}` : ''}; sedan kommer de från disken. De som inte använts på längst tid får gå när det blir fullt.`),
-          st.last_night ? h('p', { class: 'hint' }, `Senaste natten ${new Date(st.last_night.time * 1000).toLocaleString('sv-SE')}: ${st.last_night.new} nya, ${st.last_night.had} fanns redan, ${st.last_night.failed} misslyckades (${Math.round(st.last_night.seconds / 60)} min).`) : '',
-          st.enabled ? h('div', { class: 'actions' }, confirmBtn('Töm', 'small', async () => {
-            try { await api('POST', '/api/images/clear'); toast('Tömt'); } catch (e) { toast(`Misslyckades: ${e.message}`); }
-            drawPics();
-          })) : '');
+          st.last_night ? h('p', { class: 'hint' }, `Senaste natten ${new Date(st.last_night.time * 1000).toLocaleString('sv-SE')}: ${st.last_night.new} nya, ${st.last_night.had} fanns redan, ${st.last_night.failed} misslyckades (${Math.round(st.last_night.seconds / 60)} min).`) : ''),
+        st.enabled ? rows(confirmRow({ label: 'Töm omslagen' }, async () => {
+          try { await api('POST', '/api/images/clear'); toast('Tömt'); } catch (e) { toast(`Misslyckades: ${e.message}`); }
+          drawPics();
+        })) : '');
       };
 
       // ---- reached from elsewhere: over Tailscale, or with the key
-      const [st, s] = await Promise.all([status(), api('GET', '/api/settings')]);
+      const [st, s] = await Promise.all([status(), settings()]);
       const t = st.tailscale;
       const url = t.dns_name ? `https://${t.dns_name}/` : (t.ips || [])[0] ? `http://${t.ips[0]}:8765/` : null;
-      const remote = fieldsForm(s, ['remote']);
-      show(
-        h('h1', {}, 'System'),
-        cards(systemCard(st)),
+      show(h('h1', {}, 'System'),
+        systemCard(st),
         upd,
         pics,
         h('h2', {}, 'Fjärråtkomst'),
-        h('p', { class: 'muted' }, 'Enklast: kör på Pi:n ', h('code', {}, 'sudo tailscale serve --bg 8765'), '. Då nås den här sidan från alla dina Tailscale-enheter på ', url ? h('a', { href: url }, url) : 'Pi:ns Tailscale-adress', ' utan öppna portar. Åtkomstnyckeln behövs bara om du binder daemonen till 0.0.0.0 i config.toml.'),
-        remote.form, remote.save,
-        h('h2', {}, 'Åtgärder'),
-        h('div', { class: 'actions' },
-          h('button', { onclick: () => sysAction('restart_ui') }, 'Starta om Chromium'),
-          h('button', { onclick: () => sysAction('restart_daemon') }, 'Starta om daemon'),
-          confirmBtn('Starta om Pi', 'danger', () => sysAction('reboot')),
-          confirmBtn('Stäng av Pi', 'danger', () => sysAction('shutdown'))),
-        h('p', { class: 'muted' }, 'Loggarna finns under ', h('a', { href: '#logs' }, 'Loggar'), '.'),
-      );
+        h('p', { class: 'muted' }, 'Enklast: kör på Pi:n ', h('code', {}, 'sudo tailscale serve --bg 8765'), '. Då nås den här sidan från alla dina Tailscale-enheter på ', url || 'Pi:ns Tailscale-adress', ' utan öppna portar. Åtkomstnyckeln behövs bara om du binder daemonen till 0.0.0.0 i config.toml.'),
+        rows(...fieldRows(s, 'remote')),
+        h('h2', {}, 'Starta om'),
+        rows(row({ label: 'Starta om Chromium', run: () => sysAction('restart_ui') }),
+          row({ label: 'Starta om daemonen', run: () => sysAction('restart_daemon') }),
+          confirmRow({ label: 'Starta om Pi:n' }, () => sysAction('reboot')),
+          confirmRow({ label: 'Stäng av Pi:n' }, () => sysAction('shutdown'))));
       refreshUpdate(false);
       drawPics();
     },
+
+    // The journal of each of the box's parts, and the CEC bus as the daemon
+    // sees it: ◀ ▶ picks the part (A fetches it again); the daemon's log and
+    // the CEC trace follow live while they are on screen.
+    async logs(show) {
+      const pre = logBox('Hämtar…', 'log-full');
+      let timer = null;
+      let at = 0;
+      const load = async () => {
+        clearTimeout(timer);
+        const now = LOG_UNITS[at][0];
+        try {
+          const text = await api('GET', now === 'cec' ? '/api/cec/trace' : `/api/logs?unit=${encodeURIComponent(now)}&lines=200`);
+          if (!pre.isConnected || now !== LOG_UNITS[at][0]) return;
+          pre.textContent = text || '(tomt)';
+        } catch (e) {
+          if (!pre.isConnected) return;
+          pre.textContent = `Kunde inte hämta loggen: ${e.message}`;
+        }
+        pre.scrollTop = pre.scrollHeight;
+        if (pre.isConnected && (now === 'pioneer-tv-daemon' || now === 'cec')) timer = setTimeout(load, now === 'cec' ? 2000 : 5000);
+      };
+      const text = () => `◀ ${LOG_UNITS[at][1]} ▶`;
+      const pick = row({ label: 'Visa', detail: text(), run: () => { pre.textContent = 'Hämtar…'; load(); },
+        step: (dir) => { at = (at + dir + LOG_UNITS.length) % LOG_UNITS.length; pick.say(text()); pre.textContent = 'Hämtar…'; load(); } });
+      show(h('h1', {}, 'Loggar'), rows(pick), pre);
+      load();
+    },
   };
 
-  // The fields of some sections of the settings' schema as a form, and
-  // its Spara: { form, save }. titled: each section under its own heading,
-  // and what at[id] holds after it.
-  function fieldsForm(s, ids, titled, at = {}) {
-    const values = {};
-    const form = h('div');
-    for (const id of ids) {
-      const section = s.sections.find((x) => x.id === id);
-      if (!section) continue;
-      if (titled) form.append(h('h2', {}, section.title), at[id] || '');
-      for (const f of section.fields) form.append(h('div', { class: 'field' }, h('label', {}, f.label), control(f, values)));
-    }
-    const save = h('div', { class: 'actions' }, h('button', { class: 'primary', onclick: async () => {
-      try { await api('PUT', '/api/settings', { values }); toast('Sparat'); } catch (e) { toast(`Misslyckades: ${e.message}`); }
-    } }, 'Spara'));
-    return { form, save };
-  }
-  // A field's control; what is changed goes into values.
-  function control(f, values) {
-    if (f.type === 'bool') {
-      return h('button', { class: 'toggle', role: 'switch', 'aria-checked': String(!!f.value), onclick: (e) => { const v = e.currentTarget.getAttribute('aria-checked') !== 'true'; e.currentTarget.setAttribute('aria-checked', String(v)); values[f.path] = v; } });
-    }
-    if (f.type === 'choice') {
-      // One of a few: a button each, the chosen one pressed.
-      const buttons = f.options.map(([value, label]) => h('button', { class: 'small choice', 'aria-pressed': String(f.value === value),
-        onclick: (e) => { values[f.path] = value; for (const b of buttons) b.setAttribute('aria-pressed', String(b === e.currentTarget)); } }, label));
-      return h('div', { class: 'choices' }, ...buttons);
-    }
-    if (f.type === 'number') {
-      const num = h('input', { type: 'number', min: f.min, max: f.max, step: f.step, value: f.value, oninput: (e) => { values[f.path] = Number(e.target.value); } });
-      return h('div', {}, num, f.unit ? h('span', { class: 'hint' }, ` ${f.unit}`) : '');
-    }
-    return h('input', { type: f.secret ? 'password' : 'text', value: f.value ?? '', maxlength: f.maxlength, autocomplete: f.secret ? 'new-password' : 'off',
-      placeholder: f.secret ? (f.is_set ? '•••••••• (satt)' : 'inte satt') : '', oninput: (e) => { values[f.path] = e.target.value; } });
-  }
-
-  // lead: what stands before the form (the part's status).
-  async function schemaView(show, id, title, extra, lead) {
-    const s = await api('GET', '/api/settings');
-    const { form, save } = fieldsForm(s, [id]);
-    show(h('h1', {}, title), lead || '', form, save, extra || '');
-  }
-
-  async function cec(command) { try { await api('POST', '/api/cec', { command }); toast(`CEC: ${command}`); } catch (e) { toast(`CEC misslyckades: ${e.message}`); } }
-  async function sysAction(action) { toast('Kör…'); try { const r = await api('POST', '/api/system', { action }); toast(r.ok ? 'Klart' : r.message); } catch (e) { toast(`Misslyckades: ${e.message}`); } }
-
   // ---------------------------------------------------------------- the column
-  // The tabs, in groups: [group, [[view, name, icon]]]. Bluetooth first, and
-  // where the page opens.
+  // The tabs, in groups: [group, [[view, name, icon]]]. The page opens on
+  // Allmänt.
   const TABS = [
-    ['Anslutet', [['bluetooth', 'Bluetooth', 'gamepad'], ['wifi', 'Wi-Fi', 'wifi'], ['services', 'Tjänster', 'link']]],
     ['Boxen', [['general', 'Allmänt', 'home'], ['tv', 'TV', 'tv'], ['controls', 'Kontroller', 'keyboard']]],
+    ['Anslutet', [['bluetooth', 'Bluetooth', 'gamepad'], ['wifi', 'Wi-Fi', 'wifi'], ['services', 'Tjänster', 'link']]],
     ['Underhåll', [['system', 'System', 'gear'], ['logs', 'Loggar', 'pulse']]],
   ];
+  const FIRST = 'general';
   // Old tabs' addresses.
-  const MOVED = { gamepads: 'bluetooth', status: 'bluetooth', remote: 'system' };
+  const MOVED = { gamepads: 'bluetooth', status: 'general', remote: 'system' };
   const rail = $('#rail'), nav = $('#nav');
   for (const [group, tabs] of TABS) {
     nav.append(h('section', { class: 'rail-group' }, h('h2', { class: 'rail-group-label' }, group),
@@ -536,7 +556,7 @@
   // The icons, once icons.js is in (it loads beside this, see settings.html).
   const icons = () => {
     if (!(window.PioneerTV && PioneerTV.icons)) return;
-    for (const m of nav.querySelectorAll('.rail-mark:empty')) m.innerHTML = PioneerTV.icons.html(m.dataset.icon);
+    for (const m of nav.querySelectorAll('.rail-mark:empty')) m.innerHTML = iconHtml(m.dataset.icon);
   };
   icons();
   window.addEventListener('load', icons);
@@ -544,52 +564,103 @@
   rail.addEventListener('mousemove', (e) => { if (e.movementX || e.movementY) rail.classList.add('open'); });
   rail.addEventListener('mouseover', (e) => { if (!e.isTrusted) rail.classList.add('open'); });
   rail.addEventListener('mouseout', (e) => { if (!rail.contains(e.relatedTarget)) rail.classList.remove('open'); });
-  // Into the column from the view: to the tab shown, wherever the arrow
-  // pointed. Within it, a tab's ring with the focus shows that tab, so up
-  // and down go through them.
+  const marks = () => [...nav.querySelectorAll('.rail-mark')];
+  const here = () => nav.querySelector('.rail-item.active .rail-mark');
+  // Into the column from elsewhere (the pointer): to the tab shown. Within
+  // it, a tab's ring with the focus shows that tab.
   nav.addEventListener('focusin', (e) => {
     const view = e.target && e.target.dataset && e.target.dataset.view;
     if (!view) return;
-    if (!nav.contains(e.relatedTarget)) {
-      const here = nav.querySelector('.rail-item.active .rail-mark');
-      if (here && here !== e.target) { here.focus(); return; }
-    }
+    if (!nav.contains(e.relatedTarget) && here() && here() !== e.target) { here().focus(); return; }
     if (location.hash !== '#' + view) location.hash = '#' + view;
   });
 
+  // ---------------------------------------------------------------- the d-pad
+  // The page's own, not the spatial navigation's guess by distance (which
+  // went from a row to the column and back): registered before the
+  // extension's (it comes at document_idle), so it sees the arrows first.
+  // In the column, up and down go through the tabs, right goes into the
+  // view (to the row one was last on there). In the view, up and down go
+  // row by row; left steps a ◀ ▶ row's value, else goes to the column;
+  // right steps it. B in the view goes to the column; in the column, home.
+  const stops = () => [...mainHost.querySelectorAll('.stop')].filter((el) => !el.disabled && el.offsetParent);
+  const lastStop = {};                 // view -> the key of the row last on
+  let shown = FIRST;
+  function focusStop(el) {
+    if (!el) return;
+    el.focus({ preventScroll: true });
+    if (mainHost.contains(el)) el.scrollIntoView({ block: el.offsetHeight > window.innerHeight * 0.5 ? 'start' : 'center' });
+  }
+  const keyOf = (el) => el && el.dataset && el.dataset.key;
+  const intoView = () => {
+    const all = stops();
+    focusStop((lastStop[shown] && all.find((el) => keyOf(el) === lastStop[shown])) || all[0]);
+  };
+  mainHost.addEventListener('focusin', (e) => { if (keyOf(e.target)) lastStop[shown] = keyOf(e.target); });
+  const keyboardOpen = () => document.documentElement.classList.contains('pioneertv-keyboard-open');
+  const typing = (el) => el && el.tagName === 'INPUT';
+  window.addEventListener('keydown', (e) => {
+    if (keyboardOpen() || e.altKey || e.ctrlKey || e.metaKey) return;
+    const a = document.activeElement;
+    const inRail = nav.contains(a);
+    const inView = mainHost.contains(a);
+    let done = true;
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      const dir = e.key === 'ArrowUp' ? -1 : 1;
+      if (inRail) { const m = marks(); focusStop(m[m.indexOf(a) + dir]); }
+      else if (inView) {
+        const all = stops();
+        const i = all.indexOf(a);
+        if (i < 0) intoView();
+        else if (all[i + dir]) focusStop(all[i + dir]);
+        else if (dir < 0) window.scrollTo({ top: 0 });
+      } else focusStop(here());
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      const dir = e.key === 'ArrowLeft' ? -1 : 1;
+      if (inView && a.step) a.step(dir);
+      else if (inView) { if (dir < 0) focusStop(here()); }
+      else if (inRail) { if (dir > 0) intoView(); }
+      else focusStop(here());
+    } else if (e.key === 'Escape') {
+      if (typing(a)) done = false;                    // leaves the field (spatial-nav.js)
+      else if (inView) focusStop(here());
+      else if (!e.repeat) api('POST', '/api/home').catch(() => {});
+    } else if (e.key === ' ' && !e.repeat && !typing(a)) {
+      // X (the pad's, as Space) presses the view's filled row, as on every
+      // page of the box.
+      const p = stops().find((el) => el.classList.contains('primary'));
+      if (p) p.click(); else done = false;
+    } else done = false;
+    if (done) { e.preventDefault(); e.stopImmediatePropagation(); }
+  }, true);
+
   // ---------------------------------------------------------------- routing
   function route() {
-    let view = (location.hash || '#bluetooth').slice(1);
-    view = MOVED[view] || (views[view] ? view : 'bluetooth');
+    let view = (location.hash || `#${FIRST}`).slice(1);
+    view = MOVED[view] || (views[view] ? view : FIRST);
+    shown = view;
     for (const it of nav.querySelectorAll('.rail-item')) {
       it.classList.toggle('active', it.dataset.view === view);
       // The page opens with the focus on the tab shown.
       it.firstChild.toggleAttribute('data-pioneertv-initial', it.dataset.view === view);
     }
     // Each route renders into its own element, so a slow view from an earlier
-    // route can never overwrite the current one.
+    // route can never overwrite the current one. Drawn again (a device
+    // connected, a network joined), the focus stays on the row it was on.
     const gen = ++generation;
     const el = h('div');
     mainHost.replaceChildren(el);
-    const show = (...children) => { if (gen === generation) el.replaceChildren(...children); };
-    views[view](show).catch((e) => { show(h('h1', {}, 'Fel'), h('p', {}, e.message)); });
+    const draw = (...children) => {
+      if (gen !== generation) return;
+      const a = document.activeElement;
+      const was = el.contains(a) ? keyOf(a) : null;
+      el.replaceChildren(...children);
+      if (was) { const again = stops().find((s) => keyOf(s) === was); if (again) again.focus({ preventScroll: true }); else intoView(); }
+    };
+    views[view](draw).catch((e) => { draw(h('h1', {}, 'Fel'), h('p', {}, e.message)); });
   }
   window.addEventListener('hashchange', route);
-  // X (the pad's, as Space) presses the view's filled button wherever the
-  // focus is, as on every page of the box: the one in the form the focus is
-  // in, else the first in sight. Not while typing (a field, the keyboard).
-  window.addEventListener('keydown', (e) => {
-    if (e.key !== ' ' || e.repeat) return;
-    const a = document.activeElement;
-    if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable)) return;
-    if (document.documentElement.classList.contains('pioneertv-keyboard-open')) return;
-    const all = [...mainHost.querySelectorAll('button.primary:not([disabled])')].filter((b) => b.offsetParent);
-    const near = a && all.find((b) => b.parentElement && b.parentElement.contains(a));
-    const button = near || all[0];
-    if (!button) return;
-    e.preventDefault();
-    button.click();
-  });
   route();
+  if (!rail.contains(document.activeElement)) here().focus();
   api('GET', '/api/status').then((s) => { $('#foot').textContent = `Maskinrepubliken · ${s.system.hostname} · ${s.git && s.git.commit ? s.git.commit : 'v' + s.version}${MOCK ? ' · mock' : ''}`; }).catch(() => {});
 })();

@@ -1,6 +1,8 @@
-/* Pioneer TV settings page, on Maskinrepubliken's design system. Laid out as
-   one column so the d-pad moves up and down through it, with the tabs in a
-   column at the left as on the browse pages. Works on the TV and on a phone over Tailscale.
+/* Pioneer TV settings page, on Maskinrepubliken's design system. The tabs in
+   a column at the left, as on the browse pages; the view one column of rows,
+   each the view's full width and each one stop for the d-pad, as in the
+   overlay's menus (settings.js owns the arrows). Works on the TV and on a
+   phone over Tailscale.
    Tokens in tokens.css, primitives in paper.css. The voices: IBM Plex Sans for
    everything you press or fill in, Fraunces for what you read, IBM Plex Mono
    for every number and machine name, Rubik Black for the one page heading. */
@@ -12,12 +14,13 @@ body {
 }
 a { color: var(--pioneertv-link); text-decoration: underline; }
 code { font-family: var(--pioneertv-font-mono); font-size: 0.8em; background: var(--pioneertv-paper-sunken); padding: 2px 6px; border-radius: 6px; }
-.app { max-width: 1180px; margin: 0 auto; padding: 24px 40px 60px; min-height: 100vh; display: flex; flex-direction: column; }
+.app { max-width: 1060px; margin: 0 auto; padding: 24px 40px 60px; min-height: 100vh; display: flex; flex-direction: column; }
 
 /* ---- the column at the left, on the sunken paper as on the browse pages
    (browse/rail.css). At rest: a ring with each tab's icon. With the focus or
    the pointer in it: wider, over the view, with the names and the groups'.
-   In one step, as the system has no motion but the answer to a press. ---- */
+   The tab shown is a ring in ink; the one with the focus fills ochre, as
+   everything chosen does. ---- */
 :root { --rail: 92px; }
 body { padding-left: var(--rail); }
 .rail {
@@ -49,40 +52,89 @@ body { padding-left: var(--rail); }
 /* A tab: the ring centred in the narrow column, the name after it. */
 .rail-item {
   flex: none; display: flex; align-items: center; gap: 14px; cursor: pointer;
-  padding-left: calc(var(--rail) / 2 - 23px); padding-right: 16px; text-decoration: none;
+  padding-left: calc(var(--rail) / 2 - 23px); padding-right: 16px;
 }
-.rail-mark { color: var(--pioneertv-ink); padding: 0; }
+.rail-mark { font-size: 19px; color: var(--pioneertv-ink); }
 .rail-mark .pioneertv-icon { font-size: 1.4em; }
 .rail-label {
   display: none; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   font: 600 18px/1.35 var(--pioneertv-font-ui); color: var(--pioneertv-ink-muted);
 }
 .rail.open .rail-label, .rail:focus-within .rail-label { display: block; }
-.rail-item:has(.pioneertv-focus) .rail-label { color: var(--pioneertv-ink); }
-/* The tab shown: the ring in ink. */
-.rail-item.active .rail-mark { background: var(--pioneertv-ink); color: var(--pioneertv-paper); border-color: var(--pioneertv-ink); }
+.rail-item:has(.pioneertv-focus) .rail-label, .rail-item:has(:focus-visible) .rail-label { color: var(--pioneertv-ink); }
+.rail-item.active .rail-mark:not(.pioneertv-focus):not(:focus-visible) { background: var(--pioneertv-ink); color: var(--pioneertv-paper); border-color: var(--pioneertv-ink); }
 .rail-item.active .rail-label { color: var(--pioneertv-ink); }
-.foot { margin-top: auto; padding-top: 24px; font: 13px/1.5 var(--pioneertv-font-mono); color: var(--pioneertv-ink-faint); }
+/* Without the extension (a phone, the mock), the browser's own focus. */
+.rail-mark:focus-visible {
+  background: var(--pioneertv-ochre); color: var(--pioneertv-on-ochre); border-color: var(--pioneertv-ochre);
+  outline: 3px solid var(--pioneertv-focus); outline-offset: 4px;
+}
 
+.foot { margin-top: auto; padding-top: 32px; font: 13px/1.5 var(--pioneertv-font-mono); color: var(--pioneertv-ink-faint); }
 .main { padding-top: 34px; }
 /* The page heading: the system's sektion voice, capitals, one per page. */
 h1 {
-  margin: 0 0 8px; font: 900 44px/1.02 var(--pioneertv-font-display);
+  margin: 0 0 18px; font: 900 44px/1.02 var(--pioneertv-font-display);
   letter-spacing: -0.01em; text-transform: uppercase;
 }
-h2 { margin: 32px 0 12px; font: italic 400 28px/1.2 var(--pioneertv-font-prose); }
-.muted { font-family: var(--pioneertv-font-prose); color: var(--pioneertv-ink-muted); }
-.main > p { font-family: var(--pioneertv-font-prose); max-width: 66ch; }
-.main > p:first-of-type { margin-top: 14px; }
+h2 { margin: 36px 0 12px; font: italic 400 28px/1.2 var(--pioneertv-font-prose); }
+p { margin: 10px 0; }
+.muted { font-family: var(--pioneertv-font-prose); color: var(--pioneertv-ink-muted); max-width: 66ch; }
+.hint { font-family: var(--pioneertv-font-prose); font-size: 16px; color: var(--pioneertv-ink-muted); }
 
-/* ---- cards: a single column, each card one stop for the d-pad ---- */
-.cards { display: grid; grid-template-columns: 1fr; gap: 18px; margin: 18px 0; }
-.card { padding: 18px 24px 16px; border-radius: var(--pioneertv-radius-l); }
+/* ---- the rows: as the overlay's menus, a capsule each, the label at the
+   left and its value at the right. With the focus, filled ochre inside the
+   focus ring. ---- */
+.rows { display: flex; flex-direction: column; gap: 10px; margin: 14px 0; }
+.row {
+  display: flex; align-items: center; gap: 16px; width: 100%; margin: 0; min-height: 62px;
+  padding: 12px 26px; text-align: left; cursor: pointer;
+  font: 600 20px/1.25 var(--pioneertv-font-ui); color: var(--pioneertv-ink);
+  background: var(--pioneertv-paper); border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-pill);
+}
+.row:hover { background: var(--pioneertv-paper-hover); }
+.row[hidden] { display: none; }
+.row-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.row-label { overflow: hidden; text-overflow: ellipsis; }
+.row-sub { font: 400 15px/1.3 var(--pioneertv-font-mono); color: var(--pioneertv-ink-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row-detail { flex: none; font: 400 16px/1 var(--pioneertv-font-mono); color: var(--pioneertv-ink-muted); white-space: nowrap; }
+.row.primary { border-color: var(--pioneertv-ink); }
+.row:disabled { cursor: default; color: var(--pioneertv-ink-faint); border-color: var(--pioneertv-line); background: var(--pioneertv-paper); }
+.row.pioneertv-focus, .row:focus-visible, .row-input:has(.pioneertv-focus), .row-input:has(input:focus) {
+  background: var(--pioneertv-ochre); border-color: var(--pioneertv-ochre); color: var(--pioneertv-on-ochre);
+  outline: 3px solid var(--pioneertv-focus) !important; outline-offset: 4px !important; box-shadow: none !important;
+  border-radius: var(--pioneertv-radius-pill) !important;
+}
+.row.pioneertv-focus .row-sub, .row.pioneertv-focus .row-detail, .row:focus-visible .row-sub, .row:focus-visible .row-detail,
+.row-input:has(input:focus) .row-sub { color: var(--pioneertv-on-ochre); }
+/* A field's row: the field is the stop, the row shows it. */
+.row-input { cursor: text; }
+.row-input input {
+  flex: 0 1 380px; min-width: 0; font: 18px var(--pioneertv-font-ui); color: var(--pioneertv-ink);
+  background: var(--pioneertv-paper-sunken); border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-pill);
+  padding: 9px 18px; outline: none !important;
+}
+/* A switch: the knob in an empty or a filled track; the row names it, so
+   the state is never colour alone. */
+.switch {
+  position: relative; display: inline-block; width: 64px; height: 34px; vertical-align: middle;
+  border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-pill); background: var(--pioneertv-paper-sunken);
+}
+.switch::after {
+  content: ""; position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%;
+  background: var(--pioneertv-paper-raised); border: 1px solid var(--pioneertv-line-strong);
+}
+.switch[aria-checked="true"] { background: var(--pioneertv-surface-ink); border-color: var(--pioneertv-surface-ink); }
+.switch[aria-checked="true"]::after { left: 33px; background: var(--pioneertv-ochre); border-color: var(--pioneertv-ochre); }
+
+/* ---- cards: read only, what a part is like ---- */
+.card { padding: 18px 24px 16px; margin: 14px 0; border-radius: var(--pioneertv-radius-l); }
 .card h3 {
   margin: 0 0 10px; font: 13px/1.4 var(--pioneertv-font-mono); letter-spacing: 0.1em;
   text-transform: uppercase; color: var(--pioneertv-ink-faint);
 }
 .card .big { font: 600 26px/1.25 var(--pioneertv-font-ui); }
+.card .big .hint { font-size: 16px; }
 .kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 20px; margin: 12px 0 0; font-size: 17px; }
 .kv dt { color: var(--pioneertv-ink-muted); }
 .kv dd { margin: 0; font-family: var(--pioneertv-font-mono); font-size: 15px; line-height: 1.7; }
@@ -94,79 +146,25 @@ h2 { margin: 32px 0 12px; font: italic 400 28px/1.2 var(--pioneertv-font-prose);
 .dot.ok { background: var(--pioneertv-surface-forest); border-color: var(--pioneertv-surface-forest); }
 .dot.warn { background: var(--pioneertv-ochre); border-color: var(--pioneertv-surface-rust); }
 .dot.bad { background: var(--pioneertv-alarm); border-color: var(--pioneertv-alarm); }
-
-.list { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
-.item { display: flex; align-items: center; gap: 16px; padding: 14px 20px; border-radius: var(--pioneertv-radius-m); }
-.item .grow { flex: 1; min-width: 0; }
-.item .name { font-weight: 600; font-size: 21px; }
-.item .sub { font-size: 16px; color: var(--pioneertv-ink-muted); }
-.item-icon { display: inline-flex; font-size: 24px; color: var(--pioneertv-ink-muted); }
 .bars { font: 14px var(--pioneertv-font-mono); letter-spacing: 1px; color: var(--pioneertv-ink-muted); }
-
-/* ---- controls: capsules. Primary is ochre, secondary is paper with a
-   line-strong edge, hover is a change of surface, never a shadow ---- */
-button, .btn {
-  font: 600 17px/1 var(--pioneertv-font-ui); color: var(--pioneertv-ink);
-  padding: 13px 24px; cursor: pointer; margin: 0;
-  background: var(--pioneertv-paper); border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-pill);
-}
-button:hover { background: var(--pioneertv-paper-hover); }
-button.primary { background: var(--pioneertv-ochre); border-color: var(--pioneertv-ochre); color: var(--pioneertv-on-ochre); }
-button.primary:hover { background: var(--pioneertv-ochre); border-color: var(--pioneertv-ink); }
-button.danger { border-color: var(--pioneertv-alarm); color: var(--pioneertv-alarm); }
-button:disabled, button:disabled:hover { background: var(--pioneertv-paper-sunken); color: var(--pioneertv-ink-faint); border-color: var(--pioneertv-line); cursor: default; }
-button.small { padding: 9px 16px; font-size: 15px; }
-.pioneertv-focus, button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
-  outline: 3px solid var(--pioneertv-focus) !important; outline-offset: 3px !important; box-shadow: none !important;
-}
-.pioneertv-focus.pioneertv-card { border-radius: var(--pioneertv-radius-l) !important; }
-button.pioneertv-focus, .toggle.pioneertv-focus { border-radius: var(--pioneertv-radius-pill) !important; }
-.field { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 14px; padding: 16px 0 14px; border-bottom: 1px solid var(--pioneertv-line); }
-.field label { font-size: 20px; }
-.field .hint, .hint { font-family: var(--pioneertv-font-prose); font-size: 16px; color: var(--pioneertv-ink-muted); }
-input[type="text"], input[type="password"], input[type="number"], input[type="search"], select {
-  font: 18px var(--pioneertv-font-ui); color: var(--pioneertv-ink); background: var(--pioneertv-paper-sunken);
-  border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-m); padding: 10px 16px; min-width: 260px;
-}
-input[type="number"] { width: 150px; min-width: 0; font-family: var(--pioneertv-font-mono); font-variant-numeric: tabular-nums; }
-/* A switch: the knob sits in an empty or a filled track, and the label beside
-   it names the setting, so the state is never colour alone. */
-.toggle {
-  position: relative; width: 70px; height: 38px; padding: 0;
-  border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-pill); background: var(--pioneertv-paper-sunken);
-}
-.toggle::after {
-  content: ""; position: absolute; top: 4px; left: 4px; width: 28px; height: 28px; border-radius: 50%;
-  background: var(--pioneertv-paper-raised); border: 1px solid var(--pioneertv-line-strong);
-}
-.toggle[aria-checked="true"] { background: var(--pioneertv-ochre); border-color: var(--pioneertv-ink); }
-.toggle[aria-checked="true"]::after { left: 36px; background: var(--pioneertv-ink); border-color: var(--pioneertv-ink); }
-.toggle:hover { background: var(--pioneertv-paper-hover); }
-.toggle[aria-checked="true"]:hover { background: var(--pioneertv-ochre); }
-.actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
-.update .big .hint { font-size: 16px; }
-.card.pics { margin-top: 16px; }
 .commits { margin: 6px 0 0; padding-left: 20px; font-size: 16px; }
 .commits li { font-family: var(--pioneertv-font-mono); font-size: 14px; line-height: 1.6; }
-pre.log.small { max-height: 30vh; }
-pre.log.log-full { max-height: 58vh; }
-.log-units button.active { background: var(--pioneertv-surface-ink); border-color: var(--pioneertv-surface-ink); color: var(--pioneertv-on-dark); }
+
+/* ---- a log: read, and a stop so the page scrolls to it ---- */
 pre.log {
   background: var(--pioneertv-paper-sunken); border: 1px solid var(--pioneertv-line); border-radius: var(--pioneertv-radius-m);
-  padding: 14px 16px; font: 14px/1.6 var(--pioneertv-font-mono); max-height: 50vh; overflow: auto; white-space: pre-wrap; margin-top: 12px;
+  padding: 14px 16px; font: 14px/1.6 var(--pioneertv-font-mono); max-height: 50vh; overflow: auto; white-space: pre-wrap; margin: 14px 0;
 }
-.inline-form { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
-.inline-form[hidden] { display: none; }
+pre.log.small { max-height: 30vh; }
+pre.log.log-full { max-height: 70vh; }
+pre.log.pioneertv-focus, pre.log:focus-visible { outline: 3px solid var(--pioneertv-focus) !important; outline-offset: 4px !important; box-shadow: none !important; }
 .spin::before { content: "· "; }
+
 @media (max-width: 800px) {
+  :root { --rail: 72px; }
   body { font-size: 17px; }
   .app { padding: 14px 16px 40px; }
-  :root { --rail: 72px; }
   h1 { font-size: 32px; }
-  .field { grid-template-columns: 1fr; }
-  input[type="text"], input[type="password"], select { min-width: 0; width: 100%; }
+  .row { padding: 10px 18px; font-size: 17px; flex-wrap: wrap; }
+  .row-input input { flex-basis: 100%; }
 }
-
-/* One of a few (a "choice" field): the chosen one pressed, in ink. */
-.choices { display: flex; gap: 8px; flex-wrap: wrap; }
-button.choice[aria-pressed="true"] { background: var(--pioneertv-surface-ink); border-color: var(--pioneertv-surface-ink); color: var(--pioneertv-on-dark); }
