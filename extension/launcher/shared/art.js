@@ -405,10 +405,10 @@ window.PioneerTV = window.PioneerTV || {};
         if (!body) continue;
         const bb = await seen(svg).catch(() => null) || (() => { try { return body.getBBox(); } catch { return null; } })();
         if (!bb || !bb.width || !bb.height) continue;
-        const s = Math.min(124 / bb.width, 80 / bb.height, Math.sqrt((124 * 80 * 0.72) / (bb.width * bb.height)));
-        const tx = 80 - (bb.x + bb.width / 2) * s, ty = 100 - (bb.y + bb.height) * s;
+        const s = Math.min(146 / bb.width, 94 / bb.height, Math.sqrt((146 * 94 * 0.72) / (bb.width * bb.height)));
+        const tx = 80 - (bb.x + bb.width / 2) * s, ty = 102 - (bb.y + bb.height) * s;
         body.setAttribute('transform', `translate(${tx.toFixed(2)} ${ty.toFixed(2)}) scale(${s.toFixed(4)})`);
-        if (ground) { ground.setAttribute('cy', '102'); ground.setAttribute('rx', String(Math.max(30, bb.width * s * 0.5).toFixed(1))); }
+        if (ground) { ground.setAttribute('cy', '104'); ground.setAttribute('rx', String(Math.max(30, bb.width * s * 0.5).toFixed(1))); }
       }
     },
   };

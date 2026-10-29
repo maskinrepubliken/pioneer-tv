@@ -35,7 +35,6 @@ window.PioneerTV = window.PioneerTV || {};
     text.dataset.punch = '';
     text.appendChild(el('span', 'tiles-name', it.label));
     t.appendChild(text);
-    t.appendChild(el('span', 'tiles-index', String(n).padStart(2, '0')));
     it.el = t;
     return t;
   }
