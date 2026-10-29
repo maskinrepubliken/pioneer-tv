@@ -102,7 +102,6 @@ window.PioneerTV = window.PioneerTV || {};
       ],
       sections: [        { label: 'Album', layout: 'shelf', items: albums.map(group) },
       ],
-      focus: 'shuffle',
     };
   }
 
