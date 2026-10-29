@@ -25,10 +25,6 @@
   b.on('tv', (e) => {
     if (e.power === 'standby') document.querySelectorAll('video').forEach((v) => { try { v.pause(); } catch {} });
   });
-  b.on('status', () => {
-    const s = b.state;
-    M.hud.toast(`${s.daemonConnected ? 'Daemon ansluten' : 'Ingen daemon'} · ${location.hostname || 'launcher'}`, 'info');
-  });
   b.on('keyboard_present', (e) => { b.state.physicalKeyboard = !!e.present; });
 
   b.on('state', (s) => document.documentElement.classList.toggle('pioneertv-tv', !!s.tvMode));

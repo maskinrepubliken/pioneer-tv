@@ -63,7 +63,6 @@ DEFAULTS: dict[str, Any] = {
             "BTN_TR": {"key": "KEY_TAB"},                                  # next focusable
             "BTN_TL2": {"cec": "volume_down", "repeat": True},
             "BTN_TR2": {"cec": "volume_up", "repeat": True},
-            "BTN_SELECT": {"system": "status"},
             "BTN_MODE": {"system": "menu", "long": {"system": "home"}},
             "BTN_THUMBL": {"mouse_button": "BTN_RIGHT"},
             "BTN_THUMBR": {"mouse_button": "BTN_LEFT"},

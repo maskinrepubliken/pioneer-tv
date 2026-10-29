@@ -62,19 +62,47 @@ window.PioneerTV = window.PioneerTV || {};
     gridEl.style.setProperty('--columns', String(cols));
     scroller.appendChild(gridEl);
     body.appendChild(scroller);
+    // The chosen one's info in a column at the right: its whole name, each
+    // fact on a line of its own, its whole text. Right from the shelves goes
+    // into it; there up and down scroll it, and left or B go back to the
+    // cover it is about.
     const info = spec.info ? el('aside', 'grid-info') : null;
-    if (info) body.appendChild(info);
+    let about = null;              // the card the info is about
+    if (info) {
+      body.classList.add('grid-view--info');
+      info.tabIndex = 0;
+      info.setAttribute('aria-label', 'Mer om den');
+      body.appendChild(info);
+      const layer = {
+        onKeyDown(e) {
+          if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+            info.scrollBy({ top: (e.key === 'ArrowUp' ? -1 : 1) * info.clientHeight * 0.4 });
+          } else if (e.key === 'ArrowLeft' || e.key === 'Escape') {
+            leave();
+            M.nav.focus(about && about.isConnected ? about : nodes.get(windowStart) || null);
+          }
+        },
+      };
+      const leave = () => { if (M.nav.captured === layer) M.nav.captured = null; };
+      info.addEventListener('focus', () => { M.nav.captured = layer; });
+      info.addEventListener('blur', leave);
+    }
     view.appendChild(body);
 
     function showInfo(item) {
       if (!info) return;
       info.innerHTML = '';
+      info.scrollTop = 0;
       const d = item && spec.info(item);
       if (!d) return;
       info.appendChild(el('h2', 'grid-info-title', d.title));
-      if (d.meta) info.appendChild(el('p', 'grid-info-meta', d.meta));
+      const facts = [].concat(d.meta ? d.meta.split(' · ') : [], d.foot || []);
+      if (facts.length) {
+        const list = el('ul', 'grid-info-facts');
+        for (const f of facts) list.appendChild(el('li', '', f));
+        info.appendChild(list);
+      }
       if (d.text) info.appendChild(el('p', 'grid-info-text', d.text));
-      if (d.foot) info.appendChild(el('p', 'grid-info-meta', d.foot));
     }
 
     function place(i) {
@@ -130,6 +158,7 @@ window.PioneerTV = window.PioneerTV || {};
       const c = e.target.closest('[data-index]');
       if (!c) return;
       renderWindow(Number(c.dataset.index));
+      about = c;
       showInfo(shown[Number(c.dataset.index)]);
     });
     current = (t) => {

@@ -49,6 +49,7 @@ window.PioneerTV = window.PioneerTV || {};
     },
     close() {
       if (this.punching) this.punching();
+      if (M.ring) M.ring.to(null);
       const was = this.isOpen();
       if (this.root) M.bridge.unmount(this.root);
       this.root = null;
@@ -133,14 +134,17 @@ window.PioneerTV = window.PioneerTV || {};
       const pads = s.gamepads || [];
       // One pad: its name (and battery). Several: just how many, since two
       // of the same model would only repeat one long name.
-      const padText = pads.length > 1 ? `${pads.length} handkontroller`
+      const padText = pads.length === 2 ? 'Båda handkontrollerna anslutna' : pads.length > 2 ? `${pads.length} handkontroller anslutna`
         : pads.length ? pads[0].name + (pads[0].battery != null ? ` ${pads[0].battery}%` : '')
         : 'Ingen handkontroll';
       row(pads.length ? 'ok' : 'warn', padText);
       row(sys.throttled_now ? 'bad' : sys.throttled_ever ? 'warn' : 'ok', `${sys.temp_c != null ? sys.temp_c + ' °C' : '–'}${sys.throttled_now ? ' · underspänning' : ''}`);
       return box;
     },
-    highlight() { this.items.forEach((it, i) => it.el.classList.toggle('pioneertv-menu-active', i === this.index)); },
+    highlight() {
+      this.items.forEach((it, i) => it.el.classList.toggle('pioneertv-menu-active', i === this.index));
+      if (M.ring) M.ring.to(this.items[this.index] && this.items[this.index].el);
+    },
     activate() {
       const it = this.items[this.index];
       if (!it || it.disabled || this.punching) return;

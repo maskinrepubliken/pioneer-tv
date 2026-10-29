@@ -38,7 +38,7 @@ repeat_ms = 220
 
 # Button → action. Actions: {key=, modifiers=[]}, {mouse_button=}, {cec=}, {system=}.
 # cec: volume_up, volume_down, mute, tv_on, tv_off, tv_toggle, active_source
-# system: home, menu, keyboard, status, escape, reload, back
+# system: home, menu, keyboard, escape, reload, back
 # invert_axes = ["ABS_Y", "ABS_RY"]   # Nintendo pads are inverted automatically
 
 [gamepad.buttons]
@@ -54,7 +54,6 @@ BTN_TL     = { key = "KEY_TAB", modifiers = ["KEY_LEFTSHIFT"] }   # previous foc
 BTN_TR     = { key = "KEY_TAB" }                                   # next focusable
 BTN_TL2    = { cec = "volume_down", repeat = true }
 BTN_TR2    = { cec = "volume_up",   repeat = true }
-BTN_SELECT = { system = "status" }
 BTN_MODE   = { system = "menu", long = { system = "home" } }      # the only way to the menus; hold: the start page
 BTN_THUMBL = { mouse_button = "BTN_RIGHT" }
 BTN_THUMBR = { mouse_button = "BTN_LEFT" }

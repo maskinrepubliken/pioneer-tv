@@ -62,4 +62,7 @@ html, body { margin: 0; height: 100%; background: transparent !important; overfl
 .pioneertv-menu-dot.warn { background: var(--pioneertv-ochre); border-color: var(--pioneertv-surface-rust); }
 .pioneertv-menu-dot.bad { background: var(--pioneertv-alarm); border-color: var(--pioneertv-alarm); }
 
-.pioneertv-menu-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* A row's name: whole, its descenders too (with the row's line-height of 1
+   and the text clipped, the g of Stäng av TV:n lost its tail); a long one
+   wraps. */
+.pioneertv-menu-label { min-width: 0; line-height: 1.2; margin: -0.1em 0; overflow-wrap: anywhere; }

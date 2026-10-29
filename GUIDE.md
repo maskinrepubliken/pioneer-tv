@@ -43,7 +43,7 @@ what was learned on the way.
 | L2, R2 | TV volume down, up (CEC, repeats while held) |
 | Right stick | Mouse pointer; click on the stick to left-click. What it (or a mouse) is over is drawn as selected and takes the focus, so the d-pad goes on from there |
 | Start | Nothing on the box; in a game, the console's Start |
-| Select | A toast saying whether the page reaches the daemon, and the page's host (a check left from debugging) |
+| Select | Nothing on the box; in a game, the console's Select |
 | Guide / Home / PS / Xbox | The only way to the menus: the quick menu, over whatever is on screen (press again to close it); in a game or a film, the pause panel instead. Hold: the home page. Also wakes the TV and switches input when the pad connects |
 
 In a film or an episode playing in mpv, A, B and X pause it and open its
@@ -104,8 +104,10 @@ kinds, made of items of one shape (`browse/cards.js`):
   (or as stacks, `look: 'stacks'`: every artist),
   only the rows around the focus in the page (the planks are drawn behind
   the rows, so they are all there), L1/R1 a letter, Sök filtering it, the
-  chosen one's info in a strip under the shelves when the library has it
-  (so the shelves always run wall to wall); a console's games, every album;
+  chosen one's info in a column at the right when the library has it (its
+  whole name, a fact a line, its whole text; right from the shelves goes
+  into it, where up and down scroll it and left or B go back to the
+  cover); a console's games, every album;
 - **the detail** (`browse/detail.js`): one thing, its picture, text,
   buttons, choices, tabs and a list; a film, a series, an album.
 
@@ -629,9 +631,11 @@ The UI follows Maskinrepubliken's design system, vendored in
 Paper is the ground, ink is what you read with, ochre is the one signal; there
 are no shadows, gradients or see-through tones, and nothing moves except in
 answer to a button. The one motion is the focus ring's: on our own pages
-(`html.pioneertv-own`) it closes in on what takes the focus, from a little
-way out and clear, in a fifth of a second (`paper.css`, a transition, so
-it outranks the rings' `!important`). Four voices, bundled in `extension/fonts/` under the SIL
+(`html.pioneertv-own`) it is one ring that glides from what had the focus
+to what has it, in a fifth of a second, taking the place, gap and roundness
+of the outline that one would draw (`M.ring` in spatial-nav.js; the
+outlines stay, clear, in paper.css). It follows a scroll at once, and
+draws in the top layer with a menu. Four voices, bundled in `extension/fonts/` under the SIL
 Open Font License: IBM Plex Sans for everything you press or fill in, Fraunces
 for what you read and for card titles, IBM Plex Mono for every number and
 machine word, and Rubik Black for a page heading.

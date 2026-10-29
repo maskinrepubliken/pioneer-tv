@@ -139,7 +139,7 @@
   function inputRow(label, input, sub) {
     input.classList.add('stop');
     input.dataset.key = label;
-    return h('label', { class: 'row row-input' },
+    return h('label', { class: 'row row-input', 'data-pioneertv-ring': '' },
       h('span', { class: 'row-text' }, h('span', { class: 'row-label' }, label), sub ? h('span', { class: 'row-sub' }, sub) : ''), input);
   }
   // A long text to read (a log), as a stop so the page can be scrolled to it.

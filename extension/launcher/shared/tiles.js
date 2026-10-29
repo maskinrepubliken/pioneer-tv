@@ -69,7 +69,7 @@ window.PioneerTV = window.PioneerTV || {};
     else if (eth) pill('ethernet', 'Ethernet', true);
     else pill('wifi', 'Inget nätverk', false);
     const pads = s.gamepads || [];
-    pill('gamepad', pads.length > 1 ? `${pads.length} handkontroller` : pads.length ? pads[0].name : 'Ingen handkontroll', pads.length > 0);
+    pill('gamepad', pads.length === 2 ? 'Båda handkontrollerna anslutna' : pads.length > 2 ? `${pads.length} handkontroller anslutna` : pads.length ? pads[0].name : 'Ingen handkontroll', pads.length > 0);
     pill('daemon', b.state.daemonConnected ? 'Daemon' : 'Ingen daemon', b.state.daemonConnected);
     return box;
   }
