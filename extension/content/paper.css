@@ -81,3 +81,20 @@
   width: 2.1em; min-width: 0; height: 2.1em; padding: 0; border-radius: 50%; border-width: 0.14em; font-size: 0.85em;
 }
 .pioneertv-kbd--home .pioneertv-icon { width: 1.3em; height: 1.3em; }
+
+/* ---- the one motion there is: the focus ring closes in on what it moves
+   to. Every ring on our own pages (html.pioneertv-own: the launcher, the
+   overlay, the settings page; a site's own elements are left alone) is a
+   little way out and clear while nothing has it, so taking the focus
+   draws it in and darkens it. A transition outranks the rings'
+   !important; nothing else moves. ---- */
+:where(html.pioneertv-own) * {
+  outline-offset: 0.8em; outline-color: transparent;
+  transition: outline-offset 220ms cubic-bezier(0.2, 0.8, 0.3, 1), outline-color 150ms linear;
+}
+html.pioneertv-own .pioneertv-focus {
+  transition: outline-offset 220ms cubic-bezier(0.2, 0.8, 0.3, 1), outline-color 150ms linear !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(html.pioneertv-own) *, html.pioneertv-own .pioneertv-focus { transition: none !important; }
+}

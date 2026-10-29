@@ -609,7 +609,10 @@ The UI follows Maskinrepubliken's design system, vendored in
 `design/maskinrepubliken/` (its brand book is `README.md` there, in Swedish).
 Paper is the ground, ink is what you read with, ochre is the one signal; there
 are no shadows, gradients or see-through tones, and nothing moves except in
-answer to a button. Four voices, bundled in `extension/fonts/` under the SIL
+answer to a button. The one motion is the focus ring's: on our own pages
+(`html.pioneertv-own`) it closes in on what takes the focus, from a little
+way out and clear, in a fifth of a second (`paper.css`, a transition, so
+it outranks the rings' `!important`). Four voices, bundled in `extension/fonts/` under the SIL
 Open Font License: IBM Plex Sans for everything you press or fill in, Fraunces
 for what you read and for card titles, IBM Plex Mono for every number and
 machine word, and Rubik Black for a page heading.
