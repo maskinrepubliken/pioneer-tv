@@ -7,9 +7,9 @@
 // paused, its subtitles), which the overlay hears: Home then opens its panel
 // for that video (overlay/overlay.js) instead of the quick menu, and what is
 // chosen there comes back here (a webvideo event, to the frame it is for).
-// In fullscreen, left and right seek and A (or X) pauses, without the panel,
-// and our own bar says where it is (the site's own controls hidden where we
-// know them: SVT Play's blinked at every press). The overlay's menu pausing
+// In fullscreen, left and right seek and A (or X) pauses, without the panel
+// (the site's own controls hidden where we know them: SVT Play's blinked at
+// every press); where it is, the panel says. The overlay's menu pausing
 // what plays reaches the frames here too (the top frame's own videos are
 // main.js's).
 window.PioneerTV = window.PioneerTV || {};
@@ -97,6 +97,13 @@ window.PioneerTV = window.PioneerTV || {};
   function act(e) {
     const v = main();
     if (!v) return;
+    // A seek from the panel leaves a paused video paused: a site's player
+    // may set it going again once it has got there.
+    if (v.paused && (e.action === 'seek' || e.action === 'to')) {
+      const still = () => { if (!v.paused) v.pause(); };
+      v.addEventListener('playing', still, { once: true });
+      setTimeout(() => v.removeEventListener('playing', still), 3000);
+    }
     if (e.action === 'toggle') { if (v.paused) v.play().catch(() => {}); else v.pause(); }
     else if (e.action === 'seek' && typeof e.value === 'number') seek(v, e.value);
     else if (e.action === 'to' && typeof e.value === 'number') { const [start] = bounds(v); v.currentTime = Math.max(start, e.value); }
@@ -125,11 +132,6 @@ window.PioneerTV = window.PioneerTV || {};
   }
 
   // ------------------------------------------------------------ in fullscreen
-  const clock = (s) => {
-    s = Math.max(0, Math.floor(s));
-    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = String(s % 60).padStart(2, '0');
-    return h ? `${h}:${String(m).padStart(2, '0')}:${sec}` : `${m}:${sec}`;
-  };
   function filling(v) {
     const f = document.fullscreenElement;
     return (f && (f === v || f.contains(v))) || document.documentElement.classList.contains('pioneertv-bigscreen');
@@ -151,94 +153,14 @@ window.PioneerTV = window.PioneerTV || {};
     const v = main();
     const on = !!(v && filling(v));
     document.documentElement.classList.toggle('pioneertv-ownplayer', on);
-    if (!on) bar.hide();
     return on ? v : null;
   }
   document.addEventListener('fullscreenchange', () => setTimeout(ownPlayer, 50));
   setInterval(ownPlayer, 1000);
 
-  // ------------------------------------------------------------ our bar
-  // Over the video at its foot, a card on ink: playing or paused, the name,
-  // how far in on a line of ochre, the time, and what the pad does. It
-  // comes on a press and goes a few seconds after the last one. It is a
-  // popover in its own shadow, so it is drawn over the fullscreen video and
-  // the site's styles never reach it (this frame may be a film service's,
-  // without the rest of ours).
-  const ICON = {
-    play: '<path d="M8 6v12l10-6z" fill="currentColor" stroke="none"/>',
-    pause: '<rect x="7" y="6" width="3.6" height="12" rx="1" fill="currentColor" stroke="none"/><rect x="13.4" y="6" width="3.6" height="12" rx="1" fill="currentColor" stroke="none"/>',
-  };
-  const BAR_CSS = `
-    :host { all: initial; }
-    .bar { box-sizing: border-box; width: 100%; padding: 22px 30px 18px; border-radius: 28px;
-      background: #1c1613; color: #f4efe4; border: 1px solid #77716b;
-      font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif; }
-    .top { display: flex; align-items: center; gap: 18px; }
-    .icon { width: 40px; height: 40px; flex: none; display: inline-flex; align-items: center; justify-content: center;
-      border-radius: 50%; background: #f5cf5a; color: #1c1613; }
-    .icon svg { width: 24px; height: 24px; }
-    .name { flex: 1; min-width: 0; font: italic 400 26px/1.25 Fraunces, Georgia, serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-bottom: 0.12em; }
-    .time { flex: none; font: 400 22px/1 "IBM Plex Mono", "Courier New", monospace; color: #f4efe4; }
-    .track { position: relative; height: 8px; margin: 18px 0 14px; border-radius: 4px; background: #3f3934; overflow: hidden; }
-    .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: #f5cf5a; }
-    .hint { font: 400 16px/1 "IBM Plex Mono", "Courier New", monospace; letter-spacing: 0.06em; color: #c9c4ba; }`;
-  const HIDE_MS = 3000;
-  const bar = (() => {
-    let host = null, root = null, els = null, hideTimer = 0, tick = 0, shownOver = null;
-    function build() {
-      host = document.createElement('div');
-      host.setAttribute('popover', 'manual');
-      host.setAttribute('data-pioneertv-overlay', '');
-      host.style.cssText = 'position: fixed; inset: auto 48px 40px 48px; width: auto; height: auto; margin: 0; padding: 0; border: 0; background: transparent; overflow: visible; z-index: 2147483000;';
-      root = host.attachShadow({ mode: 'closed' });
-      root.innerHTML = `<style>${BAR_CSS}</style><div class="bar"><div class="top"><span class="icon"><svg viewBox="0 0 24 24"></svg></span>`
-        + '<span class="name"></span><span class="time"></span></div><div class="track"><span class="fill"></span></div>'
-        + '<div class="hint">◀ ▶ SPOLA · A PAUS · HEM MENY</div></div>';
-      els = { bar: root.querySelector('.bar'), icon: root.querySelector('.icon'), svg: root.querySelector('svg'), name: root.querySelector('.name'),
-        time: root.querySelector('.time'), fill: root.querySelector('.fill') };
-      (document.body || document.documentElement).appendChild(host);
-    }
-    const open = () => !!host && host.matches(':popover-open');
-    function draw() {
-      const v = main();
-      if (!v || !els) return;
-      const [start, end] = bounds(v);
-      const span = Math.max(1, end - start);
-      els.svg.innerHTML = v.paused ? ICON.play : ICON.pause;
-      els.name.textContent = title() || document.title || '';
-      els.fill.style.width = `${Math.max(0, Math.min(100, ((v.currentTime - start) / span) * 100))}%`;
-      els.time.textContent = live(v)
-        ? (end - v.currentTime > 15 ? `Direkt −${clock(end - v.currentTime)}` : 'Direkt')
-        : `${clock(v.currentTime)} / ${clock(v.duration)}`;
-    }
-    function show() {
-      const v = main();
-      if (!v) return;
-      if (!host) build();
-      // A popover opened before the video went fullscreen lies under it: open it again.
-      const over = document.fullscreenElement || null;
-      if (open() && shownOver !== over) host.hidePopover();
-      if (!open()) {
-        try { host.showPopover(); } catch { return; }
-        shownOver = over;
-      }
-      draw();
-      clearInterval(tick);
-      tick = setInterval(draw, 500);
-      // It goes a few seconds after the last press, paused or not.
-      clearTimeout(hideTimer);
-      hideTimer = setTimeout(hide, HIDE_MS);
-    }
-    function hide() {
-      clearTimeout(hideTimer);
-      clearInterval(tick);
-      if (open()) host.hidePopover();
-    }
-    return { show, hide };
-  })();
-
-  // Left and right seek, A or X pauses or plays, up and down show the bar,
-  // while the video fills the screen; true when the key was taken. The
+  // Left and right seek, A or X pauses or plays, while the video fills the
+  // screen; true when the key was taken (up and down too, so they do not
+  // move about the site's hidden controls). The
   // spatial navigation asks here first in the top frame; a frame of its own
   // listens itself.
   function key(e) {
@@ -249,14 +171,13 @@ window.PioneerTV = window.PioneerTV || {};
     if (!v || !filling(v)) return false;
     ownPlayer();
     if (e.key === 'Enter' || e.key === ' ') {
-      if (!e.repeat) { if (v.paused) v.play().catch(() => {}); else v.pause(); bar.show(); }
+      if (!e.repeat) { if (v.paused) v.play().catch(() => {}); else v.pause(); }
       return true;
     }
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
       seek(v, (e.key === 'ArrowLeft' ? -1 : 1) * (e.repeat ? LONG_STEP : STEP));
       report(true);
-      bar.show();
-    } else if (!e.repeat) bar.show();     // up or down: only where it is
+    }
     return true;
   }
   if (!M.nav) {

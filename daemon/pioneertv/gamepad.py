@@ -71,17 +71,18 @@ QUIRKS = [
     # 8BitDo Ultimate 2C on its 2.4 GHz dongle (2dc8:310a, xpad). xpad reports
     # the left face button (X) as BTN_NORTH and the top one (Y) as BTN_WEST,
     # the reverse of where they sit; swapped back so X is OK/space and Y opens
-    # the keyboard (hold: the quick menu), as on every other pad. Verified on
+    # the keyboard, as on every other pad. Verified on
     # the box button by button; everything else matches the defaults.
     ("Ultimate 2C", {"buttons": {
         "BTN_NORTH": {"key": "KEY_SPACE", "long": UNDO},                    # X (hold: undo)
-        "BTN_WEST": {"system": "keyboard", "long": {"system": "menu"}},     # Y
+        "BTN_WEST": {"system": "keyboard"},                                 # Y
     }}),
 ]
 
 
-# Buttons that still reach the shell while a game has the pad (see passthrough).
-SHELL_BUTTONS = {e.BTN_MODE, e.BTN_START, e.KEY_HOMEPAGE}
+# Buttons that still reach the shell while a game has the pad (see passthrough):
+# Home only. Start is the game's, held or not; the menus are Home's alone.
+SHELL_BUTTONS = {e.BTN_MODE, e.KEY_HOMEPAGE}
 
 
 class Gamepad:
@@ -92,8 +93,8 @@ class Gamepad:
         self.mouse = mouse
         # Shared with the manager: {"passthrough": bool}. In passthrough the pad
         # is left to the page (Chromium's Gamepad API, e.g. RomM's emulator):
-        # no key translation, no pointer, only Guide (menu, hold: home) and a
-        # long press on Start (menu), so there is always a way out.
+        # no key translation, no pointer, only Guide (menu, hold: home), so
+        # there is always a way out.
         self.shared = shared if shared is not None else {"passthrough": False}
         # Who this pad is: [pads."<USB serial>"] in the config gives it a name
         # and its colours (pointer fill, focus ring, and the highlight that
@@ -110,9 +111,9 @@ class Gamepad:
             if needle.lower() in dev.name.lower() and quirk.get("buttons"):
                 button_map.update(quirk["buttons"])
                 log.info("%s: using button profile", dev.name)
-        # A pad without Start or Guide still needs a way to the menu: holding Y.
+        # A pad without Home still needs a way to the menu: holding Y.
         keys = set(dev.capabilities().get(e.EV_KEY, []))
-        if e.BTN_START not in keys and e.BTN_MODE not in keys and e.BTN_NORTH in keys:
+        if e.BTN_MODE not in keys and e.BTN_NORTH in keys:
             y = dict(button_map.get("BTN_NORTH") or {"system": "keyboard"})
             y.setdefault("long", {"system": "menu"})
             button_map["BTN_NORTH"] = y
@@ -215,18 +216,12 @@ class Gamepad:
             _trace(self.dev.name, "key", name, value, describe(action))
         if action is None or value == 2:  # 2 = autorepeat
             return
-        if self.shared.get("passthrough") or self.shared.get("games"):
-            if code not in SHELL_BUTTONS:
-                return
-            if code == e.BTN_START:
-                action = self._passthrough_start
+        if (self.shared.get("passthrough") or self.shared.get("games")) and code not in SHELL_BUTTONS:
+            return
         if value:
             await self.dispatcher.press(action, at)
         else:
             await self.dispatcher.release(action, at)
-
-    # Stable objects: the dispatcher keys its long-press state on identity.
-    _passthrough_start = {"long": {"system": "menu"}}
 
     async def on_abs(self, code: int, value: int) -> None:
         v = self.normalize(code, value) if code in self.absinfo else float(value)

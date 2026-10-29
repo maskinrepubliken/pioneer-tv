@@ -3,8 +3,8 @@
 // While a browser game has the screen (RomM's EmulatorJS player, or any page
 // with a big canvas in fullscreen), the pad must reach the page as a real
 // gamepad. The daemon stops translating it into key presses and pointer
-// motion while we send a heartbeat; Guide (menu, hold: home), and holding
-// Start or Select, still reach the shell. Our own overlays pause game mode
+// motion while we send a heartbeat; Guide (menu, hold: home) still reaches
+// the shell. Our own overlays pause game mode
 // while they are open so the d-pad can drive them.
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {

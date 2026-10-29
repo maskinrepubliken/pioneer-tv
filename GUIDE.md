@@ -38,13 +38,13 @@ what was learned on the way.
 | A / Cross | Select (Enter) |
 | B / Circle | Escape: closes an overlay, releases an engaged slider, leaves a text field. Hold: one page back |
 | X / Square | The filled button, wherever there is one: on the box's pages (Spela, Blanda allt, Försök igen, the settings page's Spara), the overlay's menus (Fortsätt, Hem) and the on-screen keyboard (OK); unmarked (one learns it), the browse page's legend says it. Elsewhere play, pause (Space) or the page's own use. Hold: undo (Ctrl+Z), e.g. what X took off a list |
-| Y / Triangle | On-screen keyboard. Hold: quick menu |
+| Y / Triangle | On-screen keyboard (on a pad without Home, hold: quick menu) |
 | L1, R1 | Shift+Tab, Tab (previous, next focusable) |
 | L2, R2 | TV volume down, up (CEC, repeats while held) |
 | Right stick | Mouse pointer; click on the stick to left-click. What it (or a mouse) is over is drawn as selected and takes the focus, so the d-pad goes on from there |
-| Start | Quick menu (also: hold Y) |
-| Select | Status toast |
-| Guide / Home / PS / Xbox | Quick menu, over whatever is on screen (press again to close it); in a game or a film, the pause panel instead. Hold: the home page. Also wakes the TV and switches input when the pad connects |
+| Start | Nothing on the box; in a game, the console's Start |
+| Select | A toast saying whether the page reaches the daemon, and the page's host (a check left from debugging) |
+| Guide / Home / PS / Xbox | The only way to the menus: the quick menu, over whatever is on screen (press again to close it); in a game or a film, the pause panel instead. Hold: the home page. Also wakes the TV and switches input when the pad connects |
 
 In a film or an episode playing in mpv, A, B and X pause it and open its
 pause panel, left and right seek ten seconds, L1 and R1 a minute, and
@@ -352,8 +352,8 @@ on screen, and so does any full-screen page with a large canvas. In game mode th
 pad buttons into arrows, Enter and Escape, so the emulator reads the pad itself through the browser's
 Gamepad API and its own button mapping applies. The extension leaves the page's keys alone too.
 
-A few buttons still belong to the box: Guide opens the quick menu and holding it goes home, holding
-Start opens the quick menu too and the triggers set the TV volume. While an overlay is open the pad
+A few buttons still belong to the box: Guide opens the quick menu and holding it goes home, and the
+triggers set the TV volume. Start is the game's, held or not. While an overlay is open the pad
 drives it as usual. Game mode ends when the page goes away or stops sending heartbeats.
 
 ## Music
@@ -469,14 +469,15 @@ within what it keeps), Från början, Undertexter (when the video has text
 tracks of its own), TV-volym, Meny (the quick menu, one step in) and Sluta
 titta (back). The panel's choices go back to the frame they are for. The
 menu pauses the video as it does every page's (the media event, the
-frames' too), and closing it carries on. While the video fills the screen
+frames' too), and closing it carries on; a seek from the panel leaves it
+paused. The open panel follows the video by the words of its rows only,
+in place (drawn anew at every word from the page, the whole menu went and
+came back, which blinked over SVT Play), and where a seek was put stands
+until the page has got there. While the video fills the screen
 (fullscreen, or bigscreen.js's promotion) the pad drives the `<video>`
 itself, not the site's keys: left and right seek, A or X pauses or plays,
-up and down only show where it is. Our own bar says so at the foot of the
-picture (a card on ink: playing or paused, the name, how far in on a line
-of ochre, the time, what the pad does), for three seconds after the last
-press, paused or not. Where we know the site's own controls they
-are hidden meanwhile (`SITE_UI` in webvideo.js; SVT Play's `desktopUi` and
+up and down do nothing; where it is, Home's panel says. Where we know the
+site's own controls they are hidden meanwhile (`SITE_UI` in webvideo.js; SVT Play's `desktopUi` and
 top bar, which came and went at every press); its subtitles stay. The
 video itself is never touched beyond play, pause and its time, so it works
 for what the site protects too.
@@ -514,7 +515,7 @@ shows them in place.
 
 ## Updating the box
 
-Start → Meny → **Uppdatera systemet** checks GitHub and, only if there is
+Home → Meny → **Uppdatera systemet** checks GitHub and, only if there is
 something new, pulls it, reinstalls and restarts the daemon and Chromium. The
 screen goes blank for a few seconds. If nothing is new it just says so. The
 System page in settings shows the installed commit, lists the incoming commits,

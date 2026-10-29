@@ -200,44 +200,63 @@ window.PioneerTV = window.PioneerTV || {};
   };
   const where = (v) => (v.live ? (v.end - v.time > 30 ? `${clock(v.end - v.time)} efter direkt` : 'direkt') : `${clock(v.time)} av ${clock(v.duration)}`);
   const tell = (v, action, value) => b.relay('webvideo', { frame: v.frame, action, value });
+  // An open panel follows its video (a seek, the subtitles) by the words
+  // of its rows only, in place: drawn anew, the whole menu went and came
+  // back at every word from the page, which blinked over SVT Play. Where a
+  // seek was put stands until the page has got there (or a moment has
+  // passed): its first words after one are often from before it, or a
+  // segment short of it, and the time went back and forth.
+  let aim = null;                // { time, until } after a seek from the panel
   b.on('webvideo', (e) => {
     frames.set(e.frame, { ...e, at: Date.now() });
-    // An open panel follows it (a seek, the subtitles), unless a step in.
-    if (held && held.kind === 'web' && menu.isOpen() && menu.stack.length === 1 && held.e.frame === e.frame) webPanel(menu.index);
+    if (!(held && held.kind === 'web' && menu.isOpen() && menu.stack.length === 1 && held.e.frame === e.frame)) return;
+    const v = { ...e };
+    if (aim && Date.now() < aim.until && Math.abs((v.time || 0) - aim.time) > 3) v.time = aim.time;
+    else aim = null;
+    words(v);
   });
+  function words(v) {
+    held.e = v;
+    const rows = held.rows || {};
+    const say = (it, text) => {
+      const d = it && it.el && it.el.querySelector('.pioneertv-menu-detail');
+      if (!it) return;
+      it.detail = text;                     // also when drawn again (back from Meny)
+      if (d && d.textContent !== text) d.textContent = text;
+    };
+    say(rows.seek, `◀ ▶ · ${where(v)}`);
+    if (rows.subs) say(rows.subs, (v.subs.find((t) => t.selected) || { label: 'Av' }).label);
+  }
   function webPanel(at = 0) {
     const v = webVideo();
     if (!v) return;
+    aim = null;
     const subs = [{ id: -1, label: 'Av' }, ...v.subs];
     const current = subs.find((t) => t.selected) || subs[0];
     const items = [
       { label: 'Fortsätt', icon: 'play', primary: true, run: pick(() => {}) },
       { label: 'Spola', icon: 'arrowRight', detail: `◀ ▶ · ${where(v)}`, keep: true, run: () => {},
         step: (dir, heldDown) => {
-          const by = dir * (heldDown ? 30 : 10);
-          tell(v, 'seek', by);
-          v.time = Math.max(0, Math.min(v.live ? v.end : v.duration || 0, v.time + by));   // at once; the page says where it got to
-          webPanel(menu.index);
+          const now = held && held.kind === 'web' ? held.e : v;
+          const to = Math.max(0, Math.min(now.live ? now.end : now.duration || 0, now.time + dir * (heldDown ? 30 : 10)));
+          tell(now, 'to', to);
+          aim = { time: to, until: Date.now() + 2500 };
+          words({ ...now, time: to });          // at once; the page says where it got to
         } },
     ];
     if (!v.live) items.push({ label: 'Från början', icon: 'reload', run: pick(() => tell(v, 'to', 0)) });
     if (v.subs.length) {
       items.push({ label: 'Undertexter', icon: 'info', detail: current.label, keep: true, run: () => {
-        const next = subs[(subs.indexOf(current) + 1) % subs.length];
-        tell(v, 'subs', next.id);
+        const list = [{ id: -1, label: 'Av' }, ...held.e.subs];
+        const now = list.find((t) => t.selected) || list[0];
+        tell(held.e, 'subs', list[(list.indexOf(now) + 1) % list.length].id);
       } });
     }
     items.push({ label: 'TV-volym', icon: 'volume', detail: '◀ ▶ · även L2/R2', volume: true, keep: true, run: () => b.cec('mute') });
     items.push({ label: 'Meny', icon: 'menu', detail: 'snabbmenyn', keep: true, run: () => menu.push(M.mainMenu.spec()) });
     items.push({ label: 'Sluta titta', icon: 'back', detail: 'tillbaka', run: pick(() => b.back()) });
-    if (held && held.kind === 'web' && menu.isOpen()) {
-      // Drawn again in place: the same panel, its row where it was.
-      held.e = v;
-      menu.stack[0] = { title: v.title || pageTitle() || 'Video', items, at };
-      menu.render();
-      return;
-    }
     panel('web', v, v.title || pageTitle() || 'Video', items, null, at, () => {});
+    held.rows = { seek: items[1], subs: items.find((it) => it.label === 'Undertexter') };
   }
 
   M.overlay = { host };

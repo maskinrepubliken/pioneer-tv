@@ -49,14 +49,13 @@ BTN_DPAD_RIGHT = { key = "KEY_RIGHT" }
 BTN_SOUTH  = { key = "KEY_ENTER" }
 BTN_EAST   = { key = "KEY_ESC", long = { system = "back" } }       # hold B: one page back
 BTN_WEST   = { key = "KEY_SPACE", long = { key = "KEY_Z", modifiers = ["KEY_LEFTCTRL"] } }  # hold X: undo
-BTN_NORTH  = { system = "keyboard", long = { system = "menu" } }  # hold Y: quick menu
+BTN_NORTH  = { system = "keyboard" }                              # Y: the on-screen keyboard
 BTN_TL     = { key = "KEY_TAB", modifiers = ["KEY_LEFTSHIFT"] }   # previous focusable
 BTN_TR     = { key = "KEY_TAB" }                                   # next focusable
 BTN_TL2    = { cec = "volume_down", repeat = true }
 BTN_TR2    = { cec = "volume_up",   repeat = true }
 BTN_SELECT = { system = "status" }
-BTN_START  = { system = "menu" }
-BTN_MODE   = { system = "menu", long = { system = "home" } }      # hold Home: the start page
+BTN_MODE   = { system = "menu", long = { system = "home" } }      # the only way to the menus; hold: the start page
 BTN_THUMBL = { mouse_button = "BTN_RIGHT" }
 BTN_THUMBR = { mouse_button = "BTN_LEFT" }
 
