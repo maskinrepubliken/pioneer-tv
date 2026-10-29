@@ -72,8 +72,7 @@ window.PioneerTV = window.PioneerTV || {};
   // A button of the pad, drawn as it is on the pad (paper.css
   // .pioneertv-kbd): A, B, X and Y round, L1 and R1 as bumpers, the d-pad
   // a cross with the arms meant in ink ('◀ ▶', '▲ ▼'; 'arrows', all of it,
-  // none marked), Hem the pad's own round home button. In the colours of the pad
-  // last used (hud.js applyPad), else the design system's.
+  // none marked), Hem the pad's own round home button.
   const ARMS = { left: 'M3 9.5h6.5v5H3z', right: 'M14.5 9.5H21v5h-6.5z', up: 'M9.5 3h5v6.5h-5z', down: 'M9.5 14.5h5V21h-5z' };
   const DPAD = { '◀ ▶': ['left', 'right'], '▲ ▼': ['up', 'down'], '◀': ['left'], '▶': ['right'], '▲': ['up'], '▼': ['down'], arrows: [] };
   function key(name) {

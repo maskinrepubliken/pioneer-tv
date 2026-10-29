@@ -618,10 +618,8 @@ The legends at the foot of a page, the home page's and the on-screen
 keyboard's draw the pad's buttons as they are on the pad (`icons.js` key,
 `.pioneertv-kbd` in `paper.css`): A, B, X and Y round, L1 and R1 as
 bumpers, the d-pad as a cross with the arms meant in ink, Hem as the pad's
-round home button. They wear the colours of the pad last pressed (its
-tint and its accent from the settings' pads, `hud.js` applyPad, which
-also colours the pointer, the focus ring and the highlight), and the
-design system's until a pad is used.
+round home button, always in the design system's colours (whichever pad
+is in use).
 
 `dev/tokens-css.py` turns the system's `tokens.json` into
 `extension/content/tokens.css`, where every token is prefixed `--pioneertv-`
