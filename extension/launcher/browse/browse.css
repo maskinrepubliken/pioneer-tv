@@ -45,8 +45,14 @@
 /* ---- the shelf: sections one under the other ---- */
 .shelf-section + .shelf-section { margin-top: 1.3rem; }
 .shelf-groups { display: flex; flex-wrap: wrap; gap: 1rem; }
-.shelf-actions { display: flex; gap: 1rem; }
-.shelf-actions .knapp { align-self: stretch; }
+.shelf-actions { display: flex; align-items: center; gap: 0.8rem; }
+/* A view's own buttons above its shelves (Blanda allt, Spela allt): small
+   pills, the icon before the name. */
+.shelf-actions .knapp {
+  display: inline-flex; align-items: center; gap: 0.55rem;
+  font-size: 0.95rem; padding: 0.55rem 1.15rem 0.55rem 0.95rem;
+}
+.shelf-actions .knapp .pioneertv-icon { font-size: 1.15em; }
 .shelf-actions .card--group { min-width: 11rem; }
 
 /* ---- the grid: the cards, and (if the library has one) the chosen one's

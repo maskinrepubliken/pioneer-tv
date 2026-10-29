@@ -55,7 +55,7 @@ window.PioneerTV = window.PioneerTV || {};
       kind: 'shelf', title: 'Musik', legend: [['A', 'öppna · spela']],
       sections: [
         { layout: 'actions', items: [
-          { button: true, label: 'Blanda allt', primary: true, key: 'shuffle', run: tryPlay(() => J.shuffleAll(), false) },
+          { button: true, label: 'Blanda allt', icon: 'shuffle', primary: true, key: 'shuffle', run: tryPlay(() => J.shuffleAll(), false) },
         ] },
         { label: 'Spellistor', layout: 'stacks', columns: 4, shape: 'square', items: playlists.map(group),
           empty: 'Inga spellistor än. Gör en i Jellyfin på datorn eller telefonen.' },
@@ -100,12 +100,12 @@ window.PioneerTV = window.PioneerTV || {};
       kind: 'shelf', title: who.name, legend: [['A', 'öppna · spela']],
       sections: [
         { layout: 'actions', items: [
-          { button: true, label: 'Spela allt', primary: true, key: 'play', run: tryPlay(all, false) },
-          { button: true, label: 'Blanda', key: 'shuffle', run: tryPlay(all, true) },
+          { button: true, label: 'Blanda allt', icon: 'shuffle', primary: true, key: 'shuffle', run: tryPlay(all, true) },
+          { button: true, label: 'Spela allt', icon: 'play', key: 'play', run: tryPlay(all, false) },
         ] },
         { label: 'Album', layout: 'shelf', items: albums.map(group) },
       ],
-      focus: 'play',
+      focus: 'shuffle',
     };
   }
 

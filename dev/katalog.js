@@ -230,7 +230,7 @@
         { name: 'Film · Sök utan träffar', url: `${FILM}#/search/zzz`, ready: '.dusty' },
         { name: 'Musik · Album', url: `${MUSIK}#/albums`, ready: '.grid .card', note: 'Kvadrater, i ett rutnät.' },
         { name: 'Musik · Album, filtrerade', url: `${MUSIK}#/albums`, ready: '.grid .card', setup: filterGrid('s'), note: 'Y skriver; rutnätet visar bara det som matchar, medan man skriver.' },
-        { name: 'Musik · En artist', url: `${MUSIK}#/artist/artist2`, ready: '.card', note: 'Spela allt och Blanda, och artistens album på en hylla.' },
+        { name: 'Musik · En artist', url: `${MUSIK}#/artist/artist2`, ready: '.card', note: 'Blanda allt (X) och Spela allt, små med ikon, och artistens album på en hylla.' },
         { name: 'Film · Fortsätt titta och filmer', url: FILM, ready: '.card', note: 'Stillbilder och affischer; hur långt in: ockra längs omslagets fot.' },
         { name: 'Film · Serier', url: `${FILM}#/lib/lib-serier`, ready: '.card' },
         { name: 'Film · Hemvideor och klipp', url: `${FILM}#/lib/lib-hem`, ready: '.card' },

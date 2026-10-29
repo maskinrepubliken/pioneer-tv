@@ -8,8 +8,8 @@
 // are shelves too), 'stacks' (wholes as cards: collections, playlists,
 // artists, each its picture or its first few in a pile, cards.js stack;
 // columns, 3 if not given), 'groups' (type-only cards, wrapping), 'actions'
-// (buttons and type-only cards in a line: { button: true, label, primary,
-// run, key } for a button) or 'rows' (a list, look 'number', 'thumb' or
+// (buttons and type-only cards in a line: { button: true, label, icon,
+// primary, run, key } for a button, small, its icon before its name) or 'rows' (a list, look 'number', 'thumb' or
 // 'still'). A section without items is left out, or says empty.
 // focus: the key the focus goes to first. none: in place of the sections,
 // a bare dusty plank saying it (planks.js dusty).
@@ -37,6 +37,7 @@ window.PioneerTV = window.PioneerTV || {};
       for (const it of items) {
         if (!it.button) { body.appendChild(C.group(it)); continue; }
         const b = M.views.button(it.label, it.primary, it.run);
+        if (it.icon) b.prepend(M.icons.svg(it.icon));
         if (it.key) b.dataset.key = it.key;
         body.appendChild(b);
       }

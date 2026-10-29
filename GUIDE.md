@@ -362,7 +362,8 @@ The Musik tile opens the browse page on top of [Jellyfin](https://jellyfin.org/)
 music library (`browse.html?library=musik`): Blanda allt, then your
 playlists as cards (like Spel's collections), with Album and Artister in
 the column at the left; Album is shelves of covers, Artister cards; a playlist or an album lists its songs beside
-its cover, with Spela and Blanda. Album and Artister are grids like a
+its cover, with Spela and Blanda; an artist has Blanda allt (filled, X)
+and Spela allt above its albums, small pills with their icons. Album and Artister are grids like a
 console's games: L1/R1 jump a letter, Sök filters them. Sök (the round
 button, or Y) searches songs, albums and artists. Films, series and clips have
 their own page ([Film and series](#film-and-series)).
@@ -596,7 +597,7 @@ The launcher is at `chrome-extension://dpigdefepjjejbkidlabpjlnleidgjaf/launcher
 presses it, whatever has the focus. The button itself is not marked (one
 learns it); the browse page's legend says "X" and the button's name:
 the browse page's (`browse/page.js`; Spela, Fortsätt från, Blanda allt,
-Spela allt, Försök igen), the overlay's menus (`overlay/hud.js`; the filled
+Försök igen), the overlay's menus (`overlay/hud.js`; the filled
 row: Fortsätt in a pause panel, Hem in the quick menu), the on-screen
 keyboard's OK (A only types; there is no holding A for OK) and the settings
 page's (`settings.js`). So a view has at most one filled button; a list's
