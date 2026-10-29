@@ -24,8 +24,9 @@ window.PioneerTV = window.PioneerTV || {};
   const SHADES = 24;                     // steps of darkness
   const CHUNK = 8, SIDE = CHUNK * 2;     // cells, tiles to a chunk
   const FOV = 0.7;                       // the camera plane's half width
-  const SPEED = 1.35;                    // tiles a second
-  const TURN = 2.4;                      // radians a second
+  // Unhurried: a slow stroll, slow turns, now and then a find.
+  const SPEED = 0.8;                     // tiles a second
+  const TURN = 1.1;                      // radians a second
 
   // ------------------------------------------------------------ chance
   // A number from a few others, the same every time.
@@ -105,9 +106,10 @@ window.PioneerTV = window.PioneerTV || {};
   const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
   // ------------------------------------------------------------ the finds
-  // About one cell in eleven has something lying in it; what, comes from
-  // the list in turn as the cell is first seen.
-  const hasFind = (ci, cj) => !(ci === 0 && cj === 0) && hash(ci, cj, 5) < 0.09;
+  // About one cell in thirty has something lying in it; what, comes from
+  // the list in turn as the cell is first seen (what was played or watched
+  // lately comes first in it).
+  const hasFind = (ci, cj) => !(ci === 0 && cj === 0) && hash(ci, cj, 5) < 0.033;
   const placed = new Map();              // "ci,cj" -> find (or null: taken)
   let finds = [], nextFind = 0;
   function findAt(ci, cj) {
@@ -168,6 +170,8 @@ window.PioneerTV = window.PioneerTV || {};
     // ---------------------------------------------------------- walking
     // A way to the nearest cell wanted (a find, else a cell not yet
     // walked), breadth first, no further than `far` steps.
+    // (A find is gone for further away than a few cells: it is come upon,
+    // not hunted.)
     function route(wanted, far) {
       const from = `${me.ci},${me.cj}`;
       const back = new Map([[from, null]]);
@@ -192,7 +196,7 @@ window.PioneerTV = window.PioneerTV || {};
     }
     function plan() {
       const wantFind = (i, j) => hasFind(i, j) && findAt(i, j);
-      path = route(wantFind, 7)
+      path = route(wantFind, 4)
         || route((i, j) => !visited.has(`${i},${j}`), 40)
         || [DIRS.map(([dx, dy]) => [me.ci + dx, me.cj + dy, dx, dy]).filter(([, , dx, dy]) => open(me.ci, me.cj, dx, dy))[0]].filter(Boolean);
     }
@@ -209,7 +213,7 @@ window.PioneerTV = window.PioneerTV || {};
         found.push(f);
         if (found.length > 6) found = found.slice(-6);
         hud.found(f, found);
-        pause = 1.4;
+        pause = 3;
       }
     }
     const turnTo = (a, want, dt) => {
@@ -256,7 +260,7 @@ window.PioneerTV = window.PioneerTV || {};
 
     // ---------------------------------------------------------- drawing
     // The torch: brighter and darker in slow waves, never a blink.
-    const torch = (t) => 0.92 + 0.05 * Math.sin(t * 2.1) + 0.03 * Math.sin(t * 5.3 + 1.7);
+    const torch = (t) => 0.94 + 0.03 * Math.sin(t * 1.3) + 0.015 * Math.sin(t * 3.1 + 1.7);
     const shadeOf = (dist, light) => Math.min(SHADES - 1, Math.max(0, Math.floor((dist * 0.95 / light) ** 1.1 * SHADES / 6)));
 
     function draw(t) {
@@ -265,7 +269,7 @@ window.PioneerTV = window.PioneerTV || {};
       const planeX = -dirY * FOV, planeY = dirX * FOV;
       const half = H / 2;
       // A little bob as one walks.
-      const bob = Math.round(Math.sin(t * 7) * (path.length && pause <= 0 ? 1.2 : 0));
+      const bob = Math.round(Math.sin(t * 4) * (path.length && pause <= 0 ? 0.6 : 0));
       const horizon = half + bob;
       // Floor and ceiling, a row at a time.
       const floorT = tex[T_FLOOR], ceilT = tex[T_CEIL];
@@ -359,7 +363,7 @@ window.PioneerTV = window.PioneerTV || {};
         const ratio = im.naturalWidth / im.naturalHeight;
         const h = Math.floor((H / ty) * 0.5);
         const w = Math.floor(h * ratio);
-        const lift = (H / ty) * (0.06 + 0.02 * Math.sin(t * 1.6 + s.i * 1.3 + s.j));
+        const lift = (H / ty) * (0.06 + 0.012 * Math.sin(t * 0.9 + s.i * 1.3 + s.j));
         const y0 = Math.floor(horizon + (H / ty) / 2 - h - lift);
         const x0 = screenX - Math.floor(w / 2);
         const dark = 1 - Math.min(1, (1 - shadeOf(ty, light) / SHADES) ** 1.4);

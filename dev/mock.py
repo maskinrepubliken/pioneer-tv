@@ -333,12 +333,13 @@ def daemon(path: str, query: str, method: str) -> tuple[int, str, bytes] | None:
     if path.startswith("/api/games/"):
         return js({"ok": True, "message": ""})
     if path == "/api/finds":
-        games = [{"title": r["name"], "kind": "spel", "url": "/romm" + r["path_cover_large"], "kept": True} for r in ROMS if r["path_cover_large"]]
-        films = [{"title": m["Name"], "kind": "film", "url": f"/jellyfin/Items/{m['Id']}/Images/Primary?tag=p", "kept": False}
-                 for m in MOVIES if m["ImageTags"]]
-        albums = [{"title": a["Name"], "kind": "album", "url": f"/jellyfin/Items/{a['Id']}/Images/Primary?tag=p", "kept": False}
-                  for a in ALBUMS if a["ImageTags"]]
-        return js({"finds": games + films + albums})
+        games = [{"title": r["name"], "kind": "spel", "url": "/romm" + r["path_cover_large"], "kept": True,
+                  "recent": bool(r["rom_user"])} for r in ROMS if r["path_cover_large"]]
+        films = [{"title": m["Name"], "kind": "film", "url": f"/jellyfin/Items/{m['Id']}/Images/Primary?tag=p", "kept": False,
+                  "recent": m["Id"] == "film1"} for m in MOVIES if m["ImageTags"]]
+        found = games + films
+        found.sort(key=lambda f: not f["recent"])
+        return js({"finds": found})
     if path == "/api/video":
         return js({"state": "idle", "item": None, "choice": {}})
     if path.startswith("/api/video/"):

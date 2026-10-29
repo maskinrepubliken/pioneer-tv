@@ -749,12 +749,15 @@ tried again every three seconds.
     west and north of it, so the whole is one maze, made as it is walked
     into and forgotten behind. The walker steers by a point a little ahead
     along its way (round corners, no turning on the spot facing a wall),
-    goes for the nearest thing lying about, else the nearest cell not yet
-    walked. About one cell in eleven has a cover: a game's, film's,
-    series' or album's from the daemon's `/api/finds` (`covers.py` finds:
-    RomM and Jellyfin at random, those kept on the box first), standing on
-    the floor; picked up, a slip at the foot says "Du hittade ett spel" and
-    its name, and the last six are carried in a row at the top left. The
+    goes for a thing lying near, else the nearest cell not yet
+    walked; slowly, a stroll. About one cell in thirty has a cover: a
+    game's, a film's or a series' from the daemon's `/api/finds`
+    (`covers.py` finds: first what was played lately, RomM's last played and
+    Jellyfin's begun and seen, then others at random, those kept on the box
+    first), standing on the floor; it is come upon, not hunted (only one a
+    few cells off is gone for). Picked up, a slip at the foot says "Du
+    hittade ett spel du spelat nyss" and its name, for a while, and the last
+    four are carried in a row at the top left. The
     textures are Screaming Brain Studios' [Tiny Texture Pack
     1](https://opengameart.org/content/tiny-texture-pack-1) (CC0), made
     64 px and fewer colours (`overlay/maze/textures.png`).

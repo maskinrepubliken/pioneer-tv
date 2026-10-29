@@ -139,67 +139,92 @@ class Covers:
 
     # ------------------------------------------------------------ the maze
     async def finds(self, n: int = 40) -> list[dict]:
-        """Things for the maze screensaver to find (overlay/maze.js): games',
-        films', series' and albums' covers with their names, at random, the
-        ones kept on the box first: [{title, kind, url, kept}], url a path the
-        overlay asks the /romm/ or /jellyfin/ proxy for."""
-        found: list[dict] = []
+        """Things for the maze screensaver to find (overlay/maze.js): games'
+        and films' (and series') covers with their names. First what was
+        played or watched lately (recent: true), then others at random, the
+        ones kept on the box before the rest: [{title, kind, url, kept,
+        recent}], url a path the overlay asks the /romm/ or /jellyfin/ proxy for."""
+        recent: list[dict] = []
+        other: list[dict] = []
         for name, pick in (("romm", self._romm_finds), ("jellyfin", self._jellyfin_finds)):
             try:
-                found += await pick(n)
+                r, o = await pick(n)
+                recent += r
+                other += o
             except Exception as exc:          # noqa: BLE001 - the other source may still answer
                 log.debug("covers: no finds from %s: %s", name, exc)
-        random.shuffle(found)
-        found.sort(key=lambda f: not f["kept"])
-        return found[:n]
+        random.shuffle(recent)
+        random.shuffle(other)
+        other.sort(key=lambda f: not f["kept"])
+        seen, out = set(), []
+        for f in recent + other:
+            if f["url"] not in seen:
+                seen.add(f["url"])
+                out.append(f)
+        return out[:n]
 
     def _kept(self, source: str, path: str, query: str) -> bool:
         return bool(self.cache and self.cache.has(imagecache.key(source, path, query)))
 
-    async def _romm_finds(self, n: int) -> list[dict]:
+    def _romm_find(self, rom: dict, recent: bool) -> dict | None:
+        cover = rom.get("path_cover_large") or rom.get("path_cover_small")
+        if not cover:
+            return None
+        parts = urlsplit(cover)
+        path = parts.path.lstrip("/")
+        return {"title": rom.get("name") or "", "kind": "spel", "recent": recent,
+                "url": f"/romm/{path}?{parts.query}" if parts.query else f"/romm/{path}",
+                "kept": self._kept("romm", path, parts.query)}
+
+    async def _romm_finds(self, n: int) -> tuple[list[dict], list[dict]]:
+        """The games played lately (RomM's last_played), and some at random."""
         cfg = self.cfg.get("romm") or {}
         base, api_key = cfg.get("url", ""), cfg.get("api_key", "")
         if not base or not api_key:
-            return []
+            return [], []
         headers = {"Authorization": f"Bearer {api_key}"}
-        url = f"{base.rstrip('/')}/api/roms?limit=%d&offset=%d&with_char_index=false&with_filter_values=false&with_rom_id_index=false"
-        total = (await self._json(url % (1, 0), headers)).get("total") or 0
-        data = await self._json(url % (n, random.randrange(max(1, total - n + 1))), headers)
-        out = []
-        for rom in data.get("items") or []:
-            cover = rom.get("path_cover_large") or rom.get("path_cover_small")
-            if not cover:
-                continue
-            parts = urlsplit(cover)
-            path = parts.path.lstrip("/")
-            out.append({"title": rom.get("name") or "", "kind": "spel", "url": f"/romm/{path}?{parts.query}" if parts.query else f"/romm/{path}",
-                        "kept": self._kept("romm", path, parts.query)})
-        return out
+        lean = "with_char_index=false&with_filter_values=false&with_rom_id_index=false"
+        url = f"{base.rstrip('/')}/api/roms?{lean}"
+        played = await self._json(f"{url}&last_played=true&order_by=last_played&order_dir=desc&limit=20", headers)
+        total = (await self._json(f"{url}&limit=1&offset=0", headers)).get("total") or 0
+        some = await self._json(f"{url}&limit={n}&offset={random.randrange(max(1, total - n + 1))}", headers)
+        recent = [f for r in played.get("items") or [] if (f := self._romm_find(r, True))]
+        other = [f for r in some.get("items") or [] if (f := self._romm_find(r, False))]
+        return recent, other
 
-    async def _jellyfin_finds(self, n: int) -> list[dict]:
+    def _jellyfin_find(self, item: dict, recent: bool) -> dict | None:
+        # An episode is found as its series.
+        if item.get("Type") == "Episode":
+            sid, tag, name, kind = item.get("SeriesId"), item.get("SeriesPrimaryImageTag"), item.get("SeriesName"), "serie"
+        else:
+            sid, tag, name = item.get("Id"), (item.get("ImageTags") or {}).get("Primary"), item.get("Name")
+            kind = "serie" if item.get("Type") == "Series" else "film"
+        if not sid or not tag:
+            return None
+        path, query = f"Items/{sid}/Images/Primary", f"tag={tag}"
+        return {"title": name or "", "kind": kind, "recent": recent,
+                "url": f"/jellyfin/{path}?fillHeight=320&fillWidth=320&quality=85&{query}",
+                "kept": self._kept("jellyfin", path, query)}
+
+    async def _jellyfin_finds(self, n: int) -> tuple[list[dict], list[dict]]:
+        """The films and series watched lately (begun, or seen), and some at random."""
         cfg = self.cfg.get("jellyfin") or {}
         base, api_key = cfg.get("url", ""), cfg.get("api_key", "")
         if not base or not api_key:
-            return []
+            return [], []
         base = base.rstrip("/")
         headers = {"Authorization": jellyfin.auth_header(api_key)}
         users = await self._json(f"{base}/Users", headers)
         user = jellyfin.pick_user(users if isinstance(users, list) else [], cfg.get("user", ""))
         if not user:
-            return []
-        data = await self._json(f"{base}/Users/{user['Id']}/Items?Recursive=true&SortBy=Random&Limit={n}"
-                                "&IncludeItemTypes=Movie,Series,MusicAlbum&ImageTypes=Primary&Fields=ImageTags", headers)
-        kinds = {"Movie": "film", "Series": "serie", "MusicAlbum": "album"}
-        out = []
-        for item in data.get("Items") or []:
-            tag = (item.get("ImageTags") or {}).get("Primary")
-            if not tag:
-                continue
-            path, query = f"Items/{item['Id']}/Images/Primary", f"tag={tag}"
-            out.append({"title": item.get("Name") or "", "kind": kinds.get(item.get("Type"), "film"),
-                        "url": f"/jellyfin/{path}?fillHeight=320&fillWidth=320&quality=85&{query}",
-                        "kept": self._kept("jellyfin", path, query)})
-        return out
+            return [], []
+        items = f"{base}/Users/{user['Id']}/Items?Recursive=true&Fields=ImageTags"
+        begun = await self._json(f"{base}/UserItems/Resume?userId={user['Id']}&MediaTypes=Video&Limit=20&Fields=ImageTags", headers)
+        seen = await self._json(f"{items}&IncludeItemTypes=Movie,Episode&Filters=IsPlayed&SortBy=DatePlayed&SortOrder=Descending&Limit=20", headers)
+        some = await self._json(f"{items}&IncludeItemTypes=Movie,Series&ImageTypes=Primary&SortBy=Random&Limit={n}", headers)
+        recent = [f for i in (begun.get("Items") or []) + (seen.get("Items") or []) if (f := self._jellyfin_find(i, True))]
+        other = [f for i in some.get("Items") or [] if (f := self._jellyfin_find(i, False))]
+        return recent, other
 
     # ------------------------------------------------------------ at night
     async def run_nightly(self) -> None:

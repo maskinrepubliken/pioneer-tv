@@ -17,7 +17,7 @@
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const LINE_MS = 3 * 60 * 1000;        // a new line every three minutes
-  const SAID_MS = 4500;                 // what was found, said this long
+  const SAID_MS = 7000;                 // what was found, said this long
   let root = null, rest = null;
   let kind = null;                      // the one drawn: 'labyrint' or 'eld'
   let drawer = null;                    // its { start, stop }
@@ -80,7 +80,7 @@ window.PioneerTV = window.PioneerTV || {};
     const words = document.createElement('figcaption');
     const small = document.createElement('span');
     small.className = 'maze-said-what';
-    small.textContent = `Du hittade ${KIND[f.kind] || 'något'}`;
+    small.textContent = `Du hittade ${KIND[f.kind] || 'något'}${f.recent ? (f.kind === 'spel' ? ' du spelat nyss' : ' du sett nyss') : ''}`;
     const name = document.createElement('span');
     name.className = 'maze-said-name';
     name.textContent = f.title;
@@ -90,7 +90,7 @@ window.PioneerTV = window.PioneerTV || {};
     clearTimeout(saidTimer);
     saidTimer = setTimeout(() => { said.hidden = true; }, SAID_MS);
     carried.innerHTML = '';
-    for (const c of all) {
+    for (const c of all.slice(-4)) {
       const im = document.createElement('img');
       im.alt = '';
       im.src = c.url;
