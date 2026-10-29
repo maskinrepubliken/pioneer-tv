@@ -13,6 +13,7 @@ from .cec import Cec
 from .gamepad import GamepadManager, MouseDriver
 from .games import Games
 from .video import Video
+from .audio import Audio
 from .idle import Idle
 from .server import Server
 from .virtual_input import VirtualInput
@@ -215,6 +216,11 @@ async def amain(cfg: dict) -> None:
     server.hooks["video"] = video
     await video.reap_strays()
 
+    # Music and radio, played here so they play on from page to page (audio.py).
+    audio = Audio(cfg, emit)
+    server.hooks["audio"] = audio
+    await audio.reap_strays()
+
     # Left alone: home, the screensaver, then the TV off (idle.py). A game or a film held on
     # its pause panel is not playing; left there, it is put away first.
     def playing() -> bool:
@@ -233,7 +239,7 @@ async def amain(cfg: dict) -> None:
             did = True
         return did
 
-    idle = Idle(cfg, emit, tv_off=lambda: dispatcher.cec_command("tv_off"), busy=playing,
+    idle = Idle(cfg, emit, tv_off=lambda: dispatcher.cec_command("tv_off"), busy=playing, audible=audio.playing,
                 at_home=lambda: "/launcher/index.html" in (server.current_url or ""),
                 pads=lambda: len(pads_mgr.pads()), put_away=put_away)
     server.hooks["idle"] = idle
@@ -270,6 +276,10 @@ async def amain(cfg: dict) -> None:
         await asyncio.wait_for(video.close(), 8)
     except Exception as exc:
         log.warning("stopping the video: %s", exc)
+    try:
+        await asyncio.wait_for(audio.close(), 5)
+    except Exception as exc:
+        log.warning("stopping the music: %s", exc)
     for t in tasks:
         t.cancel()
     # Name whatever is slow to stop, so a long shutdown says why.

@@ -9,7 +9,6 @@
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const BASE = new URL('/jellyfin/', location.origin).href;
-  const DEVICE = 'pioneer-tv';
   const TICKS = 10000000;             // Jellyfin counts time in 100 ns ticks
 
   // code: 'no_key' (no API key on the box), 'no_user' (the named user does
@@ -57,22 +56,8 @@ window.PioneerTV = window.PioneerTV || {};
 
   const image = (id, tag, size) => (id && tag ? `${BASE}Items/${id}/Images/Primary?fillHeight=${size}&fillWidth=${size}&quality=90&tag=${tag}` : null);
 
-  // What Chromium on the box plays as it is: container -> audio codecs.
-  // Everything else (E-AC-3 in m4a, PCM in AIFF, ...) Jellyfin transcodes.
-  const DIRECT = {
-    mp3: ['mp3'], flac: ['flac'], m4a: ['aac'], mp4: ['aac'], aac: ['aac'],
-    ogg: ['vorbis', 'opus'], oga: ['vorbis', 'opus'], opus: ['opus'], webm: ['opus', 'vorbis'], wav: ['pcm_s16le', 'pcm_s24le'],
-  };
-  function direct(i) {
-    const src = i.MediaSources && i.MediaSources[0];
-    if (!src) return false;
-    const stream = (src.MediaStreams || []).find((x) => x.Type === 'Audio');
-    return !!(stream && (DIRECT[(src.Container || '').toLowerCase()] || []).includes((stream.Codec || '').toLowerCase()));
-  }
-
   function toSong(i) {
     return {
-      direct: direct(i),
       id: i.Id,
       name: i.Name,
       artist: (i.Artists && i.Artists.join(', ')) || i.AlbumArtist || '',
@@ -99,7 +84,7 @@ window.PioneerTV = window.PioneerTV || {};
     };
   }
 
-  const SONG = { Fields: 'MediaSources', EnableImageTypes: 'Primary' };
+  const SONG = { EnableImageTypes: 'Primary' };
 
   // ------------------------------------------------------------ video
   // Libraries that are not for the Film & serier pages.
@@ -209,17 +194,6 @@ window.PioneerTV = window.PioneerTV || {};
       ]);
       return { songs, albums, artists };
     },
-    // The song as Chromium can play it: the file as it is when it can (it
-    // has a length and seeks), else transcoded by Jellyfin to MP3, streamed
-    // without a length (the Pi does no work either way). Jellyfin's own
-    // choice through Audio/universal transcoded AAC in m4a too.
-    streamUrl(song) {
-      if (song.direct) return `${BASE}Audio/${song.id}/stream?${q({ static: 'true', DeviceId: DEVICE })}`;
-      return `${BASE}Audio/${song.id}/universal?${q({
-        UserId: userId, DeviceId: DEVICE, MaxStreamingBitrate: 320000, Container: 'mp3',
-        TranscodingContainer: 'mp3', TranscodingProtocol: 'http', AudioCodec: 'mp3',
-      })}`;
-    },
     // ---------------------------------------------------------- film and series
     // Jellyfin's own libraries, music and what is not video left out, so a
     // library added in Jellyfin shows up as a tab by itself.
@@ -304,19 +278,5 @@ window.PioneerTV = window.PioneerTV || {};
       return (d.Items || []).map(toVideo);
     },
 
-    // A song played to its end, played for the user: the reports below come
-    // from the box's API key, which is no user, so they count for nobody.
-    async markPlayed(song) {
-      return request(`UserPlayedItems/${song.id}?${q({ userId: await user() })}`, { method: 'POST' })
-        .catch((e) => console.warn('jellyfin played', e));
-    },
-    // Tells Jellyfin what plays (its dashboard shows it). Failures are only
-    // logged: the music does not depend on them.
-    report(what, song, seconds) {
-      const path = { start: 'Sessions/Playing', progress: 'Sessions/Playing/Progress', stop: 'Sessions/Playing/Stopped' }[what];
-      const body = JSON.stringify({ ItemId: song.id, PositionTicks: Math.round((seconds || 0) * TICKS), PlayMethod: 'DirectStream', CanSeek: true });
-      return request(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, keepalive: what === 'stop' })
-        .catch((e) => console.warn('jellyfin report', what, e));
-    },
   };
 })(window.PioneerTV);

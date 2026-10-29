@@ -181,6 +181,7 @@ class Video:
         self.item: dict | None = None      # what plays: {id, name, source}
         self.state = "idle"                # idle | starting | running | stopping
         self.position = 0.0
+        self.duration: float | None = None
         self.paused = False
         self.ended = False
         self.ipc_task: asyncio.Task | None = None
@@ -239,6 +240,7 @@ class Video:
                      "key": item.get("SeriesId") or item_id}
         self.remember(self.item["key"], **languages(sources[0], audio, subtitle))
         self.position, self.paused, self.ended = max(0.0, float(start or 0)), False, False
+        self.duration = None
         self.menu_paused = False
         try:
             await self._launch(audio, subtitle)
@@ -366,6 +368,7 @@ class Video:
         await self._command(["observe_property", 1, "time-pos"])
         await self._command(["observe_property", 2, "pause"])
         await self._command(["observe_property", 3, "track-list"])
+        await self._command(["observe_property", 4, "duration"])
         reported = 0.0
         try:
             while line := await reader.readline():
@@ -388,6 +391,8 @@ class Video:
                     self.paused = bool(msg.get("data"))
                     if self.state == "running":
                         await self._report("Progress")
+                elif event == "property-change" and msg.get("name") == "duration" and msg.get("data"):
+                    self.duration = float(msg["data"])
                 elif event == "property-change" and msg.get("name") == "track-list":
                     self.track_list = msg.get("data") or []
                 elif event == "client-message" and (msg.get("args") or [None])[0] == "pioneer-panel":
@@ -406,7 +411,9 @@ class Video:
         self.held = True
         await self._command(["set_property", "pause", True])
         await self._command(["set_property", "osd-level", 3])
-        await self._event("held", title=self.item["name"] if self.item else "", **panel_tracks(self.track_list))
+        await self._event("held", title=self.item["name"] if self.item else "", time=self.position,
+                          duration=self.duration or (self.item["source"].get("RunTimeTicks") or 0) / TICKS or None,
+                          **panel_tracks(self.track_list))
 
     async def resume(self) -> None:
         if not self.held:
@@ -415,6 +422,19 @@ class Video:
         await self._command(["set_property", "osd-level", 1])
         await self._command(["set_property", "pause", False])
         await self._event("running")
+
+    async def seek(self, by: float) -> None:
+        """Spola on the panel: by seconds, from where it is."""
+        if self.state == "running":
+            await self.to(self.position + by)
+
+    async def to(self, at: float) -> None:
+        """Gå till and Från början on the panel: to a time."""
+        if self.state != "running":
+            return
+        end = (self.duration or 0) - 1
+        self.position = max(0.0, min(at, end)) if end > 0 else max(0.0, at)
+        await self._command(["seek", self.position, "absolute"])
 
     async def track(self, kind: str, track_id) -> tuple[bool, str]:
         """Ljud or Undertexter from the panel: an mpv track id, or "no" for no subtitles."""

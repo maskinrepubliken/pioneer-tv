@@ -15,6 +15,7 @@ what was learned on the way.
 - [Music](#music)
 - [Film and series](#film-and-series)
 - [Video on other sites](#video-on-other-sites)
+- [The media panel](#the-media-panel)
 - [Covers on the box](#covers-on-the-box)
 - [Updating the box](#updating-the-box)
 - [Logs and CEC debugging](#logs-and-cec-debugging)
@@ -275,7 +276,9 @@ vanish over the ink), and changes every three minutes. No clock, no date.
 - **Never while something plays**: a game running in RetroArch, a film
   running in mpv, or a page whose video or audio plays, in any of its
   frames, or that is in game mode; the count starts again when it ends. A
-  game or a film held on its pause panel is not playing.
+  game or a film held on its pause panel is not playing. The box's own
+  music and radio (audio.py) play on under the screensaver instead, and
+  keep the TV on.
 
 The daemon decides (`daemon/pioneertv/idle.py`): it sees every button, the
 pointer and the pads coming and going, the pages tell it what plays and
@@ -372,23 +375,30 @@ console's games: L1/R1 jump a letter, Sök filters them. Sök (the round
 button, or Y) searches songs, albums and artists. Films, series and clips have
 their own page ([Film and series](#film-and-series)).
 
-A song plays in the page itself and "Spelas nu" covers the screen: A or X
-pauses, L1/R1 go to the previous and next song, left and right seek ten
+The box plays the music itself, not the page: the daemon's own mpv,
+without a picture (`daemon/pioneertv/audio.py`; the page hands it the
+queue, `POST /api/audio/play`). So it plays on from page to page, under the
+screensaver too, until something else plays (a film, a game, a site's
+video, a page's own sound) or it is stopped; the TV is not turned off under
+it, as the sound comes out of the TV. "Spelas nu" covers the screen: A or X
+pauses, L1/R1 go to the previous and next song, left and right seek 15
 seconds, B goes back to browsing while the music plays on, and X brings
 "Spelas nu" back (on a view without a filled button: there X is the
-button's). The music lives only as long as the page: leaving it (Home
-included) stops it. A song that cannot be played is skipped after a few
-seconds; a stream that stalls for ten seconds is picked up again where it was.
-Jellyfin hears what plays (`Sessions/Playing`, shown on its dashboard), and
-a song played to its end is marked played for the user
+button's). Elsewhere, the quick menu's first row is what plays, and opens
+its panel (see [the media panel](#the-media-panel)). A song that cannot be
+played is skipped. mpv plays every file as it is, so Jellyfin never
+transcodes. Jellyfin hears what plays (`Sessions/Playing`, shown on its
+dashboard), and a song played to its end is marked played for the user
 (`UserPlayedItems`), so play counts follow the box: the reports come from
 the box's API key, which is no user, and count for nobody.
 
+A radio channel (`radio.html`) is played the same way, live: paused, the
+stream is let go, and played again it starts where the broadcast is.
+
 As with RomM the pages never talk to Jellyfin directly: `/jellyfin/...` on
 their own origin is forwarded by the daemon with the API key added, and only
-the library, the images, the audio stream and those reports are reachable.
-Jellyfin sends a song as it is when Chromium can play it and transcodes it to
-MP3 otherwise, so the Pi does no work. Set Jellyfin's address (without
+the library and the images are reachable; the daemon's mpv streams the songs
+with the key in their address, given to it over its socket. Set Jellyfin's address (without
 `/web/`), an API key (Jellyfin: Dashboard → API Keys) and, if not the first
 administrator, the user whose playlists to show under Inställningar → Jellyfin.
 
@@ -440,9 +450,10 @@ key goes to mpv in its config file (`/var/lib/pioneer-tv/video/mpv/`,
 readable by the kiosk user alone), never on its command line.
 
 While a video plays: A, B or X pauses it and the overlay shows the pause
-panel over the picture, with the time at the top left: Fortsätt, Ljud and
-Undertexter (A steps to the next track, at once; mpv's own list, named by
-language), TV-volym and Sluta titta. B, X or Home carries on. Left and
+panel over the picture, with the time at the top left ([the media
+panel](#the-media-panel): Fortsätt, the seeks, Gå till, Från början, Ljud
+and Undertexter, where A steps to the next track, at once, mpv's own list
+named by language, TV-volym and Sluta titta). B, X or Home carries on. Left and
 right seek ten seconds, L1 and R1 a minute; holding B stops; Home opens the
 pause panel too, as in a game (the main menu's choices would act on the
 page hidden below); holding Home stops and goes home. Without the overlay, A, B and X only pause and
@@ -465,11 +476,11 @@ to drive from a pad, worst in fullscreen. `content/webvideo.js` runs in
 every frame of a page (a film service's player may sit in a frame of its
 own), finds its main video (the largest on screen) and tells the daemon how
 it is, which passes it to the overlay (`webvideo`, daemon/pioneertv/overlay.py).
-Home over such a page opens that video's panel instead of the quick menu:
-Fortsätt, Spola (left and right, 10 s a press, 30 s held; a live stream
-within what it keeps), Från början, Undertexter (when the video has text
-tracks of its own), TV-volym, Meny (the quick menu, one step in) and Sluta
-titta (back). The panel's choices go back to the frame they are for. The
+Home over such a page opens that video's panel instead of the quick menu
+([the media panel](#the-media-panel); a live stream seeks within what it
+keeps, and has no Gå till or Från början; Undertexter when the video has
+text tracks of its own; Meny is the quick menu, one step in; Sluta titta
+goes back). The panel's choices go back to the frame they are for. The
 menu pauses the video as it does every page's (the media event, the
 frames' too), and closing it carries on; a seek from the panel leaves it
 paused. The open panel follows the video by the words of its rows only,
@@ -483,6 +494,28 @@ site's own controls they are hidden meanwhile (`SITE_UI` in webvideo.js; SVT Pla
 top bar, which came and went at every press); its subtitles stay. The
 video itself is never touched beyond play, pause and its time, so it works
 for what the site protects too.
+
+## The media panel
+
+One panel in the overlay for whatever plays (`overlay.js`): a film in mpv,
+a site's video, the box's music and radio. The same rows in the same
+order, those that apply:
+
+- **Fortsätt** (a film, a video: the panel paused it) or **Pausa / Spela**
+  (the music: it plays on under the menu).
+- **Spola** ◀ ▶ 15 seconds, and **Spola långt** ◀ ▶ 2 minutes.
+- **Gå till**: ◀ ▶ moves a mark along the timeline, a twentieth at a press,
+  and A goes there.
+- **Från början**; **Låt** ◀ ▶ (the music's queue); **Ljud** and
+  **Undertexter**; **TV-volym** ◀ ▶; **Meny** (over a site's video);
+  **Sluta titta** or **Sluta spela**.
+
+A film's and a site's video's panel comes with Home (and A, B or X on a
+film); the music's is the quick menu's first row while it plays. The open
+panel follows what plays by the words of its rows only, in place; where a
+seek was put stands until the player has got there, and a time that plays
+runs on between its words. mpv seeks over `POST /api/video/seek` and
+`/to`, the music over `/api/audio/...`.
 
 ## Covers on the box
 

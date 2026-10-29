@@ -107,10 +107,10 @@ window.PioneerTV = window.PioneerTV || {};
   }
   let held = null;               // { kind, resume, e } while a panel is open
   let chose = false;             // a choice closed the panel, not B
-  function panel(kind, e, title, items, note, at, resume) {
+  function panel(kind, e, title, items, note, at, resume, spec) {
     held = { kind, resume, e };
     chose = false;
-    menu.open({ title: title || 'Pausat', note, items });
+    menu.open(spec || { title: title || 'Pausat', note, items });
     menu.index = at || 0;
     menu.highlight();
   }
@@ -153,36 +153,161 @@ window.PioneerTV = window.PioneerTV || {};
   }
   b.on('games', (e) => (e.state === 'held' ? gamePanel(e) : closePanel('game')));
 
-  // A video in mpv (video.py): Fortsätt, Ljud and Undertexter (A steps to
-  // the next track, at once), TV-volym. Holding B stops it.
-  const video = (path, body) => post(`/api/video${path}`, body);
-  function videoPanel(e, at = 0) {
-    const audio = e.audio || [];
-    const subs = [{ id: 'no', label: 'Av' }, ...(e.subtitles || [])];
-    const current = (list) => list.find((t) => t.selected) || list[0];
-    const step = (kind, list) => async () => {
-      const now = list.indexOf(current(list));
-      const next = list[(now + 1) % list.length];
-      const r = await video('/track', { kind, id: next.id });
-      if (r.ok === false || !held || held.kind !== 'video') return;     // B closed the panel meanwhile
-      const mark = (l) => l.map((t) => ({ ...t, selected: t === next }));
-      const changed = kind === 'audio' ? { ...e, audio: mark(audio) } : { ...e, subtitles: mark(subs).filter((t) => t.id !== 'no') };
-      videoPanel(changed, kind === 'audio' ? 1 : (audio.length > 1 ? 2 : 1));
+  // ------------------------------------------------------------ the media panel
+  // One panel for whatever plays: a film in mpv (video.py), a site's video
+  // (content/webvideo.js in each of the page's frames), the box's music and
+  // radio (audio.py). The same rows in the same order, those that apply:
+  //
+  //   Fortsätt (a film, a video: the panel paused it) or Pausa / Spela (the
+  //   music: it plays on under the menu); Spola ◀ ▶ 15 s; Spola ◀ ▶ 2 min;
+  //   Gå till ◀ ▶ (a mark on the timeline, a twentieth at a press; A goes
+  //   there); Från början; Låt ◀ ▶ (the queue); Ljud; Undertexter;
+  //   TV-volym ◀ ▶; Meny (the quick menu, one step in); Sluta.
+  //
+  // A source says what plays and does it:
+  //   { kind, title, live, time, duration, paused, index, count, audio, subs,
+  //     to(t), toggle(), skip(dir), track(kind, list, current), stop(), first }
+  // The open panel follows it by the words of its rows only, in place (drawn
+  // anew, the whole menu went and came back: it blinked over SVT Play).
+  // Where a seek was put stands until the source has got there (or a moment
+  // has passed), and a time that plays runs on between its words.
+  const STEPS = [[15, 'Spola', '15 s'], [120, 'Spola långt', '2 min']];
+  const clock = (s) => {
+    s = Math.max(0, Math.floor(s || 0));
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = String(s % 60).padStart(2, '0');
+    return h ? `${h}:${String(m).padStart(2, '0')}:${sec}` : `${m}:${sec}`;
+  };
+  const lengthOf = (src) => (src.live ? src.end || src.time : src.duration) || 0;
+  const where = (src) => (src.live ? (src.end - src.time > 30 ? `${clock(src.end - src.time)} efter direkt` : 'direkt') : `${clock(src.time)} av ${clock(src.duration)}`);
+  let media = null;              // { src, spec, aim, target } while a media panel is in the menu
+  function mediaOpen() { return media && menu.isOpen() && menu.stack.includes(media.spec); }
+  function mediaSpec(src, at = 0) {
+    media = { src, aim: null, target: null, spec: null };
+    const m = media;
+    const items = [];
+    const seekTo = (t) => {
+      t = Math.max(0, Math.min(lengthOf(src) || t, t));
+      src.to(t);
+      src.time = t;
+      m.aim = { time: t, until: Date.now() + 2500 };
+      refresh();
     };
-    const items = [{ label: 'Fortsätt', icon: 'play', primary: true, run: pick(() => video('/resume')) }];
-    if (audio.length > 1) items.push({ label: 'Ljud', icon: 'volume', detail: current(audio).label, keep: true, run: step('audio', audio) });
-    if (subs.length > 1) items.push({ label: 'Undertexter', icon: 'info', detail: current(subs).label, keep: true, run: step('subtitles', subs) });
+    items.push(src.first(m));
+    if (!src.live || src.end) {
+      for (const [size, label, says] of STEPS) {
+        items.push({ label, icon: 'arrowRight', keep: true, run: () => {}, say: () => `◀ ▶ ${says} · ${where(src)}`,
+          step: (dir) => seekTo(src.time + dir * size) });
+      }
+    }
+    if (!src.live && src.duration) {
+      // A mark on the timeline: a twentieth at a press, A goes there.
+      items.push({ label: 'Gå till', icon: 'clock', keep: true,
+        say: () => { const t = m.target == null ? src.time : m.target; return `◀ ${bar(t / src.duration)} ▶ ${clock(t)}`; },
+        step: (dir) => {
+          const base = m.target == null ? src.time : m.target;
+          m.target = Math.max(0, Math.min(src.duration - 1, base + dir * src.duration / 20));
+          refresh();
+        },
+        run: () => { if (m.target != null) { seekTo(m.target); m.target = null; refresh(); } } });
+      items.push({ label: 'Från början', icon: 'reload', keep: true, run: () => seekTo(0) });
+    }
+    if (src.count > 1) {
+      items.push({ label: 'Låt', icon: 'vinyl', keep: true, run: () => src.skip(1), say: () => `◀ ▶ ${src.index + 1} av ${src.count}`,
+        step: (dir) => src.skip(dir) });
+    }
+    if (src.audio && src.audio.length > 1) {
+      items.push({ label: 'Ljud', icon: 'volume', keep: true, say: () => (src.audio.find((t) => t.selected) || src.audio[0]).label,
+        run: () => src.track('audio') });
+    }
+    if (src.subs && src.subs.length) {
+      items.push({ label: 'Undertexter', icon: 'info', keep: true, say: () => (src.subs.find((t) => t.selected) || { label: 'Av' }).label,
+        run: () => src.track('subtitles') });
+    }
     items.push({ label: 'TV-volym', icon: 'volume', detail: '◀ ▶ · även L2/R2', volume: true, keep: true, run: () => b.cec('mute') });
-    items.push({ label: 'Sluta titta', icon: 'power', detail: 'håll B', run: pick(() => video('/stop')) });
-    panel('video', e, e.title, items, null, at, () => video('/resume'));
+    if (src.menu) items.push({ label: 'Meny', icon: 'menu', detail: 'snabbmenyn', keep: true, run: () => menu.push(M.mainMenu.spec()) });
+    items.push(src.last);
+    for (const it of items) if (it.say) it.detail = it.say();
+    m.spec = { title: src.title || 'Spelas', items, at };
+    return m.spec;
+  }
+  // A line of ten as the timeline, the mark where it would go.
+  const bar = (share) => { const n = Math.max(0, Math.min(9, Math.round(share * 9))); return '─'.repeat(n) + '●' + '─'.repeat(9 - n); };
+  // The open panel's words, from where its source is now.
+  function refresh() {
+    if (!mediaOpen()) return;
+    if (media.src.title && media.spec.title !== media.src.title) {
+      media.spec.title = media.src.title;
+      const t = menu.stack[menu.stack.length - 1] === media.spec && menu.root && menu.root.querySelector('.pioneertv-menu-title');
+      if (t) t.textContent = media.src.title;
+    }
+    for (const it of media.spec.items) {
+      const text = it.say ? it.say() : null;
+      const label = it.sayLabel ? it.sayLabel() : null;
+      if (text != null) it.detail = text;
+      if (label != null) it.label = label;
+      if (!it.el) continue;
+      const d = it.el.querySelector('.pioneertv-menu-detail');
+      if (d && text != null && d.textContent !== text) d.textContent = text;
+      const l = it.el.querySelector('.pioneertv-menu-label');
+      if (l && label != null && l.textContent !== label) l.textContent = label;
+    }
+  }
+  // Word from the source: what it says, unless a seek is still on its way.
+  function heard(src, said) {
+    if (!media || media.src !== src) return;
+    // Another song: no seek on its way, no mark on its timeline.
+    if (said.index != null && said.index !== src.index) { media.aim = null; media.target = null; }
+    const aim = media.aim;
+    Object.assign(src, said);
+    if (aim && Date.now() < aim.until && Math.abs((said.time || 0) - aim.time) > 3) src.time = aim.time;
+    else media.aim = null;
+    src.at = Date.now();
+    refresh();
+  }
+  // A time that plays runs on between the source's words.
+  setInterval(() => {
+    if (!mediaOpen() || media.src.paused || media.src.live) return;
+    const src = media.src;
+    const now = Date.now();
+    src.time = Math.min(lengthOf(src) || Infinity, src.time + (now - (src.at || now)) / 1000);
+    src.at = now;
+    refresh();
+  }, 1000);
+  // Ljud and Undertexter: A steps to the next track.
+  const nextTrack = (list, none) => {
+    const all = none ? [none, ...list] : list;
+    const now = all.find((t) => t.selected) || all[0];
+    return all[(all.indexOf(now) + 1) % all.length];
+  };
+  const mark = (list, chosen) => list.map((t) => ({ ...t, selected: t.id === chosen.id }));
+
+  // A film in mpv (video.py): held paused by the daemon while the panel is
+  // open; B, Fortsätt or Home carry on, holding B stops it.
+  const video = (path, body) => post(`/api/video${path}`, body);
+  function videoPanel(e) {
+    const src = {
+      kind: 'video', title: e.title, live: false, time: e.time || 0, duration: e.duration || 0, paused: true,
+      audio: e.audio || [], subs: e.subtitles || [],
+      to: (t) => video('/to', { at: t }),
+      track: async (kind) => {
+        const list = kind === 'audio' ? src.audio : src.subs;
+        const next = nextTrack(list, kind === 'audio' ? null : { id: 'no', label: 'Av' });
+        const r = await video('/track', { kind, id: next.id });
+        if (r.ok === false) return;
+        if (kind === 'audio') src.audio = mark(src.audio, next); else src.subs = mark(src.subs, next);
+        refresh();
+      },
+      first: () => ({ label: 'Fortsätt', icon: 'play', primary: true, run: pick(() => video('/resume')) }),
+      last: { label: 'Sluta titta', icon: 'power', detail: 'håll B', run: pick(() => video('/stop')) },
+    };
+    panel('video', e, null, null, null, 0, () => video('/resume'), mediaSpec(src));
   }
   b.on('video', (e) => (e.state === 'held' ? videoPanel(e) : closePanel('video')));
 
   // A site's video (SVT Play, Cineasterna, any page; content/webvideo.js in
-  // each of the page's frames says how its video is): Fortsätt, Spola (left
-  // and right, 10 s a press, 30 s held), Från början, Undertexter, TV-volym,
-  // the quick menu, Sluta titta. The menu opening paused it (the media
-  // event); closing it carries on, a seek where it was put.
+  // each of the page's frames says how its video is). The menu opening
+  // paused it (the media event); closing it carries on, a seek where it
+  // was put.
   const frames = new Map();      // frame -> what it said last, and when
   const webVideo = () => {
     let best = null;
@@ -193,71 +318,67 @@ window.PioneerTV = window.PioneerTV || {};
     return best;
   };
   const pageTitle = () => { for (const s of frames.values()) if (s.top && s.title) return s.title; return ''; };
-  const clock = (s) => {
-    s = Math.max(0, Math.floor(s || 0));
-    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = String(s % 60).padStart(2, '0');
-    return h ? `${h}:${String(m).padStart(2, '0')}:${sec}` : `${m}:${sec}`;
-  };
-  const where = (v) => (v.live ? (v.end - v.time > 30 ? `${clock(v.end - v.time)} efter direkt` : 'direkt') : `${clock(v.time)} av ${clock(v.duration)}`);
-  const tell = (v, action, value) => b.relay('webvideo', { frame: v.frame, action, value });
-  // An open panel follows its video (a seek, the subtitles) by the words
-  // of its rows only, in place: drawn anew, the whole menu went and came
-  // back at every word from the page, which blinked over SVT Play. Where a
-  // seek was put stands until the page has got there (or a moment has
-  // passed): its first words after one are often from before it, or a
-  // segment short of it, and the time went back and forth.
-  let aim = null;                // { time, until } after a seek from the panel
+  const tell = (frame, action, value) => b.relay('webvideo', { frame, action, value });
+  let webSrc = null;
   b.on('webvideo', (e) => {
     frames.set(e.frame, { ...e, at: Date.now() });
-    if (!(held && held.kind === 'web' && menu.isOpen() && menu.stack.length === 1 && held.e.frame === e.frame)) return;
-    const v = { ...e };
-    if (aim && Date.now() < aim.until && Math.abs((v.time || 0) - aim.time) > 3) v.time = aim.time;
-    else aim = null;
-    words(v);
+    if (webSrc && webSrc.frame === e.frame) heard(webSrc, { time: e.time, duration: e.duration, end: e.end, live: e.live, paused: e.paused, subs: e.subs });
   });
-  function words(v) {
-    held.e = v;
-    const rows = held.rows || {};
-    const say = (it, text) => {
-      const d = it && it.el && it.el.querySelector('.pioneertv-menu-detail');
-      if (!it) return;
-      it.detail = text;                     // also when drawn again (back from Meny)
-      if (d && d.textContent !== text) d.textContent = text;
-    };
-    say(rows.seek, `◀ ▶ · ${where(v)}`);
-    if (rows.subs) say(rows.subs, (v.subs.find((t) => t.selected) || { label: 'Av' }).label);
-  }
-  function webPanel(at = 0) {
+  function webPanel() {
     const v = webVideo();
     if (!v) return;
-    aim = null;
-    const subs = [{ id: -1, label: 'Av' }, ...v.subs];
-    const current = subs.find((t) => t.selected) || subs[0];
-    const items = [
-      { label: 'Fortsätt', icon: 'play', primary: true, run: pick(() => {}) },
-      { label: 'Spola', icon: 'arrowRight', detail: `◀ ▶ · ${where(v)}`, keep: true, run: () => {},
-        step: (dir, heldDown) => {
-          const now = held && held.kind === 'web' ? held.e : v;
-          const to = Math.max(0, Math.min(now.live ? now.end : now.duration || 0, now.time + dir * (heldDown ? 30 : 10)));
-          tell(now, 'to', to);
-          aim = { time: to, until: Date.now() + 2500 };
-          words({ ...now, time: to });          // at once; the page says where it got to
-        } },
-    ];
-    if (!v.live) items.push({ label: 'Från början', icon: 'reload', run: pick(() => tell(v, 'to', 0)) });
-    if (v.subs.length) {
-      items.push({ label: 'Undertexter', icon: 'info', detail: current.label, keep: true, run: () => {
-        const list = [{ id: -1, label: 'Av' }, ...held.e.subs];
-        const now = list.find((t) => t.selected) || list[0];
-        tell(held.e, 'subs', list[(list.indexOf(now) + 1) % list.length].id);
-      } });
+    const src = webSrc = {
+      kind: 'web', frame: v.frame, title: v.title || pageTitle() || 'Video', live: v.live, time: v.time, duration: v.duration, end: v.end,
+      paused: true, subs: v.subs, menu: true,
+      to: (t) => tell(v.frame, 'to', t),
+      track: () => tell(v.frame, 'subs', nextTrack(src.subs, { id: -1, label: 'Av' }).id),
+      first: () => ({ label: 'Fortsätt', icon: 'play', primary: true, run: pick(() => {}) }),
+      last: { label: 'Sluta titta', icon: 'back', detail: 'tillbaka', run: pick(() => b.back()) },
+    };
+    panel('web', v, null, null, null, 0, () => {}, mediaSpec(src));
+  }
+
+  // The box's music and radio (audio.py): it plays on under the menu; the
+  // quick menu's first row (Spelas nu) opens its panel, one step in.
+  const sound = (action, body) => post(`/api/audio/${action}`, body);
+  let audioState = { state: 'idle' };
+  let audioSrc = null;
+  function fromAudio(s) {
+    const it = s.item || {};
+    return { title: it.artist ? `${it.name} · ${it.artist}` : it.name, live: s.live, time: s.time || 0, duration: s.duration || it.seconds || 0,
+      paused: s.state !== 'playing', index: s.index, count: s.kind === 'music' ? s.count : 0, state: s.state };
+  }
+  b.on('audio', (s) => {
+    audioState = s;
+    if (!audioSrc) return;
+    if (s.state === 'idle') {
+      if (mediaOpen() && media.src === audioSrc) { while (menu.stack[menu.stack.length - 1] !== media.spec) menu.stack.pop(); menu.back(); }
+      audioSrc = null;
+      return;
     }
-    items.push({ label: 'TV-volym', icon: 'volume', detail: '◀ ▶ · även L2/R2', volume: true, keep: true, run: () => b.cec('mute') });
-    items.push({ label: 'Meny', icon: 'menu', detail: 'snabbmenyn', keep: true, run: () => menu.push(M.mainMenu.spec()) });
-    items.push({ label: 'Sluta titta', icon: 'back', detail: 'tillbaka', run: pick(() => b.back()) });
-    panel('web', v, v.title || pageTitle() || 'Video', items, null, at, () => {});
-    held.rows = { seek: items[1], subs: items.find((it) => it.label === 'Undertexter') };
+    const was = audioSrc.count;
+    heard(audioSrc, fromAudio(s));
+    if (was !== audioSrc.count && mediaOpen()) refresh();
+  });
+  fetch('/api/audio').then((r) => r.json()).then((s) => { if (s && s.state) audioState = s; }).catch(() => {});
+  function audioSpec() {
+    const src = audioSrc = {
+      kind: 'audio', ...fromAudio(audioState),
+      to: (t) => sound('to', { at: t }),
+      skip: (dir) => sound(dir > 0 ? 'next' : 'prev'),
+      first: () => ({ label: audioSrc.paused ? 'Spela' : 'Pausa', icon: 'play', primary: true, keep: true,
+        sayLabel: () => (src.paused ? 'Spela' : 'Pausa'), run: () => sound('toggle') }),
+      last: { label: 'Sluta spela', icon: 'power', keep: true, run: () => sound('stop') },
+    };
+    return mediaSpec(src);
+  }
+  // The quick menu's row for it (main-menu.js), while something plays.
+  function nowRow() {
+    const s = audioState;
+    if (!s || s.state === 'idle' || !s.item) return null;
+    return { label: s.item.name, icon: s.kind === 'radio' ? 'radio' : 'vinyl', detail: s.state === 'paused' ? 'pausad' : 'spelas nu', sub: audioSpec };
   }
 
   M.overlay = { host };
+  M.media = { nowRow };
 })(window.PioneerTV);

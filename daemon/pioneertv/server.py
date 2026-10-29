@@ -77,6 +77,8 @@ class Server:
             ("GET", "/api/games", self.api_games_status),
             ("POST", "/api/games/{action}", self.api_games_action),
             ("GET", "/api/video", self.api_video_status),
+            ("GET", "/api/audio", self.api_audio_status),
+            ("POST", "/api/audio/{action}", self.api_audio_action),
             ("POST", "/api/video/{action}", self.api_video_action),
             ("GET", "/api/jellyfin", self.api_jellyfin),
             ("GET", "/api/services", self.api_services),
@@ -182,6 +184,9 @@ class Server:
                             if idle.resting:
                                 await self.broadcast({"type": "event", "name": "rest", "on": True})
                 elif t in ("overlay_menu", "relay", "toast", "webvideo"):
+                    # A site's video playing: the music (audio.py) gives way.
+                    if t == "webvideo" and data.get("present") and data.get("paused") is False:
+                        await self.quiet("en video på en sida")
                     for event in self.router.handle(data):
                         await self.broadcast(event)
                         # mpv is no page: the quick menu pauses it here.
@@ -192,6 +197,8 @@ class Server:
                     await self.broadcast({"type": "event", "name": "loaded", "url": self.current_url, "target": "overlay"})
                 elif t == "activity" and self.hooks.get("idle"):
                     self.hooks["idle"].page(data)
+                    if data.get("playing"):
+                        await self.quiet("en sida spelar")
                 elif t == "debug":
                     log.info("extension: %s", str(data.get("text", ""))[:500])
                 else:
@@ -571,6 +578,8 @@ class Server:
             except (TypeError, ValueError):
                 return web.json_response({"ok": False, "message": "rom saknas"}, status=400)
             ok, msg = await games.play(rom)
+            if ok:
+                await self.quiet("ett spel")
         elif action == "resume":
             ok, msg = await games.resume(str(data.get("load", "auto")))
         elif action == "save_point":
@@ -611,6 +620,15 @@ class Server:
             except (TypeError, ValueError):
                 start = 0.0
             ok, msg = await video.play(str(data.get("id") or ""), start, index("audio"), index("subtitle"))
+            if ok:
+                await self.quiet("en film")
+        elif action in ("seek", "to"):
+            try:
+                value = float(data.get("by" if action == "seek" else "at") or 0)
+            except (TypeError, ValueError):
+                return web.json_response({"ok": False, "message": "okänd tid"}, status=400)
+            await (video.seek(value) if action == "seek" else video.to(value))
+            ok, msg = True, ""
         elif action == "stop":
             await video.stop()
             ok, msg = True, ""
@@ -622,6 +640,46 @@ class Server:
         else:
             return web.json_response({"ok": False, "message": "okänd åtgärd"}, status=404)
         return web.json_response({"ok": ok, "message": msg}, status=200 if ok else 409)
+
+    # ------------------------------------------------------------ music and radio
+    async def quiet(self, why: str) -> None:
+        """Something else plays now: the music and radio (audio.py) stop."""
+        audio = self.hooks.get("audio")
+        if audio and audio.active():
+            await audio.stop(why)
+
+    async def api_audio_status(self, _request: web.Request) -> web.Response:
+        audio = self.hooks.get("audio")
+        return web.json_response(audio.status() if audio else {"state": "idle"})
+
+    async def api_audio_action(self, request: web.Request) -> web.Response:
+        """play {queue, index} (songs from Jellyfin), radio {channel, name, url},
+        toggle, pause, resume, seek {by}, to {at}, next, prev, stop."""
+        audio = self.hooks.get("audio")
+        if not audio:
+            return web.json_response({"ok": False, "message": "inte tillgängligt"}, status=503)
+        action = request.match_info["action"]
+        data = await self._json(request) if request.can_read_body else {}
+        ok, msg = True, ""
+        if action == "play":
+            for other in ("video", "games"):
+                hook = self.hooks.get(other)
+                if hook and hook.state not in ("idle", "held"):
+                    return web.json_response({"ok": False, "message": "något annat spelas"}, status=409)
+            ok, msg = await audio.play(data.get("queue") or [], data.get("index") or 0)
+        elif action == "radio":
+            ok, msg = await audio.radio(data)
+        elif action in ("seek", "to"):
+            try:
+                value = float(data.get("by" if action == "seek" else "at") or 0)
+            except (TypeError, ValueError):
+                return web.json_response({"ok": False, "message": "okänd tid"}, status=400)
+            await (audio.seek(value) if action == "seek" else audio.to(value))
+        elif action in ("toggle", "pause", "resume", "next", "prev", "stop"):
+            await getattr(audio, action)()
+        else:
+            return web.json_response({"ok": False, "message": "okänd åtgärd"}, status=404)
+        return web.json_response({"ok": ok, "message": msg, **audio.status()}, status=200 if ok else 409)
 
     # ------------------------------------------------------------ run
     async def run(self) -> None:

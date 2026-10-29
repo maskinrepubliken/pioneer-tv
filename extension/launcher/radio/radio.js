@@ -1,7 +1,9 @@
 // Pioneer TV radio player. Opened from a radio tile as
-// radio.html?channel=<Sveriges Radio channel id>&name=<label>. Streams the
-// channel's live MP3 and shows what is on now and next from SR's open API
-// (both allow cross-site requests, so no extra permissions are needed).
+// radio.html?channel=<Sveriges Radio channel id>&name=<label>. The box plays
+// the channel's live MP3 itself (daemon/pioneertv/audio.py), so it plays on
+// when the page is left, under the screensaver too, until something else
+// plays; this page starts it (or finds it playing) and shows what is on now
+// and next from SR's open API (which allows cross-site requests).
 (function (M) {
   const b = M.bridge;
   const $ = (id) => document.getElementById(id);
@@ -10,7 +12,6 @@
   const name = params.get('name') || 'Radio';
   M.launcherUrl = new URL('index.html?tv=1', location.href).href;
 
-  const audio = $('audio');
   const playBtn = $('play');
   const stateEl = $('state');
   $('station').textContent = name;
@@ -21,31 +22,32 @@
     stateEl.textContent = text;
     stateEl.classList.toggle('fel', !!error);
   }
+  let st = { state: 'idle' };
+  const mine = () => st.kind === 'radio' && st.item && String(st.item.channel) === channel;
   function sync() {
-    playBtn.textContent = audio.paused ? 'Spela' : 'Pausa';
+    const on = mine() && st.state !== 'idle';
+    playBtn.textContent = on && st.state !== 'paused' ? 'Pausa' : 'Spela';
+    setState(!on ? 'Tyst' : st.state === 'loading' ? 'Laddar…' : st.state === 'paused' ? 'Pausad' : 'Spelar');
   }
+  function heard(s) { if (s && s.state) { st = s; sync(); } }
+  b.on('audio', heard);
 
+  async function ask(action, body) {
+    try {
+      const r = await fetch(`/api/audio/${action}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+      const data = await r.json();
+      heard(data);
+      if (data.ok === false) setState(`Fel: ${data.message || 'kunde inte starta ljudet'}`, true);
+    } catch {
+      setState('Fel: boxen svarar inte', true);
+    }
+  }
   function play() {
     if (!channel) { setState('Fel: ingen kanal angiven', true); return; }
-    // A fresh connection each time: a live stream resumed after a pause would
-    // otherwise play from where it stopped.
-    audio.src = `https://sverigesradio.se/topsy/direkt/srapi/${channel}.mp3`;
     setState('Laddar…');
-    audio.play().catch(() => setState('Fel: kunde inte starta ljudet', true));
+    ask('radio', { channel, name, url: `https://sverigesradio.se/topsy/direkt/srapi/${channel}.mp3` });
   }
-  function pause() {
-    audio.pause();
-    audio.removeAttribute('src');
-    audio.load();
-    setState('Pausad');
-    sync();
-  }
-  function toggle() { audio.paused ? play() : pause(); }
-
-  audio.addEventListener('playing', () => { setState('Spelar'); sync(); });
-  audio.addEventListener('waiting', () => setState('Laddar…'));
-  audio.addEventListener('pause', sync);
-  audio.addEventListener('error', () => { if (audio.getAttribute('src')) { setState('Fel: strömmen svarar inte', true); sync(); } });
+  function toggle() { if (mine() && st.state !== 'idle') ask('toggle'); else play(); }
 
   playBtn.addEventListener('click', toggle);
   $('home').addEventListener('click', () => b.home());
@@ -84,6 +86,7 @@
 
   schedule();
   setInterval(schedule, 60000);
-  play();
+  // Already playing (back on the page): left as it is.
+  fetch('/api/audio').then((r) => r.json()).then((s) => { heard(s); if (!mine()) play(); }).catch(play);
   requestAnimationFrame(() => M.nav.focus(playBtn, { scroll: false }));
 })(window.PioneerTV);

@@ -10,7 +10,8 @@
   else; a pad connecting does too.
 - When the screensaver has been up for ui.tv_off_minutes, the TV is turned
   off over CEC and the screensaver rests ("Vilar", nothing moving) until
-  the TV is on again.
+  the TV is on again; not while music or radio plays (audio.py), which
+  comes out of the TV and plays on under the screensaver.
 
 0 is never, for each. Alone means: no button on a pad or on the TV's
 remote, no pointer, no key on a real keyboard (the pages report those), and
@@ -38,6 +39,7 @@ HOME_SETTLE = 2.0       # a quit game's page goes back first; home comes after i
 class Idle:
     def __init__(self, cfg: dict, emit: Callable[[dict], Coroutine], tv_off: Callable[[], Coroutine],
                  busy: Callable[[], bool] = lambda: False,
+                 audible: Callable[[], bool] = lambda: False,
                  at_home: Callable[[], bool] = lambda: False,
                  pads: Callable[[], int] = lambda: 0,
                  put_away: Callable[[], Coroutine] | None = None) -> None:
@@ -45,6 +47,7 @@ class Idle:
         self.emit = emit
         self.tv_off = tv_off
         self.busy = busy                    # a game or a film is playing
+        self.audible = audible              # music or radio plays (audio.py): the TV stays on for it
         self.at_home = at_home              # the page on screen is the home page
         self.pads = pads                    # how many pads are connected
         self.put_away = put_away            # quits a held game, stops a held film
@@ -164,7 +167,8 @@ class Idle:
             log.info("no pad: screensaver on")
             await self.emit({"type": "event", "name": "saver", "show": True})
         off = self.minutes("tv_off_minutes", 5) * 60
-        if off and self.showing and not self.previewing and now - self.saver_since >= off and not self.tv_off_sent:
+        if off and self.showing and not self.previewing and now - self.saver_since >= off and not self.tv_off_sent \
+                and not self.audible():
             self.tv_off_sent = True
             log.info("screensaver up for %.0f min: the TV goes off", (now - self.saver_since) / 60)
             try:

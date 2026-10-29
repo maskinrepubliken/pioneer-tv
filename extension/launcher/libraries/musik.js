@@ -2,13 +2,13 @@
 // by the browse page (browse/page.js). #/ is Blanda allt and the
 // playlists, and the column at the left goes to Album and Artister; #/albums and #/artists are grids; #/album/<id> and
 // #/playlist/<id> a list of songs; #/artist/<id> an artist's albums;
-// #/search/<words> what was found. A song plays in the page, from where it
-// is in its list (players/audio.js): X opens Spelas nu, L1/R1 skip.
+// #/search/<words> what was found. A song plays from where it is in its
+// list, on the box itself (players/audio.js, the daemon's audio.py), so it
+// plays on from page to page: X opens Spelas nu, L1/R1 skip.
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const J = M.jellyfin;
   const audio = M.players.audio;
-  audio.source = { report: (what, song, at) => J.report(what, song, at), played: (song) => J.markPlayed(song) };
 
   const clock = (s) => {
     if (s == null || !isFinite(s)) return '';
@@ -35,16 +35,15 @@ window.PioneerTV = window.PioneerTV || {};
     shape: g.kind === 'artist' ? 'round' : 'square', mock: g.kind === 'artist' ? null : 'album',
     meta: g.kind === 'album' ? [g.artist, g.year].filter(Boolean).join(' · ') : g.kind === 'playlist' && g.count != null ? songs(g.count) : '',
   });
-  const playable = (list) => list.map((s) => ({ ...s, stream: J.streamUrl(s) }));
   const song = (s, i, list, withAlbum) => ({
     key: `song:${i}:${s.id}`, song: s.id, title: s.name, picture: s.thumb,
     meta: [s.artist, withAlbum ? s.album : ''].filter(Boolean).join(' · '), detail: clock(s.seconds),
-    run: () => audio.play(playable(list), i),
+    run: () => audio.play(list, i),
   });
 
   async function playAll(get, mix) {
     const list = await get();
-    if (list.length) audio.play(playable(mix ? shuffled(list) : list), 0);
+    if (list.length) audio.play(mix ? shuffled(list) : list, 0);
     else M.hud.toast('Inga låtar i biblioteket', 'info');
   }
   const tryPlay = (get, mix) => () => playAll(get, mix).catch((err) => M.views.error(M.browse.view, 'Jellyfin', err, M.browse.route));
@@ -84,8 +83,8 @@ window.PioneerTV = window.PioneerTV || {};
       shape: 'square', picture: g.cover || (list[0] && list[0].cover), mock: 'album', name: g.name,
       meta: [kind === 'album' ? g.artist : '', g.year, songs(list.length), clock(total)].filter(Boolean).join(' · '),
       buttons: list.length ? [
-        { label: 'Spela', primary: true, key: 'play', run: () => audio.play(playable(list), 0) },
-        { label: 'Blanda', key: 'shuffle', run: () => audio.play(playable(shuffled(list)), 0) },
+        { label: 'Spela', primary: true, key: 'play', run: () => audio.play(list, 0) },
+        { label: 'Blanda', key: 'shuffle', run: () => audio.play(shuffled(list), 0) },
       ] : [],
       rows: { look: kind === 'playlist' ? 'thumb' : 'number', items: list.map((s, i) => song(s, i, list, kind === 'playlist')), empty: 'Inga låtar.' },
       focus: 'play',

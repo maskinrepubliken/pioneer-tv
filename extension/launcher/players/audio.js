@@ -1,20 +1,22 @@
-// Pioneer TV audio player: a queue of songs, played here, in the page's own
-// <audio>: the music lives only as long as the page (leaving it, Home
-// included, stops it). "Spelas nu" covers the page while it plays; B goes
-// back to browsing and X brings it back; what plays shows small in the
-// heading meanwhile, and its row in a list is marked. Styled by audio.css.
+// Pioneer TV audio player, the pages' part: the sound itself is the
+// daemon's (daemon/pioneertv/audio.py, an mpv of its own), so the music
+// plays on from page to page and under the screensaver, until something
+// else plays. Here a queue of songs is handed to it, and what plays is
+// shown: "Spelas nu" over the page (B goes back to browsing, X brings it
+// back), small in the heading meanwhile, and its row in a list marked.
+// The radio page shows a channel the same way (radio/radio.js). Styled by
+// audio.css.
 //
-// A song: { id, name, artist, album, seconds, cover, thumb, stream }. The
-// library says where it comes from and who hears of it:
+// A song: { id, name, artist, album, seconds, cover, thumb }.
 //
-//   M.players.audio.source = { report(what, song, seconds), played(song) }
 //   M.players.audio.play(songs, index)
+//   M.players.audio.state                 the daemon's "audio" event, last heard
+//   M.players.audio.ask(action, body)     toggle, next, prev, seek {by}, to {at}, stop
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const V = M.views;
   const el = V.el;
-  const STALL_MS = 10000;
-  const SKIP_AFTER_ERROR_MS = 3000;
+  const SEEK = 15;                       // seconds a press of left or right seeks
 
   const clock = (s) => {
     if (s == null || !isFinite(s)) return '';
@@ -23,15 +25,39 @@ window.PioneerTV = window.PioneerTV || {};
     return h ? `${h}:${String(m).padStart(2, '0')}:${sec}` : `${m}:${sec}`;
   };
 
+  // ------------------------------------------------------------ the daemon
+  async function ask(action, body) {
+    try {
+      const r = await fetch(`/api/audio/${action}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+      const data = await r.json();
+      if (data && data.state) heard(data);
+      if (data && data.ok === false) M.hud.toast(data.message === 'no_key' ? 'Jellyfin saknar nyckel' : (data.message || 'Det gick inte'), 'info');
+      return data;
+    } catch {
+      M.hud.toast('Boxen svarar inte', 'info');
+      return { ok: false };
+    }
+  }
+  let state = { state: 'idle' };
+  let heardAt = 0;
+  function heard(s) {
+    state = s;
+    heardAt = Date.now();
+    player.state = s;
+    build();
+    changed();
+    if (nowPlaying.isOpen()) { if (state.state === 'idle') nowPlaying.close(); else nowPlaying.render(); }
+  }
+  // Where it is now: what was said, and the time since if it plays.
+  const now = () => (state.time || 0) + (state.state === 'playing' ? (Date.now() - heardAt) / 1000 : 0);
+  M.bridge.on('audio', heard);
+  fetch('/api/audio').then((r) => r.json()).then((s) => { if (s && s.state && !heardAt) heard(s); }).catch(() => {});
+
   // ------------------------------------------------------------ its parts of the page
-  let audio = null, np = null, mini = null;
+  let np = null, mini = null;
   const part = {};
   function build() {
-    if (audio) return;
-    audio = el('audio');
-    audio.preload = 'auto';
-    audio.id = 'audio';
-    document.body.appendChild(audio);
+    if (np) return;
     np = el('section', 'np');
     np.hidden = true;
     np.innerHTML = `
@@ -59,113 +85,26 @@ window.PioneerTV = window.PioneerTV || {};
     mini.addEventListener('click', () => nowPlaying.open());
     if (M.browse && M.browse.head) M.browse.head.appendChild(mini);
     else document.body.appendChild(mini);
-    listen();
+    setInterval(() => { if (nowPlaying.isOpen() && state.state === 'playing') nowPlaying.progress(); }, 500);
   }
 
   // ------------------------------------------------------------ the queue
   const player = {
-    source: { report() {}, played() {} },
-    queue: [], index: -1, started: false, stall: null, lastReport: 0,
-    song() { return this.queue[this.index] || null; },
-
+    state,
+    ask,
+    song() { return state.kind === 'music' && state.state !== 'idle' ? state.item : null; },
     play(list, index) {
-      build();
-      this.stopReport();
-      this.queue = list;
-      this.load(index);
-      nowPlaying.open();
+      const queue = list.map(({ id, name, artist, album, seconds, cover, thumb }) => ({ id, name, artist, album, seconds, cover, thumb }));
+      ask('play', { queue, index }).then((r) => { if (r.ok) nowPlaying.open(); });
     },
-
-    load(index, at = 0) {
-      if (index < 0 || index >= this.queue.length) return;
-      if (index !== this.index) { this.stopReport(); this.started = false; }
-      this.index = index;
-      audio.src = this.song().stream;
-      if (at) audio.addEventListener('loadedmetadata', () => { audio.currentTime = at; }, { once: true });
-      setState('Laddar…');
-      audio.play().catch((e) => { if (e.name !== 'AbortError') setState('Ljudet kunde inte startas', true); });
-      nowPlaying.render();
-      changed();
-    },
-
-    toggle() {
-      if (!this.song()) return;
-      if (audio.paused) audio.play().catch(() => setState('Ljudet kunde inte startas', true));
-      else audio.pause();
-    },
-    next() {
-      if (this.index < this.queue.length - 1) this.load(this.index + 1);
-      else { audio.pause(); this.stopReport(); setState('Slut på kön'); }
-    },
-    // Back to the start of the song, or to the one before when near its start.
-    prev() {
-      if (audio.currentTime > 3 || this.index === 0) audio.currentTime = 0;
-      else this.load(this.index - 1);
-    },
-    seek(by) {
-      if (!this.song() || !isFinite(audio.duration)) return;
-      audio.currentTime = Math.max(0, Math.min(audio.duration - 1, audio.currentTime + by));
-    },
-    stopReport() {
-      const s = this.song();
-      if (s && this.started) this.source.report('stop', s, audio.currentTime);
-      this.started = false;
-    },
+    toggle() { if (state.state !== 'idle') ask('toggle'); },
+    next() { if (this.song()) ask('next'); },
+    prev() { if (this.song()) ask('prev'); },
+    seek(by) { if (this.song()) ask('seek', { by }); },
     // The legend's part while something plays.
-    legend() { return this.song() ? [['X', 'spelas nu'], ['L1', ''], ['R1', 'föregående · nästa']] : []; },
+    legend() { return state.state !== 'idle' ? [['X', 'spelas nu'], ['L1', ''], ['R1', 'föregående · nästa']] : []; },
     open() { nowPlaying.open(); },
   };
-
-  function setState(text, error) {
-    part.state.textContent = text || '';
-    part.state.classList.toggle('fel', !!error);
-  }
-
-  function listen() {
-    audio.addEventListener('playing', () => {
-      clearTimeout(player.stall);
-      setState('');
-      const s = player.song();
-      if (s && !player.started) {
-        player.started = true;
-        player.lastReport = Date.now();
-        player.source.report('start', s, audio.currentTime);
-      }
-    });
-    audio.addEventListener('pause', () => { if (!audio.ended && player.song()) setState('Pausad'); });
-    audio.addEventListener('ended', () => {
-      if (player.song()) player.source.played(player.song());
-      player.next();
-    });
-    audio.addEventListener('timeupdate', () => {
-      nowPlaying.progress();
-      const s = player.song();
-      if (s && player.started && Date.now() - player.lastReport > 30000) {
-        player.lastReport = Date.now();
-        player.source.report('progress', s, audio.currentTime);
-      }
-    });
-    // A song the source cannot give us: say so and go on to the next.
-    audio.addEventListener('error', () => {
-      if (!player.song() || !audio.getAttribute('src')) return;
-      clearTimeout(player.stall);
-      setState('Låten kunde inte spelas', true);
-      const at = player.index;
-      setTimeout(() => { if (player.index === at) player.next(); }, SKIP_AFTER_ERROR_MS);
-    });
-    // A stream that stops coming (the network dropped a moment): pick the
-    // song up again from where it was.
-    audio.addEventListener('waiting', () => {
-      clearTimeout(player.stall);
-      const at = player.index, pos = audio.currentTime;
-      player.stall = setTimeout(() => {
-        if (player.index !== at || audio.paused || audio.readyState >= 3) return;
-        console.warn('audio: stalled, reloading at', pos);
-        player.load(at, pos);
-      }, STALL_MS);
-    });
-    window.addEventListener('pagehide', () => player.stopReport());
-  }
 
   // What plays: small in the heading, and its row marked in a list.
   function markPlaying() {
@@ -173,13 +112,18 @@ window.PioneerTV = window.PioneerTV || {};
     for (const r of document.querySelectorAll('[data-song]')) r.classList.toggle('playing', r.dataset.song === id);
   }
   M.bridge.on('browse:drawn', markPlaying);
+  let shown = '';
   function changed() {
-    const s = player.song();
-    mini.hidden = !s;
+    const it = state.state !== 'idle' ? state.item : null;
+    const key = JSON.stringify([it && (it.id || it.channel), state.state]);
+    if (key === shown) return;
+    shown = key;
+    if (M.browse && M.browse.head && mini.parentNode !== M.browse.head) M.browse.head.appendChild(mini);
+    mini.hidden = !it;
     mini.innerHTML = '';
-    if (s) {
-      if (s.thumb) { const img = el('img'); img.src = s.thumb; img.alt = ''; mini.appendChild(img); }
-      mini.appendChild(el('span', '', `${s.name} – ${s.artist}`));
+    if (it) {
+      if (it.thumb || it.cover) { const img = el('img'); img.src = it.thumb || it.cover; img.alt = ''; mini.appendChild(img); }
+      mini.appendChild(el('span', '', it.artist ? `${it.name} – ${it.artist}` : it.name));
     }
     markPlaying();
     if (M.browse) M.browse.legend();
@@ -191,50 +135,54 @@ window.PioneerTV = window.PioneerTV || {};
   const nowPlaying = {
     isOpen() { return !!np && !np.hidden; },
     open() {
-      if (!player.song()) return;
+      if (state.state === 'idle') return;
+      build();
       np.hidden = false;
       M.nav.captured = this;
       this.render();
     },
     close() {
+      if (!np) return;
       np.hidden = true;
       if (M.nav.captured === this) M.nav.captured = null;
       const row = document.querySelector('.view [data-song].playing');
       if (row && !(M.browse && M.browse.view.contains(document.activeElement))) M.nav.focus(row);
     },
     render() {
-      const s = player.song();
-      if (!s) return;
+      const it = state.item;
+      if (!it) return;
       part.cover.innerHTML = '';
-      if (s.cover) { const img = el('img'); img.src = s.cover; img.alt = ''; part.cover.appendChild(img); }
-      part.title.textContent = s.name;
-      part.artist.textContent = s.artist;
-      part.album.textContent = s.album;
-      part.label.textContent = `Spelas nu · ${player.index + 1} av ${player.queue.length}`;
-      part.len.textContent = clock(s.seconds);
+      if (it.cover) { const img = el('img'); img.src = it.cover; img.alt = ''; part.cover.appendChild(img); }
+      part.title.textContent = it.name || '';
+      part.artist.textContent = it.artist || '';
+      part.album.textContent = it.album || '';
+      part.label.textContent = state.kind === 'radio' ? 'Radio · direkt' : `Spelas nu · ${state.index + 1} av ${state.count}`;
+      part.state.textContent = state.state === 'paused' ? 'Pausad' : state.state === 'loading' ? 'Laddar…' : '';
       part.queue.innerHTML = '';
-      for (const next of player.queue.slice(player.index + 1, player.index + 7)) {
+      for (const next of state.next || []) {
         const li = el('li');
         li.appendChild(el('b', '', next.name));
-        li.appendChild(el('span', '', next.artist));
+        li.appendChild(el('span', '', next.artist || ''));
         part.queue.appendChild(li);
       }
-      if (!part.queue.children.length) part.queue.appendChild(el('li', 'empty', 'Inget mer i kön'));
-      V.legend(part.legend, [['A', 'paus · spela'], ['L1', ''], ['R1', 'föregående · nästa'], ['◀ ▶', 'spola'], ['B', 'bläddra']]);
+      if (!part.queue.children.length) part.queue.appendChild(el('li', 'empty', state.kind === 'radio' ? 'Direktsänt' : 'Inget mer i kön'));
+      V.legend(part.legend, state.kind === 'radio'
+        ? [['A', 'paus · spela'], ['B', 'bläddra']]
+        : [['A', 'paus · spela'], ['L1', ''], ['R1', 'föregående · nästa'], ['◀ ▶', `spola ${SEEK} s`], ['B', 'bläddra']]);
       this.progress();
     },
     progress() {
-      const s = player.song();
-      const len = isFinite(audio.duration) ? audio.duration : (s && s.seconds) || 0;
-      part.pos.textContent = clock(audio.currentTime || 0);
-      if (len) part.len.textContent = clock(len);
-      part.bar.style.width = len ? `${Math.min(100, (audio.currentTime / len) * 100)}%` : '0';
+      const len = state.duration || (state.item && state.item.seconds) || 0;
+      const at = now();
+      part.pos.textContent = state.live ? 'Direkt' : clock(at);
+      part.len.textContent = state.live ? '' : clock(len);
+      part.bar.style.width = len ? `${Math.min(100, (at / len) * 100)}%` : state.live ? '100%' : '0';
     },
     onKeyDown(e) {
       if (e.key === 'Enter' || e.key === ' ') { if (!e.repeat) player.toggle(); }
       else if (e.key === 'Tab') { if (!e.repeat) (e.shiftKey ? player.prev() : player.next()); }
-      else if (e.key === 'ArrowLeft') player.seek(-10);
-      else if (e.key === 'ArrowRight') player.seek(10);
+      else if (e.key === 'ArrowLeft') player.seek(-SEEK);
+      else if (e.key === 'ArrowRight') player.seek(SEEK);
       else if (e.key === 'Escape') this.close();
     },
   };

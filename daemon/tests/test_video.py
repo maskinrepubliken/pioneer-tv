@@ -30,7 +30,7 @@ args = dict(a[2:].split("=", 1) for a in sys.argv[1:] if a.startswith("--") and 
 open(os.environ["ARGS_OUT"], "w").write(json.dumps(sys.argv[1:]))
 srv = socket.socket(socket.AF_UNIX); srv.bind(args["input-ipc-server"]); srv.listen(1)
 conn, _ = srv.accept(); f = conn.makefile("rw")
-f.readline(); f.readline(); f.readline()         # the three observe_property commands
+f.readline(); f.readline(); f.readline(); f.readline()   # the four observe_property commands
 send = lambda m: (f.write(json.dumps(m) + "\n"), f.flush())
 send({"event": "playback-restart"})
 send({"event": "property-change", "name": "track-list", "data": [

@@ -70,6 +70,8 @@ window.PioneerTV = window.PioneerTV || {};
       title: 'Meny',
       status: true,
       items: [
+        // What the box plays (music, radio: overlay.js), its panel one step in.
+        ...[M.media && M.media.nowRow()].filter(Boolean),
         { label: 'Tillbaka', icon: 'back', detail: 'håll B', run: () => b.back() },
         { label: 'Hem', icon: 'home', detail: 'håll Hem', primary: true, run: () => b.home() },
         // As in the pause panels: left and right step the TV's volume, A mutes.
