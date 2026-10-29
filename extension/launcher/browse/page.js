@@ -54,7 +54,13 @@ window.PioneerTV = window.PioneerTV || {};
     let extra = library.legend ? library.legend() : [];
     const button = filled();
     if (button) extra = [['X', button.textContent.trim().toLocaleLowerCase('sv-SE')], ...extra.filter(([key]) => key !== 'X')];
-    V.legend(legendEl, [...viewLegend, ...extra, ['Y', 'sök'], ['B', library.isRoot(parts()) ? 'hem' : 'tillbaka']]);
+    // L1/R1 only where a grid has letters to jump between (not a handful
+    // of results, not none); nothing found, nothing to choose (no A); Y
+    // changes the words where there are some.
+    const nothing = view.querySelector('.dusty');
+    const own = nothing ? [] : viewLegend.filter(([key]) => !((key === 'L1' || key === 'R1') && !(onScreen && onScreen.jumps())));
+    const searching = parts()[0] === 'search' || (grid && search.value.trim());
+    V.legend(legendEl, [...own, ...extra, ['Y', searching ? 'ändra sökningen' : 'sök'], ['B', library.isRoot(parts()) ? 'hem' : 'tillbaka']]);
   }
 
   // ------------------------------------------------------------ focus
@@ -72,6 +78,7 @@ window.PioneerTV = window.PioneerTV || {};
 
   // ------------------------------------------------------------ drawing
   let grid = null;               // the grid on screen, which the search field filters
+  let onScreen = null;           // the grid on screen, filtered or not (its L1/R1)
   function draw(spec) {
     if (spec.kind !== 'message') V.clear();
     drawView(spec);
@@ -81,6 +88,7 @@ window.PioneerTV = window.PioneerTV || {};
   function drawView(spec) {
     view.innerHTML = '';
     grid = null;
+    onScreen = null;
     titleEl.textContent = spec.title || library.name;
     countEl.textContent = spec.count || '';
     tabsEl.innerHTML = '';
@@ -96,8 +104,10 @@ window.PioneerTV = window.PioneerTV || {};
       const shown = (n, all, words) => {
         titleEl.textContent = words ? V.searchTitle(words) : spec.title || library.name;
         countEl.textContent = words ? (n ? `${V.hits(n)} i ${spec.title || library.name}` : `i ${spec.title || library.name}`) : spec.count ? spec.count(n, all) : '';
+        if (onScreen) legend();      // as it filters: A, L1/R1 and Y follow
       };
-      grid = M.grid.render(view, spec, { shown, savedKey: lastFocus[here()] });
+      grid = onScreen = M.grid.render(view, spec, { shown, savedKey: lastFocus[here()] });
+      legend();
       // Nothing found: the focus is left be (the column would open over the
       // heading); the first arrow finds Sök.
       if (!typing) grid.focusFirst();

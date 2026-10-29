@@ -109,8 +109,6 @@ window.PioneerTV = window.PioneerTV || {};
       for (const node of nodes.values()) node.remove();
       nodes.clear();
       windowStart = -1;
-      if (ctx.shown) ctx.shown(list.length, all.length, words.trim());
-      else if (spec.count) ctx.setCount(spec.count(list.length, all.length));
       const none = !list.length;
       gridEl.style.display = none ? 'none' : '';
       if (bare) { bare.remove(); bare = null; }
@@ -120,6 +118,8 @@ window.PioneerTV = window.PioneerTV || {};
       }
       if (list.length) renderWindow(0);
       showInfo(list[0]);
+      if (ctx.shown) ctx.shown(list.length, all.length, words.trim());
+      else if (spec.count) ctx.setCount(spec.count(list.length, all.length));
     }
 
     gridEl.addEventListener('focusin', (e) => {
@@ -175,6 +175,14 @@ window.PioneerTV = window.PioneerTV || {};
         setShown(matches());
       },
       focusIndex,
+      count: () => shown.length,
+      // Whether L1/R1 have anywhere to go: more than two rows of it, and
+      // more than one letter among them.
+      jumps() {
+        if (shown.length <= cols * 2) return false;
+        const first = letter(shown[0]);
+        return shown.some((it) => letter(it) !== first);
+      },
     };
     M.grid.active = api;
     return api;
