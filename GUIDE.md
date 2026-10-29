@@ -930,8 +930,9 @@ text are only read. The page owns the d-pad (settings.js, registered before
 the extension's spatial navigation, which guessed by distance and went from
 a row to the column and back):
 
-- In the column, up and down go through the tabs and show each; right goes
-  into the view, to the row one was last on there.
+- In the column, up and down go through the tabs (only moving: the view
+  stays what it was); A opens one and goes into it, as in every column of
+  the box; right goes into the view shown, to the row one was last on.
 - In the view, up and down go row by row, in order. Left goes to the
   column; on a row marked ◀ ▶ (a number, a choice, the TV's volume, the
   log shown) left and right change its value instead. A does the row: a

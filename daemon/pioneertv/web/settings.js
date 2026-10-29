@@ -550,7 +550,7 @@
     nav.append(h('section', { class: 'rail-group' }, h('h2', { class: 'rail-group-label' }, group),
       tabs.map(([view, name, ic]) => {
         const mark = h('button', { class: 'pioneertv-round rail-mark', type: 'button', 'aria-label': name, 'data-view': view, 'data-icon': ic });
-        return h('div', { class: 'rail-item', 'data-view': view, onclick: () => { location.hash = '#' + view; } }, mark, h('span', { class: 'rail-label' }, name));
+        return h('div', { class: 'rail-item', 'data-view': view, onclick: () => open(view) }, mark, h('span', { class: 'rail-label' }, name));
       })));
   }
   // The icons, once icons.js is in (it loads beside this, see settings.html).
@@ -566,21 +566,23 @@
   rail.addEventListener('mouseout', (e) => { if (!rail.contains(e.relatedTarget)) rail.classList.remove('open'); });
   const marks = () => [...nav.querySelectorAll('.rail-mark')];
   const here = () => nav.querySelector('.rail-item.active .rail-mark');
-  // Into the column from elsewhere (the pointer): to the tab shown. Within
-  // it, a tab's ring with the focus shows that tab.
+  // Into the column from the view: to the tab shown. Moving in it only
+  // moves; A opens the tab and goes into it, as in every column of the box.
   nav.addEventListener('focusin', (e) => {
-    const view = e.target && e.target.dataset && e.target.dataset.view;
-    if (!view) return;
-    if (!nav.contains(e.relatedTarget) && here() && here() !== e.target) { here().focus(); return; }
-    if (location.hash !== '#' + view) location.hash = '#' + view;
+    if (e.target.dataset && e.target.dataset.view && mainHost.contains(e.relatedTarget) && here() && here() !== e.target) here().focus();
   });
+  let into = false;                    // opened with A: the focus goes into it once it is drawn
+  function open(view) {
+    into = true;
+    if (location.hash === '#' + view) intoView(); else location.hash = '#' + view;
+  }
 
   // ---------------------------------------------------------------- the d-pad
   // The page's own, not the spatial navigation's guess by distance (which
   // went from a row to the column and back): registered before the
   // extension's (it comes at document_idle), so it sees the arrows first.
-  // In the column, up and down go through the tabs, right goes into the
-  // view (to the row one was last on there). In the view, up and down go
+  // In the column, up and down go through the tabs, A opens one, right
+  // goes into the view shown (to the row one was last on there). In the view, up and down go
   // row by row; left steps a ◀ ▶ row's value, else goes to the column;
   // right steps it. B in the view goes to the column; in the column, home.
   const stops = () => [...mainHost.querySelectorAll('.stop')].filter((el) => !el.disabled && el.offsetParent);
@@ -621,6 +623,8 @@
       else if (inView) { if (dir < 0) focusStop(here()); }
       else if (inRail) { if (dir > 0) intoView(); }
       else focusStop(here());
+    } else if (e.key === 'Enter' && inRail) {
+      if (!e.repeat) open(a.dataset.view);
     } else if (e.key === 'Escape') {
       if (typing(a)) done = false;                    // leaves the field (spatial-nav.js)
       else if (inView) focusStop(here());
@@ -655,6 +659,7 @@
       const a = document.activeElement;
       const was = el.contains(a) ? keyOf(a) : null;
       el.replaceChildren(...children);
+      if (into && stops().length) { into = false; intoView(); return; }
       if (was) { const again = stops().find((s) => keyOf(s) === was); if (again) again.focus({ preventScroll: true }); else intoView(); }
     };
     views[view](draw).catch((e) => { draw(h('h1', {}, 'Fel'), h('p', {}, e.message)); });

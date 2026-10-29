@@ -222,6 +222,6 @@ window.PioneerTV = window.PioneerTV || {};
       if (!ui.volume_toast) return;
       hud.toast(e.direction === 'up' ? 'Volym +' : e.direction === 'down' ? 'Volym −' : 'Ljud av', e.direction === 'mute' ? 'mute' : 'volume');
     });
-    b.on('active_pad', (e) => hud.applyPad(e.pad));
+    hud.followPad(b);
   };
 })(window.PioneerTV);

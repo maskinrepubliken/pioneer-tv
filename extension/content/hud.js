@@ -32,11 +32,30 @@ window.PioneerTV = window.PioneerTV || {};
     return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.18;
   }
 
-  // Every page starts in the design system's own colours (ochre); the pad's
-  // colours come with its first press there.
-  hud.listen = function (b) {
-    b.on('active_pad', (e) => hud.applyPad(e.pad));
+  // The pad last used keeps its colours from page to page: a page starts in
+  // them (our own pages from what the one before kept; every page from the
+  // daemon's status, which says the pad last used), and a press on another
+  // pad changes them.
+  const own = () => document.documentElement.classList.contains('pioneertv-own');
+  const KEPT = 'pioneertv-pad';
+  if (own()) {
+    try { const kept = JSON.parse(localStorage.getItem(KEPT) || 'null'); if (kept) hud.applyPad(kept); } catch {}
+  }
+  function use(pad) {
+    if (!pad) return;
+    hud.applyPad(pad);
+    if (own()) try { localStorage.setItem(KEPT, JSON.stringify({ pointer: pad.pointer, accent: pad.accent, highlight: pad.highlight })); } catch {}
+  }
+  hud.followPad = function (b) {
+    b.on('active_pad', (e) => use(e.pad));
+    let said = '';
+    b.on('state', (st) => {
+      const pad = st.status && st.status.active_pad;
+      const key = JSON.stringify(pad || null);
+      if (pad && key !== said) { said = key; use(pad); }
+    });
   };
+  hud.listen = function (b) { hud.followPad(b); };
 
   M.hud = hud;
 })(window.PioneerTV);

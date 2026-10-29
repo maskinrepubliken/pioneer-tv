@@ -5,7 +5,9 @@
    the focus or the pointer in it: wider, over the view, with the names. In
    one step, as the system has no motion but the answer to a press. ---- */
 :root { --rail: 5.6rem; }
-.page { --side-l: 3vw; --side-r: 5vw; margin-left: var(--rail); padding-left: var(--side-l); padding-right: var(--side-r); }
+/* The view's own stacking (a pile of covers, a card with the focus) stays
+   inside it, under the column when that widens over it. */
+.page { --side-l: 3vw; --side-r: 5vw; margin-left: var(--rail); padding-left: var(--side-l); padding-right: var(--side-r); isolation: isolate; }
 .rail {
   position: fixed; top: 0; bottom: 0; left: 0; z-index: 5; width: var(--rail);
   display: flex; flex-direction: column; padding: 4.5vh 0 3vh;
