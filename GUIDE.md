@@ -737,7 +737,31 @@ tried again every three seconds.
   its Loggar tab, is the settings page.
 - **The screensaver** (`overlay/saver.js`), over everything when no pad is
   connected and nobody has pressed anything ([The TV
-  (HDMI-CEC)](#the-tv-hdmi-cec) above); it closes every menu.
+  (HDMI-CEC)](#the-tv-hdmi-cec) above); it closes every menu. One of two,
+  chosen under Inställningar → TV (`ui.screensaver`):
+  - **Labyrint** (the default, `overlay/maze.js`): a maze without end in
+    the manner of Ultima Underworld, walked by itself. A raycaster on a
+    320x180 canvas scaled up with square pixels, twenty frames a second
+    (about 1.5 ms a frame on a laptop): textured stone walls, a flagstone
+    floor and a ceiling of blocks, dark but for a flickering torch. The maze
+    comes in chunks of 8x8 cells, each a perfect maze of its own (a seeded
+    backtracker, a few walls knocked through) with two doors to the chunks
+    west and north of it, so the whole is one maze, made as it is walked
+    into and forgotten behind. The walker steers by a point a little ahead
+    along its way (round corners, no turning on the spot facing a wall),
+    goes for the nearest thing lying about, else the nearest cell not yet
+    walked. About one cell in eleven has a cover: a game's, film's,
+    series' or album's from the daemon's `/api/finds` (`covers.py` finds:
+    RomM and Jellyfin at random, those kept on the box first), standing on
+    the floor; picked up, a slip at the foot says "Du hittade ett spel" and
+    its name, and the last six are carried in a row at the top left. The
+    textures are Screaming Brain Studios' [Tiny Texture Pack
+    1](https://opengameart.org/content/tiny-texture-pack-1) (CC0), made
+    64 px and fewer colours (`overlay/maze/textures.png`).
+  - **Eld** (`overlay/mandelbrot.js`): the Mandelbrot set like an open fire
+    and a line of the Tao Te Ching, at a quarter of the screen's width and
+    ten frames a second, the line in a solid colour (a blend over the
+    moving picture was the CPU's every frame).
 
 Who gets Home, Y and B is decided in the daemon (`daemon/pioneertv/overlay.py`):
 Home, toasts and the screensaver always go to the overlay; Y and B go to the

@@ -40,6 +40,8 @@ SCHEMA: list[dict] = [
             {"path": "ui.volume_toast", "type": "bool", "label": "Visa en notis vid volymändring (TV:n visar oftast volymen själv)"},
             {"path": "ui.home_minutes", "type": "number", "label": "Gå hem efter, utan knapptryck (0 = aldrig)", "min": 0, "max": 120, "step": 1, "unit": "min"},
             {"path": "ui.tv_off_minutes", "type": "number", "label": "Stäng av TV:n när skärmsläckaren varit på (0 = aldrig)", "min": 0, "max": 120, "step": 1, "unit": "min"},
+            {"path": "ui.screensaver", "type": "choice", "label": "Skärmsläckare",
+             "options": [["labyrint", "Labyrint"], ["eld", "Eld"]]},
         ],
     },
     {
@@ -165,6 +167,9 @@ def _coerce(field: dict, value: Any) -> Any:
     if t == "text":
         s = str(value)
         return s[: field["maxlength"]] if "maxlength" in field else s
+    if t == "choice":
+        allowed = [o[0] for o in field["options"]]
+        return value if value in allowed else allowed[0]
     return value
 
 

@@ -79,6 +79,7 @@ class Server:
             ("POST", "/api/video/{action}", self.api_video_action),
             ("GET", "/api/jellyfin", self.api_jellyfin),
             ("GET", "/api/images", self.api_images),
+            ("GET", "/api/finds", self.api_finds),
             ("POST", "/api/images/clear", self.api_images_clear),
         ]
         for method, path, handler in api:
@@ -295,6 +296,15 @@ class Server:
         icfg = self.cfg.get("images") or {}
         return web.json_response({"enabled": True, **await asyncio.to_thread(cache.stats), "max_px": self.covers.max_px,
                                   "prefetch_at": icfg.get("prefetch_at", ""), "last_night": self.covers.last_night})
+
+    async def api_finds(self, request: web.Request) -> web.Response:
+        """Covers with their names for the maze screensaver to find, the
+        ones kept on the box first (covers.py finds)."""
+        try:
+            n = max(1, min(80, int(request.query.get("n", "40"))))
+        except ValueError:
+            n = 40
+        return web.json_response({"finds": await self.covers.finds(n)})
 
     async def api_images_clear(self, _request: web.Request) -> web.Response:
         if self.covers.cache:

@@ -87,7 +87,9 @@ DEFAULTS: dict[str, Any] = {
     # home_minutes: left alone anywhere else, the box goes home after this
     # long; with no pad connected, the screensaver at once; tv_off_minutes:
     # the screensaver up that long, the TV goes off (0: never, for each).
-    "ui": {"auto_keyboard": True, "volume_toast": False, "home_minutes": 10, "tv_off_minutes": 5},
+    # screensaver: "labyrint" (the maze where covers are found) or "eld"
+    # (the Mandelbrot fire and the Tao Te Ching).
+    "ui": {"auto_keyboard": True, "volume_toast": False, "home_minutes": 10, "tv_off_minutes": 5, "screensaver": "labyrint"},
     "chromium": {"log_file": "/home/pi/.pioneer-tv/chromium.log"},
     "remote": {"token": ""},
     # RomM for the Spel pages: base URL and a client API token (see /romm/ in server.py).

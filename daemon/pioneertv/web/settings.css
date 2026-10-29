@@ -138,3 +138,7 @@ pre.log {
   .field { grid-template-columns: 1fr; }
   input[type="text"], input[type="password"], select { min-width: 0; width: 100%; }
 }
+
+/* One of a few (a "choice" field): the chosen one pressed, in ink. */
+.choices { display: flex; gap: 8px; flex-wrap: wrap; }
+button.choice[aria-pressed="true"] { background: var(--pioneertv-surface-ink); border-color: var(--pioneertv-surface-ink); color: var(--pioneertv-on-dark); }

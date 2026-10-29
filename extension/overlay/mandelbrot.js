@@ -6,9 +6,9 @@
 // gently (a few slow waves out of step, never a blink), and the edges
 // waver upwards like the air over a flame.
 //
-// Drawn by the GPU (WebGL) at a third of the screen's width and fifteen
-// frames a second, scaled up: the zoom is slow, so it looks smooth, and
-// the Pi's GPU stays far from busy. Without WebGL, a coarser picture is
+// Drawn by the GPU (WebGL) at a quarter of the screen's width and ten
+// frames a second, scaled up, with fewer steps than it could take: the
+// zoom is slow, so it still looks smooth, and the Pi stays far from busy. Without WebGL, a coarser picture is
 // worked out on the CPU, a little at a time. stop() draws nothing at all
 // (the box resting, the TV off).
 window.PioneerTV = window.PioneerTV || {};
@@ -28,7 +28,7 @@ window.PioneerTV = window.PioneerTV || {};
   const WIDE = 3.2;                  // the set's width on screen at the widest
   const DEEP = 1e-3;
   const CYCLE_S = 900;               // in, out and on to the next place
-  const FPS = 15;
+  const FPS = 10;
 
   const smooth = (t) => t * t * (3 - 2 * t);
 
@@ -150,7 +150,7 @@ window.PioneerTV = window.PioneerTV || {};
       gl.uniform2f(u('size'), canvas.width, canvas.height);
       gl.uniform2f(u('centre'), v.x, v.y);
       gl.uniform1f(u('width'), v.width);
-      gl.uniform1i(u('steps'), Math.round(120 + 240 * v.depth));
+      gl.uniform1i(u('steps'), Math.round(90 + 170 * v.depth));
       gl.uniform1f(u('time'), v.t);
       gl.uniform1f(u('bright'), flicker(v.t));
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -199,7 +199,7 @@ window.PioneerTV = window.PioneerTV || {};
     let draw = null;
     let gpu = true;
     const fit = () => {
-      const scale = gpu ? 3 : 8;
+      const scale = gpu ? 4 : 10;
       canvas.width = Math.max(160, Math.round(window.innerWidth / scale));
       canvas.height = Math.max(90, Math.round(window.innerHeight / scale));
     };

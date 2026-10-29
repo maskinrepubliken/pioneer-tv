@@ -443,6 +443,11 @@
       let control;
       if (f.type === 'bool') {
         control = h('button', { class: 'toggle', role: 'switch', 'aria-checked': String(!!f.value), onclick: (e) => { const v = e.currentTarget.getAttribute('aria-checked') !== 'true'; e.currentTarget.setAttribute('aria-checked', String(v)); values[f.path] = v; } });
+      } else if (f.type === 'choice') {
+        // One of a few: a button each, the chosen one pressed.
+        const buttons = f.options.map(([value, label]) => h('button', { class: 'small choice', 'aria-pressed': String(f.value === value),
+          onclick: (e) => { values[f.path] = value; for (const b of buttons) b.setAttribute('aria-pressed', String(b === e.currentTarget)); } }, label));
+        control = h('div', { class: 'choices' }, ...buttons);
       } else if (f.type === 'number') {
         const num = h('input', { type: 'number', min: f.min, max: f.max, step: f.step, value: f.value, oninput: (e) => { values[f.path] = Number(e.target.value); } });
         control = h('div', {}, num, f.unit ? h('span', { class: 'hint' }, ` ${f.unit}`) : '');
