@@ -122,7 +122,7 @@ window.PioneerTV = window.PioneerTV || {};
     if (!typing && !spec.none) restoreFocus(asked || first || searchBtn);   // nothing found: as a grid, the focus is left be
   }
 
-  // A view's own buttons, beside its heading (an artist's Blanda allt and
+  // A view's own buttons, at its heading's right (an artist's Blanda allt and
   // Spela allt): round, as Sök is, the name beside; the filled one X's.
   //   [{ label, icon, primary, key, run }]
   function actions(list) {

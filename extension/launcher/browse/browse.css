@@ -27,7 +27,7 @@
   flex: none; margin-right: auto; font-family: var(--pioneertv-font-mono); font-size: 0.95rem;
   color: var(--pioneertv-ink-faint); font-variant-numeric: tabular-nums;
 }
-/* A view's own buttons beside its title (page.js actions): round, as Sök
+/* A view's own buttons at the heading's right (page.js actions): round, as Sök
    is, the name beside; the filled one ochre, and X's. The ring is the
    round part's alone. */
 .head-actions { flex: none; display: flex; align-items: center; gap: 1.6rem; }

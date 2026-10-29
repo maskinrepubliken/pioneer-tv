@@ -363,8 +363,8 @@ music library (`browse.html?library=musik`): Blanda allt, then your
 playlists as cards (like Spel's collections), with Album and Artister in
 the column at the left; Album is shelves of covers, Artister cards; a playlist or an album lists its songs beside
 its cover, with Spela and Blanda; an artist has Blanda allt (filled, X)
-and Spela allt beside its name, round buttons as Sök is with the name
-beside (a view's `actions`, drawn in the heading by `page.js`; Musik's
+and Spela allt at the heading's right, round buttons as Sök is with the
+name beside (a view's `actions`, drawn in the heading by `page.js`; Musik's
 start has its Blanda allt there too). Album and Artister are grids like a
 console's games: L1/R1 jump a letter, Sök filters them. Sök (the round
 button, or Y) searches songs, albums and artists. Films, series and clips have
