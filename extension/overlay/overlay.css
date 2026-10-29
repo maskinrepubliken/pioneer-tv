@@ -66,3 +66,83 @@ html, body { margin: 0; height: 100%; background: transparent !important; overfl
    and the text clipped, the g of Stäng av TV:n lost its tail); a long one
    wraps. */
 .pioneertv-menu-label { min-width: 0; line-height: 1.2; margin: -0.1em 0; overflow-wrap: anywhere; }
+
+/* ---- the media panel (overlay.js mediaSpec): a head, a timeline, the
+   transport's round buttons, the queue, and rows. With the focus each part
+   fills ochre inside the ring, as everything chosen does. ---- */
+.pioneertv-menu-row { display: flex; gap: 10px; }
+.pioneertv-menu-row--transport { justify-content: space-between; align-items: flex-start; margin: 2px 0 6px; }
+.pioneertv-menu-row--queue > * { flex: 1; }
+
+.pioneertv-media-head { display: flex; gap: 16px; align-items: center; margin-bottom: 4px; }
+.pioneertv-media-cover { flex: none; width: 92px; height: 92px; border-radius: var(--pioneertv-radius-m); overflow: hidden; background: var(--pioneertv-paper-sunken); }
+.pioneertv-media-cover[hidden] { display: none; }
+.pioneertv-media-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pioneertv-media-words { min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.pioneertv-media-kicker { font: 400 13px/1.2 var(--pioneertv-font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--pioneertv-ink-faint); }
+.pioneertv-media-title { margin: 0; font-size: 26px; line-height: 1.05; }
+.pioneertv-media-sub { font: italic 400 18px/1.25 var(--pioneertv-font-prose); color: var(--pioneertv-ink-muted); }
+.pioneertv-media-sub[hidden] { display: none; }
+
+/* The timeline: the line, how far in in ink, the mark (with the focus, where
+   A would go) with its time above it, and the times under. */
+.pioneertv-media-timeline {
+  padding: 26px 18px 12px; border-radius: var(--pioneertv-radius-m); cursor: pointer;
+  border: 1px solid transparent;
+}
+.pioneertv-media-track { position: relative; height: 8px; border-radius: 4px; background: var(--pioneertv-line); }
+.pioneertv-media-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: var(--pioneertv-ink); }
+.pioneertv-media-mark { position: absolute; top: 50%; width: 0; height: 0; display: none; }
+.pioneertv-media-timeline.marking .pioneertv-media-mark { display: block; }
+.pioneertv-media-mark::before {
+  content: ""; position: absolute; left: -9px; top: -9px; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--pioneertv-ochre); border: 2px solid var(--pioneertv-ink);
+}
+.pioneertv-media-bubble {
+  position: absolute; bottom: 14px; left: 0; transform: translateX(-50%); white-space: nowrap;
+  padding: 3px 8px; border-radius: 6px; background: var(--pioneertv-surface-ink); color: var(--pioneertv-on-dark);
+  font: 500 13px/1 var(--pioneertv-font-mono);
+}
+.pioneertv-media-times { display: flex; justify-content: space-between; gap: 10px; margin-top: 10px; font: 400 14px/1 var(--pioneertv-font-mono); color: var(--pioneertv-ink-muted); }
+.pioneertv-media-hint { color: var(--pioneertv-ink-faint); }
+.pioneertv-media-timeline.pioneertv-menu-active { background: var(--pioneertv-paper-sunken); outline: 4px solid var(--pioneertv-focus); outline-offset: 5px; }
+.pioneertv-media-timeline.pioneertv-menu-active .pioneertv-media-hint { color: var(--pioneertv-ink); }
+
+/* The transport: round buttons, play the large one, each with what it does under it. */
+.pioneertv-media-btn { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; border-radius: 50%; }
+.pioneertv-media-ring {
+  display: inline-flex; align-items: center; justify-content: center; width: 58px; height: 58px; border-radius: 50%;
+  border: 1px solid var(--pioneertv-line-strong); background: var(--pioneertv-paper); color: var(--pioneertv-ink);
+}
+.pioneertv-media-ring svg { width: 26px; height: 26px; }
+.pioneertv-media-play .pioneertv-media-ring { width: 80px; height: 80px; background: var(--pioneertv-ochre); border-color: var(--pioneertv-ochre); color: var(--pioneertv-on-ochre); }
+.pioneertv-media-play .pioneertv-media-ring svg { width: 36px; height: 36px; }
+.pioneertv-media-says { font: 400 12px/1 var(--pioneertv-font-mono); color: var(--pioneertv-ink-muted); white-space: nowrap; }
+.pioneertv-media-btn:not(.pioneertv-media-play) { margin-top: 11px; }
+.pioneertv-media-play { gap: 14px; }
+/* The ring around the button's circle, not its words. */
+.pioneertv-media-btn.pioneertv-menu-active { outline: none; }
+.pioneertv-media-btn.pioneertv-menu-active .pioneertv-media-ring {
+  background: var(--pioneertv-ochre); border-color: var(--pioneertv-ochre); color: var(--pioneertv-on-ochre);
+  outline: 4px solid var(--pioneertv-focus); outline-offset: 5px;
+}
+.pioneertv-media-btn.pioneertv-menu-active .pioneertv-media-says { color: var(--pioneertv-ink); }
+
+/* The queue: the song before and the next, side by side. */
+.pioneertv-media-wide {
+  display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 18px; cursor: pointer;
+  font: 600 19px/1 var(--pioneertv-font-ui); border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-pill);
+}
+.pioneertv-media-wide svg { width: 20px; height: 20px; }
+.pioneertv-media-wide.pioneertv-menu-active { background: var(--pioneertv-ochre); border-color: var(--pioneertv-ochre); color: var(--pioneertv-on-ochre); outline: 4px solid var(--pioneertv-focus); outline-offset: 5px; }
+
+/* A setting's value in a capsule; the volume's − and + as two small rings. */
+.pioneertv-menu-pill .pioneertv-menu-detail {
+  padding: 5px 12px; border-radius: var(--pioneertv-radius-pill); background: var(--pioneertv-paper-sunken);
+  font: 500 14px/1 var(--pioneertv-font-ui); color: var(--pioneertv-ink);
+}
+.pioneertv-media-steps { margin-left: auto; display: flex; gap: 6px; }
+.pioneertv-media-steps span {
+  width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%;
+  border: 1px solid var(--pioneertv-line-strong); font: 600 16px/1 var(--pioneertv-font-ui); color: var(--pioneertv-ink-muted);
+}

@@ -111,8 +111,7 @@ window.PioneerTV = window.PioneerTV || {};
     held = { kind, resume, e };
     chose = false;
     menu.open(spec || { title: title || 'Pausat', note, items });
-    menu.index = at || 0;
-    menu.highlight();
+    if (!spec) { menu.index = at || 0; menu.highlight(); }
   }
   const pick = (f) => () => { chose = true; f(); };
   b.on('menu:close', () => {
@@ -156,33 +155,51 @@ window.PioneerTV = window.PioneerTV || {};
   // ------------------------------------------------------------ the media panel
   // One panel for whatever plays: a film in mpv (video.py), a site's video
   // (content/webvideo.js in each of the page's frames), the box's music and
-  // radio (audio.py). The same rows in the same order, those that apply:
+  // radio (audio.py). Its parts, those that apply (overlay.css, "the media
+  // panel"):
   //
-  //   Fortsätt (a film, a video: the panel paused it) or Pausa / Spela (the
-  //   music: it plays on under the menu); Spola ◀ ▶ 15 s; Spola ◀ ▶ 2 min;
-  //   Gå till ◀ ▶ (a mark on the timeline, a twentieth at a press; A goes
-  //   there); Från början; Låt ◀ ▶ (the queue); Ljud; Undertexter;
-  //   TV-volym ◀ ▶; Meny (the quick menu, one step in); Sluta.
+  //   the head: the cover (the music's), playing or paused, the whole name,
+  //   what it is from;
+  //   the timeline: how far in, the time and what is left; with the focus,
+  //   left and right move a mark along it (a twentieth at a press, faster
+  //   held) and A goes there;
+  //   the transport: −2 min, −15 s, play or pause (on a film or a video the
+  //   panel paused: Fortsätt), +15 s, +2 min, round buttons side by side;
+  //   the queue (the music's): the song before and the next;
+  //   Från början, Ljud, Undertexter (A steps to the next), TV-volym (left
+  //   and right; A mutes), Meny (over a site's video), Sluta.
   //
   // A source says what plays and does it:
-  //   { kind, title, live, time, duration, paused, index, count, audio, subs,
-  //     to(t), toggle(), skip(dir), track(kind, list, current), stop(), first }
-  // The open panel follows it by the words of its rows only, in place (drawn
-  // anew, the whole menu went and came back: it blinked over SVT Play).
-  // Where a seek was put stands until the source has got there (or a moment
-  // has passed), and a time that plays runs on between its words.
-  const STEPS = [[15, 'Spola', '15 s'], [120, 'Spola långt', '2 min']];
+  //   { kind, title, sub, cover, live, time, duration, end, paused, index,
+  //     count, audio, subs, to(t), skip(dir), track(kind), first(), last }
+  // The open panel follows it in place, part by part (drawn anew, the whole
+  // menu went and came back: it blinked over SVT Play). Where a seek was put
+  // stands until the source has got there (or a moment has passed), and a
+  // time that plays runs on between its words.
   const clock = (s) => {
     s = Math.max(0, Math.floor(s || 0));
     const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = String(s % 60).padStart(2, '0');
     return h ? `${h}:${String(m).padStart(2, '0')}:${sec}` : `${m}:${sec}`;
   };
   const lengthOf = (src) => (src.live ? src.end || src.time : src.duration) || 0;
-  const where = (src) => (src.live ? (src.end - src.time > 30 ? `${clock(src.end - src.time)} efter direkt` : 'direkt') : `${clock(src.time)} av ${clock(src.duration)}`);
-  let media = null;              // { src, spec, aim, target } while a media panel is in the menu
+  const make = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+  // The transport's own symbols: play, pause, and a turn back or on with how far.
+  const SVG = (inner) => `<svg viewBox="0 0 24 24" aria-hidden="true">${inner}</svg>`;
+  const GLYPH = {
+    play: SVG('<path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/>'),
+    pause: SVG('<rect x="6.5" y="5.5" width="4" height="13" rx="1.2" fill="currentColor"/><rect x="13.5" y="5.5" width="4" height="13" rx="1.2" fill="currentColor"/>'),
+    back: SVG('<path d="M11 6 3.5 12 11 18zM20.5 6 13 12l7.5 6z" fill="currentColor"/>'),
+    on: SVG('<path d="M13 6l7.5 6L13 18zM3.5 6 11 12l-7.5 6z" fill="currentColor"/>'),
+    turnBack: SVG('<path d="M5 12a7 7 0 1 0 2.05-4.95" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M4 4v4.5h4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'),
+    turnOn: SVG('<path d="M19 12a7 7 0 1 1-2.05-4.95" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M20 4v4.5h-4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'),
+    prev: SVG('<rect x="5" y="6" width="2.4" height="12" rx="1" fill="currentColor"/><path d="M19 6 9 12l10 6z" fill="currentColor"/>'),
+    next: SVG('<rect x="16.6" y="6" width="2.4" height="12" rx="1" fill="currentColor"/><path d="M5 6l10 6-10 6z" fill="currentColor"/>'),
+  };
+  let media = null;              // { src, spec, aim, target, parts } while a media panel is in the menu
   function mediaOpen() { return media && menu.isOpen() && menu.stack.includes(media.spec); }
-  function mediaSpec(src, at = 0) {
-    media = { src, aim: null, target: null, spec: null };
+
+  function mediaSpec(src, at) {
+    media = { src, aim: null, target: null, parts: [], spec: null };
     const m = media;
     const items = [];
     const seekTo = (t) => {
@@ -192,65 +209,147 @@ window.PioneerTV = window.PioneerTV || {};
       m.aim = { time: t, until: Date.now() + 2500 };
       refresh();
     };
-    items.push(src.first(m));
-    if (!src.live || src.end) {
-      for (const [size, label, says] of STEPS) {
-        items.push({ label, icon: 'arrowRight', keep: true, run: () => {}, say: () => `◀ ▶ ${says} · ${where(src)}`,
-          step: (dir) => seekTo(src.time + dir * size) });
+    const seekable = !src.live ? !!src.duration : !!src.end;
+
+    // ---- the head
+    const head = make('div', 'pioneertv-media-head');
+    const cover = make('div', 'pioneertv-media-cover');
+    const kicker = make('div', 'pioneertv-media-kicker');
+    const title = make('div', 'pioneertv-menu-title pioneertv-media-title');
+    const sub = make('div', 'pioneertv-media-sub');
+    const words = make('div', 'pioneertv-media-words');
+    words.append(kicker, title, sub);
+    head.append(cover, words);
+    m.parts.push(() => {
+      const pic = src.cover || '';
+      if (cover.dataset.src !== pic) {
+        cover.dataset.src = pic;
+        cover.innerHTML = pic ? `<img alt="" src="${pic.replace(/"/g, '&quot;')}">` : '';
       }
-    }
-    if (!src.live && src.duration) {
-      // A mark on the timeline: a twentieth at a press, A goes there.
-      items.push({ label: 'Gå till', icon: 'clock', keep: true,
-        say: () => { const t = m.target == null ? src.time : m.target; return `◀ ${bar(t / src.duration)} ▶ ${clock(t)}`; },
-        step: (dir) => {
+      cover.hidden = !pic;
+      kicker.textContent = [src.live ? 'Direktsänt' : src.paused ? 'Pausad' : 'Spelas',
+        src.count > 1 ? `låt ${src.index + 1} av ${src.count}` : ''].filter(Boolean).join(' · ');
+      title.textContent = src.title || 'Spelas';
+      sub.textContent = src.sub || '';
+      sub.hidden = !src.sub;
+    });
+
+    // ---- the timeline
+    if (seekable) {
+      const box = make('div', 'pioneertv-media-timeline');
+      const track = make('div', 'pioneertv-media-track');
+      const fill = make('div', 'pioneertv-media-fill');
+      const mark = make('div', 'pioneertv-media-mark');
+      const bubble = make('span', 'pioneertv-media-bubble');
+      mark.appendChild(bubble);
+      track.append(fill, mark);
+      const times = make('div', 'pioneertv-media-times');
+      const now = make('span', '', ''), hint = make('span', 'pioneertv-media-hint', ''), end = make('span', '', '');
+      times.append(now, hint, end);
+      box.append(track, times);
+      const span = () => lengthOf(src) || 1;
+      items.push({ label: 'Tidslinje', keep: true, render: () => box,
+        step: (dir, held) => {
           const base = m.target == null ? src.time : m.target;
-          m.target = Math.max(0, Math.min(src.duration - 1, base + dir * src.duration / 20));
+          m.target = Math.max(0, Math.min(span() - 1, base + dir * span() / (held ? 10 : 20)));
           refresh();
         },
-        run: () => { if (m.target != null) { seekTo(m.target); m.target = null; refresh(); } } });
-      items.push({ label: 'Från början', icon: 'reload', keep: true, run: () => seekTo(0) });
+        run: () => { if (m.target != null) { const t = m.target; m.target = null; seekTo(t); } } });
+      m.parts.push(() => {
+        const share = Math.max(0, Math.min(1, src.time / span()));
+        fill.style.width = `${share * 100}%`;
+        const marking = m.target != null;
+        box.classList.toggle('marking', marking);
+        if (marking) {
+          mark.style.left = `${(m.target / span()) * 100}%`;
+          bubble.textContent = src.live ? `−${clock(span() - m.target)}` : clock(m.target);
+        }
+        now.textContent = src.live ? (src.end - src.time > 30 ? `${clock(src.end - src.time)} efter` : 'Direkt') : clock(src.time);
+        end.textContent = src.live ? 'direkt' : `−${clock(src.duration - src.time)}`;
+        hint.textContent = marking ? 'A går dit' : '◀ ▶ välj plats';
+      });
     }
+
+    // ---- the transport
+    const first = src.first();
+    const round = (cls, glyph, says, label) => {
+      const btn = make('div', `pioneertv-media-btn ${cls}`);
+      btn.innerHTML = `<span class="pioneertv-media-ring">${glyph}</span>`;
+      btn.appendChild(make('span', 'pioneertv-media-says', says));
+      btn.setAttribute('aria-label', label);
+      return btn;
+    };
+    const play = round('pioneertv-media-play', '', first.label, first.label);
+    m.parts.push(() => {
+      // A film or a video the panel paused carries on (Fortsätt); the music turns.
+      const icon = src.kind === 'audio' && !src.paused ? 'pause' : 'play';
+      const ring = play.querySelector('.pioneertv-media-ring');
+      if (ring.dataset.icon !== icon) { ring.dataset.icon = icon; ring.innerHTML = GLYPH[icon]; }
+      const says = src.kind === 'audio' ? (src.paused ? 'Spela' : 'Pausa') : first.label;
+      play.querySelector('.pioneertv-media-says').textContent = says;
+    });
+    const jumps = seekable ? [[-120, 'back', '2 min', '2 minuter bakåt'], [-15, 'turnBack', '15 s', '15 sekunder bakåt']] : [];
+    const ahead = seekable ? [[15, 'turnOn', '15 s', '15 sekunder framåt'], [120, 'on', '2 min', '2 minuter framåt']] : [];
+    for (const [by, glyph, says, label] of jumps) items.push({ label, row: 'transport', keep: true, render: () => round('', GLYPH[glyph], says, label), run: () => seekTo(src.time + by) });
+    items.push({ ...first, row: 'transport', primary: true, render: () => play });
+    for (const [by, glyph, says, label] of ahead) items.push({ label, row: 'transport', keep: true, render: () => round('', GLYPH[glyph], says, label), run: () => seekTo(src.time + by) });
+
+    // ---- the queue
     if (src.count > 1) {
-      items.push({ label: 'Låt', icon: 'vinyl', keep: true, run: () => src.skip(1), say: () => `◀ ▶ ${src.index + 1} av ${src.count}`,
-        step: (dir) => src.skip(dir) });
+      const wide = (glyph, text, label) => {
+        const btn = make('div', 'pioneertv-media-wide');
+        btn.innerHTML = glyph;
+        btn.appendChild(make('span', '', text));
+        btn.setAttribute('aria-label', label);
+        return btn;
+      };
+      items.push({ label: 'Förra låten', row: 'queue', keep: true, render: () => wide(GLYPH.prev, 'Förra', 'Förra låten'), run: () => src.skip(-1) });
+      items.push({ label: 'Nästa låt', row: 'queue', keep: true, render: () => wide(GLYPH.next, 'Nästa', 'Nästa låt'), run: () => src.skip(1) });
     }
+
+    // ---- the rest, as rows
+    const pill = (it, value) => { it.detail = value; it.pill = true; return it; };
+    if (!src.live && src.duration) items.push({ label: 'Från början', icon: 'reload', keep: true, run: () => seekTo(0) });
     if (src.audio && src.audio.length > 1) {
-      items.push({ label: 'Ljud', icon: 'volume', keep: true, say: () => (src.audio.find((t) => t.selected) || src.audio[0]).label,
-        run: () => src.track('audio') });
+      const it = pill({ label: 'Ljud', icon: 'volume', keep: true, run: () => src.track('audio') }, '');
+      m.parts.push(() => { setDetail(it, (src.audio.find((t) => t.selected) || src.audio[0]).label); });
+      items.push(it);
     }
     if (src.subs && src.subs.length) {
-      items.push({ label: 'Undertexter', icon: 'info', keep: true, say: () => (src.subs.find((t) => t.selected) || { label: 'Av' }).label,
-        run: () => src.track('subtitles') });
+      const it = pill({ label: 'Undertexter', icon: 'info', keep: true, run: () => src.track('subtitles') }, '');
+      m.parts.push(() => { setDetail(it, (src.subs.find((t) => t.selected) || { label: 'Av' }).label); });
+      items.push(it);
     }
-    items.push({ label: 'TV-volym', icon: 'volume', detail: '◀ ▶ · även L2/R2', volume: true, keep: true, run: () => b.cec('mute') });
+    items.push({ label: 'TV-volym', icon: 'volume', volume: true, keep: true, run: () => b.cec('mute'),
+      render: () => {
+        const row = make('div', 'pioneertv-menu-item pioneertv-media-volume');
+        row.innerHTML = `<span class="pioneertv-menu-icon">${M.icons.html('volume')}</span>`;
+        row.appendChild(make('span', 'pioneertv-menu-label', 'TV-volym'));
+        const steps = make('span', 'pioneertv-media-steps');
+        steps.append(make('span', '', '−'), make('span', '', '+'));
+        row.appendChild(steps);
+        return row;
+      } });
     if (src.menu) items.push({ label: 'Meny', icon: 'menu', detail: 'snabbmenyn', keep: true, run: () => menu.push(M.mainMenu.spec()) });
     items.push(src.last);
-    for (const it of items) if (it.say) it.detail = it.say();
-    m.spec = { title: src.title || 'Spelas', items, at };
+
+    // The timeline's mark goes when the focus leaves it.
+    const onHighlight = (it) => { if (it && it.label !== 'Tidslinje' && m.target != null) { m.target = null; refresh(); } };
+    // First the play button, unless asked for another.
+    const playAt = items.findIndex((it) => it.primary);
+    m.spec = { title: src.title || 'Spelas', head, items, at: at != null ? at : playAt, onHighlight, media: true };
+    refresh(true);
     return m.spec;
   }
-  // A line of ten as the timeline, the mark where it would go.
-  const bar = (share) => { const n = Math.max(0, Math.min(9, Math.round(share * 9))); return '─'.repeat(n) + '●' + '─'.repeat(9 - n); };
-  // The open panel's words, from where its source is now.
-  function refresh() {
-    if (!mediaOpen()) return;
-    if (media.src.title && media.spec.title !== media.src.title) {
-      media.spec.title = media.src.title;
-      const t = menu.stack[menu.stack.length - 1] === media.spec && menu.root && menu.root.querySelector('.pioneertv-menu-title');
-      if (t) t.textContent = media.src.title;
-    }
-    for (const it of media.spec.items) {
-      const text = it.say ? it.say() : null;
-      const label = it.sayLabel ? it.sayLabel() : null;
-      if (text != null) it.detail = text;
-      if (label != null) it.label = label;
-      if (!it.el) continue;
-      const d = it.el.querySelector('.pioneertv-menu-detail');
-      if (d && text != null && d.textContent !== text) d.textContent = text;
-      const l = it.el.querySelector('.pioneertv-menu-label');
-      if (l && label != null && l.textContent !== label) l.textContent = label;
-    }
+  function setDetail(it, text) {
+    it.detail = text;
+    const d = it.el && it.el.querySelector('.pioneertv-menu-detail');
+    if (d && d.textContent !== text) d.textContent = text;
+  }
+  // The open panel, from where its source is now.
+  function refresh(force) {
+    if (!media || (!force && !mediaOpen())) return;
+    for (const part of media.parts) part();
   }
   // Word from the source: what it says, unless a seek is still on its way.
   function heard(src, said) {
@@ -297,7 +396,7 @@ window.PioneerTV = window.PioneerTV || {};
         if (kind === 'audio') src.audio = mark(src.audio, next); else src.subs = mark(src.subs, next);
         refresh();
       },
-      first: () => ({ label: 'Fortsätt', icon: 'play', primary: true, run: pick(() => video('/resume')) }),
+      first: () => ({ label: 'Fortsätt', run: pick(() => video('/resume')) }),
       last: { label: 'Sluta titta', icon: 'power', detail: 'håll B', run: pick(() => video('/stop')) },
     };
     panel('video', e, null, null, null, 0, () => video('/resume'), mediaSpec(src));
@@ -332,7 +431,7 @@ window.PioneerTV = window.PioneerTV || {};
       paused: true, subs: v.subs, menu: true,
       to: (t) => tell(v.frame, 'to', t),
       track: () => tell(v.frame, 'subs', nextTrack(src.subs, { id: -1, label: 'Av' }).id),
-      first: () => ({ label: 'Fortsätt', icon: 'play', primary: true, run: pick(() => {}) }),
+      first: () => ({ label: 'Fortsätt', run: pick(() => {}) }),
       last: { label: 'Sluta titta', icon: 'back', detail: 'tillbaka', run: pick(() => b.back()) },
     };
     panel('web', v, null, null, null, 0, () => {}, mediaSpec(src));
@@ -345,7 +444,8 @@ window.PioneerTV = window.PioneerTV || {};
   let audioSrc = null;
   function fromAudio(s) {
     const it = s.item || {};
-    return { title: it.artist ? `${it.name} · ${it.artist}` : it.name, live: s.live, time: s.time || 0, duration: s.duration || it.seconds || 0,
+    return { title: it.name, sub: s.kind === 'radio' ? 'Sveriges Radio' : [it.artist, it.album].filter(Boolean).join(' · '),
+      cover: it.cover || it.thumb || '', live: s.live, time: s.time || 0, duration: s.duration || it.seconds || 0,
       paused: s.state !== 'playing', index: s.index, count: s.kind === 'music' ? s.count : 0, state: s.state };
   }
   b.on('audio', (s) => {
@@ -366,8 +466,7 @@ window.PioneerTV = window.PioneerTV || {};
       kind: 'audio', ...fromAudio(audioState),
       to: (t) => sound('to', { at: t }),
       skip: (dir) => sound(dir > 0 ? 'next' : 'prev'),
-      first: () => ({ label: audioSrc.paused ? 'Spela' : 'Pausa', icon: 'play', primary: true, keep: true,
-        sayLabel: () => (src.paused ? 'Spela' : 'Pausa'), run: () => sound('toggle') }),
+      first: () => ({ label: 'Spela eller pausa', keep: true, run: () => sound('toggle') }),
       last: { label: 'Sluta spela', icon: 'power', keep: true, run: () => sound('stop') },
     };
     return mediaSpec(src);

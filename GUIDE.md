@@ -497,25 +497,32 @@ for what the site protects too.
 
 ## The media panel
 
-One panel in the overlay for whatever plays (`overlay.js`): a film in mpv,
-a site's video, the box's music and radio. The same rows in the same
-order, those that apply:
+One panel in the overlay for whatever plays (`overlay.js` mediaSpec,
+styled in `overlay.css`): a film in mpv, a site's video, the box's music and
+radio. Its parts, those that apply:
 
-- **Fortsätt** (a film, a video: the panel paused it) or **Pausa / Spela**
-  (the music: it plays on under the menu).
-- **Spola** ◀ ▶ 15 seconds, and **Spola långt** ◀ ▶ 2 minutes.
-- **Gå till**: ◀ ▶ moves a mark along the timeline, a twentieth at a press,
-  and A goes there.
-- **Från början**; **Låt** ◀ ▶ (the music's queue); **Ljud** and
-  **Undertexter**; **TV-volym** ◀ ▶; **Meny** (over a site's video);
-  **Sluta titta** or **Sluta spela**.
+- **The head**: the cover (the music's), playing, paused or live, the whole
+  name, and what it is from (the artist and the album).
+- **The timeline**: how far in, the time and what is left. With the focus,
+  ◀ ▶ move a mark along it with its time above it (a twentieth at a
+  press, a tenth held), and A goes there.
+- **The transport**: round buttons side by side, −2 min, −15 s, play or
+  pause (the large one; on a film or a video the panel paused, Fortsätt),
+  +15 s, +2 min. Left and right go between them.
+- **The queue** (the music's): Förra and Nästa, side by side.
+- **Rows**: Från början; Ljud and Undertexter, their value in a capsule (A
+  steps to the next); TV-volym (◀ ▶, A mutes); Meny (over a site's video);
+  Sluta titta or Sluta spela.
 
-A film's and a site's video's panel comes with Home (and A, B or X on a
-film); the music's is the quick menu's first row while it plays. The open
-panel follows what plays by the words of its rows only, in place; where a
-seek was put stands until the player has got there, and a time that plays
-runs on between its words. mpv seeks over `POST /api/video/seek` and
-`/to`, the music over `/api/audio/...`.
+The focus starts on play. The menu (`hud.js`) has the parts for it: a
+`head` in the title's place, an item that draws itself (`render`), and items
+with the same `row` side by side, which the d-pad goes between by where
+they are. A film's and a site's video's panel comes with Home (and A, B or
+X on a film); the music's is the quick menu's first row while it plays. The
+open panel follows what plays in place, part by part; where a seek was put
+stands until the player has got there, and a time that plays runs on
+between its words. mpv seeks over `POST /api/video/seek` and `/to`, the
+music over `/api/audio/...`.
 
 ## Covers on the box
 

@@ -24,11 +24,14 @@ window.PioneerTV = window.PioneerTV || {};
   };
 
   // ------------------------------------------------------------ menu
-  // A menu: { title, note, items, status }. An item: { label, icon, detail,
-  // primary, disabled, run, keep (stays open after run), opens (a page:
-  // holes are punched on it until that page has loaded), volume (left and
-  // right step the TV's volume), step (left and right do this: step(-1 or
-  // 1, held)), sub (a function giving the submenu) }.
+  // A menu: { title, head, note, items, status, onHighlight }. head: an
+  // element in the title's place (the media panel's). An item: { label,
+  // icon, detail, primary, disabled, run, keep (stays open after run), opens
+  // (a page: holes are punched on it until that page has loaded), volume
+  // (left and right step the TV's volume), step (left and right do this:
+  // step(-1 or 1, held)), sub (a function giving the submenu), render (its
+  // own element instead of a row), row (items with the same row stand side
+  // by side; the d-pad goes between them by where they are) }.
   hud.menu = {
     root: null, stack: [], index: 0, items: [],
     isOpen() { return !!(this.root && this.root.isConnected); },
@@ -91,22 +94,42 @@ window.PioneerTV = window.PioneerTV || {};
       const b = M.bridge;
       const panel = document.createElement('div');
       panel.className = 'pioneertv-menu-panel';
-      const title = document.createElement('div');
-      title.className = 'pioneertv-menu-title';
-      title.textContent = spec.title || 'Meny';
-      panel.append(title);
+      if (spec.head) panel.append(spec.head);
+      else {
+        const title = document.createElement('div');
+        title.className = 'pioneertv-menu-title';
+        title.textContent = spec.title || 'Meny';
+        panel.append(title);
+      }
       if (spec.note) panel.appendChild(spec.note);
       const group = document.createElement('div');
       group.className = 'pioneertv-menu-items pioneertv-menu-list';
-      spec.items.forEach((it) => group.appendChild(this.item(it)));
+      let row = null;
+      spec.items.forEach((it) => {
+        const el = this.item(it);
+        if (!it.row) { row = null; group.appendChild(el); return; }
+        if (!row || row.dataset.row !== it.row) {
+          row = document.createElement('div');
+          row.className = `pioneertv-menu-row pioneertv-menu-row--${it.row}`;
+          row.dataset.row = it.row;
+          group.appendChild(row);
+        }
+        row.appendChild(el);
+      });
       panel.appendChild(group);
       if (spec.status) panel.appendChild(this.statusBlock(b.state.status, b.state.daemonConnected));
       return panel;
     },
     // One choice as a row: its icon, its name and a detail at the right.
     item(it) {
+      if (it.render) {
+        const own = it.render();
+        own.classList.toggle('pioneertv-menu-disabled', !!it.disabled);
+        it.el = own;
+        return own;
+      }
       const el = document.createElement('div');
-      el.className = 'pioneertv-menu-item' + (it.primary ? ' pioneertv-menu-primary' : '') + (it.disabled ? ' pioneertv-menu-disabled' : '');
+      el.className = 'pioneertv-menu-item' + (it.primary ? ' pioneertv-menu-primary' : '') + (it.disabled ? ' pioneertv-menu-disabled' : '') + (it.pill ? ' pioneertv-menu-pill' : '');
       el.innerHTML = `<span class="pioneertv-menu-icon">${M.icons.html(it.icon)}</span>`;
       const name = document.createElement('span'); name.className = 'pioneertv-menu-label'; name.textContent = it.label; el.appendChild(name);
       const detail = it.detail || (it.sub ? '›' : '');
@@ -144,6 +167,8 @@ window.PioneerTV = window.PioneerTV || {};
     highlight() {
       this.items.forEach((it, i) => it.el.classList.toggle('pioneertv-menu-active', i === this.index));
       if (M.ring) M.ring.to(this.items[this.index] && this.items[this.index].el);
+      const spec = this.stack[this.stack.length - 1];
+      if (spec && spec.onHighlight) spec.onHighlight(this.items[this.index]);
     },
     activate() {
       const it = this.items[this.index];
