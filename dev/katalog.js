@@ -226,7 +226,7 @@
         { name: 'Spel · En samling', url: `${SPEL}#/collection/own/2`, ready: '.grid .card' },
         { name: 'Spel · Sök', url: `${SPEL}#/search/mario`, ready: '.grid .card' },
         { name: 'Spel · Sök utan träffar', url: `${SPEL}#/search/zzz`, ready: '.dusty', note: 'Sökorden som rubrik; inga träffar: en dammig tom hylla med spindelväv under.' },
-        { name: 'Spel · En konsol, filtrerad utan träffar', url: `${SPEL}#/platform/1`, ready: '.grid .card', setup: filterGrid('zz'), note: 'Y på en hylla: rubriken SNES: zz, och den dammiga hyllan.' },
+        { name: 'Spel · En konsol, filtrerad utan träffar', url: `${SPEL}#/platform/1`, ready: '.grid .card', setup: filterGrid('zz'), note: 'Y på en hylla: rubriken SNES: ”zz”, och den dammiga hyllan.' },
         { name: 'Film · Sök utan träffar', url: `${FILM}#/search/zzz`, ready: '.dusty' },
         { name: 'Musik · Album', url: `${MUSIK}#/albums`, ready: '.grid .card', note: 'Kvadrater, i ett rutnät.' },
         { name: 'Musik · Album, filtrerade', url: `${MUSIK}#/albums`, ready: '.grid .card', setup: filterGrid('s'), note: 'Y skriver; rutnätet visar bara det som matchar, medan man skriver.' },

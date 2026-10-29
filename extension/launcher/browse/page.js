@@ -99,11 +99,11 @@ window.PioneerTV = window.PioneerTV || {};
     // While typing in the field (a search, a filter) the focus stays there.
     const typing = document.activeElement === search;
     if (spec.kind === 'grid') {
-      // A grid filtered by the search field is headed "SNES: the words", and
+      // A grid filtered by the search field is headed `SNES: ”the words”`, and
       // how many in it match beside it (the grid tells, as it filters).
       const shown = (n, all, words) => {
         const name = spec.title || library.name;
-        titleEl.textContent = words ? `${name}: ${words}` : name;
+        titleEl.textContent = words ? `${name}: ${V.searchTitle(words)}` : name;
         countEl.textContent = words ? V.hits(n) : spec.count ? spec.count(n, all) : '';
         if (onScreen) legend();      // as it filters: A, L1/R1 and Y follow
       };
