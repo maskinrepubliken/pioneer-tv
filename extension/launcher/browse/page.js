@@ -25,6 +25,7 @@ window.PioneerTV = window.PioneerTV || {};
   const titleEl = $('title');
   const countEl = $('count');
   const tabsEl = $('tabs');
+  const actionsEl = $('actions');
   const search = $('search');
   const searchBtn = $('search-btn');
   const searchItem = $('search-item');
@@ -45,7 +46,7 @@ window.PioneerTV = window.PioneerTV || {};
   // A view's filled button (Spela, Blanda allt, Försök igen) is always X's:
   // X presses it wherever the focus is, before whatever else X means in the
   // library (Spelas nu), and the legend says it, X and the button's name.
-  const filled = () => [...view.querySelectorAll('.knapp.primar:not([disabled])')].find((b) => b.offsetParent);
+  const filled = () => [...actionsEl.querySelectorAll('.primar'), ...view.querySelectorAll('.knapp.primar:not([disabled])')].find((b) => b.offsetParent);
 
   // ------------------------------------------------------------ the legend
   let viewLegend = [];
@@ -66,13 +67,13 @@ window.PioneerTV = window.PioneerTV || {};
   // ------------------------------------------------------------ focus
   const lastFocus = {};
   b.on('nav:focus', (target) => {
-    if (!target || !view.contains(target)) return;
+    if (!target || !(view.contains(target) || actionsEl.contains(target))) return;
     const k = target.closest('[data-key]');
     if (k) lastFocus[here()] = k.dataset.key;
   });
   function restoreFocus(fallback) {
     const key = lastFocus[here()];
-    const target = (key && view.querySelector(`[data-key="${CSS.escape(key)}"]`)) || fallback;
+    const target = (key && (view.querySelector(`[data-key="${CSS.escape(key)}"]`) || actionsEl.querySelector(`[data-key="${CSS.escape(key)}"]`))) || fallback;
     if (target) M.nav.focus(target);
   }
 
@@ -94,6 +95,7 @@ window.PioneerTV = window.PioneerTV || {};
     tabsEl.innerHTML = '';
     if (spec.tabs) tabsEl.appendChild(M.cards.tabs(spec.tabs));
     tabsEl.hidden = !spec.tabs;
+    actions(spec.actions);
     legend(spec.legend || []);
     if (spec.kind === 'message') return V.message(view, spec.text, spec.hint, spec.retry);
     // While typing in the field (a search, a filter) the focus stays there.
@@ -116,7 +118,25 @@ window.PioneerTV = window.PioneerTV || {};
       return;
     }
     const first = spec.kind === 'detail' ? M.detail.render(view, spec) : M.shelf.render(view, spec);
-    if (!typing && !spec.none) restoreFocus(first || searchBtn);   // nothing found: as a grid, the focus is left be
+    const asked = spec.focus && actionsEl.querySelector(`[data-key="${CSS.escape(spec.focus)}"]`);
+    if (!typing && !spec.none) restoreFocus(asked || first || searchBtn);   // nothing found: as a grid, the focus is left be
+  }
+
+  // A view's own buttons, beside its heading (an artist's Blanda allt and
+  // Spela allt): round, as Sök is, the name beside; the filled one X's.
+  //   [{ label, icon, primary, key, run }]
+  function actions(list) {
+    actionsEl.innerHTML = '';
+    for (const a of list || []) {
+      const btn = V.el('button', `head-action${a.primary ? ' primar' : ''}`);
+      btn.type = 'button';
+      const ring = V.el('span', 'head-action-ring');
+      ring.appendChild(M.icons.svg(a.icon || 'play'));
+      btn.append(ring, V.el('span', 'head-action-label', a.label));
+      if (a.key) btn.dataset.key = a.key;
+      btn.addEventListener('click', a.run);
+      actionsEl.appendChild(btn);
+    }
   }
 
   // ------------------------------------------------------------ routing

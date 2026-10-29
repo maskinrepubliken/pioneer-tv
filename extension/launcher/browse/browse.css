@@ -27,6 +27,26 @@
   flex: none; margin-right: auto; font-family: var(--pioneertv-font-mono); font-size: 0.95rem;
   color: var(--pioneertv-ink-faint); font-variant-numeric: tabular-nums;
 }
+/* A view's own buttons beside its title (page.js actions): round, as Sök
+   is, the name beside; the filled one ochre, and X's. The ring is the
+   round part's alone. */
+.head-actions { flex: none; display: flex; align-items: center; gap: 1.6rem; }
+.head-actions:empty { display: none; }
+.head-action {
+  display: inline-flex; align-items: center; gap: 0.65rem; margin: 0; padding: 0; cursor: pointer;
+  background: none; border: 0; font: 600 1rem/1 var(--pioneertv-font-ui); color: var(--pioneertv-ink);
+}
+.head-action-ring {
+  box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;
+  width: 2.5rem; height: 2.5rem; border-radius: 50%;
+  border: 1px solid var(--pioneertv-line-strong); color: var(--pioneertv-ink-muted);
+}
+.head-action-ring .pioneertv-icon { font-size: 1.15rem; }
+.head-action.primar .head-action-ring { background: var(--pioneertv-ochre); border-color: var(--pioneertv-ochre); color: var(--pioneertv-on-ochre); }
+.head-action:hover .head-action-ring { background: var(--pioneertv-paper-hover); }
+.head-action.primar:hover .head-action-ring { background: var(--pioneertv-ochre); }
+.head-action.pioneertv-focus { outline: none !important; box-shadow: none !important; }
+.head-action.pioneertv-focus .head-action-ring { outline: 0.15rem solid var(--pioneertv-focus); outline-offset: 0.2rem; }
 .head-tabs { flex: 0 1 auto; min-width: 0; }
 .head-tabs[hidden] { display: none; }
 /* Out of sight: the on-screen keyboard shows what is typed. */
