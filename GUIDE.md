@@ -361,7 +361,7 @@ drives it as usual. Game mode ends when the page goes away or stops sending hear
 The Musik tile opens the browse page on top of [Jellyfin](https://jellyfin.org/)'s
 music library (`browse.html?library=musik`): Blanda allt, then your
 playlists as cards (like Spel's collections), with Album and Artister in
-the column at the left; Album is shelves of covers, Artister cards; a playlist or an album lists its songs beside
+the column at the left; Album is shelves of covers, Artister their names alone, long, in three columns (they have no pictures; grid.js look names); a playlist or an album lists its songs beside
 its cover, with Spela and Blanda; an artist has Blanda allt (filled, X)
 and Spela allt at the heading's right, round buttons as Sök is with the
 name beside (a view's `actions`, drawn in the heading by `page.js`; Musik's

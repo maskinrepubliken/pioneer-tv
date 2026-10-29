@@ -251,7 +251,7 @@
           setup: ({ P, doc }) => doc.querySelectorAll('.card--stack').forEach((c) => P.cards.pile(c, null)),
           note: 'Korten kommer direkt, omslagen efter hand (RomM tar en stund per samling).' },
         { name: 'Musik · Blanda allt och spellistor', url: MUSIK, ready: '.card' },
-        { name: 'Musik · Artister', url: `${MUSIK}#/artists`, ready: '.grid .card', note: 'Ett rutnät av kort: L1/R1 hoppar en bokstav.' },
+        { name: 'Musik · Artister', url: `${MUSIK}#/artists`, ready: '.grid .card', note: 'Namnen, långa, i tre kolumner (artister har inga bilder): L1/R1 hoppar en bokstav.' },
         { name: 'Musik · Sök', url: `${MUSIK}#/search/kom`, ready: '.card, .row', note: 'Artister som kort, album på en hylla, låtar i en lista.' },
       ] },
     { part: 'Sidor', group: 'Detaljsidor', files: 'launcher/browse.html · browse/detail.js · browse/cards.js (row) · libraries/*.js',

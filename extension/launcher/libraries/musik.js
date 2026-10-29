@@ -68,7 +68,8 @@ window.PioneerTV = window.PioneerTV || {};
       kind: 'grid', title: kind === 'albums' ? 'Album' : 'Artister', filter: true,
       legend: [['A', 'öppna'], ['L1', ''], ['R1', 'hoppa en bokstav']],
       items: all.map(group), shape: kind === 'albums' ? 'square' : 'round',
-      look: kind === 'albums' ? 'shelf' : 'stacks', columns: kind === 'albums' ? 6 : 4,
+      // Artists have no pictures: their names, long, in three columns.
+      look: kind === 'albums' ? 'shelf' : 'names', columns: kind === 'albums' ? 6 : 3,
       count: (n, total) => (n === total ? `${total} ${word}` : `${n} av ${total} ${word}`),
       empty: kind === 'albums' ? 'Inga album.' : 'Inga artister.',
     };
@@ -113,7 +114,7 @@ window.PioneerTV = window.PioneerTV || {};
     return {
       ...head,
       sections: [
-        { label: 'Artister', layout: 'stacks', columns: 4, shape: 'round', items: found.artists.map(group) },
+        { label: 'Artister', layout: 'names', columns: 3, items: found.artists.map(group) },
         { label: 'Album', layout: 'shelf', items: found.albums.map(group) },
         { label: 'Låtar', layout: 'rows', look: 'thumb', items: found.songs.map((s, i) => song(s, i, found.songs, true)) },
       ],

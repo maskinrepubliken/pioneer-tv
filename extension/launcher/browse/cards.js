@@ -138,5 +138,15 @@ window.PioneerTV = window.PioneerTV || {};
     return nav;
   }
 
-  M.cards = { card, group, stack, pile, row, picture, tabs };
+  // A name alone, in a list of names in a few columns (an artist: there is
+  // no picture to show): the name in Fraunces, long, and a line beside it.
+  function name(item) {
+    const a = el('a', 'card card--name pioneertv-card');
+    link(a, item);
+    a.appendChild(el('span', 'name', item.title));
+    if (item.meta) a.appendChild(el('span', 'meta', item.meta));
+    return a;
+  }
+
+  M.cards = { card, group, stack, pile, row, name, picture, tabs };
 })(window.PioneerTV);

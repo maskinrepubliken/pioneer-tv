@@ -3,8 +3,9 @@
 //
 //   { items, shape, look, columns, info, letter, count }
 //
-// look: 'stacks' for cards of wholes (cards.js stack: the artists), else
-// covers on shelves. info(item): { title, meta, text, foot } for a strip
+// look: 'stacks' for cards of wholes (cards.js stack), 'names' for names
+// alone in a few columns (cards.js name: the artists, who have no
+// pictures), else covers on shelves. info(item): { title, meta, text, foot } for a strip
 // under the cards that follows the focus; letter(item): the letter it
 // files under, for L1/R1 jumps; count(shown, all): the heading's count;
 // empty: what the bare plank says when there is nothing at all. The page's
@@ -21,6 +22,7 @@ window.PioneerTV = window.PioneerTV || {};
   const el = M.views.el;
   const C = M.cards;
   const WINDOW_ROWS = 3;           // rows kept either side of the focused row
+  const NAME_ROWS = 14;            // a list of names: its rows are low, more of them on screen
 
   // The navigation's own word for a move (focusin does not fire while the
   // window itself lacks focus, as in a preview pane), for the grid on screen.
@@ -53,7 +55,9 @@ window.PioneerTV = window.PioneerTV || {};
     const body = el('div', 'grid-view');
     const scroller = el('div', 'scroll grid-scroll');
     const stacks = spec.look === 'stacks';
-    const gridEl = stacks ? el('div', 'shelf-stacks') : M.planks.el(spec.shape || 'square', cols);
+    const names = spec.look === 'names';
+    const around = names ? NAME_ROWS : WINDOW_ROWS;
+    const gridEl = stacks ? el('div', 'shelf-stacks') : names ? el('div', 'name-list') : M.planks.el(spec.shape || 'square', cols);
     gridEl.classList.add('grid');
     gridEl.style.setProperty('--columns', String(cols));
     scroller.appendChild(gridEl);
@@ -74,7 +78,7 @@ window.PioneerTV = window.PioneerTV || {};
     }
 
     function place(i) {
-      const c = stacks ? C.stack(shown[i], spec.shape) : C.card(shown[i], spec.shape);
+      const c = stacks ? C.stack(shown[i], spec.shape) : names ? C.name(shown[i]) : C.card(shown[i], spec.shape);
       c.dataset.index = String(i);
       c.style.gridRow = String(Math.floor(i / cols) + 1);
       c.style.gridColumn = String((i % cols) + 1);
@@ -86,8 +90,8 @@ window.PioneerTV = window.PioneerTV || {};
     function renderWindow(center) {
       gridEl.style.setProperty('--rows', String(Math.max(1, Math.ceil(shown.length / cols))));
       const row = Math.floor(center / cols);
-      const first = Math.max(0, row - WINDOW_ROWS) * cols;
-      const last = Math.min(shown.length, (row + WINDOW_ROWS + 1) * cols);
+      const first = Math.max(0, row - around) * cols;
+      const last = Math.min(shown.length, (row + around + 1) * cols);
       if (first === windowStart && nodes.size === last - first) return;
       windowStart = first;
       for (const [i, node] of nodes) if (i < first || i >= last) { node.remove(); nodes.delete(i); }

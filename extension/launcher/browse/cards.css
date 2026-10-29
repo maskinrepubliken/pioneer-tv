@@ -130,3 +130,25 @@
   outline: 0.2rem solid var(--pioneertv-focus) !important; outline-offset: 0.2rem !important;
   box-shadow: none !important; border-radius: var(--pioneertv-radius-pill) !important;
 }
+
+/* ---- names alone (grid.js look 'names', cards.js name): the artists,
+   who have no pictures, as a long list in a few columns, each name on its
+   own line over a hairline, in Fraunces, as long as it is. ---- */
+.name-list {
+  --row-h: 3.6rem;
+  display: grid; grid-template-columns: repeat(var(--columns, 3), minmax(0, 1fr)); column-gap: 2.6rem;
+  grid-auto-rows: var(--row-h);
+}
+.card--name {
+  display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 0.9rem; min-width: 0; padding: 0 0.9rem; text-align: left; content-visibility: visible;
+  background: none; border: 0; border-bottom: 1px solid var(--pioneertv-line); border-radius: 0;
+}
+.card--name .name {
+  flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font: 400 1.45rem/1.35 var(--pioneertv-font-prose); color: var(--pioneertv-ink); padding-bottom: 0.1em;
+}
+.card--name .meta { flex: none; font: 0.8rem var(--pioneertv-font-mono); color: var(--pioneertv-ink-faint); }
+.card--name.pioneertv-focus {
+  background: var(--pioneertv-paper-hover); border-bottom-color: transparent;
+  border-radius: 0.6rem !important; outline-offset: 0.12rem !important;
+}

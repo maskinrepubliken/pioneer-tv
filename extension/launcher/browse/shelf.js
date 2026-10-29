@@ -7,7 +7,8 @@
 // layout: 'shelf' (covers standing on shelves, planks.js; 'row' and 'grid'
 // are shelves too), 'stacks' (wholes as cards: collections, playlists,
 // artists, each its picture or its first few in a pile, cards.js stack;
-// columns, 3 if not given), 'groups' (type-only cards, wrapping), 'actions'
+// columns, 3 if not given), 'names' (names alone in a few columns, an
+// artist's: cards.js name), 'groups' (type-only cards, wrapping), 'actions'
 // (buttons and type-only cards in a line: { button: true, label, icon,
 // primary, run, key } for a button, small, its icon before its name) or 'rows' (a list, look 'number', 'thumb' or
 // 'still'). A section without items is left out, or says empty.
@@ -41,6 +42,10 @@ window.PioneerTV = window.PioneerTV || {};
         if (it.key) b.dataset.key = it.key;
         body.appendChild(b);
       }
+    } else if (s.layout === 'names') {
+      body = el('div', 'name-list');
+      if (s.columns) body.style.setProperty('--columns', String(s.columns));
+      items.forEach((it) => body.appendChild(C.name(it)));
     } else if (s.layout === 'stacks') {
       body = el('div', 'shelf-stacks');
       if (s.columns) body.style.setProperty('--columns', String(s.columns));
