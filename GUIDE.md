@@ -120,10 +120,10 @@ left from the view lands on the one the page is at. Search is a round
 button, as on every page of ours (`pioneertv-round` in
 `content/paper.css`): A on it, or Y anywhere, opens the on-screen keyboard
 on a field out of sight; over a grid they filter it, elsewhere they
-search the library. Either way the heading is the same: the words as the
-title and how many were found beside them ("3 träffar", over a grid "2
-träffar i SNES"), and when nothing was found only the words (and "i
-SNES") and a bare dusty plank, a cobweb under its end, saying "Inga
+search the library. Either way the heading is alike: the words as the
+title (over a grid with its name, "SNES: mario") and how many were found
+beside them ("3 träffar"), and when nothing was found only the title and
+a bare dusty plank, a cobweb under its end, saying "Inga
 träffar" in big type (`planks.js` dusty, also for a grid with nothing in
 it), and the legend then offers no A. On a search Y says "ändra
 sökningen", and L1/R1 are in the legend only where a grid has more than

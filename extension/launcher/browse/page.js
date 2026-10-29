@@ -99,11 +99,12 @@ window.PioneerTV = window.PioneerTV || {};
     // While typing in the field (a search, a filter) the focus stays there.
     const typing = document.activeElement === search;
     if (spec.kind === 'grid') {
-      // A grid filtered by the search field is headed as a search is: the
-      // words, and how many in it match (the grid tells, as it filters).
+      // A grid filtered by the search field is headed "SNES: the words", and
+      // how many in it match beside it (the grid tells, as it filters).
       const shown = (n, all, words) => {
-        titleEl.textContent = words ? V.searchTitle(words) : spec.title || library.name;
-        countEl.textContent = words ? (n ? `${V.hits(n)} i ${spec.title || library.name}` : `i ${spec.title || library.name}`) : spec.count ? spec.count(n, all) : '';
+        const name = spec.title || library.name;
+        titleEl.textContent = words ? `${name}: ${words}` : name;
+        countEl.textContent = words ? V.hits(n) : spec.count ? spec.count(n, all) : '';
         if (onScreen) legend();      // as it filters: A, L1/R1 and Y follow
       };
       grid = onScreen = M.grid.render(view, spec, { shown, savedKey: lastFocus[here()] });
