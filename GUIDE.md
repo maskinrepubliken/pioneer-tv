@@ -695,7 +695,7 @@ Paper is the ground, ink is what you read with, ochre is the one signal; there
 are no shadows, gradients or see-through tones, and nothing moves except in
 answer to a button. The one motion is the focus ring's: on our own pages
 (`html.pioneertv-own`) it is one ring that glides from what had the focus
-to what has it, in a fifth of a second, taking the place, gap and roundness
+to what has it, in a seventh of a second, taking the place, gap and roundness
 of the outline that one would draw (`M.ring` in spatial-nav.js; the
 outlines stay, clear, in paper.css). It follows a scroll at once, and
 draws in the top layer with a menu. The glide is a transform alone, done by
