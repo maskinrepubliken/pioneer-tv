@@ -698,7 +698,9 @@ answer to a button. The one motion is the focus ring's: on our own pages
 to what has it, in a seventh of a second, taking the place, gap and roundness
 of the outline that one would draw (`M.ring` in spatial-nav.js; the
 outlines stay, clear, in paper.css). It follows a scroll at once, and
-draws in the top layer with a menu. The glide is a transform alone, done by
+draws in the top layer with a menu. Covered by something over it (a
+full-screen message, a panel: what is at its middle is not it), it is not
+drawn, and comes back when that goes. The glide is a transform alone, done by
 the compositor: moving its left, top, width and height had the Pi lay the
 page out at every frame, and on the box about half the frames of a glide
 were lost. Four voices, bundled in `extension/fonts/` under the SIL

@@ -56,7 +56,11 @@ window.PioneerTV = window.PioneerTV || {};
     draw() {
       const t = this.target;
       const r = t && t.isConnected ? t.getBoundingClientRect() : null;
-      if (!r || r.width < 2 || r.height < 2) {
+      // Covered by something over it (a full-screen message, a panel): no
+      // ring over that. What is at its middle is it, in it, or around it.
+      const hit = r && t.ownerDocument.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      const covered = hit && hit !== t && !t.contains(hit) && !hit.contains(t);
+      if (!r || r.width < 2 || r.height < 2 || covered) {
         if (this.el) this.el.style.display = 'none';
         this.placed = null;
         return;
