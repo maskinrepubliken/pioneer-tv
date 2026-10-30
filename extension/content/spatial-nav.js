@@ -76,14 +76,23 @@ window.PioneerTV = window.PioneerTV || {};
       const radius = st.borderTopLeftRadius.endsWith('%') ? st.borderTopLeftRadius : `${(parseFloat(st.borderTopLeftRadius) || 0) + off}px`;
       const at = `${r.left - off},${r.top - off},${r.width + off * 2},${r.height + off * 2},${radius},${w}`;
       if (at === this.at && this.el.style.display !== 'none') return;
-      // A new one glides there; the same one moved (a scroll) is followed at once.
-      const glide = this.placed && this.placed !== t && this.el.style.display !== 'none';
-      this.el.style.transition = glide ? '' : 'none';
+      // A new one glides there; the same one moved (a scroll) is followed at
+      // once. The glide is a transform alone (put where it goes, then drawn
+      // from where it was, back to nothing): left, top, width and height
+      // moving made the Pi lay the page out at every frame, and the glide
+      // stuttered (half the frames lost, measured on the box).
+      const was = this.el.style.display !== 'none' && this.placed && this.placed !== t ? this.el.getBoundingClientRect() : null;
+      const x = r.left - off, y = r.top - off, w2 = r.width + off * 2, h2 = r.height + off * 2;
       Object.assign(this.el.style, {
-        display: 'block', left: `${r.left - off}px`, top: `${r.top - off}px`,
-        width: `${r.width + off * 2}px`, height: `${r.height + off * 2}px`, borderRadius: radius, borderWidth: `${w}px`,
+        transition: 'none', transform: 'none', display: 'block', left: `${x}px`, top: `${y}px`,
+        width: `${w2}px`, height: `${h2}px`, borderRadius: radius, borderWidth: `${w}px`,
       });
-      if (!glide) void this.el.offsetWidth;          // placed before the glide comes back
+      if (was && was.width > 0 && was.height > 0) {
+        this.el.style.transform = `translate(${was.left - x}px, ${was.top - y}px) scale(${was.width / w2}, ${was.height / h2})`;
+        void this.el.offsetWidth;                    // drawn there first, then it goes
+        this.el.style.transition = '';
+        this.el.style.transform = 'none';
+      }
       this.placed = t;
       this.at = at;
     },

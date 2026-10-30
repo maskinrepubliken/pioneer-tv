@@ -698,7 +698,10 @@ answer to a button. The one motion is the focus ring's: on our own pages
 to what has it, in a fifth of a second, taking the place, gap and roundness
 of the outline that one would draw (`M.ring` in spatial-nav.js; the
 outlines stay, clear, in paper.css). It follows a scroll at once, and
-draws in the top layer with a menu. Four voices, bundled in `extension/fonts/` under the SIL
+draws in the top layer with a menu. The glide is a transform alone, done by
+the compositor: moving its left, top, width and height had the Pi lay the
+page out at every frame, and on the box about half the frames of a glide
+were lost. Four voices, bundled in `extension/fonts/` under the SIL
 Open Font License: IBM Plex Sans for everything you press or fill in, Fraunces
 for what you read and for card titles, IBM Plex Mono for every number and
 machine word, and Rubik Black for a page heading.
