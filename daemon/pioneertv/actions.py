@@ -242,6 +242,13 @@ class VolumeChord:
     the volume a step first; a tap shorter than that is still one step.
     With both down the volume stops and the TV is muted; neither steps it
     again until both are let go. Any other action passes straight on.
+
+    The wait runs beside the pad's own events, so a release can come while
+    its press is still being handled (the dispatcher asks the TV's power
+    first, which takes a while over CEC). It then waits for the press to
+    be done before it lets go: let go first, the press began its repeat
+    afterwards with no release to end it, and the volume ran down by
+    itself for seconds (seen on the box).
     """
 
     CHORD_SECONDS = 0.09
@@ -250,13 +257,20 @@ class VolumeChord:
 
     def __init__(self, dispatcher) -> None:
         self.dispatcher = dispatcher
-        self.held: dict[str, tuple] = {}         # side -> (action, at)
-        self.waiting: dict[str, asyncio.Task] = {}
-        self.begun: set[str] = set()
+        self.held: dict[str, Action] = {}        # side -> its action, while down
+        self.waiting: dict[str, asyncio.Task] = {}   # side -> its press, until it is done
+        self.pressing: set[str] = set()          # sides whose press has started (past the wait)
+        self.begun: set[str] = set()             # sides pressed in the dispatcher
         self.chord = False
 
     def side(self, action) -> str | None:
         return self.SIDES.get(action.get("cec")) if isinstance(action, dict) else None
+
+    async def _settled(self, side: str) -> None:
+        """Wait for a press past its wait to be done (no-op otherwise)."""
+        task = self.waiting.get(side)
+        if task and side in self.pressing:
+            await asyncio.shield(task)
 
     async def press(self, action: Action, at: float | None = None) -> None:
         side = self.side(action)
@@ -264,16 +278,17 @@ class VolumeChord:
             await self.dispatcher.press(action, at)
             return
         other = "r" if side == "l" else "l"
-        self.held[side] = (action, at)
+        self.held[side] = action
         if self.chord:
             return
         if other in self.held:
             self.chord = True
-            if task := self.waiting.pop(other, None):
-                task.cancel()                      # it never began
-            elif other in self.begun:
+            await self._settled(other)
+            if (task := self.waiting.pop(other, None)) and not task.done():
+                task.cancel()                      # still waiting: it never began
+            if other in self.begun:
                 self.begun.discard(other)
-                await self.dispatcher.release(self.held[other][0])
+                await self.dispatcher.release(self.held.get(other) or action)
             log.info("L1 and R1 together: mute")
             await self.dispatcher.press(self.MUTE)
             await self.dispatcher.release(self.MUTE)
@@ -285,10 +300,17 @@ class VolumeChord:
             await asyncio.sleep(self.CHORD_SECONDS)
         except asyncio.CancelledError:
             return
-        self.waiting.pop(side, None)
-        if side in self.held and not self.chord:
-            self.begun.add(side)
+        if side not in self.held or self.chord:
+            self.waiting.pop(side, None)
+            return
+        self.pressing.add(side)
+        try:
             await self.dispatcher.press(action, at)
+            self.begun.add(side)
+        finally:
+            self.pressing.discard(side)
+            if self.waiting.get(side) is asyncio.current_task():
+                del self.waiting[side]
 
     async def release(self, action: Action, at: float | None = None) -> None:
         side = self.side(action)
@@ -296,9 +318,10 @@ class VolumeChord:
             await self.dispatcher.release(action, at)
             return
         self.held.pop(side, None)
-        if task := self.waiting.pop(side, None):
+        await self._settled(side)
+        if (task := self.waiting.pop(side, None)) and not task.done():
             task.cancel()
-            if not self.chord:                     # a tap: one step
+            if not self.chord:                     # a tap shorter than the wait: one step
                 await self.dispatcher.press(action, at)
                 await self.dispatcher.release(action, at)
         elif side in self.begun:
@@ -306,4 +329,3 @@ class VolumeChord:
             await self.dispatcher.release(action, at)
         if not self.held:
             self.chord = False
-
