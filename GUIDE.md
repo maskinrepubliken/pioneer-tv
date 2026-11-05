@@ -41,7 +41,7 @@ what was learned on the way.
 | X / Square | The filled button, wherever there is one: on the box's pages (Spela, Blanda allt, Försök igen, the settings page's Sök efter enheter), the overlay's menus (Fortsätt, Hem) and the on-screen keyboard (OK); unmarked (one learns it), the browse page's legend says it. Elsewhere play, pause (Space) or the page's own use. Hold: undo (Ctrl+Z), e.g. what X took off a list |
 | Y / Triangle | On-screen keyboard (on a pad without Home, hold: quick menu) |
 | L1, R1 | TV volume down, up (CEC, repeats while held). Both held together: mute, once (`VolumeChord` in actions.py; either alone waits 90 ms for the other, so a chord moves the volume no step first) |
-| L2, R2 | On the media panel, wherever the focus is: the timeline's mark back, on (A goes there). Nothing elsewhere. As triggers (analog) they press past `trigger_threshold` and let go only under half of it, so one resting near the line cannot flutter; the volume left them for L1/R1, as it hung there and crept up or down |
+| L2, R2 | On the media panel, wherever the focus is: seek back, on, as fast as they are pressed (the daemon sends how hard, `seek`; the mark on the timeline glides, and what plays goes where they are let go; a short light touch is ten seconds). Nothing elsewhere. The volume left them for L1/R1, as it hung there and crept up or down |
 | Right stick | Mouse pointer; click on the stick to left-click. What it (or a mouse) is over is drawn as selected and takes the focus, so the d-pad goes on from there |
 | Start | Nothing on the box; in a game, the console's Start |
 | Select | Nothing on the box; in a game, the console's Select |
@@ -502,9 +502,12 @@ radio. Its parts, those that apply:
 
 - **The head**: the cover (the music's), playing, paused or live, the whole
   name, and what it is from (the artist and the album).
-- **The timeline**: how far in, the time and what is left. With the focus,
-  ◀ ▶ move a mark along it with its time above it (a twentieth at a
-  press, a tenth held), and A goes there.
+- **The timeline**, read only: how far in, the time and what is left. L2
+  and R2 glide a mark along it with its time above it, as fast as they are
+  pressed (a full press goes through a tenth of the whole a second, a light
+  one a three-hundredth), and what plays goes where they are let go (one
+  seek, so a site's video does not load and load); a short light touch is
+  ten seconds.
 - **The transport**: round buttons side by side, −2 min, −15 s, play or
   pause (the large one; on a film or a video the panel paused, Fortsätt),
   +15 s, +2 min. Left and right go between them.
@@ -513,9 +516,10 @@ radio. Its parts, those that apply:
   what plays; Ljud and Undertexter, their value in a capsule (A steps to
   the next); Meny (over a site's video); Sluta titta or Sluta spela.
 
-L2 and R2 move the timeline's mark wherever the focus is on the panel (the
-focus goes to the timeline; A goes there): the daemon sends them as
-`seek_back` and `seek_on`, to the overlay alone.
+L2 and R2 work wherever the focus is on the panel, which stays where it
+is: the daemon sends them as `seek` (a direction and how hard, 0 to 1, said
+when it changes by a twentieth; a trigger as a button is half), to the
+overlay alone.
 
 The focus starts on play. The menu (`hud.js`) has the parts for it: a
 `head` in the title's place, an item that draws itself (`render`), and items
@@ -616,7 +620,8 @@ are the keyboard's own and reach the page or the overlay as real presses; a
 click sends the same key, marked `pioneertvPad` (spatial-nav.js lets those
 through, as it does real presses, and not the on-screen keyboard's own). H is Home (held, the
 home page), Y the on-screen keyboard, held Esc is holding B, `[` and `]` are
-L1/R1 (the volume), `,` and `.` L2/R2 (seeking on the media panel). The side panel draws the pad (lighting up what is pressed), and has
+L1/R1 (the volume), `,` and `.` L2/R2 (seeking on the media panel, held;
+with Shift as hard as it goes). The side panel draws the pad (lighting up what is pressed), and has
 the screensaver, the TV off and on, the green or the pink pad, and a toast;
 under it, every event the daemon sends. Another site (SVT Play, ...) cannot
 be framed and shows as a stand-in page; `?page=` opens the simulator on a

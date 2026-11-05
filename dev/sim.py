@@ -293,8 +293,6 @@ class Daemon:
                 self.event("back")
             elif name in ("vol_up", "vol_down"):
                 self.cec("volume_up" if name == "vol_up" else "volume_down")
-            elif name in ("seek_back", "seek_on"):
-                self.event(name)                      # L2/R2: the media panel's timeline (overlay.js)
 
     def use_pad(self, key: str) -> None:
         with self.lock:
@@ -511,6 +509,9 @@ class Daemon:
             # The simulator's own controls.
             if path == "/api/sim/button":
                 self.button(str(body.get("name") or ""))
+                return {"ok": True}
+            if path == "/api/sim/seek":           # L2/R2: a direction and how hard (gamepad.py seek)
+                self.event("seek", dir=-1 if float(body.get("dir") or 1) < 0 else 1, amount=max(0.0, min(1.0, float(body.get("amount") or 0))))
                 return {"ok": True}
             if path == "/api/sim/pad":
                 self.use_pad(str(body.get("pad") or ""))

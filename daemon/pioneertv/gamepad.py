@@ -47,6 +47,8 @@ def describe(action) -> str | None:
         return "TV " + action["cec"]
     if "system" in action:
         return action["system"]
+    if "seek" in action:
+        return "spola " + ("bakåt" if action["seek"] < 0 else "framåt")
     return "?"
 
 # Per-device quirks by name substring: axis inversion and button overrides
@@ -64,8 +66,8 @@ QUIRKS = [
         "BTN_NORTH": {"system": "keyboard", "long": {"system": "menu"}},  # Y
         "BTN_WEST": {"cec": "volume_down", "repeat": True},             # L1: TV volume
         "BTN_Z": {"cec": "volume_up", "repeat": True},                  # R1
-        "BTN_TL": {"system": "seek_back"},                              # L2: seek on the media panel
-        "BTN_TR": {"system": "seek_on"},                                # R2
+        "BTN_TL": {"seek": -1},                                         # L2: seek on the media panel
+        "BTN_TR": {"seek": 1},                                          # R2
         "KEY_HOMEPAGE": {"system": "home"},   # pause: only reports after a long hold
     }}),
     # 8BitDo Ultimate 2C on its 2.4 GHz dongle (2dc8:310a, xpad). xpad reports
@@ -92,6 +94,7 @@ class Gamepad:
         self.dispatcher = dispatcher
         # L2 and R2 together mute; every press and release goes through it.
         self.chord = VolumeChord(dispatcher)
+        self.seeking: dict[int, float] = {}       # L2/R2: how hard each is pressed, last said
         self.mouse = mouse
         # Shared with the manager: {"passthrough": bool}. In passthrough the pad
         # is left to the page (Chromium's Gamepad API, e.g. RomM's emulator):
@@ -220,6 +223,9 @@ class Gamepad:
             return
         if (self.shared.get("passthrough") or self.shared.get("games")) and code not in SHELL_BUTTONS:
             return
+        if "seek" in action:                          # L2/R2 as buttons: half speed while held
+            await self.seek(code, action["seek"], 0.5 if value else 0.0)
+            return
         if value:
             await self.chord.press(action, at)
         else:
@@ -239,6 +245,10 @@ class Gamepad:
             return
         if "mouse" in spec:
             self.mouse.set_axis(spec["mouse"], v)
+            return
+        if "seek" in spec:                            # L2/R2 as triggers: how hard is how fast
+            dead = 0.08
+            await self.seek(code, spec["seek"], 0.0 if v < dead else min(1.0, (v - dead) / (1 - dead)))
             return
         hat = code in (e.ABS_HAT0X, e.ABS_HAT0Y)
         threshold = 0.5 if hat else (self.cfg["trigger_threshold"] if code in self.unipolar else self.cfg["stick_deadzone"])
@@ -260,7 +270,21 @@ class Gamepad:
             if act:
                 await self.chord.press(act)
 
+    async def seek(self, code: int, direction: int, amount: float) -> None:
+        """L2 and R2: seeking on the media panel (overlay.js), back or on, as
+        fast as the trigger is pressed (0 let go, 1 all the way). Said when
+        it changes by a twentieth, so a trigger moving does not flood."""
+        amount = round(amount * 20) / 20
+        if self.seeking.get(code, 0.0) == amount:
+            return
+        self.seeking[code] = amount
+        await self.dispatcher.emit({"type": "event", "name": "seek", "dir": -1 if direction < 0 else 1, "amount": amount})
+
     async def release_everything(self) -> None:
+        for code, amount in list(self.seeking.items()):
+            if amount:
+                spec = self.axes.get(code) or self.buttons.get(code) or {}
+                await self.seek(code, spec.get("seek", 1), 0.0)
         for code, state in list(self.axis_state.items()):
             if state:
                 act = self.axes[code].get("positive" if state > 0 else "negative")

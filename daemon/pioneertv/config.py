@@ -60,11 +60,11 @@ DEFAULTS: dict[str, Any] = {
             "BTN_WEST": {"key": "KEY_SPACE", "long": UNDO},                 # hold: undo (Ctrl+Z)
             "BTN_NORTH": {"system": "keyboard"},
             # L1/R1 the TV's volume (both together: mute), buttons that cannot
-            # stick; L2/R2 seek on the media panel's timeline (overlay.js).
+            # stick; L2/R2 seek on the media panel (overlay.js), as fast as pressed.
             "BTN_TL": {"cec": "volume_down", "repeat": True},
             "BTN_TR": {"cec": "volume_up", "repeat": True},
-            "BTN_TL2": {"system": "seek_back"},
-            "BTN_TR2": {"system": "seek_on"},
+            "BTN_TL2": {"seek": -1},
+            "BTN_TR2": {"seek": 1},
             "BTN_MODE": {"system": "menu", "long": {"system": "home"}},
             "BTN_THUMBL": {"mouse_button": "BTN_RIGHT"},
             "BTN_THUMBR": {"mouse_button": "BTN_LEFT"},
@@ -76,8 +76,9 @@ DEFAULTS: dict[str, Any] = {
             "ABS_Y": {"negative": {"key": "KEY_UP"}, "positive": {"key": "KEY_DOWN"}},
             "ABS_RX": {"mouse": "x"},
             "ABS_RY": {"mouse": "y"},
-            "ABS_Z": {"positive": {"system": "seek_back"}},
-            "ABS_RZ": {"positive": {"system": "seek_on"}},
+            # L2/R2 as triggers: how hard they are pressed is how fast it seeks.
+            "ABS_Z": {"seek": -1},
+            "ABS_RZ": {"seek": 1},
         },
     },
     # mode "virtual": the extension draws and drives the pointer (no Wayland pointer, see README).

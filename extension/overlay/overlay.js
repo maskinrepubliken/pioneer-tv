@@ -160,15 +160,14 @@ window.PioneerTV = window.PioneerTV || {};
   //
   //   the head: the cover (the music's), playing or paused, the whole name,
   //   what it is from;
-  //   the timeline: how far in, the time and what is left; with the focus,
-  //   left and right move a mark along it (a twentieth at a press, faster
-  //   held) and A goes there;
+  //   the timeline: how far in, the time and what is left, read only;
+  //   L2 and R2 glide a mark along it, as fast as they are pressed, and
+  //   what plays goes where they are let go (below);
   //   the transport: −2 min, −15 s, play or pause (on a film or a video the
   //   panel paused: Fortsätt), +15 s, +2 min, round buttons side by side;
   //   the queue (the music's): the song before and the next;
   //   Från början, TV-volym (left and right, and L1/R1; A mutes), Ljud,
   //   Undertexter (A steps to the next), Meny (over a site's video), Sluta.
-  //   L2 and R2 move the timeline's mark wherever the focus is (scrub).
   //
   // A source says what plays and does it:
   //   { kind, title, sub, cover, live, time, duration, end, paused, index,
@@ -212,15 +211,17 @@ window.PioneerTV = window.PioneerTV || {};
     };
     const seekable = !src.live ? !!src.duration : !!src.end;
 
-    // ---- the head
-    const head = make('div', 'pioneertv-media-head');
+    // ---- the head (the timeline goes under it)
+    const head = make('div', 'pioneertv-media-top');
+    const top = make('div', 'pioneertv-media-head');
+    head.appendChild(top);
     const cover = make('div', 'pioneertv-media-cover');
     const kicker = make('div', 'pioneertv-media-kicker');
     const title = make('div', 'pioneertv-menu-title pioneertv-media-title');
     const sub = make('div', 'pioneertv-media-sub');
     const words = make('div', 'pioneertv-media-words');
     words.append(kicker, title, sub);
-    head.append(cover, words);
+    top.append(cover, words);
     m.parts.push(() => {
       const pic = src.cover || '';
       if (cover.dataset.src !== pic) {
@@ -248,14 +249,9 @@ window.PioneerTV = window.PioneerTV || {};
       const now = make('span', '', ''), hint = make('span', 'pioneertv-media-hint', ''), end = make('span', '', '');
       times.append(now, hint, end);
       box.append(track, times);
+      head.appendChild(box);                       // read, not a stop: L2/R2 move it
       const span = () => lengthOf(src) || 1;
-      items.push({ label: 'Tidslinje', keep: true, render: () => box,
-        step: (dir, held) => {
-          const base = m.target == null ? src.time : m.target;
-          m.target = Math.max(0, Math.min(span() - 1, base + dir * span() / (held ? 10 : 20)));
-          refresh();
-        },
-        run: () => { if (m.target != null) { const t = m.target; m.target = null; seekTo(t); } } });
+      m.seekTo = seekTo;
       m.parts.push(() => {
         const share = Math.max(0, Math.min(1, src.time / span()));
         fill.style.width = `${share * 100}%`;
@@ -267,7 +263,7 @@ window.PioneerTV = window.PioneerTV || {};
         }
         now.textContent = src.live ? (src.end - src.time > 30 ? `${clock(src.end - src.time)} efter` : 'Direkt') : clock(src.time);
         end.textContent = src.live ? 'direkt' : `−${clock(src.duration - src.time)}`;
-        hint.textContent = marking ? 'A går dit' : '◀ ▶ välj plats';
+        hint.textContent = marking ? 'släpp så hoppar den hit' : 'L2 ◀ ▶ R2';
       });
     }
 
@@ -336,10 +332,9 @@ window.PioneerTV = window.PioneerTV || {};
     items.push(src.last);
 
     // The timeline's mark goes when the focus leaves it.
-    const onHighlight = (it) => { if (it && it.label !== 'Tidslinje' && m.target != null) { m.target = null; refresh(); } };
     // First the play button, unless asked for another.
     const playAt = items.findIndex((it) => it.primary);
-    m.spec = { title: src.title || 'Spelas', head, items, at: at != null ? at : playAt, onHighlight, media: true };
+    m.spec = { title: src.title || 'Spelas', head, items, at: at != null ? at : playAt, media: true };
     refresh(true);
     return m.spec;
   }
@@ -348,17 +343,46 @@ window.PioneerTV = window.PioneerTV || {};
     const d = it.el && it.el.querySelector('.pioneertv-menu-detail');
     if (d && d.textContent !== text) d.textContent = text;
   }
-  // L2 and R2 (the daemon's seek_back and seek_on) wherever the focus is on
-  // the panel: to the timeline, and its mark a step back or on (A goes there).
-  function scrub(dir) {
-    if (!mediaOpen() || menu.stack[menu.stack.length - 1] !== media.spec) return;
-    const i = media.spec.items.findIndex((it) => it.label === 'Tidslinje');
-    if (i < 0) return;
-    if (menu.index !== i) { menu.index = i; menu.highlight(); }
-    media.spec.items[i].step(dir, false);
+  // L2 and R2 (the daemon's seek: a direction and how hard, 0 let go, 1 all
+  // the way) on the open media panel, wherever its focus is: the mark on the
+  // timeline glides back or on, the harder the faster (a full press goes
+  // through a tenth of the whole a second, a light one through a
+  // three-hundredth), and where it is let go, what plays goes. A short
+  // light touch is a step of ten seconds. Seeking at every frame would have
+  // a site's video load and load; one seek on letting go does not.
+  let scrubbing = null;          // { dir, amount, from, at } while L2 or R2 is down
+  function scrubSpeed(src, amount) {
+    const whole = lengthOf(src) || 600;
+    const slow = Math.max(2, whole / 300), fast = Math.max(30, whole / 10);
+    return slow + (fast - slow) * amount * amount;
   }
-  b.on('seek_back', () => scrub(-1));
-  b.on('seek_on', () => scrub(1));
+  b.on('seek', (e) => {
+    if (!mediaOpen() || menu.stack[menu.stack.length - 1] !== media.spec || !media.seekTo) return;
+    const src = media.src;
+    const amount = Math.max(0, Math.min(1, Number(e.amount) || 0));
+    if (amount > 0) {
+      if (!scrubbing) scrubbing = { from: src.time, at: performance.now() };
+      scrubbing.dir = e.dir < 0 ? -1 : 1;
+      scrubbing.amount = amount;
+      if (media.target == null) media.target = src.time;
+      return;
+    }
+    if (!scrubbing) return;
+    const { from, dir } = scrubbing;
+    scrubbing = null;
+    let to = media.target == null ? src.time : media.target;
+    if (Math.abs(to - from) < 3) to = from + dir * 10;
+    media.target = null;
+    media.seekTo(to);
+  });
+  setInterval(() => {
+    if (!scrubbing || !mediaOpen() || media.target == null) return;
+    const now = performance.now(), dt = (now - scrubbing.at) / 1000;
+    scrubbing.at = now;
+    const src = media.src;
+    media.target = Math.max(0, Math.min((lengthOf(src) || 1) - 1, media.target + scrubbing.dir * scrubSpeed(src, scrubbing.amount) * dt));
+    refresh();
+  }, 50);
   // The open panel, from where its source is now.
   function refresh(force) {
     if (!media || (!force && !mediaOpen())) return;

@@ -52,8 +52,8 @@ BTN_WEST   = { key = "KEY_SPACE", long = { key = "KEY_Z", modifiers = ["KEY_LEFT
 BTN_NORTH  = { system = "keyboard" }                              # Y: the on-screen keyboard
 BTN_TL     = { cec = "volume_down", repeat = true }               # L1: TV volume (L1+R1: mute)
 BTN_TR     = { cec = "volume_up",   repeat = true }               # R1
-BTN_TL2    = { system = "seek_back" }                              # L2: seek on the media panel
-BTN_TR2    = { system = "seek_on" }                                # R2
+BTN_TL2    = { seek = -1 }                                         # L2: seek on the media panel
+BTN_TR2    = { seek = 1 }                                          # R2
 BTN_MODE   = { system = "menu", long = { system = "home" } }      # the only way to the menus; hold: the start page
 BTN_THUMBL = { mouse_button = "BTN_RIGHT" }
 BTN_THUMBR = { mouse_button = "BTN_LEFT" }
@@ -65,8 +65,8 @@ ABS_X     = { negative = { key = "KEY_LEFT" }, positive = { key = "KEY_RIGHT" } 
 ABS_Y     = { negative = { key = "KEY_UP" },   positive = { key = "KEY_DOWN" } }
 ABS_RX    = { mouse = "x" }
 ABS_RY    = { mouse = "y" }
-ABS_Z     = { positive = { system = "seek_back" } }               # L2 as a trigger
-ABS_RZ    = { positive = { system = "seek_on" } }                 # R2 as a trigger
+ABS_Z     = { seek = -1 }                                         # L2 as a trigger: as fast as pressed
+ABS_RZ    = { seek = 1 }                                          # R2
 
 [mouse]
 mode = "virtual"     # the extension draws and drives the pointer; "uinput" is a real mouse device (see README)

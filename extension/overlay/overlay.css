@@ -74,7 +74,8 @@ html, body { margin: 0; height: 100%; background: transparent !important; overfl
 .pioneertv-menu-row--transport { justify-content: space-between; align-items: flex-start; margin: 2px 0 6px; }
 .pioneertv-menu-row--queue > * { flex: 1; }
 
-.pioneertv-media-head { display: flex; gap: 16px; align-items: center; margin-bottom: 4px; }
+.pioneertv-media-top { display: flex; flex-direction: column; gap: 4px; margin-bottom: 4px; }
+.pioneertv-media-head { display: flex; gap: 16px; align-items: center; }
 .pioneertv-media-cover { flex: none; width: 92px; height: 92px; border-radius: var(--pioneertv-radius-m); overflow: hidden; background: var(--pioneertv-paper-sunken); }
 .pioneertv-media-cover[hidden] { display: none; }
 .pioneertv-media-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -84,11 +85,11 @@ html, body { margin: 0; height: 100%; background: transparent !important; overfl
 .pioneertv-media-sub { font: italic 400 18px/1.25 var(--pioneertv-font-prose); color: var(--pioneertv-ink-muted); }
 .pioneertv-media-sub[hidden] { display: none; }
 
-/* The timeline: the line, how far in in ink, the mark (with the focus, where
-   A would go) with its time above it, and the times under. */
+/* The timeline, read only: the line, how far in in ink, the mark (while L2
+   or R2 glides it, where it goes on letting go) with its time above it, and
+   the times under. */
 .pioneertv-media-timeline {
-  padding: 26px 18px 12px; border-radius: var(--pioneertv-radius-m); cursor: pointer;
-  border: 1px solid transparent;
+  padding: 26px 0 8px;
 }
 .pioneertv-media-track { position: relative; height: 8px; border-radius: 4px; background: var(--pioneertv-line); }
 .pioneertv-media-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: var(--pioneertv-ink); }
@@ -105,8 +106,7 @@ html, body { margin: 0; height: 100%; background: transparent !important; overfl
 }
 .pioneertv-media-times { display: flex; justify-content: space-between; gap: 10px; margin-top: 10px; font: 400 14px/1 var(--pioneertv-font-mono); color: var(--pioneertv-ink-muted); }
 .pioneertv-media-hint { color: var(--pioneertv-ink-faint); }
-.pioneertv-media-timeline.pioneertv-menu-active { background: var(--pioneertv-paper-sunken); outline: 4px solid var(--pioneertv-focus); outline-offset: 5px; }
-.pioneertv-media-timeline.pioneertv-menu-active .pioneertv-media-hint { color: var(--pioneertv-ink); }
+.pioneertv-media-timeline.marking .pioneertv-media-hint { color: var(--pioneertv-ink); }
 
 /* The transport: round buttons, play the large one, each with what it does under it. */
 .pioneertv-media-btn { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; border-radius: 50%; }

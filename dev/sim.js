@@ -138,8 +138,10 @@
       } else if (k === 'y') { eat(); if (!e.repeat) press('keyboard'); }
       else if (e.key === '[') { eat(); press('vol_down'); }
       else if (e.key === ']') { eat(); press('vol_up'); }
-      else if (e.key === ',') { eat(); press('seek_back'); }
-      else if (e.key === '.') { eat(); press('seek_on'); }
+      else if (e.key === ',' || e.key === '.' || e.key === ';' || e.key === ':') {
+        eat();                                     // L2/R2, as hard as Shift says
+        if (!e.repeat) seek(e.key === ',' || e.key === ';' ? -1 : 1, e.shiftKey ? 1 : 0.5);
+      }
       else if (e.key === 'Escape' && !e.repeat) backTimer = setTimeout(() => press('back'), HOLD_MS);
     }, true);
     w.addEventListener('keyup', (e) => {
@@ -151,9 +153,16 @@
         e.preventDefault();
       }
       if (e.key === 'Escape') clearTimeout(backTimer);
+      if (',.;:'.includes(e.key)) seek(1, 0);
     }, true);
   }
   pad(window);
+  // L2/R2: a direction and how hard (dev/sim.py passes it on as the daemon does).
+  const seek = (dir, amount) => post('/api/sim/seek', { dir, amount });
+  document.querySelectorAll('[data-seek]').forEach((b) => b.addEventListener('click', () => {
+    seek(Number(b.dataset.seek), 0.6);
+    setTimeout(() => seek(Number(b.dataset.seek), 0), 900);
+  }));
 
   // A click on A, B, X, the d-pad or L1/R1: the key, to the window that has
   // the keys, as a press the pages take for the pad's (spatial-nav.js lets a
