@@ -232,3 +232,78 @@ class Dispatcher:
             await self.cec.command(command)
         except Exception as exc:  # cec-ctl missing, TV asleep, ...
             log.warning("cec %s failed: %s", command, exc)
+
+
+class VolumeChord:
+    """L2 and R2 (the TV's volume down and up) held together: mute, once.
+
+    Each pad's presses and releases pass through here. A press of either
+    waits a moment (CHORD_SECONDS) for the other, so a chord does not move
+    the volume a step first; a tap shorter than that is still one step.
+    With both down the volume stops and the TV is muted; neither steps it
+    again until both are let go. Any other action passes straight on.
+    """
+
+    CHORD_SECONDS = 0.09
+    SIDES = {"volume_down": "l", "volume_up": "r"}
+    MUTE: Action = {"cec": "mute"}
+
+    def __init__(self, dispatcher) -> None:
+        self.dispatcher = dispatcher
+        self.held: dict[str, tuple] = {}         # side -> (action, at)
+        self.waiting: dict[str, asyncio.Task] = {}
+        self.begun: set[str] = set()
+        self.chord = False
+
+    def side(self, action) -> str | None:
+        return self.SIDES.get(action.get("cec")) if isinstance(action, dict) else None
+
+    async def press(self, action: Action, at: float | None = None) -> None:
+        side = self.side(action)
+        if side is None:
+            await self.dispatcher.press(action, at)
+            return
+        other = "r" if side == "l" else "l"
+        self.held[side] = (action, at)
+        if self.chord:
+            return
+        if other in self.held:
+            self.chord = True
+            if task := self.waiting.pop(other, None):
+                task.cancel()                      # it never began
+            elif other in self.begun:
+                self.begun.discard(other)
+                await self.dispatcher.release(self.held[other][0])
+            log.info("L2 and R2 together: mute")
+            await self.dispatcher.press(self.MUTE)
+            await self.dispatcher.release(self.MUTE)
+            return
+        self.waiting[side] = asyncio.create_task(self._begin_later(side, action, at))
+
+    async def _begin_later(self, side: str, action: Action, at: float | None) -> None:
+        try:
+            await asyncio.sleep(self.CHORD_SECONDS)
+        except asyncio.CancelledError:
+            return
+        self.waiting.pop(side, None)
+        if side in self.held and not self.chord:
+            self.begun.add(side)
+            await self.dispatcher.press(action, at)
+
+    async def release(self, action: Action, at: float | None = None) -> None:
+        side = self.side(action)
+        if side is None:
+            await self.dispatcher.release(action, at)
+            return
+        self.held.pop(side, None)
+        if task := self.waiting.pop(side, None):
+            task.cancel()
+            if not self.chord:                     # a tap: one step
+                await self.dispatcher.press(action, at)
+                await self.dispatcher.release(action, at)
+        elif side in self.begun:
+            self.begun.discard(side)
+            await self.dispatcher.release(action, at)
+        if not self.held:
+            self.chord = False
+

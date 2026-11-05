@@ -16,7 +16,7 @@ from typing import Callable, Coroutine
 import evdev
 from evdev import ecodes as e
 
-from .actions import Dispatcher
+from .actions import Dispatcher, VolumeChord
 from .config import UNDO
 
 log = logging.getLogger("pioneertv.gamepad")
@@ -90,6 +90,8 @@ class Gamepad:
         self.dev = dev
         self.cfg = cfg["gamepad"]
         self.dispatcher = dispatcher
+        # L2 and R2 together mute; every press and release goes through it.
+        self.chord = VolumeChord(dispatcher)
         self.mouse = mouse
         # Shared with the manager: {"passthrough": bool}. In passthrough the pad
         # is left to the page (Chromium's Gamepad API, e.g. RomM's emulator):
@@ -219,9 +221,9 @@ class Gamepad:
         if (self.shared.get("passthrough") or self.shared.get("games")) and code not in SHELL_BUTTONS:
             return
         if value:
-            await self.dispatcher.press(action, at)
+            await self.chord.press(action, at)
         else:
-            await self.dispatcher.release(action, at)
+            await self.chord.release(action, at)
 
     async def on_abs(self, code: int, value: int) -> None:
         v = self.normalize(code, value) if code in self.absinfo else float(value)
@@ -248,18 +250,18 @@ class Gamepad:
         if old:
             act = spec.get("positive" if old > 0 else "negative")
             if act:
-                await self.dispatcher.release(act)
+                await self.chord.release(act)
         if new:
             act = spec.get("positive" if new > 0 else "negative")
             if act:
-                await self.dispatcher.press(act)
+                await self.chord.press(act)
 
     async def release_everything(self) -> None:
         for code, state in list(self.axis_state.items()):
             if state:
                 act = self.axes[code].get("positive" if state > 0 else "negative")
                 if act:
-                    await self.dispatcher.release(act)
+                    await self.chord.release(act)
         self.axis_state.clear()
         self.mouse.reset()
 

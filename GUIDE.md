@@ -41,7 +41,7 @@ what was learned on the way.
 | X / Square | The filled button, wherever there is one: on the box's pages (Spela, Blanda allt, Försök igen, the settings page's Sök efter enheter), the overlay's menus (Fortsätt, Hem) and the on-screen keyboard (OK); unmarked (one learns it), the browse page's legend says it. Elsewhere play, pause (Space) or the page's own use. Hold: undo (Ctrl+Z), e.g. what X took off a list |
 | Y / Triangle | On-screen keyboard (on a pad without Home, hold: quick menu) |
 | L1, R1 | Shift+Tab, Tab (previous, next focusable) |
-| L2, R2 | TV volume down, up (CEC, repeats while held) |
+| L2, R2 | TV volume down, up (CEC, repeats while held). Both held together: mute, once (`VolumeChord` in actions.py; either alone waits 90 ms for the other, so a chord moves the volume no step first) |
 | Right stick | Mouse pointer; click on the stick to left-click. What it (or a mouse) is over is drawn as selected and takes the focus, so the d-pad goes on from there |
 | Start | Nothing on the box; in a game, the console's Start |
 | Select | Nothing on the box; in a game, the console's Select |
