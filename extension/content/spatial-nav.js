@@ -20,95 +20,6 @@ window.PioneerTV = window.PioneerTV || {};
   const PAD_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Escape', 'Tab', 'PageUp', 'PageDown', 'Home', 'End']);
   const FOCUS_CLASS = 'pioneertv-focus';
 
-  // ------------------------------------------------------------ the ring
-  // On our own pages (html.pioneertv-own: the launcher, the overlay, the
-  // settings page) the focus ring is one ring that moves from what had the
-  // focus to what has it, rather than each one's own outline coming and
-  // going. It takes the place, width, gap and roundness of the outline the
-  // chosen one would have drawn (that outline is kept, only clear:
-  // paper.css), and follows it while it moves (a scroll, a column that
-  // widens) without the glide. [data-pioneertv-ring] on an ancestor draws
-  // it round that instead (a field's row on the settings page).
-  const ring = {
-    el: null, target: null, placed: null, at: '', raf: 0, until: 0,
-    on() { return document.documentElement.classList.contains('pioneertv-own'); },
-    to(t) {
-      if (!this.on()) return;
-      t = t ? (t.closest('[data-pioneertv-ring]') || t) : null;
-      // The one that draws the outline: it or one inside it (a card's cover).
-      if (t && getComputedStyle(t).outlineStyle === 'none') {
-        for (const c of t.querySelectorAll('*')) if (getComputedStyle(c).outlineStyle !== 'none') { t = c; break; }
-      }
-      this.target = t;
-      document.documentElement.classList.add('pioneertv-ring-on');
-      this.kick();
-    },
-    // Watch it for a moment after each change (it may still be moving).
-    kick(ms = 700) {
-      this.until = Math.max(this.until, performance.now() + ms);
-      if (!this.raf) this.raf = requestAnimationFrame(() => this.frame());
-    },
-    frame() {
-      this.raf = 0;
-      this.draw();
-      if (performance.now() < this.until) this.raf = requestAnimationFrame(() => this.frame());
-    },
-    draw() {
-      const t = this.target;
-      const r = t && t.isConnected ? t.getBoundingClientRect() : null;
-      // Covered by something over it (a full-screen message, a panel): no
-      // ring over that. What is at its middle is it, in it, or around it.
-      const hit = r && t.ownerDocument.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-      const covered = hit && hit !== t && !t.contains(hit) && !hit.contains(t);
-      if (!r || r.width < 2 || r.height < 2 || covered) {
-        if (this.el) this.el.style.display = 'none';
-        this.placed = null;
-        return;
-      }
-      if (!this.el) {
-        this.el = document.createElement('div');
-        this.el.className = 'pioneertv-ring';
-        this.el.setAttribute('aria-hidden', 'true');
-      }
-      // In the top layer with what it is round (a menu is a popover there,
-      // over everything whatever its z-index), else on the page.
-      const host = t.closest('[popover]') || document.body;
-      if (this.el.parentNode !== host) host.appendChild(this.el);
-      const st = getComputedStyle(t);
-      const w = parseFloat(st.outlineWidth) || 3;
-      const off = (parseFloat(st.outlineOffset) || 0) + w;
-      const radius = st.borderTopLeftRadius.endsWith('%') ? st.borderTopLeftRadius : `${(parseFloat(st.borderTopLeftRadius) || 0) + off}px`;
-      const at = `${r.left - off},${r.top - off},${r.width + off * 2},${r.height + off * 2},${radius},${w}`;
-      if (at === this.at && this.el.style.display !== 'none') return;
-      // A new one glides there; the same one moved (a scroll) is followed at
-      // once. The glide is a transform alone (put where it goes, then drawn
-      // from where it was, back to nothing): left, top, width and height
-      // moving made the Pi lay the page out at every frame, and the glide
-      // stuttered (half the frames lost, measured on the box).
-      const was = this.el.style.display !== 'none' && this.placed && this.placed !== t ? this.el.getBoundingClientRect() : null;
-      const x = r.left - off, y = r.top - off, w2 = r.width + off * 2, h2 = r.height + off * 2;
-      Object.assign(this.el.style, {
-        transition: 'none', transform: 'none', display: 'block', left: `${x}px`, top: `${y}px`,
-        width: `${w2}px`, height: `${h2}px`, borderRadius: radius, borderWidth: `${w}px`,
-      });
-      if (was && was.width > 0 && was.height > 0) {
-        this.el.style.transform = `translate(${was.left - x}px, ${was.top - y}px) scale(${was.width / w2}, ${was.height / h2})`;
-        void this.el.offsetWidth;                    // drawn there first, then it goes
-        this.el.style.transition = '';
-        this.el.style.transform = 'none';
-      }
-      this.placed = t;
-      this.at = at;
-    },
-  };
-  // Gone or moved without a word (a menu closed, a view drawn anew): seen
-  // a moment later.
-  setInterval(() => { if (ring.target && !ring.raf) ring.draw(); }, 250);
-  // Scrolled or resized: where it is now, at once.
-  window.addEventListener('scroll', () => { if (ring.target) ring.kick(200); }, true);
-  window.addEventListener('resize', () => { if (ring.target) ring.kick(200); });
-  M.ring = ring;
-
   const nav = {
     enabled: true,
     current: null,
@@ -185,7 +96,6 @@ window.PioneerTV = window.PioneerTV || {};
     ring(show) {
       const el = this.current;
       if (el && el.isConnected) el.classList.toggle(FOCUS_CLASS, show);
-      ring.to(show && el && el.isConnected ? el : null);
     },
 
     focus(el, opts = {}) {
@@ -194,7 +104,6 @@ window.PioneerTV = window.PioneerTV || {};
       if (prev && prev !== el) prev.classList.remove(FOCUS_CLASS);
       this.current = el;
       el.classList.toggle(FOCUS_CLASS, this.ringShown());
-      ring.to(this.ringShown() ? el : null);
       if (!el.hasAttribute('tabindex') && !el.matches('a[href],button,input,select,textarea,summary,video,audio,[contenteditable="true"]')) {
         el.setAttribute('tabindex', '-1');
       }
@@ -212,13 +121,13 @@ window.PioneerTV = window.PioneerTV || {};
         return true;
       }
       const next = this.pick(cur.getBoundingClientRect(), dir, list.filter((e) => e !== cur));
-      if (next) { this.focus(next); return true; }
+      if (next) { this.focus(next); if (M.sound) M.sound.tick(dir); return true; }
       // Nothing that way: scroll so lazy-loaded rows appear, then try again.
       if (dir === 'down' || dir === 'up') {
         window.scrollBy({ top: (dir === 'down' ? 1 : -1) * window.innerHeight * 0.6, behavior: 'auto' });
         setTimeout(() => {
           const again = this.pick(cur.getBoundingClientRect(), dir, this.candidates().filter((e) => e !== cur));
-          if (again) this.focus(again);
+          if (again) { this.focus(again); if (M.sound) M.sound.tick(dir); }
         }, 120);
       }
       return false;
@@ -394,7 +303,6 @@ window.PioneerTV = window.PioneerTV || {};
         if (this.current) this.current.classList.remove(FOCUS_CLASS);
         this.current = el;
         el.classList.toggle(FOCUS_CLASS, this.ringShown());
-        ring.to(this.ringShown() ? el : null);
       });
       // A mouse's first move says mouseover before the arrow is shown
       // (cursor.js shows it on mousemove), so a move over something new counts too.

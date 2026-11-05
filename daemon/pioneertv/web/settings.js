@@ -55,7 +55,8 @@
         { id: 'general', title: 'Allmänt', fields: [
           { path: 'ui.screensaver', type: 'choice', label: 'Skärmsläckare', options: [['labyrint', 'Labyrint'], ['eld', 'Eld']], value: 'labyrint' },
           { path: 'ui.home_minutes', type: 'number', label: 'Gå hem efter, utan knapptryck (0 = aldrig)', min: 0, max: 120, step: 1, unit: 'min', value: 30 },
-          { path: 'ui.auto_keyboard', type: 'bool', label: 'Öppna skärmtangentbordet automatiskt i textfält', value: true } ] },
+          { path: 'ui.auto_keyboard', type: 'bool', label: 'Öppna skärmtangentbordet automatiskt i textfält', value: true },
+          { path: 'ui.nav_sound', type: 'bool', label: 'Ett litet ljud när markeringen flyttas', value: true } ] },
         { id: 'controls', title: 'Kontroller', fields: [
           { path: 'mouse.max_speed', type: 'number', label: 'Pekarhastighet', min: 200, max: 3000, step: 100, unit: 'px/s', value: 1100 },
           { path: 'gamepad.long_press_ms', type: 'number', label: 'Långtryck', min: 300, max: 2000, step: 100, unit: 'ms', value: 800 } ] },
@@ -141,7 +142,7 @@
   function inputRow(label, input, sub) {
     input.classList.add('stop');
     input.dataset.key = label;
-    return h('label', { class: 'row row-input', 'data-pioneertv-ring': '' },
+    return h('label', { class: 'row row-input' },
       h('span', { class: 'row-text' }, h('span', { class: 'row-label' }, label), sub ? h('span', { class: 'row-sub' }, sub) : ''), input);
   }
   // A long text to read (a log), as a stop so the page can be scrolled to it.
@@ -164,7 +165,10 @@
     if (f.type === 'bool') {
       let on = !!f.value;
       const sw = h('span', { class: 'switch', 'aria-checked': String(on) });
-      const r = row({ label: f.label, detail: sw, run: () => { on = !on; sw.setAttribute('aria-checked', String(on)); save(f.path, on); } });
+      const r = row({ label: f.label, detail: sw, run: () => {
+        on = !on; sw.setAttribute('aria-checked', String(on)); save(f.path, on);
+        if (f.path === 'ui.nav_sound' && window.PioneerTV && PioneerTV.sound) PioneerTV.sound.off = !on;
+      } });
       r.setAttribute('role', 'switch');
       return r;
     }
@@ -606,6 +610,8 @@
   window.addEventListener('keydown', (e) => {
     if (keyboardOpen() || e.altKey || e.ctrlKey || e.metaKey) return;
     const a = document.activeElement;
+    // The sound of the focus moving (content/sound.js), where it did.
+    if (e.key.startsWith('Arrow')) queueMicrotask(() => { if (document.activeElement !== a && window.PioneerTV && PioneerTV.sound) PioneerTV.sound.tick(e.key); });
     const inRail = nav.contains(a);
     const inView = mainHost.contains(a);
     let done = true;
@@ -669,5 +675,12 @@
   window.addEventListener('hashchange', route);
   route();
   if (!rail.contains(document.activeElement)) here().focus();
+  // The focus's sound, on or off (Allmänt; the page has no bridge to say it).
+  settings().then((s) => {
+    const f = ((s.sections.find((x) => x.id === 'general') || {}).fields || []).find((x) => x.path === 'ui.nav_sound');
+    const set = () => { if (window.PioneerTV && PioneerTV.sound) PioneerTV.sound.off = !!f && f.value === false; };
+    set();
+    window.addEventListener('load', set);
+  }).catch(() => {});
   api('GET', '/api/status').then((s) => { $('#foot').textContent = `Maskinrepubliken · ${s.system.hostname} · ${s.git && s.git.commit ? s.git.commit : 'v' + s.version}${MOCK ? ' · mock' : ''}`; }).catch(() => {});
 })();

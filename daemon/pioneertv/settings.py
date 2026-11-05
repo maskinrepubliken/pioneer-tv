@@ -27,6 +27,7 @@ SCHEMA: list[dict] = [
             {"path": "ui.home_minutes", "type": "number", "label": "Gå hem efter, utan knapptryck (0 = aldrig)", "min": 0, "max": 120, "step": 1, "unit": "min"},
             {"path": "ui.volume_toast", "type": "bool", "label": "Visa en notis vid volymändring (TV:n visar oftast volymen själv)"},
             {"path": "ui.auto_keyboard", "type": "bool", "label": "Öppna skärmtangentbordet automatiskt i textfält"},
+            {"path": "ui.nav_sound", "type": "bool", "label": "Ett litet ljud när markeringen flyttas"},
         ],
     },
     {

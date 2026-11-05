@@ -52,7 +52,6 @@ window.PioneerTV = window.PioneerTV || {};
     },
     close() {
       if (this.punching) this.punching();
-      if (M.ring) M.ring.to(null);
       const was = this.isOpen();
       if (this.root) M.bridge.unmount(this.root);
       this.root = null;
@@ -166,7 +165,6 @@ window.PioneerTV = window.PioneerTV || {};
     },
     highlight() {
       this.items.forEach((it, i) => it.el.classList.toggle('pioneertv-menu-active', i === this.index));
-      if (M.ring) M.ring.to(this.items[this.index] && this.items[this.index].el);
       const spec = this.stack[this.stack.length - 1];
       if (spec && spec.onHighlight) spec.onHighlight(this.items[this.index]);
     },
@@ -209,7 +207,7 @@ window.PioneerTV = window.PioneerTV || {};
         const order = this.items.map((it, i) => i).filter((i) => !this.items[i].disabled);
         best = key === 'ArrowDown' ? order[0] : order[order.length - 1];
       }
-      if (best >= 0) { this.index = best; this.highlight(); }
+      if (best >= 0) { this.index = best; this.highlight(); if (M.sound) M.sound.tick(key); }
     },
     onKeyDown(e) {
       const handled = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Escape', ' '];

@@ -242,10 +242,10 @@ window.PioneerTV = window.PioneerTV || {};
       if (!handled.includes(e.key)) return; // real keyboard keys type into the field directly
       e.preventDefault(); e.stopImmediatePropagation();
       switch (e.key) {
-        case 'ArrowUp': this.moveRow(-1); break;
-        case 'ArrowDown': this.moveRow(1); break;
-        case 'ArrowLeft': this.col = (this.col - 1 + this.buttons[this.row].length) % this.buttons[this.row].length; this.highlight(); break;
-        case 'ArrowRight': this.col = (this.col + 1) % this.buttons[this.row].length; this.highlight(); break;
+        case 'ArrowUp': this.moveRow(-1); if (M.sound) M.sound.tick('up'); break;
+        case 'ArrowDown': this.moveRow(1); if (M.sound) M.sound.tick('down'); break;
+        case 'ArrowLeft': this.col = (this.col - 1 + this.buttons[this.row].length) % this.buttons[this.row].length; this.highlight(); if (M.sound) M.sound.tick('left'); break;
+        case 'ArrowRight': this.col = (this.col + 1) % this.buttons[this.row].length; this.highlight(); if (M.sound) M.sound.tick('right'); break;
         // A types the key it is on (and only that: OK is X's).
         case 'Enter': {
           const def = this.buttons[this.row][this.col].def;
