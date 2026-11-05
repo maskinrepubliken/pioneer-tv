@@ -55,11 +55,10 @@ window.PioneerTV = window.PioneerTV || {};
     let extra = library.legend ? library.legend() : [];
     const button = filled();
     if (button) extra = [['X', button.textContent.trim().toLocaleLowerCase('sv-SE')], ...extra.filter(([key]) => key !== 'X')];
-    // L1/R1 only where a grid has letters to jump between (not a handful
-    // of results, not none); nothing found, nothing to choose (no A); Y
-    // changes the words where there are some.
+    // Nothing found, nothing to choose (no A); Y changes the words where
+    // there are some.
     const nothing = view.querySelector('.dusty');
-    const own = nothing ? [] : viewLegend.filter(([key]) => !((key === 'L1' || key === 'R1') && !(onScreen && onScreen.jumps())));
+    const own = nothing ? [] : viewLegend;
     const searching = parts()[0] === 'search' || (grid && search.value.trim());
     V.legend(legendEl, [...own, ...extra, ['Y', searching ? 'ändra sökningen' : 'sök'], ['B', library.isRoot(parts()) ? 'hem' : 'tillbaka']]);
   }
@@ -79,7 +78,7 @@ window.PioneerTV = window.PioneerTV || {};
 
   // ------------------------------------------------------------ drawing
   let grid = null;               // the grid on screen, which the search field filters
-  let onScreen = null;           // the grid on screen, filtered or not (its L1/R1)
+  let onScreen = null;           // the grid on screen, filtered or not
   function draw(spec) {
     if (spec.kind !== 'message') V.clear();
     drawView(spec);
@@ -107,7 +106,7 @@ window.PioneerTV = window.PioneerTV || {};
         const name = spec.title || library.name;
         titleEl.textContent = words ? `${name}: ${V.searchTitle(words)}` : name;
         countEl.textContent = words ? V.hits(n) : spec.count ? spec.count(n, all) : '';
-        if (onScreen) legend();      // as it filters: A, L1/R1 and Y follow
+        if (onScreen) legend();      // as it filters: A and Y follow
       };
       grid = onScreen = M.grid.render(view, spec, { shown, savedKey: lastFocus[here()] });
       legend();
@@ -226,8 +225,8 @@ window.PioneerTV = window.PioneerTV || {};
   });
 
   // ------------------------------------------------------------ the pad
-  // B: one view back, and from the library's first view home. X and L1/R1
-  // are the library's (a grid takes L1/R1 for its letters first).
+  // B: one view back, and from the library's first view home. X is the
+  // library's.
   window.addEventListener('keydown', (e) => {
     if (M.nav.captured) return;                     // a player, the menu or the keyboard has the pad
     const active = document.activeElement;

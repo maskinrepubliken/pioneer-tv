@@ -19,8 +19,8 @@ log = logging.getLogger("pioneertv.overlay")
 
 # Pad buttons whose meaning depends on whether the overlay's menu is open.
 ROUTED = ("keyboard", "escape")
-# Always the overlay's.
-OVERLAY = ("menu", "toast", "saver", "rest")
+# Always the overlay's (seek_back, seek_on: L2/R2 on the media panel's timeline).
+OVERLAY = ("menu", "toast", "saver", "rest", "seek_back", "seek_on")
 # What the overlay may ask the page (through the extension) to do, and what
 # a page may ask of the overlay (the home page: a panel, Live or Sök).
 RELAYS = ("home", "back", "reload", "settings", "keyboard", "navigate", "webvideo")

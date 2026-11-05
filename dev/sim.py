@@ -4,7 +4,7 @@ The pages and the overlay connect to it over /ws as they do to the daemon on
 the box, and the overlay's routing is the daemon's own (pioneertv/overlay.py,
 Router): what goes to the overlay, what to the page, the menu pausing what
 plays. Around it, stand-ins for what the box does with the pad's system
-buttons (Home, holding Home, Y, holding B, L2/R2) and for its players: the
+buttons (Home, holding Home, Y, holding B, L1/R1, L2/R2) and for its players: the
 music and radio (audio.py), a film in mpv (video.py), a game in RetroArch
 (games.py), the screensaver (idle.py). Their state moves with the clock as
 the real ones do, and they say so with the same events. Stdlib only.
@@ -260,7 +260,8 @@ class Daemon:
     # ------------------------------------------------------------ the pad's system buttons
     def button(self, name: str) -> None:
         """A press on the pad that the daemon itself handles (actions.py): Home
-        (menu), holding Home (home), Y (keyboard), holding B (back), L2/R2."""
+        (menu), holding Home (home), Y (keyboard), holding B (back), L1/R1 (the
+        volume), L2/R2 (seeking on the media panel)."""
         with self.lock:
             if self.saver and name not in ("vol_up", "vol_down"):
                 self.saver_show(False)                # a press takes the screensaver away, and does nothing else
@@ -292,6 +293,8 @@ class Daemon:
                 self.event("back")
             elif name in ("vol_up", "vol_down"):
                 self.cec("volume_up" if name == "vol_up" else "volume_down")
+            elif name in ("seek_back", "seek_on"):
+                self.event(name)                      # L2/R2: the media panel's timeline (overlay.js)
 
     def use_pad(self, key: str) -> None:
         with self.lock:

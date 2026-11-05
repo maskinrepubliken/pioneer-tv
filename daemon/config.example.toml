@@ -50,10 +50,10 @@ BTN_SOUTH  = { key = "KEY_ENTER" }
 BTN_EAST   = { key = "KEY_ESC", long = { system = "back" } }       # hold B: one page back
 BTN_WEST   = { key = "KEY_SPACE", long = { key = "KEY_Z", modifiers = ["KEY_LEFTCTRL"] } }  # hold X: undo
 BTN_NORTH  = { system = "keyboard" }                              # Y: the on-screen keyboard
-BTN_TL     = { key = "KEY_TAB", modifiers = ["KEY_LEFTSHIFT"] }   # previous focusable
-BTN_TR     = { key = "KEY_TAB" }                                   # next focusable
-BTN_TL2    = { cec = "volume_down", repeat = true }
-BTN_TR2    = { cec = "volume_up",   repeat = true }
+BTN_TL     = { cec = "volume_down", repeat = true }               # L1: TV volume (L1+R1: mute)
+BTN_TR     = { cec = "volume_up",   repeat = true }               # R1
+BTN_TL2    = { system = "seek_back" }                              # L2: seek on the media panel
+BTN_TR2    = { system = "seek_on" }                                # R2
 BTN_MODE   = { system = "menu", long = { system = "home" } }      # the only way to the menus; hold: the start page
 BTN_THUMBL = { mouse_button = "BTN_RIGHT" }
 BTN_THUMBR = { mouse_button = "BTN_LEFT" }
@@ -65,8 +65,8 @@ ABS_X     = { negative = { key = "KEY_LEFT" }, positive = { key = "KEY_RIGHT" } 
 ABS_Y     = { negative = { key = "KEY_UP" },   positive = { key = "KEY_DOWN" } }
 ABS_RX    = { mouse = "x" }
 ABS_RY    = { mouse = "y" }
-ABS_Z     = { positive = { cec = "volume_down", repeat = true } }
-ABS_RZ    = { positive = { cec = "volume_up",   repeat = true } }
+ABS_Z     = { positive = { system = "seek_back" } }               # L2 as a trigger
+ABS_RZ    = { positive = { system = "seek_on" } }                 # R2 as a trigger
 
 [mouse]
 mode = "virtual"     # the extension draws and drives the pointer; "uinput" is a real mouse device (see README)

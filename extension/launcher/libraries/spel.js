@@ -41,13 +41,12 @@ window.PioneerTV = window.PioneerTV || {};
 
   // The letter a game files under, from RomM's sort key, so the jumps
   // follow the order the grid is in ("The Blues Brothers" is a B).
-  const letter = (it) => M.grid.letterOf(it.game.sortKey || it.game.name);
 
   function gridOf(title, games, filter) {
     return {
       kind: 'grid', title, filter,
-      legend: [['A', 'spela'], ['L1', ''], ['R1', 'hoppa en bokstav']],
-      items: games.map((g) => game(g)), shape: 'box', columns: 6, letter,
+      legend: [['A', 'spela']],
+      items: games.map((g) => game(g)), shape: 'box', columns: 6,
       count: (n, all) => (n === all ? `${all} spel` : `${n} av ${all} spel`),
       empty: 'Inga spel här.',
       info: (it) => {

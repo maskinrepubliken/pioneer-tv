@@ -235,7 +235,7 @@ class Dispatcher:
 
 
 class VolumeChord:
-    """L2 and R2 (the TV's volume down and up) held together: mute, once.
+    """L1 and R1 (the TV's volume down and up) held together: mute, once.
 
     Each pad's presses and releases pass through here. A press of either
     waits a moment (CHORD_SECONDS) for the other, so a chord does not move
@@ -274,7 +274,7 @@ class VolumeChord:
             elif other in self.begun:
                 self.begun.discard(other)
                 await self.dispatcher.release(self.held[other][0])
-            log.info("L2 and R2 together: mute")
+            log.info("L1 and R1 together: mute")
             await self.dispatcher.press(self.MUTE)
             await self.dispatcher.release(self.MUTE)
             return

@@ -75,7 +75,7 @@ window.PioneerTV = window.PioneerTV || {};
         { label: 'Tillbaka', icon: 'back', detail: 'håll B', run: () => b.back() },
         { label: 'Hem', icon: 'home', detail: 'håll Hem', primary: true, run: () => b.home() },
         // As in the pause panels: left and right step the TV's volume, A mutes.
-        { label: 'TV-volym', icon: 'volume', detail: '◀ ▶ · även L2/R2', volume: true, keep: true, run: () => b.cec('mute'), disabled: !tv },
+        { label: 'TV-volym', icon: 'volume', detail: '◀ ▶ · även L1/R1', volume: true, keep: true, run: () => b.cec('mute'), disabled: !tv },
         { label: 'Tangentbord', icon: 'keyboard', detail: 'Y', run: () => b.keyboard() },
         { label: 'Ladda om sidan', icon: 'reload', run: () => b.reload() },
         { label: 'Stäng av TV:n', icon: 'power', run: () => b.cec('tv_off'), disabled: !tv },

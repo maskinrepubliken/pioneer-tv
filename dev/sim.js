@@ -7,7 +7,7 @@
 // worker (home, back, reload, navigate, settings for the page), the overlay
 // window taking the keyboard while its menu is open (overlay.py's
 // set_keyboard_mode), and the pad's system buttons (Home, Y, holding B,
-// L2/R2), which the daemon handles itself. The d-pad, A, B, X and L1/R1 are
+// L1/R1 the volume, L2/R2 seeking), which the daemon handles itself. The d-pad, A, B, X and L1/R1 are
 // the Mac's own keys, which reach whichever frame has the keyboard as real
 // presses: a page acts only on those.
 (function () {
@@ -138,6 +138,8 @@
       } else if (k === 'y') { eat(); if (!e.repeat) press('keyboard'); }
       else if (e.key === '[') { eat(); press('vol_down'); }
       else if (e.key === ']') { eat(); press('vol_up'); }
+      else if (e.key === ',') { eat(); press('seek_back'); }
+      else if (e.key === '.') { eat(); press('seek_on'); }
       else if (e.key === 'Escape' && !e.repeat) backTimer = setTimeout(() => press('back'), HOLD_MS);
     }, true);
     w.addEventListener('keyup', (e) => {

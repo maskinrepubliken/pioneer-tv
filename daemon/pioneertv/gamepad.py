@@ -62,10 +62,10 @@ QUIRKS = [
         "BTN_B": {"key": "KEY_ESC", "long": {"system": "back"}},
         "BTN_C": {"key": "KEY_SPACE", "long": UNDO},                    # X (hold: undo)
         "BTN_NORTH": {"system": "keyboard", "long": {"system": "menu"}},  # Y
-        "BTN_WEST": {"key": "KEY_TAB", "modifiers": ["KEY_LEFTSHIFT"]}, # L1: previous focusable
-        "BTN_Z": {"key": "KEY_TAB"},                                    # R1: next focusable
-        "BTN_TL": {"cec": "volume_down", "repeat": True},               # L2
-        "BTN_TR": {"cec": "volume_up", "repeat": True},                 # R2
+        "BTN_WEST": {"cec": "volume_down", "repeat": True},             # L1: TV volume
+        "BTN_Z": {"cec": "volume_up", "repeat": True},                  # R1
+        "BTN_TL": {"system": "seek_back"},                              # L2: seek on the media panel
+        "BTN_TR": {"system": "seek_on"},                                # R2
         "KEY_HOMEPAGE": {"system": "home"},   # pause: only reports after a long hold
     }}),
     # 8BitDo Ultimate 2C on its 2.4 GHz dongle (2dc8:310a, xpad). xpad reports
@@ -242,8 +242,12 @@ class Gamepad:
             return
         hat = code in (e.ABS_HAT0X, e.ABS_HAT0Y)
         threshold = 0.5 if hat else (self.cfg["trigger_threshold"] if code in self.unipolar else self.cfg["stick_deadzone"])
-        new = 1 if v > threshold else (-1 if v < -threshold else 0)
         old = self.axis_state.get(code, 0)
+        # A trigger already down is let go well under where it went down, so
+        # one resting near the line does not flutter (press, release, press).
+        if code in self.unipolar and old:
+            threshold *= 0.5
+        new = 1 if v > threshold else (-1 if v < -threshold else 0)
         if new == old:
             return
         self.axis_state[code] = new

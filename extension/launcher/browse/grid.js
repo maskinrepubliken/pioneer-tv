@@ -1,13 +1,12 @@
 // Pioneer TV browse page, the grid: a long collection of cards (a console's
 // games, every album), with
 //
-//   { items, shape, look, columns, info, letter, count }
+//   { items, shape, look, columns, info, count }
 //
 // look: 'stacks' for cards of wholes (cards.js stack), 'names' for names
 // alone in a few columns (cards.js name: the artists, who have no
-// pictures), else covers on shelves. info(item): { title, meta, text, foot } for a strip
-// under the cards that follows the focus; letter(item): the letter it
-// files under, for L1/R1 jumps; count(shown, all): the heading's count;
+// pictures), else covers on shelves. info(item): { title, meta, text, foot } for the
+// column at the right that follows the focus; count(shown, all): the heading's count;
 // empty: what the bare plank says when there is nothing at all. The page's
 // search field filters it while it is on screen.
 //
@@ -31,22 +30,12 @@ window.PioneerTV = window.PioneerTV || {};
 
   const fold = (s) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLocaleLowerCase('sv-SE');
 
-  // The letter a name files under: å, ä and ö are letters of their own;
-  // anything else (digits, punctuation) is '#'.
-  function letterOf(name) {
-    const c = (name || '').trim().charAt(0).toLocaleLowerCase('sv-SE');
-    if (c && 'åäö'.includes(c)) return c;
-    const base = c.normalize('NFD').replace(/[̀-ͯ]/g, '');
-    return /^[a-z]$/.test(base) ? base : '#';
-  }
-
   // ctx: { setCount(text), shown(n, all, words), savedKey } (shown, when
   // given, instead of setCount: the page heads a filtered grid itself). Returns { focusFirst(), filter(words),
   // focusIndex(i) }; the grid on screen is also M.grid.active.
   function render(view, spec, ctx) {
     const all = spec.items;
     const cols = spec.columns || 5;
-    const letter = spec.letter || ((it) => letterOf(it.title));
     let shown = all;
     let words = '';
     let windowStart = -1;
@@ -166,32 +155,6 @@ window.PioneerTV = window.PioneerTV || {};
       if (c) showInfo(shown[Number(c.dataset.index)]);
     };
 
-    // L1/R1 arrive as Shift+Tab/Tab: to the previous/next letter.
-    gridEl.addEventListener('keydown', (e) => {
-      if (e.key !== 'Tab' || M.nav.captured) return;
-      e.preventDefault();
-      e.stopPropagation();
-      const c = document.activeElement.closest('[data-index]');
-      if (!c) return;
-      let i = Number(c.dataset.index);
-      const key = letter(shown[i]);
-      if (e.shiftKey) {
-        // To the start of this letter; from there, to the start of the one before.
-        let start = i;
-        while (start > 0 && letter(shown[start - 1]) === key) start--;
-        if (start === i && i > 0) {
-          const prev = letter(shown[i - 1]);
-          start = i - 1;
-          while (start > 0 && letter(shown[start - 1]) === prev) start--;
-        }
-        i = start;
-      } else {
-        while (i < shown.length - 1 && letter(shown[i]) === key) i++;
-      }
-      focusIndex(i);
-      M.hud.toast(letter(shown[i]).toUpperCase(), '', 700);
-    });
-
     setShown(all);
     const matches = () => {
       const q = fold(words.trim());
@@ -209,17 +172,10 @@ window.PioneerTV = window.PioneerTV || {};
       },
       focusIndex,
       count: () => shown.length,
-      // Whether L1/R1 have anywhere to go: more than two rows of it, and
-      // more than one letter among them.
-      jumps() {
-        if (shown.length <= cols * 2) return false;
-        const first = letter(shown[0]);
-        return shown.some((it) => letter(it) !== first);
-      },
     };
     M.grid.active = api;
     return api;
   }
 
-  M.grid = { render, letterOf };
+  M.grid = { render };
 })(window.PioneerTV);

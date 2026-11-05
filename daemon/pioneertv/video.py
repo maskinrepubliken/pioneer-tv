@@ -15,7 +15,7 @@ user can read, never on its command line. The pad drives it through the
 virtual keyboard: A, B and X pause it and the overlay shows the pause panel
 (Fortsätt, Ljud, Undertexter; B, X or Home carry on), or without the
 overlay only pause and resume, with the timeline; left and right seek ten
-seconds, L1 and R1 a minute. Holding B stops; Home opens the pause panel
+seconds. Holding B stops; Home opens the pause panel
 too (the quick menu's choices act on the page hidden below), holding Home
 stops and goes home. Nothing plays on by itself: at the end mpv quits and the page says
 "Tryck B för att fortsätta".
@@ -74,7 +74,7 @@ sub-auto=no
 """
 
 # The pad arrives as keys (actions.py): A is Enter, B Escape, X Space,
-# left and right the arrows, L1 and R1 Shift+Tab and Tab. A, B and X ask for
+# left and right the arrows. A, B and X ask for
 # the pause panel, which the overlay draws (PANEL_KEYS); without the overlay
 # they only pause, with the timeline.
 PAUSE_KEYS = """\
@@ -90,8 +90,6 @@ ESC script-message pioneer-panel
 INPUT_CONF = """\
 LEFT seek -10; show-progress
 RIGHT seek 10; show-progress
-TAB seek 60; show-progress
-Shift+TAB seek -60; show-progress
 UP show-progress
 DOWN show-progress
 """

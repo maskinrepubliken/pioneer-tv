@@ -40,15 +40,15 @@ what was learned on the way.
 | B / Circle | Escape: closes an overlay, releases an engaged slider, leaves a text field. Hold: one page back |
 | X / Square | The filled button, wherever there is one: on the box's pages (Spela, Blanda allt, Försök igen, the settings page's Sök efter enheter), the overlay's menus (Fortsätt, Hem) and the on-screen keyboard (OK); unmarked (one learns it), the browse page's legend says it. Elsewhere play, pause (Space) or the page's own use. Hold: undo (Ctrl+Z), e.g. what X took off a list |
 | Y / Triangle | On-screen keyboard (on a pad without Home, hold: quick menu) |
-| L1, R1 | Shift+Tab, Tab (previous, next focusable) |
-| L2, R2 | TV volume down, up (CEC, repeats while held). Both held together: mute, once (`VolumeChord` in actions.py; either alone waits 90 ms for the other, so a chord moves the volume no step first) |
+| L1, R1 | TV volume down, up (CEC, repeats while held). Both held together: mute, once (`VolumeChord` in actions.py; either alone waits 90 ms for the other, so a chord moves the volume no step first) |
+| L2, R2 | On the media panel, wherever the focus is: the timeline's mark back, on (A goes there). Nothing elsewhere. As triggers (analog) they press past `trigger_threshold` and let go only under half of it, so one resting near the line cannot flutter; the volume left them for L1/R1, as it hung there and crept up or down |
 | Right stick | Mouse pointer; click on the stick to left-click. What it (or a mouse) is over is drawn as selected and takes the focus, so the d-pad goes on from there |
 | Start | Nothing on the box; in a game, the console's Start |
 | Select | Nothing on the box; in a game, the console's Select |
 | Guide / Home / PS / Xbox | The only way to the menus: the quick menu, over whatever is on screen (press again to close it); in a game or a film, the pause panel instead. Hold: the home page. Also wakes the TV and switches input when the pad connects |
 
 In a film or an episode playing in mpv, A, B and X pause it and open its
-pause panel, left and right seek ten seconds, L1 and R1 a minute, and
+pause panel, left and right seek ten seconds, and
 holding B stops it ([Film and series](#film-and-series)).
 
 All of it is in `/etc/pioneer-tv/config.toml` (see `daemon/config.example.toml`).
@@ -104,7 +104,7 @@ kinds, made of items of one shape (`browse/cards.js`):
 - **the grid** (`browse/grid.js`): a long collection on the same shelves
   (or as stacks, `look: 'stacks'`: every artist),
   only the rows around the focus in the page (the planks are drawn behind
-  the rows, so they are all there), L1/R1 a letter, Sök filtering it, the
+  the rows, so they are all there), Sök filtering it, the
   chosen one's info in a column at the right when the library has it (its
   whole name, a fact a line, its whole text; right from the shelves goes
   into it, where up and down scroll it and left or B go back to the
@@ -129,8 +129,7 @@ beside them ("3 träffar"), and when nothing was found only the title and
 a bare dusty plank, a cobweb under its end, saying "Inga
 träffar" in big type (`planks.js` dusty, also for a grid with nothing in
 it), and the legend then offers no A. On a search Y says "ändra
-sökningen", and L1/R1 are in the legend only where a grid has more than
-two rows across more than one letter. B takes a filter away first. What plays is a player's:
+sökningen". B takes a filter away first. What plays is a player's:
 `players/video.js` (mpv, through the daemon) and `players/audio.js` (in the
 page, with "Spelas nu"). `shared/` has the canvas, the buttons and the
 legend (`base.css`), the full-screen message (`screen.js`; on ink where
@@ -357,8 +356,8 @@ on screen, and so does any full-screen page with a large canvas. In game mode th
 pad buttons into arrows, Enter and Escape, so the emulator reads the pad itself through the browser's
 Gamepad API and its own button mapping applies. The extension leaves the page's keys alone too.
 
-A few buttons still belong to the box: Guide opens the quick menu and holding it goes home, and the
-triggers set the TV volume. Start is the game's, held or not. While an overlay is open the pad
+One button still belongs to the box: Guide opens the quick menu and holding it goes home. Every
+other, Start and the bumpers too, is the game's. While an overlay is open the pad
 drives it as usual. Game mode ends when the page goes away or stops sending heartbeats.
 
 ## Music
@@ -371,7 +370,7 @@ its cover, with Spela and Blanda; an artist has Blanda allt (filled, X)
 and Spela allt at the heading's right, round buttons as Sök is with the
 name beside (a view's `actions`, drawn in the heading by `page.js`; Musik's
 start has its Blanda allt there too). Album and Artister are grids like a
-console's games: L1/R1 jump a letter, Sök filters them. Sök (the round
+console's games: Sök filters them. Sök (the round
 button, or Y) searches songs, albums and artists. Films, series and clips have
 their own page ([Film and series](#film-and-series)).
 
@@ -381,7 +380,7 @@ queue, `POST /api/audio/play`). So it plays on from page to page, under the
 screensaver too, until something else plays (a film, a game, a site's
 video, a page's own sound) or it is stopped; the TV is not turned off under
 it, as the sound comes out of the TV. "Spelas nu" covers the screen: A or X
-pauses, L1/R1 go to the previous and next song, left and right seek 15
+pauses, left and right seek 15
 seconds, B goes back to browsing while the music plays on, and X brings
 "Spelas nu" back (on a view without a filled button: there X is the
 button's). Elsewhere, the quick menu's first row is what plays, and opens
@@ -416,7 +415,7 @@ what was watched ("Eftersom du såg …", "Med …", `Movies/Recommendations`);
 and videos have Kanaler in the column, their folders as Spel's
 collections are (a card each, its newest clips in a pile; opened, the
 clips in a grid). Its column has Upptäck, Alla filmer
-or Alla serier (a grid with letter jumps and the text under the shelves)
+or Alla serier (a grid with the text at the right)
 and the genres (`Genres`), by their Swedish name with an icon each, one
 genre where Jellyfin has it under two names (Comedy and Komedi); a genre
 is a grid as Alla is; Samlingar, Jellyfin's collections (box sets), when
@@ -454,7 +453,7 @@ panel over the picture, with the time at the top left ([the media
 panel](#the-media-panel): Fortsätt, the seeks, Gå till, Från början, Ljud
 and Undertexter, where A steps to the next track, at once, mpv's own list
 named by language, TV-volym and Sluta titta). B, X or Home carries on. Left and
-right seek ten seconds, L1 and R1 a minute; holding B stops; Home opens the
+right seek ten seconds; holding B stops; Home opens the
 pause panel too, as in a game (the main menu's choices would act on the
 page hidden below); holding Home stops and goes home. Without the overlay, A, B and X only pause and
 resume, with mpv's timeline. Nothing plays on by itself, not even the next
@@ -510,9 +509,13 @@ radio. Its parts, those that apply:
   pause (the large one; on a film or a video the panel paused, Fortsätt),
   +15 s, +2 min. Left and right go between them.
 - **The queue** (the music's): Förra and Nästa, side by side.
-- **Rows**: Från början; Ljud and Undertexter, their value in a capsule (A
-  steps to the next); TV-volym (◀ ▶, A mutes); Meny (over a site's video);
-  Sluta titta or Sluta spela.
+- **Rows**: Från början; TV-volym (◀ ▶ or L1/R1, A mutes), after what drives
+  what plays; Ljud and Undertexter, their value in a capsule (A steps to
+  the next); Meny (over a site's video); Sluta titta or Sluta spela.
+
+L2 and R2 move the timeline's mark wherever the focus is on the panel (the
+focus goes to the timeline; A goes there): the daemon sends them as
+`seek_back` and `seek_on`, to the overlay alone.
 
 The focus starts on play. The menu (`hud.js`) has the parts for it: a
 `head` in the title's place, an item that draws itself (`render`), and items
@@ -608,12 +611,12 @@ navigate, settings for the page) and hands the keys to the overlay while
 its menu is open, as on the box.
 
 Every button on the drawn pad can be clicked, or the Mac's keys are the
-pad: the arrows, Enter (A), Esc (B), Space (X), Tab and Shift+Tab (L1/R1)
+pad: the arrows, Enter (A), Esc (B) and Space (X)
 are the keyboard's own and reach the page or the overlay as real presses; a
 click sends the same key, marked `pioneertvPad` (spatial-nav.js lets those
 through, as it does real presses, and not the on-screen keyboard's own). H is Home (held, the
 home page), Y the on-screen keyboard, held Esc is holding B, `[` and `]` are
-L2/R2. The side panel draws the pad (lighting up what is pressed), and has
+L1/R1 (the volume), `,` and `.` L2/R2 (seeking on the media panel). The side panel draws the pad (lighting up what is pressed), and has
 the screensaver, the TV off and on, the green or the pink pad, and a toast;
 under it, every event the daemon sends. Another site (SVT Play, ...) cannot
 be framed and shows as a stand-in page; `?page=` opens the simulator on a
@@ -795,7 +798,7 @@ tried again every three seconds.
   at the foot. Holding Home goes to the home page. B goes one step back,
   the last step closes it. A choice that opens a page punches its row of
   holes until the page has loaded (the extension says `loaded`). The TV's
-  volume is L2 and R2 too (and a row in the pause panels).
+  volume is L1 and R1 too (and a row in the pause panels).
 - **The menu system** (`overlay/hud.js`): a stack of menus, each the paper
   card at the right; the pause panels of a game and a film are the same
   card. The d-pad moves to the nearest choice that way on screen.

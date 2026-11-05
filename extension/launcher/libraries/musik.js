@@ -4,7 +4,7 @@
 // #/playlist/<id> a list of songs; #/artist/<id> an artist's albums;
 // #/search/<words> what was found. A song plays from where it is in its
 // list, on the box itself (players/audio.js, the daemon's audio.py), so it
-// plays on from page to page: X opens Spelas nu, L1/R1 skip.
+// plays on from page to page: X opens Spelas nu.
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const J = M.jellyfin;
@@ -65,7 +65,7 @@ window.PioneerTV = window.PioneerTV || {};
     const word = kind === 'albums' ? 'album' : 'artister';
     return {
       kind: 'grid', title: kind === 'albums' ? 'Album' : 'Artister', filter: true,
-      legend: [['A', 'öppna'], ['L1', ''], ['R1', 'hoppa en bokstav']],
+      legend: [['A', 'öppna']],
       items: all.map(group), shape: kind === 'albums' ? 'square' : 'round',
       // Artists have no pictures: their names, long, in three columns.
       look: kind === 'albums' ? 'shelf' : 'names', columns: kind === 'albums' ? 6 : 3,
@@ -135,10 +135,9 @@ window.PioneerTV = window.PioneerTV || {};
     return start();
   }
 
-  // While browsing: X opens Spelas nu, L1/R1 (Tab) skip.
+  // While browsing: X opens Spelas nu.
   function onKey(e) {
     if (e.key === ' ') { if (!e.repeat) audio.open(); return true; }
-    if (e.key === 'Tab') { if (!e.repeat && audio.song()) (e.shiftKey ? audio.prev() : audio.next()); return true; }
     return false;
   }
 

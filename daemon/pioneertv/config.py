@@ -59,10 +59,12 @@ DEFAULTS: dict[str, Any] = {
             "BTN_EAST": {"key": "KEY_ESC", "long": {"system": "back"}},      # hold: one page back
             "BTN_WEST": {"key": "KEY_SPACE", "long": UNDO},                 # hold: undo (Ctrl+Z)
             "BTN_NORTH": {"system": "keyboard"},
-            "BTN_TL": {"key": "KEY_TAB", "modifiers": ["KEY_LEFTSHIFT"]},  # previous focusable
-            "BTN_TR": {"key": "KEY_TAB"},                                  # next focusable
-            "BTN_TL2": {"cec": "volume_down", "repeat": True},
-            "BTN_TR2": {"cec": "volume_up", "repeat": True},
+            # L1/R1 the TV's volume (both together: mute), buttons that cannot
+            # stick; L2/R2 seek on the media panel's timeline (overlay.js).
+            "BTN_TL": {"cec": "volume_down", "repeat": True},
+            "BTN_TR": {"cec": "volume_up", "repeat": True},
+            "BTN_TL2": {"system": "seek_back"},
+            "BTN_TR2": {"system": "seek_on"},
             "BTN_MODE": {"system": "menu", "long": {"system": "home"}},
             "BTN_THUMBL": {"mouse_button": "BTN_RIGHT"},
             "BTN_THUMBR": {"mouse_button": "BTN_LEFT"},
@@ -74,8 +76,8 @@ DEFAULTS: dict[str, Any] = {
             "ABS_Y": {"negative": {"key": "KEY_UP"}, "positive": {"key": "KEY_DOWN"}},
             "ABS_RX": {"mouse": "x"},
             "ABS_RY": {"mouse": "y"},
-            "ABS_Z": {"positive": {"cec": "volume_down", "repeat": True}},
-            "ABS_RZ": {"positive": {"cec": "volume_up", "repeat": True}},
+            "ABS_Z": {"positive": {"system": "seek_back"}},
+            "ABS_RZ": {"positive": {"system": "seek_on"}},
         },
     },
     # mode "virtual": the extension draws and drives the pointer (no Wayland pointer, see README).

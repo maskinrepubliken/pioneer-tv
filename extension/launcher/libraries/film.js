@@ -204,11 +204,11 @@ window.PioneerTV = window.PioneerTV || {};
   }
 
   // Every film or series of the section, or those of a genre, in a grid
-  // (L1/R1 a letter, Sök filters, the chosen one's text under the shelves).
+  // (Sök filters them, the chosen one's text at the right).
   function gridOf(title, found) {
     return {
       kind: 'grid', title, filter: true, shape: 'poster', columns: 6,
-      legend: [['A', 'öppna'], ['L1', ''], ['R1', 'hoppa en bokstav']],
+      legend: [['A', 'öppna']],
       items: found.map(item), empty: 'Inget hittades',
       count: (n, all) => (n === all ? `${all} st` : `${n} av ${all}`),
       info: (it) => {
@@ -236,7 +236,7 @@ window.PioneerTV = window.PioneerTV || {};
     setTimeout(() => fillPiles(items.filter((it) => it.pictures === null)), 0);
     return {
       kind: 'grid', title: 'Kanaler', filter: true, look: 'stacks', shape: 'still', columns: 3,
-      legend: [['A', 'öppna'], ['L1', ''], ['R1', 'hoppa en bokstav']],
+      legend: [['A', 'öppna']],
       items, empty: 'Inget hittades', count: (n, all) => (n === all ? `${all} kanaler` : `${n} av ${all}`),
     };
   }

@@ -23,7 +23,7 @@ window.PioneerTV = window.PioneerTV || {};
 
   // [[key, text, how], ...]: the pad's buttons and what they do here (how:
   // "håll", said before the key), and the wordmark at the right. A key
-  // without a text shares the next one's, beside it (L1 R1 hoppa en bokstav).
+  // without a text shares the next one's, beside it (◀ ▶ spola).
   function legend(target, items) {
     target.innerHTML = '';
     let s = null;

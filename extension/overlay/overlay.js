@@ -146,7 +146,7 @@ window.PioneerTV = window.PioneerTV || {};
       { label: 'Ladda läge', icon: 'back', detail: e.point ? hhmm(e.point) : 'inget sparat', disabled: !e.point,
         run: pick(() => games('/resume', { load: 'point' })) },
       { label: 'Starta om', icon: 'reload', run: pick(() => games('/resume', { load: 'none' })) },
-      { label: 'TV-volym', icon: 'volume', detail: '◀ ▶ · även L2/R2', volume: true, keep: true, run: () => b.cec('mute') },
+      { label: 'TV-volym', icon: 'volume', detail: '◀ ▶ · även L1/R1', volume: true, keep: true, run: () => b.cec('mute') },
       { label: 'Avsluta', icon: 'power', run: pick(() => games('/quit')) },
     ], note, at, () => games('/resume', { load: 'auto' }));
   }
@@ -166,8 +166,9 @@ window.PioneerTV = window.PioneerTV || {};
   //   the transport: −2 min, −15 s, play or pause (on a film or a video the
   //   panel paused: Fortsätt), +15 s, +2 min, round buttons side by side;
   //   the queue (the music's): the song before and the next;
-  //   Från början, Ljud, Undertexter (A steps to the next), TV-volym (left
-  //   and right; A mutes), Meny (over a site's video), Sluta.
+  //   Från början, TV-volym (left and right, and L1/R1; A mutes), Ljud,
+  //   Undertexter (A steps to the next), Meny (over a site's video), Sluta.
+  //   L2 and R2 move the timeline's mark wherever the focus is (scrub).
   //
   // A source says what plays and does it:
   //   { kind, title, sub, cover, live, time, duration, end, paused, index,
@@ -310,16 +311,7 @@ window.PioneerTV = window.PioneerTV || {};
     // ---- the rest, as rows
     const pill = (it, value) => { it.detail = value; it.pill = true; return it; };
     if (!src.live && src.duration) items.push({ label: 'Från början', icon: 'reload', keep: true, run: () => seekTo(0) });
-    if (src.audio && src.audio.length > 1) {
-      const it = pill({ label: 'Ljud', icon: 'volume', keep: true, run: () => src.track('audio') }, '');
-      m.parts.push(() => { setDetail(it, (src.audio.find((t) => t.selected) || src.audio[0]).label); });
-      items.push(it);
-    }
-    if (src.subs && src.subs.length) {
-      const it = pill({ label: 'Undertexter', icon: 'info', keep: true, run: () => src.track('subtitles') }, '');
-      m.parts.push(() => { setDetail(it, (src.subs.find((t) => t.selected) || { label: 'Av' }).label); });
-      items.push(it);
-    }
+    // The TV's volume after what plays is driven by, before its sound and subtitles.
     items.push({ label: 'TV-volym', icon: 'volume', volume: true, keep: true, run: () => b.cec('mute'),
       render: () => {
         const row = make('div', 'pioneertv-menu-item pioneertv-media-volume');
@@ -330,6 +322,16 @@ window.PioneerTV = window.PioneerTV || {};
         row.appendChild(steps);
         return row;
       } });
+    if (src.audio && src.audio.length > 1) {
+      const it = pill({ label: 'Ljud', icon: 'volume', keep: true, run: () => src.track('audio') }, '');
+      m.parts.push(() => { setDetail(it, (src.audio.find((t) => t.selected) || src.audio[0]).label); });
+      items.push(it);
+    }
+    if (src.subs && src.subs.length) {
+      const it = pill({ label: 'Undertexter', icon: 'info', keep: true, run: () => src.track('subtitles') }, '');
+      m.parts.push(() => { setDetail(it, (src.subs.find((t) => t.selected) || { label: 'Av' }).label); });
+      items.push(it);
+    }
     if (src.menu) items.push({ label: 'Meny', icon: 'menu', detail: 'snabbmenyn', keep: true, run: () => menu.push(M.mainMenu.spec()) });
     items.push(src.last);
 
@@ -346,6 +348,17 @@ window.PioneerTV = window.PioneerTV || {};
     const d = it.el && it.el.querySelector('.pioneertv-menu-detail');
     if (d && d.textContent !== text) d.textContent = text;
   }
+  // L2 and R2 (the daemon's seek_back and seek_on) wherever the focus is on
+  // the panel: to the timeline, and its mark a step back or on (A goes there).
+  function scrub(dir) {
+    if (!mediaOpen() || menu.stack[menu.stack.length - 1] !== media.spec) return;
+    const i = media.spec.items.findIndex((it) => it.label === 'Tidslinje');
+    if (i < 0) return;
+    if (menu.index !== i) { menu.index = i; menu.highlight(); }
+    media.spec.items[i].step(dir, false);
+  }
+  b.on('seek_back', () => scrub(-1));
+  b.on('seek_on', () => scrub(1));
   // The open panel, from where its source is now.
   function refresh(force) {
     if (!media || (!force && !mediaOpen())) return;

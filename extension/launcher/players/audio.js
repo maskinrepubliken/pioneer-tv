@@ -102,7 +102,7 @@ window.PioneerTV = window.PioneerTV || {};
     prev() { if (this.song()) ask('prev'); },
     seek(by) { if (this.song()) ask('seek', { by }); },
     // The legend's part while something plays.
-    legend() { return state.state !== 'idle' ? [['X', 'spelas nu'], ['L1', ''], ['R1', 'föregående · nästa']] : []; },
+    legend() { return state.state !== 'idle' ? [['X', 'spelas nu']] : []; },
     open() { nowPlaying.open(); },
   };
 
@@ -130,8 +130,8 @@ window.PioneerTV = window.PioneerTV || {};
   }
 
   // ------------------------------------------------------------ Spelas nu
-  // Over the whole page, holding the pad while open: A or X pauses, L1/R1
-  // skip, left/right seek, B goes back to browsing (the music plays on).
+  // Over the whole page, holding the pad while open: A or X pauses,
+  // left/right seek, B goes back to browsing (the music plays on).
   const nowPlaying = {
     isOpen() { return !!np && !np.hidden; },
     open() {
@@ -168,7 +168,7 @@ window.PioneerTV = window.PioneerTV || {};
       if (!part.queue.children.length) part.queue.appendChild(el('li', 'empty', state.kind === 'radio' ? 'Direktsänt' : 'Inget mer i kön'));
       V.legend(part.legend, state.kind === 'radio'
         ? [['A', 'paus · spela'], ['B', 'bläddra']]
-        : [['A', 'paus · spela'], ['L1', ''], ['R1', 'föregående · nästa'], ['◀ ▶', `spola ${SEEK} s`], ['B', 'bläddra']]);
+        : [['A', 'paus · spela'], ['◀ ▶', `spola ${SEEK} s`], ['B', 'bläddra']]);
       this.progress();
     },
     progress() {
@@ -180,7 +180,6 @@ window.PioneerTV = window.PioneerTV || {};
     },
     onKeyDown(e) {
       if (e.key === 'Enter' || e.key === ' ') { if (!e.repeat) player.toggle(); }
-      else if (e.key === 'Tab') { if (!e.repeat) (e.shiftKey ? player.prev() : player.next()); }
       else if (e.key === 'ArrowLeft') player.seek(-SEEK);
       else if (e.key === 'ArrowRight') player.seek(SEEK);
       else if (e.key === 'Escape') this.close();
