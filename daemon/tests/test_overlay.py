@@ -18,6 +18,7 @@ class Routing(unittest.TestCase):
             self.assertEqual(r.target(name), "overlay", name)
         self.assertEqual(r.target("keyboard"), "page")      # Y types into the page
         self.assertEqual(r.target("escape"), "page")
+        self.assertEqual(r.target("seek"), "page")          # L2/R2: Spelas nu, until the menu is open
 
     def test_overlay_menu_open_takes_every_button_and_pauses(self):
         r = Router()

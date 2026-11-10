@@ -388,11 +388,19 @@ without a picture (`daemon/pioneertv/audio.py`; the page hands it the
 queue, `POST /api/audio/play`). So it plays on from page to page, under the
 screensaver too, until something else plays (a film, a game, a site's
 video, a page's own sound) or it is stopped; the TV is not turned off under
-it, as the sound comes out of the TV. "Spelas nu" covers the screen: A or X
-pauses, left and right seek 15
-seconds, B goes back to browsing while the music plays on, and X brings
-"Spelas nu" back (on a view without a filled button: there X is the
-button's). Elsewhere, the quick menu's first row is what plays, and opens
+it, as the sound comes out of the TV. "Spelas nu" covers the screen, laid
+out as the media panel: the cover; what plays, its timeline (L2 and R2
+glide a mark along it, what plays goes where they are let go: the daemon
+sends `seek` to the page while no menu of the overlay is open) and round
+buttons (Förra, −15 s, play or pause, +15 s, Nästa); Blanda and Upprepa;
+at the right every song after it (up to 100), numbered, A on one plays it
+(`jump`). The d-pad goes between them, A presses, X plays or pauses
+wherever the mark is, B goes back to browsing while the music plays on.
+While browsing, X on an album, a playlist or an artist plays it at once;
+elsewhere X is the filled button's (Blanda allt, Spela), or brings "Spelas
+nu" back. Blanda shuffles the songs after the one playing (and puts them
+back in their order), and stays on for the next queue; Upprepa goes off,
+the whole queue, the one song. Elsewhere, the quick menu's first row is what plays, and opens
 its panel (see [the media panel](#the-media-panel)). A song that cannot be
 played is skipped. mpv plays every file as it is, so Jellyfin never
 transcodes. Jellyfin hears what plays (`Sessions/Playing`, shown on its
@@ -717,7 +725,7 @@ presses it, whatever has the focus. The button itself is not marked (one
 learns it); the browse page's legend says "X" and the button's name:
 the browse page's (`browse/page.js`; Spela, Fortsätt från, Blanda allt,
 Försök igen), the overlay's menus (`overlay/hud.js`; the filled
-row: Fortsätt in a pause panel, Hem in the quick menu), the on-screen
+row: Spara läge in a game's panel, the media panel's play), the on-screen
 keyboard's OK (A only types; there is no holding A for OK) and the settings
 page's (`settings.js`). So a view has at most one filled button; a list's
 own buttons (a network's Anslut, a pad's Para) are outlined: where a

@@ -17,10 +17,12 @@ import logging
 
 log = logging.getLogger("pioneertv.overlay")
 
-# Pad buttons whose meaning depends on whether the overlay's menu is open.
-ROUTED = ("keyboard", "escape")
-# Always the overlay's (seek: L2/R2 on the media panel, how hard they are pressed).
-OVERLAY = ("menu", "toast", "saver", "rest", "seek")
+# Pad buttons whose meaning depends on whether the overlay's menu is open
+# (seek: L2/R2, how hard they are pressed: the media panel's with the menu
+# open, else the page's, its Spelas nu).
+ROUTED = ("keyboard", "escape", "seek")
+# Always the overlay's.
+OVERLAY = ("menu", "toast", "saver", "rest")
 # What the overlay may ask the page (through the extension) to do, and what
 # a page may ask of the overlay (the home page: its Sök panel, and the cover
 # over a channel on its way until it plays in full).

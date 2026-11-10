@@ -19,30 +19,83 @@
   background: var(--pioneertv-paper);
 }
 .np[hidden] { display: none; }
-.np-main { flex: 1; min-height: 0; display: flex; align-items: center; gap: 3rem; }
+.np-main { flex: 1; min-height: 0; display: flex; align-items: center; gap: 2.6rem; }
 .np-cover {
-  width: 24rem; height: 24rem; flex: none; border-radius: var(--pioneertv-radius-l); overflow: hidden;
+  width: min(19rem, 42vh); height: min(19rem, 42vh); flex: none; border-radius: var(--pioneertv-radius-l); overflow: hidden;
   background: var(--pioneertv-paper-sunken); box-shadow: 0 0.8rem 2.4rem rgba(40, 30, 20, 0.18);
 }
 .np-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.np-text { flex: 1; min-width: 0; }
+.np-text { flex: 1; min-width: 24rem; }
 .np-title {
-  margin: 0 0 0.6rem; padding-top: 0.14em; font-family: var(--pioneertv-font-display); font-weight: 900; font-size: 2.6rem; line-height: 1.02;
-  letter-spacing: -0.01em; text-transform: uppercase;
-  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  margin: 0 0 0.6rem; padding-top: 0.14em; font-family: var(--pioneertv-font-display); font-weight: 900; font-size: 2.3rem; line-height: 1.02;
+  letter-spacing: -0.01em; text-transform: uppercase; overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-.np-artist { margin: 0 0 0.3rem; font: 1.5rem/1.25 var(--pioneertv-font-prose); }
-.np-album { margin: 0 0 2rem; font: italic 1.15rem/1.25 var(--pioneertv-font-prose); color: var(--pioneertv-ink-muted); }
-.np-progress { height: 0.45rem; border-radius: 0.3rem; background: var(--pioneertv-paper-sunken); overflow: hidden; }
-.np-bar { height: 100%; width: 0; background: var(--pioneertv-ochre); }
+.np-artist { margin: 0 0 0.3rem; font: 1.4rem/1.25 var(--pioneertv-font-prose); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.np-album { margin: 0 0 1.4rem; font: italic 1.15rem/1.25 var(--pioneertv-font-prose); color: var(--pioneertv-ink-muted); }
+.np-timeline { margin-bottom: 1.6rem; }
+.np-track { position: relative; height: 0.45rem; border-radius: 0.3rem; background: var(--pioneertv-paper-sunken); }
+.np-bar { height: 100%; width: 0; border-radius: 0.3rem; background: var(--pioneertv-ink); }
+.np-mark { position: absolute; top: 50%; width: 0; height: 0; display: none; }
+.np-timeline.marking .np-mark { display: block; }
+.np-mark::before {
+  content: ""; position: absolute; left: -0.6rem; top: -0.6rem; width: 1.2rem; height: 1.2rem; border-radius: 50%;
+  background: var(--pioneertv-ochre); border: 2px solid var(--pioneertv-ink);
+}
+.np-mark span {
+  position: absolute; bottom: 0.9rem; left: 0; transform: translateX(-50%); white-space: nowrap; padding: 0.2rem 0.5rem;
+  border-radius: 0.4rem; background: var(--pioneertv-surface-ink); color: var(--pioneertv-on-dark); font: 500 0.85rem/1 var(--pioneertv-font-mono);
+}
 .np-times {
   display: flex; justify-content: space-between; margin: 0.6rem 0 0;
   font-family: var(--pioneertv-font-mono); font-size: 0.95rem; color: var(--pioneertv-ink-faint); font-variant-numeric: tabular-nums;
 }
-.np-state { font-family: var(--pioneertv-font-ui); font-weight: 600; color: var(--pioneertv-ink); }
-.np-state.fel { color: var(--pioneertv-alarm); }
-.np-queue { width: 17rem; flex: none; align-self: stretch; padding-left: 1.8rem; border-left: 1px solid var(--pioneertv-line); overflow: hidden; }
-.np-queue ol { list-style: none; margin: 0; padding: 0; }
-.np-queue li { padding: 0.5rem 0; border-bottom: 1px solid var(--pioneertv-line); }
-.np-queue li b { display: block; font: 400 1.05rem/1.2 var(--pioneertv-font-prose); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.np-queue li span { display: block; font-size: 0.85rem; color: var(--pioneertv-ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.np-timeline.marking .np-hint { color: var(--pioneertv-ink); }
+
+/* The round buttons, as the overlay's media panel: the large one plays or pauses. */
+.np-transport { display: flex; align-items: flex-start; gap: 1.1rem; margin-bottom: 1.4rem; }
+.np-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 0.45rem; padding: 0; margin-top: 0.9rem;
+  background: none; border: 0; cursor: pointer; color: var(--pioneertv-ink);
+}
+.np-ring {
+  width: 3.4rem; height: 3.4rem; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%;
+  border: 1px solid var(--pioneertv-line-strong); background: var(--pioneertv-paper);
+}
+.np-ring svg { width: 1.6rem; height: 1.6rem; }
+.np-play { margin-top: 0; }
+.np-play .np-ring { width: 5.2rem; height: 5.2rem; background: var(--pioneertv-ochre); border-color: var(--pioneertv-ochre); color: var(--pioneertv-on-ochre); }
+.np-play .np-ring svg { width: 2.3rem; height: 2.3rem; }
+.np-says { font: 400 0.8rem/1 var(--pioneertv-font-mono); color: var(--pioneertv-ink-muted); white-space: nowrap; }
+.np-btn.np-on .np-ring { outline: 0.25rem solid var(--pioneertv-focus); outline-offset: 0.3rem; }
+.np-btn.np-on .np-says { color: var(--pioneertv-ink); }
+
+/* Blanda and Upprepa: their value in a capsule; A changes it. */
+.np-modes { display: flex; gap: 0.9rem; }
+.np-mode {
+  display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0.7rem 0.55rem 1rem; cursor: pointer;
+  font: 600 1rem/1 var(--pioneertv-font-ui); color: var(--pioneertv-ink);
+  background: var(--pioneertv-paper); border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-pill);
+}
+.np-mode-icon { display: inline-flex; color: var(--pioneertv-ink-muted); }
+.np-mode-value {
+  padding: 0.3rem 0.7rem; border-radius: var(--pioneertv-radius-pill); background: var(--pioneertv-paper-sunken);
+  font: 500 0.85rem/1 var(--pioneertv-font-ui);
+}
+.np-mode.np-on { outline: 0.25rem solid var(--pioneertv-focus); outline-offset: 0.3rem; }
+
+/* Every song after it, numbered, the list scrolling with the mark. */
+.np-queue { width: 19rem; flex: none; align-self: stretch; display: flex; flex-direction: column; min-height: 0; padding-left: 1.8rem; border-left: 1px solid var(--pioneertv-line); }
+.np-queue ol { list-style: none; margin: 0; padding: 0.3rem; flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none; }
+.np-queue ol::-webkit-scrollbar { display: none; }
+.np-queue li.empty { padding: 0.5rem 0; color: var(--pioneertv-ink-muted); font: 400 1rem/1.2 var(--pioneertv-font-prose); }
+.np-song {
+  width: 100%; display: grid; grid-template-columns: 2rem 1fr auto; grid-template-rows: auto auto; column-gap: 0.6rem; align-items: baseline;
+  padding: 0.5rem 0.6rem; text-align: left; cursor: pointer; color: var(--pioneertv-ink);
+  background: none; border: 0; border-bottom: 1px solid var(--pioneertv-line); border-radius: 0;
+}
+.np-song-n { grid-column: 1; grid-row: 1 / 3; font: 400 0.85rem/1 var(--pioneertv-font-mono); color: var(--pioneertv-ink-faint); }
+.np-song b { grid-column: 2; grid-row: 1; font: 400 1.05rem/1.2 var(--pioneertv-font-prose); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.np-song-len { grid-column: 3; grid-row: 1; font: 400 0.85rem/1 var(--pioneertv-font-mono); color: var(--pioneertv-ink-faint); }
+.np-song-artist { grid-column: 2 / 4; grid-row: 2; font-size: 0.85rem; color: var(--pioneertv-ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.np-song.np-on { outline: 0.25rem solid var(--pioneertv-focus); outline-offset: 0; border-radius: 0.6rem; background: var(--pioneertv-paper-hover); }

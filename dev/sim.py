@@ -367,6 +367,8 @@ class Daemon:
                 self.audio_load(self.index - 1)
         elif action == "stop":
             self.audio_stop()
+        elif action == "jump" and self.kind == "music" and 0 <= int(body.get("index", -1)) < len(self.queue):
+            self.audio_load(int(body["index"]))
         elif action == "shuffle":                 # audio.py shuffles; here only the word changes
             self.shuffle = not getattr(self, "shuffle", False)
             self.audio_say()

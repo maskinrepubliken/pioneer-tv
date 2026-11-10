@@ -177,6 +177,12 @@ class Audio:
             await self._report_stop()
             await self._load((self.index + 1) % len(self.queue))
 
+    async def jump(self, index: int) -> None:
+        """A song of the queue, from Spelas nu's list: it plays now."""
+        if self.kind == "music" and 0 <= index < len(self.queue) and index != self.index:
+            await self._report_stop()
+            await self._load(index)
+
     async def prev(self) -> None:
         """Back to the start of the song, or to the one before when near its start."""
         if self.kind != "music":

@@ -10,12 +10,12 @@
 //
 //   M.players.audio.play(songs, index)
 //   M.players.audio.state                 the daemon's "audio" event, last heard
-//   M.players.audio.ask(action, body)     toggle, next, prev, seek {by}, to {at}, stop
+//   M.players.audio.ask(action, body)     toggle, next, prev, seek {by}, to {at}, stop, shuffle, repeat, jump {index}
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const V = M.views;
   const el = V.el;
-  const SEEK = 15;                       // seconds a press of left or right seeks
+  const SEEK = 15;                       // seconds the −15 s and +15 s buttons seek
 
   const clock = (s) => {
     if (s == null || !isFinite(s)) return '';
@@ -53,6 +53,21 @@ window.PioneerTV = window.PioneerTV || {};
   fetch('/api/audio').then((r) => r.json()).then((s) => { if (s && s.state && !heardAt) heard(s); }).catch(() => {});
 
   // ------------------------------------------------------------ its parts of the page
+  // Spelas nu, laid out as the overlay's media panel: the cover; what plays,
+  // its timeline (L2 and R2 glide a mark along it, what plays goes where
+  // they are let go) and round buttons (Förra, −15 s, play or pause, +15 s,
+  // Nästa); Blanda and Upprepa; at the right every song after it, A on one
+  // plays it.
+  const SVG = (inner) => `<svg viewBox="0 0 24 24" aria-hidden="true">${inner}</svg>`;
+  const GLYPH = {
+    play: SVG('<path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/>'),
+    pause: SVG('<rect x="6.5" y="5.5" width="4" height="13" rx="1.2" fill="currentColor"/><rect x="13.5" y="5.5" width="4" height="13" rx="1.2" fill="currentColor"/>'),
+    turnBack: SVG('<path d="M5 12a7 7 0 1 0 2.05-4.95" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M4 4v4.5h4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'),
+    turnOn: SVG('<path d="M19 12a7 7 0 1 1-2.05-4.95" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M20 4v4.5h-4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'),
+    prev: SVG('<rect x="5" y="6" width="2.4" height="12" rx="1" fill="currentColor"/><path d="M19 6 9 12l10 6z" fill="currentColor"/>'),
+    next: SVG('<rect x="16.6" y="6" width="2.4" height="12" rx="1" fill="currentColor"/><path d="M5 6l10 6-10 6z" fill="currentColor"/>'),
+  };
+  const REPEAT = { off: 'Av', all: 'Alla låtar', one: 'Den här låten' };
   let np = null, mini = null;
   const part = {};
   function build() {
@@ -67,16 +82,44 @@ window.PioneerTV = window.PioneerTV || {};
           <h1 class="np-title" data-part="title"></h1>
           <p class="np-artist" data-part="artist"></p>
           <p class="np-album" data-part="album"></p>
-          <div class="np-progress"><div class="np-bar" data-part="bar"></div></div>
-          <p class="np-times"><span data-part="pos">0:00</span><span class="np-state" data-part="state"></span><span data-part="len"></span></p>
+          <div class="np-timeline" data-part="timeline">
+            <div class="np-track"><div class="np-bar" data-part="bar"></div><div class="np-mark" data-part="mark"><span data-part="bubble"></span></div></div>
+            <p class="np-times"><span data-part="pos">0:00</span><span class="np-hint" data-part="hint">L2 ◀ ▶ R2</span><span data-part="len"></span></p>
+          </div>
+          <div class="np-transport" data-part="transport"></div>
+          <div class="np-modes" data-part="modes"></div>
         </div>
         <aside class="np-queue">
-          <p class="section-label">Näst på tur</p>
+          <p class="section-label" data-part="queuehead">Näst på tur</p>
           <ol data-part="queue"></ol>
         </aside>
       </div>
       <footer class="legend" data-part="legend"></footer>`;
     np.querySelectorAll('[data-part]').forEach((n) => { part[n.dataset.part] = n; });
+    const round = (glyph, says, run, cls = '') => {
+      const btn = el('button', `np-btn ${cls}`);
+      btn.type = 'button';
+      btn.innerHTML = `<span class="np-ring">${GLYPH[glyph]}</span>`;
+      btn.appendChild(el('span', 'np-says', says));
+      btn.addEventListener('click', run);
+      return btn;
+    };
+    part.play = round('play', 'Spela', () => player.toggle(), 'np-play');
+    part.transport.append(
+      round('prev', 'Förra', () => player.prev()), round('turnBack', '15 s', () => player.seek(-SEEK)),
+      part.play,
+      round('turnOn', '15 s', () => player.seek(SEEK)), round('next', 'Nästa', () => player.next()));
+    const mode = (icon, label, action) => {
+      const btn = el('button', 'np-mode');
+      btn.type = 'button';
+      btn.innerHTML = `<span class="np-mode-icon">${M.icons.html(icon)}</span>`;
+      btn.append(el('span', 'np-mode-label', label), el('span', 'np-mode-value', ''));
+      btn.addEventListener('click', () => ask(action));
+      return btn;
+    };
+    part.shuffle = mode('shuffle', 'Blanda', 'shuffle');
+    part.repeat = mode('repeat', 'Upprepa', 'repeat');
+    part.modes.append(part.shuffle, part.repeat);
     document.body.appendChild(np);
     mini = el('button', 'np-mini');
     mini.type = 'button';
@@ -129,8 +172,12 @@ window.PioneerTV = window.PioneerTV || {};
   }
 
   // ------------------------------------------------------------ Spelas nu
-  // Over the whole page, holding the pad while open: A or X pauses,
-  // left/right seek, B goes back to browsing (the music plays on).
+  // Over the whole page, holding the pad while open. The d-pad goes between
+  // its buttons and down into the list; A presses what is marked, X plays
+  // or pauses wherever the mark is, L2 and R2 seek, B goes back to browsing
+  // (the music plays on).
+  let at = null;                   // the marked button or row
+  const length = () => state.duration || (state.item && state.item.seconds) || 0;
   const nowPlaying = {
     isOpen() { return !!np && !np.hidden; },
     open() {
@@ -139,10 +186,12 @@ window.PioneerTV = window.PioneerTV || {};
       np.hidden = false;
       M.nav.captured = this;
       this.render();
+      mark(part.play);
     },
     close() {
       if (!np) return;
       np.hidden = true;
+      scrub = null; target = null;
       if (M.nav.captured === this) M.nav.captured = null;
       const row = document.querySelector('.view [data-song].playing');
       if (row && !(M.browse && M.browse.view.contains(document.activeElement))) M.nav.focus(row);
@@ -150,38 +199,122 @@ window.PioneerTV = window.PioneerTV || {};
     render() {
       const it = state.item;
       if (!it) return;
-      part.cover.innerHTML = '';
-      if (it.cover) { const img = el('img'); img.src = it.cover; img.alt = ''; part.cover.appendChild(img); }
+      if (part.cover.dataset.src !== (it.cover || '')) {
+        part.cover.dataset.src = it.cover || '';
+        part.cover.innerHTML = '';
+        if (it.cover) { const img = el('img'); img.src = it.cover; img.alt = ''; part.cover.appendChild(img); }
+      }
       part.title.textContent = it.name || '';
       part.artist.textContent = it.artist || '';
       part.album.textContent = it.album || '';
-      part.label.textContent = `Spelas nu · ${state.index + 1} av ${state.count}`;
-      part.state.textContent = state.state === 'paused' ? 'Pausad' : state.state === 'loading' ? 'Laddar…' : '';
+      part.label.textContent = [state.state === 'paused' ? 'Pausad' : state.state === 'loading' ? 'Laddar…' : 'Spelas nu',
+        state.count > 1 ? `låt ${state.index + 1} av ${state.count}` : ''].filter(Boolean).join(' · ');
+      const playing = state.state === 'playing' || state.state === 'loading';
+      part.play.querySelector('.np-ring').innerHTML = GLYPH[playing ? 'pause' : 'play'];
+      part.play.querySelector('.np-says').textContent = playing ? 'Pausa' : 'Spela';
+      part.shuffle.querySelector('.np-mode-value').textContent = state.shuffle ? 'På' : 'Av';
+      part.repeat.querySelector('.np-mode-value').textContent = REPEAT[state.repeat] || 'Av';
+      // Every song after it (the daemon names up to a hundred).
+      const next = state.next || [];
+      const left = next.reduce((n, s) => n + (s.seconds || 0), 0);
+      part.queuehead.textContent = next.length ? `Näst på tur · ${next.length === 1 ? '1 låt' : `${next.length} låtar`}${left ? ` · ${Math.round(left / 60)} min` : ''}` : 'Näst på tur';
+      const was = at && at.dataset.n;
       part.queue.innerHTML = '';
-      for (const next of state.next || []) {
+      next.forEach((song, i) => {
         const li = el('li');
-        li.appendChild(el('b', '', next.name));
-        li.appendChild(el('span', '', next.artist || ''));
+        const row = el('button', 'np-song');
+        row.type = 'button';
+        row.dataset.n = String(i);
+        row.append(el('span', 'np-song-n', String(state.index + i + 2)), el('b', '', song.name), el('span', 'np-song-artist', song.artist || ''),
+          el('span', 'np-song-len', clock(song.seconds)));
+        row.addEventListener('click', () => ask('jump', { index: state.index + 1 + i }));
+        li.appendChild(row);
         part.queue.appendChild(li);
-      }
-      if (!part.queue.children.length) part.queue.appendChild(el('li', 'empty', 'Inget mer i kön'));
-      V.legend(part.legend, [['A', 'paus · spela'], ['◀ ▶', `spola ${SEEK} s`], ['B', 'bläddra']]);
+      });
+      if (!next.length) part.queue.appendChild(el('li', 'empty', state.repeat === 'all' ? 'Kön börjar om' : 'Inget mer i kön'));
+      if (was != null) mark(part.queue.querySelector(`[data-n="${was}"]`) || part.queue.querySelector('.np-song') || part.play);
+      V.legend(part.legend, [['arrows', 'välj'], ['A', 'tryck'], ['X', 'paus · spela'], ['L2', ''], ['R2', 'spola'], ['B', 'bläddra']]);
       this.progress();
     },
     progress() {
-      const len = state.duration || (state.item && state.item.seconds) || 0;
-      const at = now();
-      part.pos.textContent = clock(at);
-      part.len.textContent = clock(len);
-      part.bar.style.width = len ? `${Math.min(100, (at / len) * 100)}%` : '0';
+      const len = length();
+      const shown = target != null ? target : nowTime();
+      part.pos.textContent = clock(nowTime());
+      part.len.textContent = len ? `−${clock(Math.max(0, len - nowTime()))}` : '';
+      part.bar.style.width = len ? `${Math.min(100, (nowTime() / len) * 100)}%` : '0';
+      part.timeline.classList.toggle('marking', target != null);
+      if (target != null && len) {
+        part.mark.style.left = `${(shown / len) * 100}%`;
+        part.bubble.textContent = clock(shown);
+      }
+      part.hint.textContent = target != null ? 'släpp så hoppar den hit' : 'L2 ◀ ▶ R2';
     },
     onKeyDown(e) {
-      if (e.key === 'Enter' || e.key === ' ') { if (!e.repeat) player.toggle(); }
-      else if (e.key === 'ArrowLeft') player.seek(-SEEK);
-      else if (e.key === 'ArrowRight') player.seek(SEEK);
-      else if (e.key === 'Escape') this.close();
+      if (e.key === ' ') { if (!e.repeat) player.toggle(); return; }
+      if (e.key === 'Escape') { this.close(); return; }
+      if (e.key === 'Enter') { if (!e.repeat && at) at.click(); return; }
+      if (e.key.startsWith('Arrow')) move(e.key);
     },
   };
+  const nowTime = () => now();
+
+  // The mark: one button or row at a time, the d-pad to the nearest that way.
+  function mark(node) {
+    if (!node) return;
+    if (at) at.classList.remove('np-on');
+    at = node;
+    at.classList.add('np-on');
+    if (at.classList.contains('np-song')) at.scrollIntoView({ block: 'nearest' });
+  }
+  function move(key) {
+    const all = [...np.querySelectorAll('.np-btn, .np-mode, .np-song')];
+    if (!at) return mark(part.play);
+    const a = at.getBoundingClientRect(), ax = a.left + a.width / 2, ay = a.top + a.height / 2;
+    let best = null, score = Infinity;
+    for (const n of all) {
+      if (n === at) continue;
+      const r = n.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+      const along = { ArrowUp: ay - y, ArrowDown: y - ay, ArrowLeft: ax - x, ArrowRight: x - ax }[key];
+      if (along < 4) continue;
+      const across = key === 'ArrowUp' || key === 'ArrowDown' ? Math.abs(x - ax) : Math.abs(y - ay);
+      const s = along + across * 2;
+      if (s < score) { score = s; best = n; }
+    }
+    if (best) { mark(best); if (M.sound) M.sound.tick(key); }
+  }
+
+  // L2 and R2 (the daemon's seek: a direction and how hard; the page's
+  // while no menu of the overlay is open): the mark on the timeline glides,
+  // the harder the faster, and what plays goes where they are let go; a
+  // short light touch is ten seconds. As the overlay's media panel.
+  let scrub = null, target = null;
+  M.bridge.on('seek', (e) => {
+    if (!nowPlaying.isOpen() || !length()) return;
+    const amount = Math.max(0, Math.min(1, Number(e.amount) || 0));
+    if (amount > 0) {
+      if (!scrub) scrub = { from: now(), at: performance.now() };
+      scrub.dir = e.dir < 0 ? -1 : 1;
+      scrub.amount = amount;
+      if (target == null) target = now();
+      return;
+    }
+    if (!scrub) return;
+    const { from, dir } = scrub;
+    scrub = null;
+    let to = target == null ? now() : target;
+    if (Math.abs(to - from) < 3) to = from + dir * 10;
+    target = null;
+    ask('to', { at: Math.max(0, Math.min(length() - 1, to)) });
+    nowPlaying.progress();
+  });
+  setInterval(() => {
+    if (!scrub || target == null || !nowPlaying.isOpen()) return;
+    const t = performance.now(), dt = (t - scrub.at) / 1000;
+    scrub.at = t;
+    const whole = length() || 600, slow = Math.max(2, whole / 300), fast = Math.max(30, whole / 10);
+    target = Math.max(0, Math.min(whole - 1, target + scrub.dir * (slow + (fast - slow) * scrub.amount * scrub.amount) * dt));
+    nowPlaying.progress();
+  }, 50);
   // The keyboard takes the pad while open; it comes back here.
   M.bridge.on('keyboard:close', () => { if (nowPlaying.isOpen() && !M.nav.captured) M.nav.captured = nowPlaying; });
 
