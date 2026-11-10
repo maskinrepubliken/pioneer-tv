@@ -51,7 +51,8 @@ window.PioneerTV = window.PioneerTV || {};
     layers = [el('div', 'pv-layer'), el('div', 'pv-layer')];
     caption = el('div', 'pv-caption');
     for (const name of ['when', 'where', 'text']) { part[name] = el('p', `pv-${name}`); caption.appendChild(part[name]); }
-    // A clip: a small mark in the corner, playing or paused, the time.
+    // A clip: a small mark in the top corner (clear of the caption at the
+    // foot), playing or paused, the time.
     part.clip = el('div', 'pv-clip');
     part.clipState = el('span', 'pv-clip-state');
     part.clipLen = el('span');
