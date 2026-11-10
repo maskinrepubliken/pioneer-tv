@@ -2,10 +2,11 @@
 // manner of the old dungeon games (Ultima Underworld): parts of it in
 // their own stones (walls, floors, ceilings), now and then a room (a hall
 // of pillars, a garden under the stars, a ballroom, a treasury), all of it
-// dark but for the torch one carries, which flickers. Its walls are hung
-// full of pictures in frames: the covers kept on the box (games', films',
-// series' and albums', the daemon's /api/finds) and Bilder's own (Immich);
-// small ones along the ways, larger in the rooms, great ones in gold. Now
+// dark but for the torch one carries, which flickers. It starts somewhere
+// new each time. Its walls are hung full of pictures in frames, one kind
+// only: Bilder's photos (Immich's, some 1600 at random each time), else
+// the covers kept on the box (the daemon's /api/finds); small ones along
+// the ways, larger in the rooms, great ones in gold. Now
 // and then the walker stops at a wall, turns to it and looks a while:
 // hud.look(items) is told what hangs there (saver.js shows it, sharp, and
 // what it is), hud.leave() when it walks on.
@@ -45,11 +46,22 @@ window.PioneerTV = window.PioneerTV || {};
     { walls: [T.sand], floor: T.planks, ceil: T.beams },
     { walls: [T.slate, T.brick], floor: T.tiles, ceil: T.blocks },
     { walls: [T.dirt, T.stone], floor: T.planks, ceil: T.blocks },
+    { walls: [T.brick], floor: T.marble, ceil: T.beams },
+    { walls: [T.stone, T.moss], floor: T.dirt, ceil: T.blocks },
+    { walls: [T.planks], floor: T.planks, ceil: T.beams },
+    { walls: [T.marble, T.sand], floor: T.tiles, ceil: T.beams },
+    { walls: [T.slate], floor: T.flags, ceil: T.slate },
   ];
   // Rooms that turn up now and then, a chunk's open middle: a hall of
   // pillars, a garden under the stars with hedges round it, a ballroom
-  // floored in marble, a treasury with many things lying about.
-  const ROOMS = ['hall', 'garden', 'ballroom', 'treasury'];
+  // floored in marble, a treasury, a long gallery of great pictures, a crypt
+  // of pillars in slate, a library in wood, a cellar of earth. Each its
+  // walls, floor and ceiling; some with pillars.
+  const ROOMS = ['hall', 'garden', 'ballroom', 'treasury', 'gallery', 'crypt', 'library', 'cellar'];
+  const ROOM_WALL = { garden: T.hedge, ballroom: T.sand, hall: T.stone, treasury: T.brick, gallery: T.brick, crypt: T.slate, library: T.planks, cellar: T.dirt };
+  const ROOM_FLOOR = { garden: T.grass, ballroom: T.marble, hall: T.flags, treasury: T.tiles, gallery: T.marble, crypt: T.flags, library: T.planks, cellar: T.dirt };
+  const ROOM_CEIL = { garden: T.sky, ballroom: T.beams, hall: T.blocks, treasury: T.blocks, gallery: T.beams, crypt: T.blocks, library: T.beams, cellar: T.beams };
+  const PILLARS = new Set(['hall', 'crypt']);
 
   // ------------------------------------------------------------ chance
   // A number from a few others, the same every time.
@@ -121,7 +133,9 @@ window.PioneerTV = window.PioneerTV || {};
     let room = null;
     if (!(cx === 0 && cy === 0) && hash(cx, cy, 6) < 0.45) {
       const kind = ROOMS[Math.floor(hash(cx, cy, 7) * ROOMS.length)];
-      const w = 3 + Math.floor(rand() * 2), h = 3 + Math.floor(rand() * 2);
+      // A gallery long, the rest 3 or 4 cells a side.
+      const w = kind === 'gallery' ? 5 + Math.floor(rand() * 2) : 3 + Math.floor(rand() * 2);
+      const h = kind === 'gallery' ? 2 + Math.floor(rand() * 2) : 3 + Math.floor(rand() * 2);
       const x0 = 1 + Math.floor(rand() * (CHUNK - w - 1)), y0 = 1 + Math.floor(rand() * (CHUNK - h - 1));
       room = { kind, x0: cx * CHUNK + x0, y0: cy * CHUNK + y0, x1: cx * CHUNK + x0 + w - 1, y1: cy * CHUNK + y0 + h - 1 };
       // Its tiles, and the ring of wall round it.
@@ -131,12 +145,12 @@ window.PioneerTV = window.PioneerTV || {};
           const inside = lx > x0 * 2 && ly > y0 * 2 && lx < (x0 + w - 1) * 2 + 2 && ly < (y0 + h - 1) * 2 + 2;
           if (inside) {
             const pillar = lx % 2 === 0 && ly % 2 === 0;
-            wall[i] = kind === 'hall' && pillar ? 1 + T.stone : 0;
+            wall[i] = PILLARS.has(kind) && pillar ? 1 + ROOM_WALL[kind] : 0;
           } else if (wall[i]) {
-            wall[i] = 1 + ({ garden: T.hedge, ballroom: T.sand, hall: T.stone, treasury: T.brick })[kind];
+            wall[i] = 1 + ROOM_WALL[kind];
           }
-          floor[i] = ({ garden: T.grass, ballroom: T.marble, hall: T.flags, treasury: T.tiles })[kind];
-          ceil[i] = ({ garden: T.sky, ballroom: T.beams, hall: T.blocks, treasury: T.blocks })[kind];
+          floor[i] = ROOM_FLOOR[kind];
+          ceil[i] = ROOM_CEIL[kind];
         }
       }
     }
@@ -188,7 +202,8 @@ window.PioneerTV = window.PioneerTV || {};
     epic: { h: 0.8, frame: 0.065, gold: true },
   };
   // A way of hanging: its pictures' sizes, where their middles are on the
-  // face (u across, v down) and how wide one may be.
+  // face (u across, v down) and how wide one may be (a place's own, else
+  // the hanging's).
   const one = (size) => ({ w: 0.9, slots: [[size, 0.5, SIZES[size].h > 0.7 ? 0.5 : 0.44]] });
   const HANGINGS = {
     small: one('small'), medium: one('medium'), large: one('large'), epic: one('epic'),
@@ -196,16 +211,43 @@ window.PioneerTV = window.PioneerTV || {};
     row: { w: 0.28, slots: [['small', 0.18, 0.44], ['small', 0.5, 0.44], ['small', 0.82, 0.44]] },
     square: { w: 0.38, slots: [['tiny', 0.29, 0.31], ['tiny', 0.71, 0.31], ['tiny', 0.29, 0.6], ['tiny', 0.71, 0.6]] },
     gallery: { w: 0.42, slots: [['medium', 0.27, 0.44], ['medium', 0.73, 0.44]] },
+    tall: { w: 0.5, slots: [['small', 0.5, 0.3], ['small', 0.5, 0.62]] },
+    triptych: { w: 0.24, slots: [['tiny', 0.15, 0.44], ['medium', 0.5, 0.44, 0.36], ['tiny', 0.85, 0.44]] },
+    salon: { w: 0.26, slots: [['tiny', 0.19, 0.31], ['tiny', 0.5, 0.31], ['tiny', 0.81, 0.31], ['tiny', 0.19, 0.6], ['tiny', 0.5, 0.6], ['tiny', 0.81, 0.6]] },
   };
   const pick = (k, table) => { for (const [name, upTo] of table) if (k < upTo) return HANGINGS[name]; return null; };
   const LOOK_S = 7;                      // seconds a wall is looked at
-  const WAYS = [['small', 0.2], ['medium', 0.32], ['pair', 0.55], ['row', 0.7], ['square', 0.85], ['large', 0.9]];
-  const ROOMS_HUNG = [['epic', 0.25], ['large', 0.45], ['gallery', 0.62], ['square', 0.8], ['row', 1]];
+  const PHOTO_CALLS = 2;                 // Immich's random pictures, 800 a call
+  // How the ways are hung, and each kind of room (the garden's hedges bare).
+  const WAYS = [['small', 0.14], ['medium', 0.24], ['pair', 0.4], ['row', 0.52], ['square', 0.64], ['tall', 0.76],
+    ['triptych', 0.86], ['salon', 0.94], ['large', 0.98]];
+  const ROOMS_HUNG = {
+    gallery: [['epic', 0.4], ['large', 0.7], ['gallery', 0.85], ['triptych', 1]],
+    crypt: [['small', 0.25], ['pair', 0.45], ['tall', 0.6]],
+    library: [['salon', 0.4], ['square', 0.7], ['row', 1]],
+    cellar: [['small', 0.35], ['pair', 0.55]],
+    other: [['epic', 0.2], ['large', 0.36], ['gallery', 0.5], ['triptych', 0.64], ['salon', 0.78], ['square', 0.88], ['row', 1]],
+  };
   function hangs(tx, ty, face, room) {
     const k = hash(tx * 4 + face, ty, 22);
-    if (room) return room.kind === 'garden' ? null : pick(k, ROOMS_HUNG);
+    if (room) return room.kind === 'garden' ? null : pick(k, ROOMS_HUNG[room.kind] || ROOMS_HUNG.other);
     return pick(k, WAYS);
   }
+  // Frames of many kinds: dark wood, black, silver, white (a wide mat),
+  // gilt, and gilt with a dark rim within (the great ones'); the smaller a
+  // picture, the plainer its frame may be. [body, edge] as ABGR.
+  const FRAMES = {
+    wood: { body: 0xff22344f, edge: 0xff142233 },
+    black: { body: 0xff1a1c1e, edge: 0xff3c4246 },
+    silver: { body: 0xffc4c0be, edge: 0xff767066 },
+    white: { body: 0xffdee8ec, edge: 0xff8a9296, wide: 1.8 },
+    gold: { body: 0xff3aa4d8, edge: 0xff1d6a9a },
+    ornate: { body: 0xff3aa4d8, edge: 0xff123a5a, inner: true, wide: 1.3 },
+  };
+  const FRAMED = {
+    tiny: ['wood', 'black', 'white', 'silver'], small: ['wood', 'black', 'white', 'silver', 'gold'],
+    medium: ['wood', 'black', 'silver', 'gold', 'white'], large: ['gold', 'silver', 'black', 'ornate'], epic: ['gold', 'ornate'],
+  };
 
   // ------------------------------------------------------------ textures
   // Each texture at SHADES darknesses, as rows of 32-bit pixels.
@@ -270,7 +312,7 @@ window.PioneerTV = window.PioneerTV || {};
         } catch { /* a picture that may not be read: the wall stays bare */ }
       };
       im.src = f.url;
-      if (wallPics.size > 260) wallPics.delete(wallPics.keys().next().value);
+      if (wallPics.size > 700) wallPics.delete(wallPics.keys().next().value);
       return null;
     }
     // A pixel in the torchlight, as the textures are (shadeTables).
@@ -280,8 +322,6 @@ window.PioneerTV = window.PioneerTV || {};
       const r = (p & 255) * k, g = ((p >>> 8) & 255) * k, b = ((p >>> 16) & 255) * k;
       return 0xff000000 | (Math.min(255, b * 0.82) << 16) | (Math.min(255, g * 0.95) << 8) | Math.min(255, r * 1.08);
     };
-    const WOOD = 0xff22344f, WOOD_EDGE = 0xff142233;            // dark wood (as ABGR)
-    const GOLD = 0xff3aa4d8, GOLD_EDGE = 0xff1d6a9a;            // gilt and its shadow
     // The pictures on the face a column hits, each where it sits on the
     // face (u across and v down, 0 to 1); those not yet loaded left out.
     let pool = [];                       // what hangs: the finds, and Immich's
@@ -300,11 +340,13 @@ window.PioneerTV = window.PioneerTV || {};
       if (!hung) return null;
       const { hanging, items } = hung;
       const out = [];
-      hanging.slots.forEach(([name, uc, vc], i) => {
+      hanging.slots.forEach(([name, uc, vc, most], i) => {
         const pic = wallPicture(items[i]);
         if (!pic) return;
-        const size = SIZES[name], h = size.h, w = Math.min(hanging.w, h * pic.ratio);
-        out.push({ pic, size, u0: uc - w / 2, u1: uc + w / 2, v0: vc - h / 2, v1: vc + h / 2 });
+        const size = SIZES[name], h = size.h, w = Math.min(most || hanging.w, h * pic.ratio);
+        const kinds = FRAMED[name];
+        const style = FRAMES[kinds[Math.floor(hash(mx * 4 + face, my, 30 + i) * kinds.length)]];
+        out.push({ pic, size, style, frame: size.frame * (style.wide || 1), u0: uc - w / 2, u1: uc + w / 2, v0: vc - h / 2, v1: vc + h / 2 });
       });
       return out.length ? out : null;
     }
@@ -490,22 +532,24 @@ window.PioneerTV = window.PioneerTV || {};
         if (here && here.length) {
           // Each picture this column crosses: where across it, and its frame's sides.
           for (const a of here) {
-            const fw = a.size.frame;
+            const fw = a.frame;
             a.inX = uf > a.u0 + fw && uf < a.u1 - fw;
             a.pu = Math.min(PIC - 1, Math.floor(((uf - a.u0 - fw) / (a.u1 - a.u0 - 2 * fw)) * PIC));
-            a.edgeX = uf < a.u0 + fw * 0.35 || uf > a.u1 - fw * 0.35;
+            a.edgeX = uf < a.u0 + fw * 0.35 || uf > a.u1 - fw * 0.35
+              || (a.style.inner && ((uf > a.u0 + fw * 0.7 && uf < a.u0 + fw) || (uf < a.u1 - fw * 0.7 && uf > a.u1 - fw)));
           }
           for (let y = top; y < bottom; y++) {
             const vf = v / TEX;
             let p = 0;
             for (const a of here) {
               if (vf < a.v0 || vf > a.v1) continue;
-              const fh = a.size.frame;
+              const fh = a.frame;
               if (a.inX && vf > a.v0 + fh && vf < a.v1 - fh) {
                 p = lit(a.pic.data[Math.min(PIC - 1, Math.floor(((vf - a.v0 - fh) / (a.v1 - a.v0 - 2 * fh)) * PIC)) * PIC + a.pu], shade);
               } else {
-                const edge = a.edgeX || vf < a.v0 + fh * 0.35 || vf > a.v1 - fh * 0.35;
-                p = lit(a.size.gold ? (edge ? GOLD_EDGE : GOLD) : (edge ? WOOD_EDGE : WOOD), shade);
+                const edge = a.edgeX || vf < a.v0 + fh * 0.35 || vf > a.v1 - fh * 0.35
+                  || (a.style.inner && ((vf > a.v0 + fh * 0.7 && vf < a.v0 + fh) || (vf < a.v1 - fh * 0.7 && vf > a.v1 - fh)));
+                p = lit(edge ? a.style.edge : a.style.body, shade);
               }
               break;
             }
@@ -525,26 +569,32 @@ window.PioneerTV = window.PioneerTV || {};
     // ---------------------------------------------------------- running
     let timer = null, last = 0, begun = performance.now();
     let cost = 0;                        // ms a frame takes, smoothed (debug)
+    // What hangs, one kind only: Bilder's photos (Immich's, a fresh lot
+    // each time the screensaver starts, through the daemon's /immich/),
+    // else, with no Immich, the covers kept on the box.
     async function load() {
-      try {
-        const r = await fetch('/api/finds?n=60');
-        const d = await r.json();
-        if (Array.isArray(d.finds) && d.finds.length) finds = d.finds;
-      } catch { /* no finds: the maze alone */ }
-      pool = [...finds];
-      // Bilder's pictures for the walls too: a fresh handful from Immich
-      // (through the daemon's /immich/, as the Bilder pages read it).
-      try {
-        const r = await fetch('/immich/api/search/random', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ size: 160, type: 'IMAGE' }) });
-        const list = r.ok ? await r.json() : [];
-        const photos = (Array.isArray(list) ? list : []).map((a) => ({
+      const photos = [];
+      for (let i = 0; i < PHOTO_CALLS; i++) {
+        try {
+          const r = await fetch('/immich/api/search/random', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ size: 800, type: 'IMAGE' }) });
+          const list = r.ok ? await r.json() : [];
+          photos.push(...(Array.isArray(list) ? list : []).map((a) => ({
           url: `/immich/api/assets/${encodeURIComponent(a.id)}/thumbnail?size=thumbnail`,
           big: `/immich/api/assets/${encodeURIComponent(a.id)}/thumbnail?size=preview`,
-          photo: true, taken: a.localDateTime || a.fileCreatedAt || null, city: (a.exifInfo && a.exifInfo.city) || '',
-        }));
-        pool = [...finds, ...photos];
-      } catch { /* no Immich: the covers alone */ }
+            photo: true, taken: a.localDateTime || a.fileCreatedAt || null, city: (a.exifInfo && a.exifInfo.city) || '',
+          })));
+        } catch { break; }                 // no Immich
+      }
+      const seen = new Set();
+      const once = photos.filter((p) => !seen.has(p.url) && seen.add(p.url));
+      if (once.length) { pool = once; return; }
+      try {
+        const r = await fetch('/api/finds?n=600');
+        const d = await r.json();
+        if (Array.isArray(d.finds) && d.finds.length) finds = d.finds;
+      } catch { /* no covers either: the maze bare */ }
+      pool = [...finds];
     }
     function tick() {
       const now = performance.now();
@@ -555,16 +605,29 @@ window.PioneerTV = window.PioneerTV || {};
       draw((now - begun) / 1000);
       cost = cost * 0.95 + (performance.now() - now) * 0.05;
     }
+    // Somewhere new each time: a cell far off in the maze without end
+    // (every cell is open; the chunks are made as they are walked into).
+    function wander() {
+      const far = () => Math.floor((Math.random() * 2 - 1) * 60000);
+      me.ci = far(); me.cj = far();
+      me.x = me.ci * 2 + 1.5; me.y = me.cj * 2 + 1.5;
+      chunks.clear(); lastKey = NaN;
+      here = [Math.floor((me.ci * 2 + 1) / SIDE), Math.floor((me.cj * 2 + 1) / SIDE)];
+      visited.clear(); visited.add(`${me.ci},${me.cj}`);
+      if (look) hud.leave();
+      path = []; pause = 0; look = null; since = 0;
+      const ways = DIRS.filter(([dx, dy]) => open(me.ci, me.cj, dx, dy));
+      const [dx, dy] = ways[Math.floor(Math.random() * ways.length)] || DIRS[0];
+      me.a = Math.atan2(dy, dx);
+    }
     function start() {
       if (timer) return;
       last = performance.now();
-      load();                            // a fresh handful of Immich's each time
+      wander();
+      load();                            // a fresh lot of Immich's each time
       timer = setInterval(tick, 1000 / FPS);
     }
     function stop() { clearInterval(timer); timer = null; if (look) { look = null; pause = 0; hud.leave(); } }
-    // Facing the first open way.
-    const first = DIRS.find(([dx, dy]) => open(0, 0, dx, dy));
-    if (first) me.a = Math.atan2(first[1], first[0]);
     start();
     // Straight into a room of a kind (the catalogue of views, tests): the
     // nearest chunk that has one, in its middle.
@@ -576,6 +639,7 @@ window.PioneerTV = window.PioneerTV || {};
             if (!room || room.kind !== kind) continue;
             me.ci = Math.floor((room.x0 + room.x1) / 2); me.cj = Math.floor((room.y0 + room.y1) / 2);
             me.x = me.ci * 2 + 1.5; me.y = me.cj * 2 + 1.5; me.a = 0.4;
+            if (look) hud.leave();
             path = []; pause = 0; look = null;
             arrive();
             return true;

@@ -967,14 +967,22 @@ tried again every three seconds.
     straight to one, for the catalogue). The walker steers by a point a little ahead
     along its way (round corners, no turning on the spot facing a wall),
     goes for the nearest cell not yet walked; slowly, a stroll. The walls are hung full of pictures,
-    the covers and a fresh handful of Bilder's own (Immich's
-    `search/random`, through `/immich/`, each time the screensaver starts),
-    drawn into the wall's columns as the torch lights them: along the ways
-    three faces in four, one picture or two side by side, three in a row or
-    four in a square, in dark wood; in the rooms every face (but the
-    garden's hedges), larger, and great ones in gold, the rooms'
-    centrepieces. None on a door. Each is drawn 64 px square, kept in its
-    own shape by its frame. Every few cells the walker stops at a wall of
+    one kind only: Bilder's photos (Immich's `search/random`, two calls of
+    800, a fresh lot each time the screensaver starts, through `/immich/`),
+    else, with no Immich, the covers kept on the box (`/api/finds?n=600`).
+    They are drawn into the wall's columns as the torch lights them: along
+    the ways three faces in four, one picture or two side by side, three in
+    a row, four in a square, two above each other, a triptych or a salon of
+    six; in the rooms every face (but the garden's hedges), each kind of
+    room hung its own way (the gallery's great ones, the library's salons,
+    the crypt's and the cellar's few and small). Frames of many kinds: dark
+    wood, black, silver, white with a wide mat, gilt, and gilt with a dark
+    rim within for the great ones. None on a door. Each is drawn 64 px
+    square, kept in its own shape by its frame. The maze starts somewhere
+    new each time (a cell far off, `wander()`), and has more parts and rooms:
+    besides the hall of pillars, the garden, the ballroom and the treasury,
+    a long gallery, a crypt of slate pillars, a library in wood and a cellar
+    of earth. Every few cells the walker stops at a wall of
     its cell with pictures on it, turns to it and looks a while (seven
     seconds): what hangs there comes up sharp over the maze (saver.js,
     `hud.look`: a covers' own picture, a photo's Immich preview), each in

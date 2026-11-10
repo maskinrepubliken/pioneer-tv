@@ -493,7 +493,7 @@ class Server:
         """Covers with their names for the maze screensaver to find, the
         ones kept on the box first (covers.py finds)."""
         try:
-            n = max(1, min(80, int(request.query.get("n", "40"))))
+            n = max(1, min(800, int(request.query.get("n", "40"))))
         except ValueError:
             n = 40
         return web.json_response({"finds": await self.covers.finds(n)})
