@@ -54,7 +54,7 @@ window.PioneerTV = window.PioneerTV || {};
           key: `memory:${m.id}`, title: ago(m.year), meta: many(m.assets.length), href: `#/memory/${encodeURIComponent(m.id)}`,
           pictures: m.assets.slice(0, 4).map((a) => ({ src: I.picture(a.id), name: '' })),
         })) },
-        { label: 'Album', layout: 'stacks', columns: 4, shape: 'square', items: albums.slice(0, 8).map(albumCard),
+        { label: 'Album', layout: 'stacks', columns: 4, shape: 'square', items: albums.slice(0, 8).map((a) => albumCard(a)),
           empty: 'Inga album än. Gör ett i Immich.' },
         { label: partner ? `${partner.name}s album` : '', layout: 'stacks', columns: 4, shape: 'square', items: theirs.slice(0, 8).map((a) => albumCard(a, PARTNER)) },
         { label: 'Personer', layout: 'shelf', shape: 'round', items: people.slice(0, 12).map((p) => personCard(p)) },
