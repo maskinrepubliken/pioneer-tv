@@ -290,8 +290,9 @@ class Server:
         only writes the Bilder pages have: favourite {id, on}, trash {id}
         (to Immich's trash, which keeps it a while), not_photo {id} (the
         original kept in the Google Drive's folder first, drive.py, then to
-        the trash; cancel {id} calls a move off while it is on its way).
-        /immich/ itself only reads."""
+        the trash: in the background, one at a time, an event "bilder"
+        {id, action: moved | failed | cancelled} and a toast when it is
+        done; cancel {id} calls one off). /immich/ itself only reads."""
         cfg = self.cfg.get("immich") or {}
         url, key = (cfg.get("url") or "").rstrip("/"), cfg.get("api_key", "")
         if not url or not key:
@@ -340,24 +341,46 @@ class Server:
         elif action == "trash":
             code, _ = await call("DELETE", "api/assets", {"ids": [asset], "force": False}, headers)
         else:
-            task = self._moves[asset] = asyncio.create_task(self._to_drive(url, headers, asset))
-            try:
-                ok, message = await task
-            except asyncio.CancelledError:
-                if not task.cancelled():
-                    raise                            # the request itself went
-                return web.json_response({"ok": False, "message": "cancelled"}, status=409)
-            finally:
-                self._moves.pop(asset, None)
-            if not ok:
-                return web.json_response({"ok": False, "message": message}, status=409)
-            code, _ = await call("DELETE", "api/assets", {"ids": [asset], "force": False}, headers)
+            if not self.cfg.get("drive", {}).get("token"):
+                return web.json_response({"ok": False, "message": "Google Drive är inte kopplat (Inställningar → Tjänster)"}, status=409)
+            if asset not in self._moves:
+                self._moves[asset] = asyncio.create_task(self._move(url, headers, asset))
+            return web.json_response({"ok": True, "queued": True})
         if code in (200, 201, 204):
             return web.json_response({"ok": True})
         message = ("Immich svarar inte" if code == 0 else "Nyckeln får inte ändra i Immich" if code in (401, 403)
                    else "Bara dina egna bilder går att ändra" if code == 400 else f"Immich svarade {code}")
         log.warning("immich %s %s: %s", action, asset, code)
         return web.json_response({"ok": False, "message": message}, status=409)
+
+    async def _move(self, url: str, headers: dict, asset: str) -> None:
+        """Ej foto in the background: into the Drive, then to Immich's trash;
+        one at a time (the box's upload is the slow part), said when done."""
+        if not hasattr(self, "_move_lock"):
+            self._move_lock = asyncio.Lock()
+        action, message = "failed", ""
+        try:
+            async with self._move_lock:
+                ok, message = await self._to_drive(url, headers, asset)
+                if ok:
+                    async with self._session().delete(f"{url}/api/assets", json={"ids": [asset], "force": False}, headers=headers,
+                                                      timeout=aiohttp.ClientTimeout(total=15)) as resp:
+                        ok = resp.status in (200, 204)
+                    message = "" if ok else "I Google Drive, men Immich tog inte bort den"
+                action = "moved" if ok else "failed"
+        except asyncio.CancelledError:
+            action = "cancelled"
+        except (aiohttp.ClientError, asyncio.TimeoutError) as exc:
+            log.warning("immich trash %s: %s", asset, exc)
+            message = "I Google Drive, men Immich svarade inte"
+        finally:
+            self._moves.pop(asset, None)
+        if action == "failed":
+            log.warning("ej foto %s: %s", asset, message)
+        await self.broadcast({"type": "event", "name": "bilder", "id": asset, "action": action, "message": message})
+        text = {"moved": "Flyttad till Google Drive", "cancelled": "Flytten avbröts"}.get(action) or f"Kunde inte flytta: {message}"
+        for event in self.router.handle({"type": "toast", "text": text, "icon": "folder" if action == "moved" else "info"}):
+            await self.broadcast(event)
 
     async def _immich_user(self, url: str, key: str) -> str | None:
         """Whose an Immich key is (its user's id), asked once a key."""
@@ -381,13 +404,19 @@ class Server:
         if not self._drive.ready():
             return False, "Google Drive är inte kopplat (Inställningar → Tjänster)"
         tmp = self._drive.root / "tmp"
+        path = tmp / asset
+        try:
+            return await self._fetch_and_put(url, headers, asset, tmp, path)
+        finally:
+            path.unlink(missing_ok=True)             # done, failed or called off: nothing left behind
+
+    async def _fetch_and_put(self, url: str, headers: dict, asset: str, tmp: Path, path: Path) -> tuple[bool, str]:
         try:
             async with self._session().get(f"{url}/api/assets/{asset}", headers=headers,
                                            timeout=aiohttp.ClientTimeout(total=15)) as resp:
                 info = json.loads(await resp.read()) if resp.status == 200 else {}
             name = str(info.get("originalFileName") or f"{asset}.jpg")
             tmp.mkdir(parents=True, exist_ok=True)
-            path = tmp / asset
             async with self._session().get(f"{url}/api/assets/{asset}/original", headers=headers,
                                            timeout=aiohttp.ClientTimeout(total=600)) as resp:
                 if resp.status != 200:
@@ -398,10 +427,7 @@ class Server:
         except (aiohttp.ClientError, asyncio.TimeoutError, ValueError, OSError) as exc:
             log.warning("immich original %s: %s", asset, exc)
             return False, "Immich svarar inte"
-        try:
-            return await self._drive.put(path, name)
-        finally:
-            path.unlink(missing_ok=True)
+        return await self._drive.put(path, name)
 
     def _session(self) -> aiohttp.ClientSession:
         if self.proxy_session is None:

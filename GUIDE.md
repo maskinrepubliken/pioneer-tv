@@ -541,10 +541,14 @@ daemon's `POST /api/bilder/favorite|not_photo|trash` (`server.py`
 owner change it, so a partner's own pictures are changed with the
 partner's key (Inställningar → Tjänster → Immich, Partnerns API-nyckel;
 the daemon asks whose a picture is, and whose each key is); without it a
-notice says to put it there. While Ej foto is on its way the row says
-Avbryt flytten, with the row of holes a home page tile has, and A calls
-it off (`cancel`: the download or rclone stopped, the picture left in
-Immich). X starts or stops the
+notice says to put it there. Ej foto moves in the background: the daemon
+takes it (one at a time: the box's upload is the slow part, a few seconds
+a picture, minutes for a long clip) and says when it is done, an event
+`bilder` {id, action: moved, failed or cancelled} and a toast wherever
+one is. Meanwhile one browses on; the picture's row says Avbryt flytten,
+with the row of holes a home page tile has, and A there calls it off
+(`cancel`: the download or rclone stopped, the picture left in Immich).
+Moved, it goes from the list. X starts or stops the
 slideshow: a new picture every six seconds, each moving while it is shown
 (Ken Burns: from a little closer to a little further or the other way,
 drifting a little), fading into the next; clips passed over; the box told

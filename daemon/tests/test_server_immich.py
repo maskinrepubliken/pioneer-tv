@@ -56,6 +56,13 @@ class Immich(unittest.IsolatedAsyncioTestCase):
         self.client = TestClient(TestServer(Server(self.cfg, nothing, hooks={}).app))
         await self.client.start_server()
 
+    async def until(self, test, seconds=5):
+        for _ in range(seconds * 20):
+            if test():
+                return
+            await asyncio.sleep(0.05)
+        self.fail("it never came")
+
     async def asyncTearDown(self):
         await self.client.close()
         await self.upstream.close()
@@ -87,7 +94,8 @@ class Immich(unittest.IsolatedAsyncioTestCase):
         rclone.chmod(0o755)
         self.cfg["drive"] = {"token": '{"access_token": "x"}', "folder": "Ej foto", "dir": str(Path(tmp.name) / "drive"), "rclone": str(rclone)}
         r = await self.client.post("/api/bilder/not_photo", json={"id": A})
-        self.assertEqual((await r.json())["ok"], True)
+        self.assertEqual(await r.json(), {"ok": True, "queued": True})      # in the background
+        await self.until(lambda: self.heard and self.heard[-1][0] == "DELETE")
         self.assertEqual(put.read_text(), "box:Ej foto/IMG_0001.HEIC\nthe original")
         self.assertEqual(self.heard[-1], ("DELETE", "/api/assets", {"ids": [A], "force": False}))
         self.assertIn("scope = drive.file", (Path(tmp.name) / "drive" / "rclone.conf").read_text())
@@ -99,11 +107,10 @@ class Immich(unittest.IsolatedAsyncioTestCase):
         rclone.write_text(f"#!{sys.executable}\nimport time\ntime.sleep(30)\n")   # an upload that takes its time
         rclone.chmod(0o755)
         self.cfg["drive"] = {"token": '{"access_token": "x"}', "folder": "Ej foto", "dir": str(Path(tmp.name) / "drive"), "rclone": str(rclone)}
-        moving = asyncio.create_task(self.client.post("/api/bilder/not_photo", json={"id": A}))
+        await self.client.post("/api/bilder/not_photo", json={"id": A})
         await asyncio.sleep(0.5)
         await self.client.post("/api/bilder/cancel", json={"id": A})
-        r = await asyncio.wait_for(moving, 5)
-        self.assertEqual((await r.json())["message"], "cancelled")
+        await asyncio.sleep(0.3)
         self.assertNotIn("DELETE", [m for m, _, _ in self.heard])     # still in Immich
 
     def test_both_kinds_of_token(self):
