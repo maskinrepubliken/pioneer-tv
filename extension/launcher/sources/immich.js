@@ -102,15 +102,20 @@ window.PioneerTV = window.PioneerTV || {};
       const [p, assets] = await Promise.all([json(`api/people/${encodeURIComponent(id)}`), every({ personIds: [id] })]);
       return { name: p.name, assets };
     },
-    // Today's memories, "för X år sedan": { id, year, assets }.
-    memories: once(async () => (await json('api/memories'))
-      .filter((m) => m.type === 'on_this_day' && (m.assets || []).length)
-      .map((m) => ({ id: m.id, year: m.data && m.data.year, assets: m.assets.map(asset) }))
-      .sort((a, b) => (b.year || 0) - (a.year || 0))),
+    // Today's memories, "för X år sedan": { id, year, assets } (Immich keeps
+    // the coming days' and the past days' too: for= asks for today's).
+    memories: once(async () => {
+      const d = new Date();
+      const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      return (await json(`api/memories?for=${today}`))
+        .filter((m) => m.type === 'on_this_day' && (m.assets || []).length)
+        .map((m) => ({ id: m.id, year: m.data && m.data.year, assets: m.assets.map(asset) }))
+        .sort((a, b) => (b.year || 0) - (a.year || 0));
+    }),
     favorites: () => every({ isFavorite: true }),
     // Immich's search by what is in the picture (its smart search).
     async search(words) {
-      const r = await post('api/search/smart', { query: words, size: 200 });
+      const r = await post('api/search/smart', { query: words, size: 200, language: 'sv' });
       return ((r.assets && r.assets.items) || []).map(asset);
     },
     // One, with what the viewer says of it: when, where, who, its text.
