@@ -11,7 +11,7 @@ from pathlib import Path
 from aiohttp import web
 
 from pioneertv import config
-from pioneertv.video import Video, languages, panel_tracks, track_label, tracks
+from pioneertv.video import Video, languages, panel_tracks, stream_label, track_label, tracks
 
 SOURCE = {"Id": "src1", "RunTimeTicks": 100 * 10_000_000, "MediaStreams": [
     {"Index": 0, "Type": "Video"},
@@ -41,7 +41,11 @@ if os.environ.get("PANEL"):
 for t in (12.0, 13.0):
     send({"event": "property-change", "name": "time-pos", "data": t})
 if os.environ.get("TO_END"):
-    send({"event": "end-file", "reason": "eof"}); sys.exit(0)
+    send({"event": "end-file", "reason": "eof"})
+    time.sleep(0.2); conn.setblocking(False)                  # what was sent meanwhile (sub-add) read, not reset
+    try: conn.recv(65536)
+    except OSError: pass
+    sys.exit(0)
 for line in f:
     with open(os.environ["ARGS_OUT"] + ".commands", "a") as log:
         log.write(line)
@@ -96,6 +100,21 @@ class Panel(unittest.TestCase):
         self.assertEqual(t["subtitles"], [{"id": 1, "label": "Svenska", "selected": False}])
 
 
+    def test_named_by_jellyfin(self):
+        self.assertEqual(stream_label({"Language": "eng", "Title": "SDH", "IsForced": True}), "Engelska · SDH · tvingad")
+        self.assertEqual(stream_label({"Language": "und"}), "Okänt språk")
+        mpv = [{"id": 1, "type": "audio"}, {"id": 2, "type": "audio"},
+               {"id": 1, "type": "sub", "lang": "swe"}, {"id": 2, "type": "sub"},
+               {"id": 3, "type": "sub", "external": True, "title": "Stream.srt",
+                "external-filename": "http://j/Videos/a/src1/Subtitles/5/0/Stream.srt", "selected": True},
+               {"id": 4, "type": "sub", "external": True, "title": "Engelska", "external-filename": "http://j/x/Subtitles/9/0/Stream.srt"}]
+        t = panel_tracks(mpv, SOURCE)
+        self.assertEqual([a["label"] for a in t["audio"]], ["Engelska", "Svenska"])
+        # The file mpv calls Stream.srt is Jellyfin's stream 5 (no language);
+        # one added with a title keeps it.
+        self.assertEqual([x["label"] for x in t["subtitles"]], ["Svenska", "Okänt språk", "Okänt språk (2)", "Engelska"])
+
+
 class Base(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -109,7 +128,22 @@ class Base(unittest.IsolatedAsyncioTestCase):
                 return web.json_response({}, status=401)
             if request.query.get("userId") != "u1":
                 return web.json_response({}, status=400)
-            return web.json_response({"Id": request.match_info["id"], "Name": "Fyren", "SeriesId": "ser1", "MediaSources": [SOURCE]})
+            source = SOURCE
+            if self.fetched:                     # Jellyfin has fetched one from the internet
+                source = {**SOURCE, "MediaStreams": SOURCE["MediaStreams"] + [
+                    {"Index": 6, "Type": "Subtitle", "Codec": "subrip", "Language": "swe", "IsExternal": True, "Path": "/m/f.sv.srt"}]}
+            return web.json_response({"Id": request.match_info["id"], "Name": "Fyren", "SeriesId": "ser1", "MediaSources": [source]})
+
+        async def search(request):
+            lang = request.match_info["lang"]
+            return web.json_response([{"Id": f"os_{lang}_1", "Name": f"Fyren {lang}", "DownloadCount": 5, "ThreeLetterISOLanguageName": lang},
+                                      {"Id": f"os_{lang}_2", "Name": "Fyren (hash)", "DownloadCount": 1, "IsHashMatch": True,
+                                       "ThreeLetterISOLanguageName": lang}])
+
+        async def fetch(request):
+            self.fetched = request.match_info["sid"]
+            return web.Response(status=204)
+        self.fetched = None
 
         async def report(request):
             self.reports.append((request.path, await request.json()))
@@ -118,6 +152,8 @@ class Base(unittest.IsolatedAsyncioTestCase):
             return web.json_response([{"Id": "u1", "Name": "viktor", "Policy": {"IsAdministrator": True}}])
         app.router.add_get("/Users", users)
         app.router.add_get("/Items/{id}", item)
+        app.router.add_get("/Items/{id}/RemoteSearch/Subtitles/{lang}", search)
+        app.router.add_post("/Items/{id}/RemoteSearch/Subtitles/{sid}", fetch)
         async def user_data(request):
             self.user_data.append((request.query.get("userId"), await request.json()))
             return web.json_response({})
@@ -127,7 +163,7 @@ class Base(unittest.IsolatedAsyncioTestCase):
         await self.runner.setup()
         site = web.TCPSite(self.runner, "127.0.0.1", 0)
         await site.start()
-        port = site._server.sockets[0].getsockname()[1]
+        port = self.port = site._server.sockets[0].getsockname()[1]
         mpv = self.dir / "mpv"
         mpv.write_text(f"#!{sys.executable}\n" + FAKE_MPV)
         mpv.chmod(0o755)
@@ -230,7 +266,8 @@ class Playing(Base):
         self.assertIn("script-message pioneer-panel", (self.dir / "video" / "mpv" / "input.conf").read_text())
         held = next(e for e in self.events if e["state"] == "held")
         self.assertEqual(held["title"], "Fyren")
-        self.assertEqual([a["label"] for a in held["audio"]], ["Engelska", "Svenska · Kommentar"])
+        # Named by what Jellyfin knows of them, not mpv's title.
+        self.assertEqual([a["label"] for a in held["audio"]], ["Engelska", "Svenska"])
         self.assertEqual(await self.video.track("subtitles", "no"), (True, ""))
         self.assertEqual((await self.video.track("audio", "x"))[0], False)
         self.assertTrue(await self.video.on_system("menu"))          # Home on the panel: carry on
@@ -244,6 +281,44 @@ class Playing(Base):
         self.assertIn('["set_property", "sid", "no"]', sent)
         self.assertIn('["set_property", "pause", false]', sent)
         self.assertFalse(self.video.held)
+        await self.video.stop()
+
+    async def test_subtitles_from_the_internet(self):
+        os.environ["PANEL"] = "1"
+        self.video.overlay = lambda: True
+        try:
+            await self.video.play("abc", 0, 1, -1)
+            await self.wait_for("held")
+        finally:
+            os.environ.pop("PANEL", None)
+        ok, found = await self.video.find_subtitles()
+        self.assertTrue(ok)
+        # Swedish first, the one that fits the file first of each.
+        self.assertEqual([f["id"] for f in found], ["os_swe_2", "os_swe_1", "os_eng_2", "os_eng_1"])
+        self.assertEqual(found[0]["detail"], "Svenska · passar filen · 1 nedladdningar")
+        self.assertEqual((await self.video.fetch_subtitle("../etc"))[0], False)
+        ok, _ = await self.video.fetch_subtitle("os_swe_2")
+        self.assertTrue(ok)
+        self.assertEqual(self.fetched, "os_swe_2")
+        await asyncio.sleep(0.1)
+        sent = (self.dir / "args.json.commands").read_text()
+        # Every subtitle file once it plays (the one not chosen, off), then the new one, chosen.
+        self.assertIn('["sub-add", "http://127.0.0.1:%d/Videos/abc/src1/Subtitles/5/0/Stream.srt", "auto", "Ok\\u00e4nt spr\\u00e5k", ""]' % self.port, sent)
+        self.assertIn('Subtitles/6/0/Stream.srt", "select", "Svenska", "swe"]', sent)
+        self.assertEqual(self.video.choice("ser1")["subtitles"], "swe")
+        await self.video.stop()
+
+    async def test_left_and_right_seek_with_the_overlays_timeline(self):
+        self.video.overlay = lambda: True
+        await self.video.play("abc", 30)
+        await self.wait_for("running")
+        conf = self.video.root / "mpv"
+        self.assertIn("LEFT script-message pioneer-seek -10", (conf / "input.conf").read_text())
+        self.assertIn("osd-level=0", (conf / "mpv.conf").read_text())
+        self.video.position = 30.0
+        await self.video.seeked(["10"])
+        seeked = [e for e in self.events if e["state"] == "seeked"][-1]
+        self.assertEqual((seeked["time"], seeked["duration"]), (40.0, 100.0))
         await self.video.stop()
 
     async def test_the_choice_is_remembered_for_the_series(self):

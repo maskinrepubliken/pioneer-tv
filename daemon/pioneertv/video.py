@@ -75,8 +75,10 @@ sub-auto=no
 
 # The pad arrives as keys (actions.py): A is Enter, B Escape, X Space,
 # left and right the arrows. A, B and X ask for
-# the pause panel, which the overlay draws (PANEL_KEYS); without the overlay
-# they only pause, with the timeline.
+# the pause panel, which the overlay draws (PANEL_KEYS), and left and right
+# seek with its timeline over the film (pioneer-seek: mpv's own shows
+# nothing then, OVERLAY_CONF); without the overlay they only pause, with
+# mpv's timeline.
 PAUSE_KEYS = """\
 ENTER cycle pause; show-progress
 SPACE cycle pause; show-progress
@@ -93,6 +95,17 @@ RIGHT seek 10; show-progress
 UP show-progress
 DOWN show-progress
 """
+PANEL_SEEK = """\
+LEFT script-message pioneer-seek -10
+RIGHT script-message pioneer-seek 10
+UP script-message pioneer-seek 0
+DOWN script-message pioneer-seek 0
+"""
+OVERLAY_CONF = "osd-level=0\nosd-bar=no\n"
+# Subtitles searched for on the internet: these languages, the best few of each.
+SUBTITLE_LANGUAGES = ("swe", "eng")
+SUBTITLE_HITS = 8
+REMOTE_ID = re.compile(r"^[A-Za-z0-9_.:-]{1,200}$")
 
 # Languages as the panel names them (mpv gives ISO 639 codes).
 LANGUAGES = {"swe": "Svenska", "sv": "Svenska", "eng": "Engelska", "en": "Engelska", "nor": "Norska", "no": "Norska",
@@ -102,7 +115,8 @@ LANGUAGES = {"swe": "Svenska", "sv": "Svenska", "eng": "Engelska", "en": "Engels
 
 
 def track_label(t: dict) -> str:
-    """A track as the panel shows it: its language, and its title when it says more."""
+    """A track as mpv says it, when Jellyfin says nothing of it: its
+    language, and its title when it says more."""
     lang = LANGUAGES.get((t.get("lang") or "").lower(), t.get("lang") or "")
     title = t.get("title") or ""
     if lang and title and title.lower() not in lang.lower():
@@ -110,13 +124,59 @@ def track_label(t: dict) -> str:
     return lang or title or f"Spår {t.get('id')}"
 
 
-def panel_tracks(track_list: list) -> dict:
-    """The audio and subtitle tracks mpv has, for the pause panel."""
+def stream_label(s: dict) -> str:
+    """A track as Jellyfin knows it: its language (mpv would name a
+    subtitle file by its file name, "Stream.srt"), its title when it says
+    more, and whether it is forced or for the hard of hearing."""
+    code = (s.get("Language") or "").lower()
+    lang = LANGUAGES.get(code, code.capitalize() if code and code != "und" else "")
+    title = s.get("Title") or ""
+    parts = [lang or title or "Okänt språk"]
+    if lang and title and title.lower() not in lang.lower():
+        parts.append(title)
+    if s.get("IsForced"):
+        parts.append("tvingad")
+    if s.get("IsHearingImpaired"):
+        parts.append("för hörselskadade")
+    return " · ".join(parts)
+
+
+EXTERNAL = re.compile(r"/Subtitles/(\d+)/")
+
+
+def panel_tracks(track_list: list, source: dict | None = None) -> dict:
+    """The audio and subtitle tracks mpv has, for the pause panel, named by
+    what Jellyfin knows of them: mpv numbers each kind in file order, as
+    Jellyfin's streams inside the file go; a subtitle file is known by its
+    address (or by the title it was added with)."""
+    streams = (source or {}).get("MediaStreams") or []
+    inside = {kind: [s for s in streams if s.get("Type") == kind and not s.get("IsExternal")] for kind in ("Audio", "Subtitle")}
+    by_index = {s.get("Index"): s for s in streams}
     out: dict = {"audio": [], "subtitles": []}
     for t in track_list or []:
         kind = {"audio": "audio", "sub": "subtitles"}.get(t.get("type"))
-        if kind:
-            out[kind].append({"id": t.get("id"), "label": track_label(t), "selected": bool(t.get("selected"))})
+        if not kind:
+            continue
+        stream = None
+        if t.get("external"):
+            m = EXTERNAL.search(t.get("external-filename") or "")
+            ours = t.get("title") and not (t.get("title") or "").lower().startswith("stream.")
+            if not ours and m:
+                stream = by_index.get(int(m.group(1)))
+        else:
+            mine = [x for x in track_list if x.get("type") == t.get("type") and not x.get("external")]
+            n = next(i for i, x in enumerate(mine) if x is t)
+            group = inside["Audio" if kind == "audio" else "Subtitle"]
+            stream = group[n] if n < len(group) and len(mine) == len(group) else None
+        label = stream_label(stream) if stream else track_label(t)
+        out[kind].append({"id": t.get("id"), "label": label, "selected": bool(t.get("selected"))})
+    # Two of the same name: numbered, so they can be told apart.
+    for kind, tracks in out.items():
+        seen: dict = {}
+        for t in tracks:
+            seen[t["label"]] = seen.get(t["label"], 0) + 1
+            if seen[t["label"]] > 1:
+                t["label"] = f"{t['label']} ({seen[t['label']]})"
     return out
 
 
@@ -188,6 +248,7 @@ class Video:
         self.menu_paused = False           # the quick menu paused it, and resumes it
         self.held = False                  # the pause panel is open over it
         self.track_list: list = []         # mpv's, as it last said
+        self.first_sub: int | None = None  # the subtitle file it started with
 
     # ------------------------------------------------------------ config
     @property
@@ -266,13 +327,32 @@ class Video:
         conf = self.root / "mpv"
         conf.mkdir(parents=True, exist_ok=True)
         os.chmod(conf, 0o700)
-        (conf / "mpv.conf").write_text(MPV_CONF + f"http-header-fields=X-Emby-Token: {self.jcfg['api_key']}\n")
-        (conf / "input.conf").write_text((PANEL_KEYS if self.overlay() else PAUSE_KEYS) + INPUT_CONF)
+        overlay = self.overlay()
+        (conf / "mpv.conf").write_text(MPV_CONF + (OVERLAY_CONF if overlay else "")
+                                       + f"http-header-fields=X-Emby-Token: {self.jcfg['api_key']}\n")
+        (conf / "input.conf").write_text(PANEL_KEYS + PANEL_SEEK if overlay else PAUSE_KEYS + INPUT_CONF)
         for f in (conf / "mpv.conf", conf / "input.conf"):
             os.chmod(f, 0o600)
         self._own(conf)
         self._own(self.root)
         return conf
+
+    def subtitle_url(self, index: int) -> str:
+        """A subtitle file of what plays, as Jellyfin serves it."""
+        source = self.item["source"]
+        stream = next((s for s in source.get("MediaStreams") or [] if s.get("Index") == index), {})
+        fmt = SUBTITLE_FORMAT.get((stream.get("Codec") or "").lower(), "srt")
+        base = self.jcfg["url"].rstrip("/")
+        return f"{base}/Videos/{quote(self.item['id'])}/{quote(source.get('Id', ''))}/Subtitles/{index}/0/Stream.{fmt}"
+
+    async def add_subtitles(self, skip: int | None = None) -> None:
+        """Every subtitle file of what plays in mpv, named by its language,
+        so the panel can choose any of them (the one asked for at the start
+        came with it, as --sub-file)."""
+        for stream in self.item["source"].get("MediaStreams") or []:
+            if stream.get("Type") == "Subtitle" and stream.get("IsExternal") and stream.get("Index") != skip:
+                await self._command(["sub-add", self.subtitle_url(stream["Index"]), "auto", stream_label(stream),
+                                     stream.get("Language") or ""])
 
     def stream_url(self, item_id: str, source_id: str) -> str:
         base = self.jcfg["url"].rstrip("/")
@@ -300,9 +380,7 @@ class Video:
         if "sid" in chosen:
             cmd.append(f"--sid={chosen['sid']}")
         if "sub_file" in chosen:
-            index, fmt = chosen["sub_file"]
-            base = self.jcfg["url"].rstrip("/")
-            cmd.append(f"--sub-file={base}/Videos/{quote(self.item['id'])}/{quote(source.get('Id', ''))}/Subtitles/{index}/0/Stream.{fmt}")
+            cmd.append(f"--sub-file={self.subtitle_url(chosen['sub_file'][0])}")
         cmd.append(self.stream_url(self.item["id"], source.get("Id", self.item["id"])))
         return (["runuser", "-u", user, "--"] if os.geteuid() == 0 else []) + ["env", *env, *cmd]
 
@@ -310,6 +388,7 @@ class Video:
         conf = self.write_config()
         self.socket_path.unlink(missing_ok=True)
         cmd = self.command_line(conf, audio, subtitle)
+        self.first_sub = (tracks(self.item["source"], audio, subtitle).get("sub_file") or (None,))[0]
         log.info("playing %s from %.0f s", self.item["name"], self.position)
         self.proc = await asyncio.create_subprocess_exec(*cmd, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
         self.dispatcher.system_hook = self.on_system
@@ -378,6 +457,7 @@ class Video:
                 if event == "playback-restart" and self.state == "starting":
                     self.state = "running"
                     await self._event("running")
+                    await self.add_subtitles(skip=self.first_sub)
                     await self._report("Start")
                     reported = time.monotonic()
                 elif event == "property-change" and msg.get("name") == "time-pos" and msg.get("data") is not None:
@@ -395,6 +475,8 @@ class Video:
                     self.track_list = msg.get("data") or []
                 elif event == "client-message" and (msg.get("args") or [None])[0] == "pioneer-panel":
                     await self.hold()
+                elif event == "client-message" and (msg.get("args") or [None])[0] == "pioneer-seek":
+                    await self.seeked((msg.get("args") or [None, "0"])[1:2])
                 elif event == "end-file" and msg.get("reason") == "eof":
                     self.ended = True
         except (OSError, asyncio.IncompleteReadError):
@@ -408,16 +490,29 @@ class Video:
             return
         self.held = True
         await self._command(["set_property", "pause", True])
-        await self._command(["set_property", "osd-level", 3])
         await self._event("held", title=self.item["name"] if self.item else "", time=self.position,
-                          duration=self.duration or (self.item["source"].get("RunTimeTicks") or 0) / TICKS or None,
-                          **panel_tracks(self.track_list))
+                          duration=self.length(), **panel_tracks(self.track_list, self.item["source"] if self.item else None))
+
+    def length(self) -> float | None:
+        return self.duration or (self.item["source"].get("RunTimeTicks") or 0) / TICKS or None if self.item else self.duration
+
+    async def seeked(self, args: list) -> None:
+        """Left or right while it plays (with the overlay): a seek, and the
+        overlay shows where it is now on a timeline of its own."""
+        try:
+            by = float(args[0]) if args else 0.0
+        except ValueError:
+            by = 0.0
+        if self.state != "running":
+            return
+        if by:
+            await self.seek(by)
+        await self._event("seeked", time=self.position, duration=self.length(), paused=self.paused)
 
     async def resume(self) -> None:
         if not self.held:
             return
         self.held = False
-        await self._command(["set_property", "osd-level", 1])
         await self._command(["set_property", "pause", False])
         await self._event("running")
 
@@ -447,6 +542,74 @@ class Video:
             if lang:
                 self.remember(self.item["key"], **{kind: lang})
         return True, ""
+
+    # ------------------------------------------------------------ subtitles from the internet
+    # Jellyfin's subtitle plugins (Open Subtitles on the box's) search for
+    # what plays; one chosen is fetched by Jellyfin, kept with the film, and
+    # added to mpv at once.
+    async def find_subtitles(self, langs: tuple = SUBTITLE_LANGUAGES) -> tuple[bool, list | str]:
+        if not self.item:
+            return False, "inget spelas"
+        found = []
+        for lang in langs:
+            try:
+                hits = await self._get(f"Items/{quote(self.item['id'])}/RemoteSearch/Subtitles/{lang}", {}, timeout=30)
+            except (aiohttp.ClientError, asyncio.TimeoutError) as exc:
+                log.warning("subtitle search %s: %s", lang, exc)
+                continue
+            hits = [h for h in hits if isinstance(h, dict) and h.get("Id")] if isinstance(hits, list) else []
+            hits.sort(key=lambda h: (not h.get("IsHashMatch"), -(h.get("DownloadCount") or 0)))
+            for h in hits[:SUBTITLE_HITS]:
+                lang_name = LANGUAGES.get((h.get("ThreeLetterISOLanguageName") or lang).lower(), lang)
+                detail = [lang_name, "passar filen" if h.get("IsHashMatch") else "",
+                          f"{h['DownloadCount']} nedladdningar" if h.get("DownloadCount") else ""]
+                found.append({"id": str(h["Id"]), "name": str(h.get("Name") or h.get("Comment") or "Undertext")[:120],
+                              "detail": " · ".join(d for d in detail if d), "lang": lang})
+        if not found:
+            return False, "Hittade inga undertexter"
+        return True, found
+
+    async def fetch_subtitle(self, sub_id: str) -> tuple[bool, dict | str]:
+        """Have Jellyfin fetch one; when the film has it (Jellyfin looks
+        again, a moment), it is added to mpv and chosen."""
+        if not self.item or not REMOTE_ID.match(sub_id or ""):
+            return False, "okänd undertext"
+        before = {s.get("Path") for s in self.item["source"].get("MediaStreams") or [] if s.get("IsExternal")}
+        url = f"{self.jcfg['url'].rstrip('/')}/Items/{quote(self.item['id'])}/RemoteSearch/Subtitles/{quote(sub_id, safe='')}"
+        try:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=60)) as s:
+                async with s.post(url, headers=self._headers()) as resp:
+                    if resp.status >= 300:
+                        log.warning("subtitle download %s: %s", sub_id, resp.status)
+                        return False, "Jellyfin kunde inte hämta den"
+        except (aiohttp.ClientError, asyncio.TimeoutError) as exc:
+            log.warning("subtitle download %s: %s", sub_id, exc)
+            return False, "Jellyfin svarar inte"
+        for _ in range(20):
+            await asyncio.sleep(1)
+            if not self.item:
+                return False, "inget spelas"
+            try:
+                item = await self._get(f"Items/{quote(self.item['id'])}", {"Fields": "MediaSources", "userId": await self._user_id()})
+            except (aiohttp.ClientError, asyncio.TimeoutError, ValueError):
+                continue
+            source = next((x for x in item.get("MediaSources") or [] if x.get("Id") == self.item["source"].get("Id")), None)
+            new = [x for x in (source or {}).get("MediaStreams") or []
+                   if x.get("Type") == "Subtitle" and x.get("IsExternal") and x.get("Path") not in before]
+            if new:
+                self.item["source"] = source
+                stream = new[0]
+                label = stream_label(stream)
+                await self._command(["sub-add", self.subtitle_url(stream["Index"]), "select", label, stream.get("Language") or ""])
+                if stream.get("Language"):
+                    self.remember(self.item["key"], subtitles=stream["Language"])
+                # mpv says its new track list a moment later.
+                for _ in range(30):
+                    await asyncio.sleep(0.1)
+                    if any(t.get("type") == "sub" and t.get("title") == label for t in self.track_list):
+                        break
+                return True, panel_tracks(self.track_list, self.item["source"])
+        return False, "Undertexten kom inte fram"
 
     # ------------------------------------------------------------ remembered choices
     # The sound and subtitles last chosen, by language, for each series (or
@@ -552,9 +715,9 @@ class Video:
     def _headers(self) -> dict:
         return {"Authorization": jellyfin.auth_header(self.jcfg["api_key"]), "Accept-Encoding": "identity"}
 
-    async def _get(self, path: str, params: dict) -> dict:
+    async def _get(self, path: str, params: dict, timeout: float = 10) -> dict:
         url = self.jcfg["url"].rstrip("/") + "/" + path
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as s:
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=timeout)) as s:
             async with s.get(url, params=params, headers=self._headers()) as resp:
                 resp.raise_for_status()
                 return await resp.json(content_type=None)

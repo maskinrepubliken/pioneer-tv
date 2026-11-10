@@ -425,6 +425,16 @@ class Daemon:
             self.video.set(None, float(body.get("at") or 0))
         elif action == "track":
             self.toast(f"Spår: {body.get('kind')} {body.get('id')}")
+        elif action == "find_subtitles":          # Jellyfin's Open Subtitles, made up
+            return {"ok": True, "found": [
+                {"id": "sv1", "name": "Fyren.2024.1080p.WEB-DL", "detail": "Svenska · passar filen · 312 nedladdningar", "lang": "swe"},
+                {"id": "sv2", "name": "Fyren (2024)", "detail": "Svenska · 88 nedladdningar", "lang": "swe"},
+                {"id": "en1", "name": "The Lighthouse 2024 WEBRip", "detail": "Engelska · 2 140 nedladdningar", "lang": "eng"}]}
+        elif action == "fetch_subtitle":
+            time.sleep(1)
+            return {"ok": True, "audio": [{"id": 1, "label": "Svenska", "selected": True}],
+                    "subtitles": [{"id": 1, "label": "Engelska", "selected": False},
+                                  {"id": 2, "label": "Svenska", "selected": True}]}
         return {"ok": True, "message": ""}
 
     # ------------------------------------------------------------ a game (games.py)

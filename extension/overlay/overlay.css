@@ -147,3 +147,19 @@ html, body { margin: 0; height: 100%; background: transparent !important; overfl
   border: 1px solid var(--pioneertv-line-strong); font: 600 16px/1 var(--pioneertv-font-ui); color: var(--pioneertv-ink-muted);
 }
 
+/* Left and right over a film (overlay.js seekStrip): the panel's timeline at
+   the foot of the screen, for a moment. */
+.pioneertv-seekstrip {
+  position: fixed; left: 50%; bottom: 7vh; transform: translateX(-50%); z-index: 2147482990; width: min(70vw, 1100px);
+  padding: 20px 28px 16px; box-sizing: border-box; pointer-events: none;
+  background: var(--pioneertv-paper-raised); border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-m);
+  opacity: 0; transition: opacity 0.3s ease;
+}
+.pioneertv-seekstrip.shown { opacity: 1; }
+.pioneertv-seekstrip .pioneertv-media-times { font-size: 18px; }
+
+/* Hitta undertexter: a hit's name on its own line, what it is under it. */
+.pioneertv-subhit { align-items: center; }
+.pioneertv-subhit-words { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+.pioneertv-subhit-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pioneertv-subhit-detail { font: 400 14px/1.2 var(--pioneertv-font-mono); color: var(--pioneertv-ink-muted); }

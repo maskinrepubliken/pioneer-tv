@@ -50,6 +50,8 @@ window.PioneerTV = window.PioneerTV || {};
   // everything here.
   const away = () => { if (M.keyboard.isOpen()) M.keyboard.close(); menu.close(); };
   b.on('menu', (e) => {
+    // B over a site's video filling the screen (webvideo.js): its panel.
+    if (e && e.panel === 'media') { if (!menu.isOpen() && webVideo()) webPanel(); return; }
     if (e && e.panel) return M.mainMenu.panel(e.panel);
     if (e && e.open) return menu.isOpen() || menu.open(M.mainMenu.spec());
     // Over a site's video: its panel (below), the quick menu one step in.
@@ -349,15 +351,53 @@ window.PioneerTV = window.PioneerTV || {};
       m.parts.push(() => { setDetail(it, (src.audio.find((t) => t.selected) || src.audio[0]).label); });
       items.push(it);
     }
-    if (src.subs && src.subs.length) {
-      const it = pill({ label: 'Undertexter', icon: 'info', keep: true, run: () => src.track('subtitles') }, '');
+    if ((src.subs && src.subs.length) || src.find) {
+      const it = pill({ label: 'Undertexter', icon: 'info', keep: true, run: () => src.subs.length && src.track('subtitles') }, '');
       m.parts.push(() => { setDetail(it, (src.subs.find((t) => t.selected) || { label: 'Av' }).label); });
       items.push(it);
     }
-    if (src.menu) items.push({ label: 'Meny', icon: 'menu', detail: 'snabbmenyn', keep: true, run: () => menu.push(M.mainMenu.spec()) });
+    if (src.find) items.push({ label: 'Hitta undertexter', icon: 'search', sub: () => findSpec(src) });
+    if (src.menu) items.push({ label: 'Meny', icon: 'menu', keep: true, run: () => menu.push(M.mainMenu.spec()) });
     items.push(src.last);
 
-    // The timeline's mark goes when the focus leaves it.
+    // Hitta undertexter (a film from Jellyfin): its subtitle plugins search
+  // the internet; the one chosen is fetched, kept with the film and shown.
+  function findSpec(src) {
+    const spec = { title: 'Undertexter från nätet', items: [{ label: 'Söker…', icon: 'search', disabled: true, keep: true, run: () => {} }] };
+    src.find().then((r) => {
+      if (menu.stack[menu.stack.length - 1] !== spec) return;
+      spec.items = r.ok && Array.isArray(r.found)
+        ? r.found.map((f) => {
+          // The name on its own line, what it is under it: the names are long.
+          const says = (text) => { const d = it.el && it.el.querySelector('.pioneertv-subhit-detail'); if (d) d.textContent = text; };
+          const it = { label: f.name, keep: true, render: () => {
+            const row = make('div', 'pioneertv-menu-item pioneertv-subhit');
+            row.innerHTML = `<span class="pioneertv-menu-icon">${M.icons.html('info')}</span>`;
+            const words = make('span', 'pioneertv-subhit-words');
+            words.append(make('span', 'pioneertv-subhit-name', f.name), make('span', 'pioneertv-subhit-detail', f.detail));
+            row.appendChild(words);
+            return row;
+          }, run: async () => {
+            if (it.busy) return;
+            it.busy = true;
+            says('Hämtar…');
+            const got = await src.fetch(f.id);
+            it.busy = false;
+            if (!got.ok) { says(got.message || 'Det gick inte'); return; }
+            src.subs = got.subtitles || src.subs;
+            if (menu.stack[menu.stack.length - 1] === spec) menu.back();
+            refresh(true);
+            M.hud.toast('Undertexten är vald', 'info');
+          } };
+          return it;
+        })
+        : [{ label: r.message || 'Hittade inga undertexter', icon: 'info', disabled: true, keep: true, run: () => {} }];
+      menu.render();
+    });
+    return spec;
+  }
+
+  // The timeline's mark goes when the focus leaves it.
     // First the play button, unless asked for another.
     const playAt = items.findIndex((it) => it.primary);
     m.spec = { title: src.title || 'Spelas', head, items, at: at != null ? at : playAt, media: true };
@@ -451,6 +491,8 @@ window.PioneerTV = window.PioneerTV || {};
       kind: 'video', title: e.title, live: false, time: e.time || 0, duration: e.duration || 0, paused: true,
       audio: e.audio || [], subs: e.subtitles || [],
       to: (t) => video('/to', { at: t }),
+      find: () => video('/find_subtitles'),
+      fetch: (id) => video('/fetch_subtitle', { id }),
       track: async (kind) => {
         const list = kind === 'audio' ? src.audio : src.subs;
         const next = nextTrack(list, kind === 'audio' ? null : { id: 'no', label: 'Av' });
@@ -464,7 +506,33 @@ window.PioneerTV = window.PioneerTV || {};
     };
     panel('video', e, null, null, null, 0, () => video('/resume'), mediaSpec(src));
   }
-  b.on('video', (e) => (e.state === 'held' ? videoPanel(e) : closePanel('video')));
+  b.on('video', (e) => {
+    if (e.state === 'seeked') return seekStrip(e);
+    seekStrip(null);
+    if (e.state === 'held') videoPanel(e); else closePanel('video');
+  });
+
+  // Left and right over a film (video.py seeks): where it is now, on a
+  // timeline of the panel's look at the foot of the screen, for a moment.
+  let strip = null, stripTimer = 0;
+  function seekStrip(e) {
+    clearTimeout(stripTimer);
+    if (!e) { if (strip) strip.classList.remove('shown'); return; }
+    if (!strip) {
+      strip = make('div', 'pioneertv-seekstrip');
+      strip.innerHTML = '<div class="pioneertv-media-track"><div class="pioneertv-media-fill"></div></div>'
+        + '<div class="pioneertv-media-times"><span></span><span class="pioneertv-media-hint"></span><span></span></div>';
+      document.body.appendChild(strip);
+    }
+    const len = e.duration || 0, at = Math.max(0, Math.min(len || e.time, e.time || 0));
+    strip.querySelector('.pioneertv-media-fill').style.width = len ? `${(at / len) * 100}%` : '0';
+    const [now, hint, left] = strip.querySelectorAll('.pioneertv-media-times span');
+    now.textContent = clock(at);
+    hint.textContent = e.paused ? 'Pausad' : '';
+    left.textContent = len ? `−${clock(len - at)}` : '';
+    strip.classList.add('shown');
+    stripTimer = setTimeout(() => strip.classList.remove('shown'), 2500);
+  }
 
   // A site's video (SVT Play, Cineasterna, any page; content/webvideo.js in
   // each of the page's frames says how its video is). The menu opening
@@ -496,7 +564,7 @@ window.PioneerTV = window.PioneerTV || {};
       to: (t) => tell(v.frame, 'to', t),
       track: () => tell(v.frame, 'subs', nextTrack(src.subs, { id: -1, label: 'Av' }).id),
       first: () => ({ label: 'Fortsätt', run: pick(() => {}) }),
-      last: { label: 'Sluta titta', icon: 'back', detail: 'tillbaka', run: pick(() => b.back()) },
+      last: { label: 'Sluta titta', icon: 'back', detail: 'håll B', run: pick(() => b.back()) },
     };
     panel('web', v, null, null, null, 0, () => {}, mediaSpec(src));
   }

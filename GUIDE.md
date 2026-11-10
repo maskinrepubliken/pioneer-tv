@@ -447,9 +447,19 @@ readable by the kiosk user alone), never on its command line.
 While a video plays: A, B or X pauses it and the overlay shows the pause
 panel over the picture, with the time at the top left ([the media
 panel](#the-media-panel): Fortsätt, the seeks, Gå till, Från början, Ljud
-and Undertexter, where A steps to the next track, at once, mpv's own list
-named by language, TV-volym and Sluta titta). B, X or Home carries on. Left and
-right seek ten seconds; holding B stops; Home opens the
+and Undertexter, where A steps to the next track, at once, TV-volym, Hitta
+undertexter and Sluta titta). B, X or Home carries on. The tracks are named
+by what Jellyfin knows of them, by their language (mpv calls a subtitle file
+by its name, "Stream.srt"): those inside the file in the order mpv counts
+them, every subtitle file by its address; each subtitle file of the film is
+added to mpv once it plays (`sub-add`, with its name), so any can be
+chosen. Hitta undertexter asks Jellyfin's subtitle plugins (Open Subtitles
+on the box's: `RemoteSearch/Subtitles`) for Swedish and English ones, the
+ones that fit the file first; the one chosen Jellyfin fetches and keeps
+with the film, and it is added to mpv and chosen. Left and right seek ten
+seconds, and the overlay shows where it is on a timeline of its own at the
+foot of the screen (`seeked`); mpv draws nothing of its own while the
+overlay is there. Holding B stops; Home opens the
 pause panel too, as in a game (the main menu's choices would act on the
 page hidden below); holding Home stops and goes home. Without the overlay, A, B and X only pause and
 resume, with mpv's timeline. Nothing plays on by itself, not even the next
@@ -474,8 +484,9 @@ it is, which passes it to the overlay (`webvideo`, daemon/pioneertv/overlay.py).
 Home over such a page opens that video's panel instead of the quick menu
 ([the media panel](#the-media-panel); a live stream seeks within what it
 keeps, and has no Gå till or Från början; Undertexter when the video has
-text tracks of its own; Meny is the quick menu, one step in; Sluta titta
-goes back). The panel's choices go back to the frame they are for. The
+text tracks of its own, named by their language when the site's label is a
+number or a file's name; Meny is the quick menu, one step in; Sluta titta,
+holding B, goes back). The panel's choices go back to the frame they are for. The
 menu pauses the video as it does every page's (the media event, the
 frames' too), and closing it carries on; a seek from the panel leaves it
 paused. The open panel follows the video by the words of its rows only,
@@ -484,7 +495,8 @@ came back, which blinked over SVT Play), and where a seek was put stands
 until the page has got there. While the video fills the screen
 (fullscreen, or bigscreen.js's promotion) the pad drives the `<video>`
 itself, not the site's keys: left and right seek, A or X pauses or plays,
-up and down do nothing; where it is, Home's panel says. Where we know the
+up and down do nothing, B opens the panel (paused; holding B goes back);
+where it is, the panel says. Where we know the
 site's own controls they are hidden meanwhile (`SITE_UI` in webvideo.js; SVT Play's `desktopUi` and
 top bar, which came and went at every press); its subtitles stay. The
 video itself is never touched beyond play, pause and its time, so it works
@@ -510,7 +522,8 @@ Its parts, those that apply:
 - **The queue** (the music's): Förra and Nästa, side by side.
 - **Rows**: Från början; TV-volym (◀ ▶ or L1/R1, A mutes), after what drives
   what plays; Ljud and Undertexter, their value in a capsule (A steps to
-  the next); Meny (over a site's video); Sluta titta or Sluta spela.
+  the next); Hitta undertexter (a film); Meny (over a site's video); Sluta
+  titta or Sluta spela.
 
 L2 and R2 work wherever the focus is on the panel, which stays where it
 is: the daemon sends them as `seek` (a direction and how hard, 0 to 1, said
@@ -801,8 +814,10 @@ tried again every three seconds.
   card at the right; the pause panels of a game and a film are the same
   card. The d-pad moves to the nearest choice that way on screen.
 - **The home page** (`launcher/index.html`, `home/home.js`) is a page of
-  its own: the services (config `services`, in order; the first, Play, has
-  the focus when it opens) as tiles of one size in two rows, the pad's
+  its own: the services as tiles of one size in two rows (`services.js`
+  `PLACES`: Play, Cineasterna, Bilder, Spel; Film, Serier, Musik, Videor;
+  one not named there at the end of its row; Play has the focus when it
+  opens), the pad's
   legend under them; beside them, at their left, the live TV channels
   (`row = "live"`) as small tiles in a column together as tall as the two
   rows, each with what is on now (its title, how far in) and next: the

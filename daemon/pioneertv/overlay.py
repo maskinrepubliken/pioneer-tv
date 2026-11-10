@@ -26,8 +26,9 @@ OVERLAY = ("menu", "toast", "saver", "rest", "seek")
 # over a channel on its way until it plays in full).
 RELAYS = ("home", "back", "reload", "settings", "keyboard", "navigate", "webvideo")
 TO_OVERLAY = ("menu", "cover")
-# The panels the home page may open alone in the overlay.
-PANELS = ("search",)
+# The panels a page may open alone in the overlay: the home page's Sök, a
+# site's video's panel (B over it, webvideo.js).
+PANELS = ("search", "media")
 # What the overlay's panel for a site's video may ask of it (content/webvideo.js).
 WEBVIDEO_ACTIONS = ("toggle", "seek", "to", "subs")
 

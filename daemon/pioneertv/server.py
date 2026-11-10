@@ -638,6 +638,12 @@ class Server:
             ok, msg = True, ""
         elif action == "track":
             ok, msg = await video.track(str(data.get("kind") or ""), data.get("id"))
+        elif action == "find_subtitles":
+            ok, found = await video.find_subtitles()
+            return web.json_response({"ok": ok, "found": found} if ok else {"ok": False, "message": found})
+        elif action == "fetch_subtitle":
+            ok, got = await video.fetch_subtitle(str(data.get("id") or ""))
+            return web.json_response({"ok": ok, **got} if ok else {"ok": False, "message": got})
         else:
             return web.json_response({"ok": False, "message": "okänd åtgärd"}, status=404)
         return web.json_response({"ok": ok, "message": msg}, status=200 if ok else 409)

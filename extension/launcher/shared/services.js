@@ -21,9 +21,6 @@ window.PioneerTV = window.PioneerTV || {};
   // A service's picture: its logo, else its illustration (art.js).
   const art = (s) => (s.logo ? `<img src="${encodeURI(s.logo)}" alt="">` : M.art.html(s.id, s.color || '#444'));
 
-  // The first row: the services without a row (Film & serier as three);
-  // the second: those with row "second" (Bilder); channels: those with row
-  // "live" (the TV channels), small tiles in a column of their own.
   // Jellyfin's films, series and videos as a tile each (Film, Serier,
   // Videor), each opening the film pages on its own section
   // (libraries/film.js ?section=), from the one Film & serier service.
@@ -39,11 +36,20 @@ window.PioneerTV = window.PioneerTV || {};
       url: withSection(s.url, t.section), search_url: withSection(s.search_url, t.section) }));
   }
 
+  // Where the big tiles stand on the home page, by id: Play, Cineasterna,
+  // Bilder, Spel in the first row; Film, Serier, Musik, Videor in the
+  // second. One not named here goes at the end of its row (the second with
+  // row "second").
+  const PLACES = [['svtplay', 'cineasterna', 'immich', 'romm', 'spel'], ['film', 'serier', 'musik', 'videor']];
   function rows() {
     const all = list();
+    const tiles = all.filter((s) => s.row !== 'live');
+    const placed = (ids) => ids.map((id) => tiles.find((s) => s.id === id)).filter(Boolean);
+    const named = new Set(PLACES.flat());
+    const rest = tiles.filter((s) => !named.has(s.id));
     return {
-      first: all.filter((s) => s.row !== 'second' && s.row !== 'live'),
-      second: all.filter((s) => s.row === 'second'),
+      first: [...placed(PLACES[0]), ...rest.filter((s) => s.row !== 'second')],
+      second: [...placed(PLACES[1]), ...rest.filter((s) => s.row === 'second')],
       channels: all.filter((s) => s.row === 'live'),
     };
   }

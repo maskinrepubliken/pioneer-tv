@@ -9,7 +9,8 @@
 // chosen there comes back here (a webvideo event, to the frame it is for).
 // In fullscreen, left and right seek and A (or X) pauses, without the panel
 // (the site's own controls hidden where we know them: SVT Play's blinked at
-// every press); where it is, the panel says. The overlay's menu pausing
+// every press); where it is, the panel says, which B opens (holding B goes
+// back). The overlay's menu pausing
 // what plays reaches the frames here too (the top frame's own videos are
 // main.js's).
 window.PioneerTV = window.PioneerTV || {};
@@ -58,13 +59,26 @@ window.PioneerTV = window.PioneerTV || {};
     return ((og && og.content) || document.title || '').trim().slice(0, 120);
   }
 
+  // A subtitle track by its language: a site's label may be a number or a
+  // file's name ("8", "stream.vtt"), which says nothing.
+  const LANGUAGES = { sv: 'Svenska', swe: 'Svenska', en: 'Engelska', eng: 'Engelska', no: 'Norska', nb: 'Norska', nor: 'Norska',
+    da: 'Danska', dan: 'Danska', fi: 'Finska', fin: 'Finska', de: 'Tyska', deu: 'Tyska', ger: 'Tyska', fr: 'Franska', fra: 'Franska',
+    es: 'Spanska', spa: 'Spanska' };
+  function trackName(t, i) {
+    const lang = LANGUAGES[String(t.language || '').toLowerCase().split('-')[0]] || '';
+    const label = String(t.label || '').trim();
+    const says = label && !/^\d+$/.test(label) && !/\.(vtt|srt|txt|ttml|xml)$/i.test(label);
+    if (says && lang && !label.toLowerCase().includes(lang.toLowerCase())) return `${lang} · ${label}`;
+    return (says && label) || lang || t.language || `Spår ${i + 1}`;
+  }
+
   function state(v) {
     if (!v || document.visibilityState !== 'visible') return { type: 'webvideo', frame: FRAME, top: TOP, present: false, title: title() };
     const [, end] = bounds(v);
     return {
       type: 'webvideo', frame: FRAME, top: TOP, present: true, title: title(), area: areaOf(v),
       time: v.currentTime, duration: live(v) ? null : v.duration, live: live(v), end, paused: v.paused, full: !!filling(v),
-      subs: tracks(v).slice(0, 12).map((t, i) => ({ id: i, label: (t.label || t.language || `Spår ${i + 1}`).slice(0, 40), selected: t.mode === 'showing' })),
+      subs: tracks(v).slice(0, 12).map((t, i) => ({ id: i, label: trackName(t, i).slice(0, 40), selected: t.mode === 'showing' })),
     };
   }
 
@@ -164,12 +178,17 @@ window.PioneerTV = window.PioneerTV || {};
   // spatial navigation asks here first in the top frame; a frame of its own
   // listens itself.
   function key(e) {
-    if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter', ' '].includes(e.key)) return false;
+    if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter', ' ', 'Escape'].includes(e.key)) return false;
     if (M.nav && M.nav.captured) return false;
     if (M.cursor && M.cursor.active && M.cursor.active()) return false;
     const v = main();
     if (!v || !filling(v)) return false;
     ownPlayer();
+    // B: paused, with the overlay's panel over it (holding B goes back).
+    if (e.key === 'Escape') {
+      if (!e.repeat && M.bridge) M.bridge.relay('menu', { panel: 'media' });
+      return true;
+    }
     if (e.key === 'Enter' || e.key === ' ') {
       if (!e.repeat) { if (v.paused) v.play().catch(() => {}); else v.pause(); }
       return true;

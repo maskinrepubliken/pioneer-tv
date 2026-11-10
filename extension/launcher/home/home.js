@@ -48,12 +48,10 @@
     drawnFor = key;
     const focused = document.activeElement && document.activeElement.dataset.key;
     const service = (s) => ({ key: `tile:${s.id}`, label: s.name, art: S.art(s), color: s.color, url: s.url });
-    // The services, all the same size, in two rows; the channels small, in
-    // their column.
-    const all = [...first, ...second].map(service);
+    // The services, all the same size, in two rows (services.js places
+    // them); the channels small, in their column.
+    const rows = [first.map(service), second.map(service)];
     live = channels.map((s) => ({ key: `channel:${s.id}`, label: s.name, url: s.url, channel: true }));
-    const half = Math.ceil(all.length / 2);
-    const rows = [all.slice(0, half), all.slice(half)];
     // The column at the left, top to bottom.
     const side = [
       { key: 'search', label: 'Sök', icon: 'search', round: true, run: panel('search') },
