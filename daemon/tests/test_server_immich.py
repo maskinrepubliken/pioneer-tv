@@ -67,6 +67,13 @@ class Immich(unittest.IsolatedAsyncioTestCase):
         await self.client.close()
         await self.upstream.close()
 
+    async def test_the_partners_way_in(self):
+        self.assertEqual((await self.client.get("/immich-partner/api/albums")).status, 503)   # no partner key yet
+        self.cfg["immich"]["partner_api_key"] = "kat"
+        r = await self.client.get("/immich-partner/api/users/me")
+        self.assertEqual((await r.json())["id"], "u-puffen")
+        self.assertEqual((await self.client.delete("/immich-partner/api/assets")).status, 405)
+
     async def test_the_proxy_reads_only(self):
         self.assertEqual((await self.client.get("/immich/api/albums")).status, 200)
         self.assertEqual((await self.client.delete("/immich/api/assets")).status, 405)

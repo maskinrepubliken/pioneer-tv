@@ -66,6 +66,14 @@ window.PioneerTV = window.PioneerTV || {};
   b.on('escape', () => (M.keyboard.isOpen() ? M.keyboard.close() : menu.back()));
   // The page a choice opened has loaded: the menu waiting on it goes.
   b.on('loaded', () => { if (menu.punching) menu.close(); });
+  // Home (the home page loaded, however one got there): every menu and
+  // panel here goes, nothing to carry on.
+  b.on('loaded', (e) => {
+    if (!e || !/\/launcher\/index\.html/.test(e.url || '')) return;
+    chose = true;
+    held = null;
+    away();
+  });
   // Nothing of a menu stays under the screensaver.
   b.on('saver', (e) => { if (e.show && !held) away(); });
 

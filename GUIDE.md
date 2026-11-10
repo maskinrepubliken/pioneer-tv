@@ -502,9 +502,12 @@ seconds ahead.
 The Bilder tile opens the browse page on top of [Immich](https://immich.app)
 (`browse.html?library=bilder`, `libraries/bilder.js` on
 `sources/immich.js`). Its column: Förslag (today's memories, "för X år
-sedan", the albums and the people), Favoriter, Tidslinje, Album and
-Personer (every face Immich has found, named or not; those hidden in
-Immich left out). A partner's pictures (Immich's partner sharing) are
+sedan", one's albums, the partner's and one's people) and Tidslinje; then
+under one's name Favoriter, Album and Personer (every face Immich has
+found, named or not; those hidden in Immich left out), and the same under
+the partner's name (`#/partner/...`, through the daemon's
+`/immich-partner/`, the partner's key, reading only as `/immich/`: their
+own albums and people, which one's key does not see). A partner's pictures (Immich's partner sharing) are
 there too: the timeline asks for them (`withPartners`), the searches and
 the favourites have them already; the memories, the albums (those shared
 aside) and the people are one's own. The timeline, a year at a time, its months as cards; a

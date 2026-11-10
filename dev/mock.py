@@ -393,7 +393,8 @@ def _page(items: list) -> bytes:
                                                                       "nextCursor": None, "nextPage": None, "facets": []}}).encode()
 
 
-def immich(path: str, query: str, method: str, body: dict | None = None) -> tuple[int, str, bytes]:
+def immich(path: str, query: str, method: str, body: dict | None = None, partner: bool = False) -> tuple[int, str, bytes]:
+    """Immich's stand-in; partner: through /immich-partner/, as Katrin, with her own albums."""
     q = {k: v[0] for k, v in parse_qs(query).items()}
     body = body or {}
     js = lambda d: (200, "application/json", json.dumps(d).encode())   # noqa: E731
@@ -407,9 +408,10 @@ def immich(path: str, query: str, method: str, body: dict | None = None) -> tupl
     if m := re.match(r"api/assets/([0-9a-f-]{36})$", path):
         return js(next((a for a in IMMICH_ASSETS if a["id"] == m.group(1)), IMMICH_ASSETS[0]))
     if path == "api/albums":
-        return js([{k: v for k, v in a.items() if k != "ids"} for a in IMMICH_ALBUMS])
+        albums = IMMICH_ALBUMS[2:3] if partner else IMMICH_ALBUMS
+        return js([{k: v for k, v in a.items() if k != "ids"} for a in albums])
     if path == "api/users/me":
-        return js({"id": _uuid(990), "name": "Viktor"})
+        return js({"id": _uuid(991), "name": "Katrin"} if partner else {"id": _uuid(990), "name": "Viktor"})
     if path == "api/partners":
         return js([{"id": _uuid(991), "name": "Katrin", "inTimeline": True}])
     if m := re.match(r"api/albums/([0-9a-f-]{36})$", path):

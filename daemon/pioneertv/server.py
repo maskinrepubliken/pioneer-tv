@@ -6,6 +6,7 @@
   /romm/...      RomM's API and assets with the API key added, for the Spel pages
   /jellyfin/...  Jellyfin's library and audio with the API key added, for the Musik pages
   /immich/...    Immich's albums, timeline, people and pictures with the API key added, for the Bilder pages
+  /immich-partner/...  the same with the partner's key: their own albums and people
 """
 from __future__ import annotations
 
@@ -97,6 +98,7 @@ class Server:
         self.app.router.add_route("*", "/romm/{path:.*}", self.romm_proxy)
         self.app.router.add_route("*", "/jellyfin/{path:.*}", self.jellyfin_proxy)
         self.app.router.add_route("*", "/immich/{path:.*}", self.immich_proxy)
+        self.app.router.add_route("*", "/immich-partner/{path:.*}", self.immich_partner_proxy)
         self.app.on_cleanup.append(self._close_proxy_session)
 
     # ------------------------------------------------------------ pages
@@ -270,7 +272,13 @@ class Server:
                 return self._picture(picture)
         return await self._forward(request, target, headers, jellyfin.RESPONSE_HEADERS, "jellyfin")
 
-    async def immich_proxy(self, request: web.Request) -> web.StreamResponse:
+    async def immich_partner_proxy(self, request: web.Request) -> web.StreamResponse:
+        """The same reading, with the partner's key: their own albums and
+        people, which one's own key does not see (partner sharing shares
+        the timeline alone)."""
+        return await self.immich_proxy(request, "partner_api_key")
+
+    async def immich_proxy(self, request: web.Request, which: str = "api_key") -> web.StreamResponse:
         # As RomM's: only the box's own pages (the Bilder pages) get the key.
         if request.method not in immich.METHODS:
             return web.json_response({"error": "method_not_allowed"}, status=405)
@@ -280,9 +288,9 @@ class Server:
         target = immich.target_url(cfg.get("url", ""), request.match_info["path"], request.query_string, request.method)
         if target is None:
             return web.json_response({"error": "not_found"}, status=404)
-        if not cfg.get("api_key"):
+        if not cfg.get(which):
             return web.json_response({"error": "no_key"}, status=503)
-        return await self._forward(request, target, immich.request_headers(request.headers, cfg["api_key"]),
+        return await self._forward(request, target, immich.request_headers(request.headers, cfg[which]),
                                    immich.RESPONSE_HEADERS, "immich")
 
     async def api_bilder(self, request: web.Request) -> web.Response:

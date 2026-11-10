@@ -175,7 +175,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         path, _, query = self.path.partition("?")
         jf = path.startswith("/jellyfin/") and not jellyfin_settings()[0]
         rm = path.startswith("/romm/") and not romm_settings()[0]
-        im = path.startswith("/immich/") and not immich_settings()[0]
+        im = path.startswith(("/immich/", "/immich-partner/")) and not immich_settings()[0]
         api = path.startswith("/api/") and not (path == "/api/jellyfin" and jellyfin_settings()[0])
         if not (jf or rm or im or api):
             return False
@@ -186,7 +186,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             except ValueError:
                 body = {}
             err = mock.error_for(self.headers.get("Referer"))
-            self.send_mock(err or mock.immich(path[len("/immich/"):], query, self.command, body if isinstance(body, dict) else {}))
+            partner = path.startswith("/immich-partner/")
+            self.send_mock(err or mock.immich(path.split("/", 2)[2], query, self.command, body if isinstance(body, dict) else {}, partner))
             return True
         if api:
             length = int(self.headers.get("Content-Length") or 0)
@@ -273,7 +274,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.send_json(200, {"ok": True, "user_id": user["Id"], "user": user["Name"]})
 
     def proxied(self) -> bool:
-        return self.path.startswith(("/romm/", "/jellyfin/", "/immich/"))
+        return self.path.startswith(("/romm/", "/jellyfin/", "/immich/", "/immich-partner/"))
 
     def do_POST(self):
         if self.path.startswith("/api/") and self.mocked():
