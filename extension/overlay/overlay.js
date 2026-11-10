@@ -54,8 +54,10 @@ window.PioneerTV = window.PioneerTV || {};
     if (e && e.panel === 'media') { if (!menu.isOpen() && webVideo()) webPanel(); return; }
     if (e && e.panel) return M.mainMenu.panel(e.panel);
     if (e && e.open) return menu.isOpen() || menu.open(M.mainMenu.spec());
-    // Over a site's video: its panel (below), the quick menu one step in.
+    // Over a site's video or the music's Spelas nu: its panel (below), the
+    // quick menu one step in (Mer…).
     if (!menu.isOpen() && webVideo()) return webPanel();
+    if (!menu.isOpen() && audioState && audioState.state !== 'idle' && audioState.item) return menu.open(audioSpec());
     menu.toggle();
   });
   b.on('home', () => { if (!held) away(); });
@@ -613,8 +615,8 @@ window.PioneerTV = window.PioneerTV || {};
     panel('web', v, null, null, null, 0, () => {}, mediaSpec(src));
   }
 
-  // The box's music (audio.py): it plays on under the menu; the
-  // quick menu's first row (Spelas nu) opens its panel, one step in.
+  // The box's music (audio.py), while its page's Spelas nu is open: it
+  // plays on under the menu; Home opens its panel, as over a film.
   const sound = (action, body) => post(`/api/audio/${action}`, body);
   let audioState = { state: 'idle' };
   let audioSrc = null;
@@ -645,20 +647,13 @@ window.PioneerTV = window.PioneerTV || {};
       skip: (dir) => sound(dir > 0 ? 'next' : 'prev'),
       first: () => ({ label: 'Spela eller pausa', keep: true, run: () => sound('toggle') }),
       // Blanda and Upprepa among its rows; Sluta spela stops it (the stop
-      // symbol: the music is the box's own); Tillbaka, to the quick menu.
+      // symbol), and its page leaves Spelas nu; Mer…, the quick menu.
       modes: true,
-      last: { label: 'Sluta spela', icon: 'stop', keep: true, run: () => sound('stop') },
-      more: { label: 'Tillbaka', icon: 'back', keep: true, run: () => menu.back() },
+      last: { label: 'Sluta spela', icon: 'stop', run: () => sound('stop') },
+      more: more(() => sound('stop')),
     };
     return mediaSpec(src);
   }
-  // The quick menu's row for it (main-menu.js), while something plays.
-  function nowRow() {
-    const s = audioState;
-    if (!s || s.state === 'idle' || !s.item) return null;
-    return { label: s.item.name, icon: 'vinyl', detail: s.state === 'paused' ? 'pausad' : 'spelas nu', sub: audioSpec };
-  }
 
   M.overlay = { host };
-  M.media = { nowRow };
 })(window.PioneerTV);

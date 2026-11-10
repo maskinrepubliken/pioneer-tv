@@ -3,10 +3,9 @@
 // playlists, and the column at the left goes to Album and Artister; #/albums and #/artists are grids; #/album/<id> and
 // #/playlist/<id> a list of songs; #/artist/<id> an artist's albums;
 // #/search/<words> what was found. A song plays from where it is in its
-// list, on the box itself (players/audio.js, the daemon's audio.py), so it
-// plays on from page to page. X on an album, a playlist or an artist plays
-// it at once; elsewhere it is the filled button (Blanda allt, Spela), or it
-// opens Spelas nu.
+// list, on the box itself (players/audio.js, the daemon's audio.py), while
+// Spelas nu is open over the page. X on an album, a playlist or an artist
+// plays it at once; elsewhere it is the filled button's (Blanda allt, Spela).
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const J = M.jellyfin;
@@ -38,7 +37,7 @@ window.PioneerTV = window.PioneerTV || {};
     meta: g.kind === 'album' ? [g.artist, g.year].filter(Boolean).join(' · ') : g.kind === 'playlist' && g.count != null ? songs(g.count) : '',
   });
   const song = (s, i, list, withAlbum) => ({
-    key: `song:${i}:${s.id}`, song: s.id, title: s.name, picture: s.thumb,
+    key: `song:${i}:${s.id}`, title: s.name, picture: s.thumb,
     meta: [s.artist, withAlbum ? s.album : ''].filter(Boolean).join(' · '), detail: clock(s.seconds),
     run: () => audio.play(list, i),
   });
@@ -143,20 +142,18 @@ window.PioneerTV = window.PioneerTV || {};
     const [kind, ...rest] = card.dataset.key.split(':');
     tryPlay(() => J.songs({ kind, id: rest.join(':') }), false)();
   }
-  function onKey(e, button) {
+  function onKey(e) {
     if (e.key !== ' ') return false;
     const active = document.activeElement;
     const key = (active && active.dataset && active.dataset.key) || '';
     if (/^(album|playlist|artist):/.test(key)) { if (!e.repeat) playGroup(active); return true; }
-    if (button) return false;                       // the page's filled button
-    if (!e.repeat) audio.open();
-    return true;
+    return false;                                   // the page's filled button, if any
   }
 
   M.libraries = M.libraries || {};
   M.libraries.musik = {
     name: 'Musik', source: 'Jellyfin', search: 'Sök låt, album eller artist…',
     isRoot: ([what]) => !what,
-    view, rail, onKey, legend: () => audio.legend(),
+    view, rail, onKey,
   };
 })(window.PioneerTV);

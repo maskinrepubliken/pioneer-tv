@@ -1,10 +1,9 @@
 // Pioneer TV audio player, the pages' part: the sound itself is the
-// daemon's (daemon/pioneertv/audio.py, an mpv of its own), so the music
-// plays on from page to page and under the screensaver, until something
-// else plays. Here a queue of songs is handed to it, and what plays is
-// shown: "Spelas nu" over the page (B goes back to browsing, X brings it
-// back), small in the heading meanwhile, and its row in a list marked.
-// Styled by audio.css.
+// daemon's (daemon/pioneertv/audio.py, an mpv of its own). Here a queue of
+// songs is handed to it, and what plays is shown, "Spelas nu" over the
+// page; the music plays while that is open, as a film plays while its
+// window is: B leaves it and the music stops. Home over it opens its panel
+// in the overlay. Styled by audio.css.
 //
 // A song: { id, name, artist, album, seconds, cover, thumb }.
 //
@@ -43,14 +42,15 @@ window.PioneerTV = window.PioneerTV || {};
     state = s;
     heardAt = Date.now();
     player.state = s;
-    build();
-    changed();
-    if (nowPlaying.isOpen()) { if (state.state === 'idle') nowPlaying.close(); else nowPlaying.render(); }
+    if (nowPlaying.isOpen()) { if (state.state === 'idle') nowPlaying.close(false); else nowPlaying.render(); }
   }
   // Where it is now: what was said, and the time since if it plays.
   const now = () => (state.time || 0) + (state.state === 'playing' ? (Date.now() - heardAt) / 1000 : 0);
   M.bridge.on('audio', heard);
   fetch('/api/audio').then((r) => r.json()).then((s) => { if (s && s.state && !heardAt) heard(s); }).catch(() => {});
+  // The page going away: so does the music (the daemon hears the next page
+  // load too).
+  window.addEventListener('pagehide', () => { if (state.state !== 'idle') navigator.sendBeacon('/api/audio/stop', ''); });
 
   // ------------------------------------------------------------ its parts of the page
   // Spelas nu, laid out as the overlay's media panel: the cover; what plays,
@@ -68,7 +68,7 @@ window.PioneerTV = window.PioneerTV || {};
     next: SVG('<rect x="16.6" y="6" width="2.4" height="12" rx="1" fill="currentColor"/><path d="M5 6l10 6-10 6z" fill="currentColor"/>'),
   };
   const REPEAT = { off: 'Av', all: 'Alla låtar', one: 'Den här låten' };
-  let np = null, mini = null;
+  let np = null;
   const part = {};
   function build() {
     if (np) return;
@@ -121,12 +121,6 @@ window.PioneerTV = window.PioneerTV || {};
     part.repeat = mode('repeat', 'Upprepa', 'repeat');
     part.modes.append(part.shuffle, part.repeat);
     document.body.appendChild(np);
-    mini = el('button', 'np-mini');
-    mini.type = 'button';
-    mini.hidden = true;
-    mini.addEventListener('click', () => nowPlaying.open());
-    if (M.browse && M.browse.head) M.browse.head.appendChild(mini);
-    else document.body.appendChild(mini);
     setInterval(() => { if (nowPlaying.isOpen() && state.state === 'playing') nowPlaying.progress(); }, 500);
   }
 
@@ -143,39 +137,13 @@ window.PioneerTV = window.PioneerTV || {};
     next() { if (this.song()) ask('next'); },
     prev() { if (this.song()) ask('prev'); },
     seek(by) { if (this.song()) ask('seek', { by }); },
-    // The legend's part while something plays.
-    legend() { return state.state !== 'idle' ? [['X', 'spelas nu']] : []; },
-    open() { nowPlaying.open(); },
   };
-
-  // What plays: small in the heading, and its row marked in a list.
-  function markPlaying() {
-    const id = player.song() && player.song().id;
-    for (const r of document.querySelectorAll('[data-song]')) r.classList.toggle('playing', r.dataset.song === id);
-  }
-  M.bridge.on('browse:drawn', markPlaying);
-  let shown = '';
-  function changed() {
-    const it = state.state !== 'idle' ? state.item : null;
-    const key = JSON.stringify([it && (it.id || it.channel), state.state]);
-    if (key === shown) return;
-    shown = key;
-    if (M.browse && M.browse.head && mini.parentNode !== M.browse.head) M.browse.head.appendChild(mini);
-    mini.hidden = !it;
-    mini.innerHTML = '';
-    if (it) {
-      if (it.thumb || it.cover) { const img = el('img'); img.src = it.thumb || it.cover; img.alt = ''; mini.appendChild(img); }
-      mini.appendChild(el('span', '', it.artist ? `${it.name} – ${it.artist}` : it.name));
-    }
-    markPlaying();
-    if (M.browse) M.browse.legend();
-  }
 
   // ------------------------------------------------------------ Spelas nu
   // Over the whole page, holding the pad while open. The d-pad goes between
   // its buttons and down into the list; A presses what is marked, X plays
   // or pauses wherever the mark is, L2 and R2 seek, B goes back to browsing
-  // (the music plays on).
+  // and the music stops.
   let at = null;                   // the marked button or row
   const length = () => state.duration || (state.item && state.item.seconds) || 0;
   const nowPlaying = {
@@ -188,13 +156,13 @@ window.PioneerTV = window.PioneerTV || {};
       this.render();
       mark(part.play);
     },
-    close() {
-      if (!np) return;
+    // stop: the music stops with it (not when it closes because it did).
+    close(stop = true) {
+      if (!np || np.hidden) return;
       np.hidden = true;
       scrub = null; target = null;
       if (M.nav.captured === this) M.nav.captured = null;
-      const row = document.querySelector('.view [data-song].playing');
-      if (row && !(M.browse && M.browse.view.contains(document.activeElement))) M.nav.focus(row);
+      if (stop && state.state !== 'idle') ask('stop');
     },
     render() {
       const it = state.item;

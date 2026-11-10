@@ -62,8 +62,6 @@ window.PioneerTV = window.PioneerTV || {};
       title: 'Meny',
       status: true,
       items: [
-        // What the box plays (music: overlay.js), its panel one step in.
-        ...[M.media && M.media.nowRow()].filter(Boolean),
         // From a panel (Mer…) the panel has its own way out: Sluta titta, Sluta spela.
         ...(inPanel ? [] : [{ label: 'Tillbaka', icon: 'back', detail: 'håll B', run: () => b.back() }]),
         { label: 'Hem', icon: 'home', run: away(() => b.home()) },

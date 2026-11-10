@@ -1,18 +1,4 @@
-/* Pioneer TV audio player (audio.js): what plays, small in the heading,
-   and "Spelas nu" over the whole page. */
-
-.np-mini {
-  flex: none; max-width: 20rem; display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.35rem 0.9rem 0.35rem 0.35rem;
-  font: 0.95rem/1.15 var(--pioneertv-font-prose); color: var(--pioneertv-ink); text-align: left; cursor: pointer;
-  background: var(--pioneertv-paper-raised); border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-pill);
-}
-.np-mini[hidden] { display: none; }
-.np-mini img { width: 1.9rem; height: 1.9rem; border-radius: 50%; object-fit: cover; flex: none; }
-.np-mini span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.np-mini.pioneertv-focus {
-  outline: 0.2rem solid var(--pioneertv-focus) !important; outline-offset: 0.25rem !important;
-  box-shadow: none !important; border-radius: var(--pioneertv-radius-pill) !important;
-}
+/* Pioneer TV audio player (audio.js): "Spelas nu" over the whole page. */
 
 .np {
   position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column; padding: 5vh 5vw 2vh;

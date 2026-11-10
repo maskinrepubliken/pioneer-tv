@@ -196,6 +196,8 @@ class Server:
                             await self.hooks["video"].media(event["action"])
                 elif t == "loaded":
                     self.current_url = data.get("url")
+                    # The music plays only while its page's Spelas nu is open: a page loading is one left.
+                    await self.quiet("en annan sida")
                     await self.broadcast({"type": "event", "name": "loaded", "url": self.current_url, "target": "overlay"})
                 elif t == "activity" and self.hooks.get("idle"):
                     self.hooks["idle"].page(data)

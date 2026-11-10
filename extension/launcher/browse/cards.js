@@ -8,7 +8,7 @@
 // key: stable, so the focus comes back to it; picture/large: a small and a
 // sharp image; shape: how it is drawn (below); progress: 0 to 1, how far
 // into it; href: where it goes (a view of this page, or another page), or
-// run: what it does; song: marks the row of what plays (players/audio.js);
+// run: what it does;
 // played: dimmed; detail: a row's right-hand column.
 //
 // A card's shape: box (a game's box art at its own shape), poster (2:3),
@@ -103,7 +103,6 @@ window.PioneerTV = window.PioneerTV || {};
     const a = el(item.href ? 'a' : 'button', `row row--${look}${item.played ? ' played' : ''}`);
     if (!item.href) a.type = 'button';
     link(a, item);
-    if (item.song) a.dataset.song = item.song;
     if (look === 'number') a.appendChild(el('span', 'n', String(n)));
     else if (look === 'thumb') {
       const img = el('img');

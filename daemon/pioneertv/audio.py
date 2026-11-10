@@ -1,11 +1,10 @@
 """Music, played by the daemon in an mpv of its own, without a picture.
 
-A page only asks for it (the Musik pages' songs) and shows
-what plays: the sound lives here, so it plays on whatever page is on screen,
-under the screensaver too, until something else starts to play (a film in
-mpv, a game, a site's video, a page's own sound: main.py and server.py stop
-it then) or it is stopped. The overlay's quick menu has a row for it, which
-opens its panel (overlay.js), as a film's and a site's video's.
+A page only asks for it (the Musik pages' songs) and shows what plays,
+Spelas nu: it plays while that is open, as a film plays while mpv's window
+is, and stops when it is left, when another page loads (server.py), or when
+something else starts to play (a film in mpv, a game, a site's video). Home
+over Spelas nu opens its panel in the overlay (overlay.js), as a film's.
 
 A queue of songs from Jellyfin (each streamed as it is, the API key in its
 address, which goes to mpv over its socket and never on a command line).

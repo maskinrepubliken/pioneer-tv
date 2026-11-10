@@ -156,9 +156,9 @@
           setup: ({ P }) => {
             P.bridge.emit('audio', { state: 'playing', kind: 'music', time: 61, duration: 214, index: 2, count: 9,
               item: { name: 'Sommarnatt', artist: 'Snowstorm', album: 'Vinterland', cover: '/jellyfin/Items/album1/Images/Primary?tag=p' } });
-            P.hud.menu.open(P.media.nowRow().sub());
+            P.bridge.emit('menu', {});
           },
-          note: 'Snabbmenyns rad för det som spelas (Spelas nu) öppnar den.' },
+          note: 'Hem över Spelas nu öppnar den, som över en film.' },
         { name: 'En sajts video (SVT Play, Cineasterna)', under: FILM_PICTURE, url: OVERLAY,
           setup: ({ P }) => { P.bridge.emit('webvideo', WEBVIDEO); P.bridge.emit('menu', {}); },
           note: 'Hem över en video på en sajt (content/webvideo.js): spola med ◀ ▶, 10 s ett tryck, 30 s hållet. I fullskärm spolar ◀ ▶ och A pausar utan panelen.' },
@@ -225,11 +225,9 @@
         { name: 'Utfälld: Videor', url: VIDEOR, ready: '.rail-mark', setup: railOpen, note: 'Upptäck och Kanaler.' },
       ] },
     { part: 'Komponenter', group: 'Spelas nu', files: 'launcher/players/audio.js · launcher/players/audio.css',
-      used: 'Musik: en låt spelar i sidan; Spelas nu täcker den, och i rubriken medan man bläddrar.',
+      used: 'Musik: en låt spelar medan Spelas nu täcker sidan; B lämnar den och musiken slutar.',
       items: [
         { name: 'Spelas nu', url: `${MUSIK}#/album/album1`, ready: '.row', setup: playSong },
-        { name: 'I rubriken medan man bläddrar', url: `${MUSIK}#/album/album1`, ready: '.row',
-          setup: async (ctx) => { await playSong(ctx); ctx.P.players.audio.nowPlaying.close(); } },
       ] },
 
     { part: 'Komponenter', group: 'Omslag som saknas', files: 'launcher/shared/mockups.js (M.mockups) · launcher/shared/views.js (cover, mock) · libraries/*.js (mock)',
