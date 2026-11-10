@@ -2,8 +2,8 @@
 // card at the right): the quick menu Home opens over any window, and the
 // panel the home page (launcher/index.html) asks for: Sök (the on-screen
 // keyboard here, then where to search). The home
-// page itself, the tiles, is a page of its own; so are Inställningar and
-// its Loggar (the settings page).
+// page itself, the tiles, is a page of its own; so is the settings page,
+// which no menu here opens (the home page does).
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const b = M.bridge;
@@ -52,23 +52,25 @@ window.PioneerTV = window.PioneerTV || {};
 
   // The quick menu: what Home opens over any window, the paper card at the
   // right. Most used first; the detail is the button that does the same
-  // without the menu. The box's status at the foot.
-  function spec() {
+  // without the menu. The box's status at the foot. leave: from a game's or
+  // a film's panel (Mer…), what goes to another page first ends what plays
+  // there (leave(go) does both).
+  function spec({ leave, inPanel = !!leave } = {}) {
     const tv = b.state.daemonConnected;
+    const away = (go) => (leave ? () => leave(go) : go);
     return {
       title: 'Meny',
       status: true,
       items: [
         // What the box plays (music: overlay.js), its panel one step in.
         ...[M.media && M.media.nowRow()].filter(Boolean),
-        { label: 'Tillbaka', icon: 'back', detail: 'håll B', run: () => b.back() },
-        { label: 'Hem', icon: 'home', detail: 'håll Hem', primary: true, run: () => b.home() },
-        // As in the pause panels: left and right step the TV's volume, A mutes.
-        { label: 'TV-volym', icon: 'volume', detail: '◀ ▶ · även L1/R1', volume: true, keep: true, run: () => b.cec('mute'), disabled: !tv },
+        // From a panel (Mer…) the panel has its own way out: Sluta titta, Sluta spela.
+        ...(inPanel ? [] : [{ label: 'Tillbaka', icon: 'back', detail: 'håll B', run: () => b.back() }]),
+        { label: 'Hem', icon: 'home', primary: true, run: away(() => b.home()) },
+        M.hud.volumeItem({ disabled: !tv }),
         { label: 'Tangentbord', icon: 'keyboard', detail: 'Y', run: () => b.keyboard() },
-        { label: 'Ladda om sidan', icon: 'reload', run: () => b.reload() },
+        { label: 'Ladda om sidan', icon: 'reload', run: away(() => b.reload()) },
         { label: 'Stäng av TV:n', icon: 'power', run: () => b.cec('tv_off'), disabled: !tv },
-        { label: 'Inställningar', icon: 'gear', opens: true, run: () => b.settings() },
       ],
     };
   }

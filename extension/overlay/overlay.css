@@ -120,6 +120,13 @@ html, body { margin: 0; height: 100%; background: transparent !important; overfl
 .pioneertv-media-says { font: 400 12px/1 var(--pioneertv-font-mono); color: var(--pioneertv-ink-muted); white-space: nowrap; }
 .pioneertv-media-btn:not(.pioneertv-media-play) { margin-top: 11px; }
 .pioneertv-media-play { gap: 14px; }
+.pioneertv-media-play { position: relative; }
+.pioneertv-media-key {
+  position: absolute; top: -4px; right: -10px; min-width: 22px; height: 22px; padding: 0 5px; box-sizing: border-box;
+  display: inline-flex; align-items: center; justify-content: center; border-radius: 11px;
+  background: var(--pioneertv-paper); border: 1px solid var(--pioneertv-line-strong);
+  font: 600 12px/1 var(--pioneertv-font-mono); color: var(--pioneertv-ink);
+}
 /* The ring around the button's circle, not its words. */
 .pioneertv-media-btn.pioneertv-menu-active { outline: none; }
 .pioneertv-media-btn.pioneertv-menu-active .pioneertv-media-ring {
@@ -136,15 +143,10 @@ html, body { margin: 0; height: 100%; background: transparent !important; overfl
 .pioneertv-media-wide svg { width: 20px; height: 20px; }
 .pioneertv-media-wide.pioneertv-menu-active { background: var(--pioneertv-ochre); border-color: var(--pioneertv-ochre); color: var(--pioneertv-on-ochre); outline: 4px solid var(--pioneertv-focus); outline-offset: 5px; }
 
-/* A setting's value in a capsule; the volume's − and + as two small rings. */
+/* A setting's value in a capsule. */
 .pioneertv-menu-pill .pioneertv-menu-detail {
   padding: 5px 12px; border-radius: var(--pioneertv-radius-pill); background: var(--pioneertv-paper-sunken);
   font: 500 14px/1 var(--pioneertv-font-ui); color: var(--pioneertv-ink);
-}
-.pioneertv-media-steps { margin-left: auto; display: flex; gap: 6px; }
-.pioneertv-media-steps span {
-  width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%;
-  border: 1px solid var(--pioneertv-line-strong); font: 600 16px/1 var(--pioneertv-font-ui); color: var(--pioneertv-ink-muted);
 }
 
 /* Left and right over a film (overlay.js seekStrip): the panel's timeline at

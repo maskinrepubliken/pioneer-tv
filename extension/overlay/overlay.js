@@ -150,12 +150,18 @@ window.PioneerTV = window.PioneerTV || {};
       if (!menu.isOpen()) held = null;
     });
   });
+  // Mer… on a game's or a film's panel: the quick menu, one step in; what
+  // goes to another page from it ends what plays first (stop).
+  const more = (stop) => ({ label: 'Mer…', icon: 'menu', sub: () => M.mainMenu.spec({
+    leave: (go) => { chose = true; menu.close(); Promise.resolve(stop && stop()).then(go); },
+  }) });
   function closePanel(kind) {
     if (held && held.kind === kind && menu.isOpen()) { chose = true; held = null; menu.close(); }
   }
 
   // A game (games.py): Fortsätt spela, Spara läge, Ladda läge, Starta om,
-  // TV-volym, Avsluta; each one of RetroArch's own commands. Holding B quits.
+  // TV-volym, Sluta spela, Mer… (the quick menu, whose way to another page
+  // ends the game first); each one of RetroArch's own commands. Holding B quits.
   const games = (path, body) => post(`/api/games${path}`, body);
   function gamePanel(e, at = 0) {
     const note = document.createElement('div');
@@ -172,11 +178,12 @@ window.PioneerTV = window.PioneerTV || {};
         M.hud.toast(r.ok === false ? (r.message || 'Det gick inte att spara') : 'Läget är sparat', r.ok === false ? 'info' : 'check');
         if (r.ok !== false && held && held.kind === 'game') gamePanel({ ...e, point: Date.now() / 1000 }, 1);   // Ladda läge has a time now
       } },
-      { label: 'Ladda läge', icon: 'back', detail: e.point ? hhmm(e.point) : 'inget sparat', disabled: !e.point,
+      { label: 'Ladda läge', icon: 'clock', detail: e.point ? hhmm(e.point) : 'inget sparat', disabled: !e.point,
         run: pick(() => games('/resume', { load: 'point' })) },
       { label: 'Starta om', icon: 'reload', run: pick(() => games('/resume', { load: 'none' })) },
-      { label: 'TV-volym', icon: 'volume', detail: '◀ ▶ · även L1/R1', volume: true, keep: true, run: () => b.cec('mute') },
-      { label: 'Avsluta', icon: 'power', run: pick(() => games('/quit')) },
+      M.hud.volumeItem(),
+      { label: 'Sluta spela', icon: 'back', detail: 'håll B', run: pick(() => games('/quit')) },
+      more(() => games('/quit')),
     ], note, at, () => games('/resume', { load: 'auto' }));
   }
   b.on('games', (e) => (e.state === 'held' ? gamePanel(e) : closePanel('game')));
@@ -196,12 +203,13 @@ window.PioneerTV = window.PioneerTV || {};
   //   a film or a video the panel paused: Fortsätt), +15 s, +2 min, round
   //   buttons side by side;
   //   the queue (the music's): the song before and the next;
-  //   Från början, TV-volym (left and right, and L1/R1; A mutes), Ljud,
-  //   Undertexter (A steps to the next), Meny (over a site's video), Sluta.
+  //   Från början, TV-volym (L1/R1; marked, left and right, A mutes), Ljud,
+  //   Undertexter (A steps to the next), Hitta undertexter, Sluta titta or
+  //   spela (the arrow back), Mer… (the quick menu; a film's, a video's).
   //
   // A source says what plays and does it:
   //   { kind, title, sub, cover, live, time, duration, end, paused, index,
-  //     count, audio, subs, to(t), skip(dir), track(kind), first(), last }
+  //     count, audio, subs, to(t), skip(dir), track(kind), first(), last, more }
   // The open panel follows it in place, part by part (drawn anew, the whole
   // menu went and came back: it blinked over SVT Play). Where a seek was put
   // stands until the source has got there (or a moment has passed), and a
@@ -307,6 +315,8 @@ window.PioneerTV = window.PioneerTV || {};
       return btn;
     };
     const play = round('pioneertv-media-play', '', first.label, first.label);
+    // The filled one is X's, as in every menu.
+    play.appendChild(make('span', 'pioneertv-media-key', 'X'));
     m.parts.push(() => {
       // Plays or pauses under the panel, which stays open: a film or a video
       // the panel paused says Fortsätt, the music Spela.
@@ -339,16 +349,7 @@ window.PioneerTV = window.PioneerTV || {};
     const pill = (it, value) => { it.detail = value; it.pill = true; return it; };
     if (!src.live && src.duration) items.push({ label: 'Från början', icon: 'reload', keep: true, run: () => seekTo(0) });
     // The TV's volume after what plays is driven by, before its sound and subtitles.
-    items.push({ label: 'TV-volym', icon: 'volume', volume: true, keep: true, run: () => b.cec('mute'),
-      render: () => {
-        const row = make('div', 'pioneertv-menu-item pioneertv-media-volume');
-        row.innerHTML = `<span class="pioneertv-menu-icon">${M.icons.html('volume')}</span>`;
-        row.appendChild(make('span', 'pioneertv-menu-label', 'TV-volym'));
-        const steps = make('span', 'pioneertv-media-steps');
-        steps.append(make('span', '', '−'), make('span', '', '+'));
-        row.appendChild(steps);
-        return row;
-      } });
+    items.push(M.hud.volumeItem());
     if (src.audio && src.audio.length > 1) {
       const it = pill({ label: 'Ljud', icon: 'volume', keep: true, run: () => src.track('audio') }, '');
       m.parts.push(() => { setDetail(it, (src.audio.find((t) => t.selected) || src.audio[0]).label); });
@@ -360,8 +361,9 @@ window.PioneerTV = window.PioneerTV || {};
       items.push(it);
     }
     if (src.find) items.push({ label: 'Hitta undertexter', icon: 'search', sub: () => findSpec(src) });
-    if (src.menu) items.push({ label: 'Meny', icon: 'menu', keep: true, run: () => menu.push(M.mainMenu.spec()) });
+    // Sluta titta (or spela) last of what plays, then Mer…: the quick menu.
     items.push(src.last);
+    if (src.more) items.push(src.more);
 
     // Hitta undertexter (a film from Jellyfin): its subtitle plugins search
   // the internet; the one chosen is fetched, kept with the film and shown.
@@ -510,7 +512,8 @@ window.PioneerTV = window.PioneerTV || {};
         const r = await video('/toggle');
         if (r.ok !== false) { src.paused = !!r.paused; refresh(); }
       } }),
-      last: { label: 'Sluta titta', icon: 'power', detail: 'håll B', run: pick(() => video('/stop')) },
+      last: { label: 'Sluta titta', icon: 'back', detail: 'håll B', run: pick(() => video('/stop')) },
+      more: more(() => video('/stop')),
     };
     panel('video', e, null, null, null, 0, () => video('/resume'), mediaSpec(src));
   }
@@ -568,7 +571,7 @@ window.PioneerTV = window.PioneerTV || {};
     if (!v) return;
     const src = webSrc = {
       kind: 'web', frame: v.frame, title: v.title || pageTitle() || 'Video', live: v.live, time: v.time, duration: v.duration, end: v.end,
-      paused: true, subs: v.subs, menu: true,
+      paused: true, subs: v.subs, more: more(null),
       to: (t) => tell(v.frame, 'to', t),
       track: () => tell(v.frame, 'subs', nextTrack(src.subs, { id: -1, label: 'Av' }).id),
       first: () => ({ label: 'Fortsätt', keep: true, run: () => { tell(v.frame, 'toggle'); src.paused = !src.paused; refresh(); } }),
@@ -607,7 +610,7 @@ window.PioneerTV = window.PioneerTV || {};
       to: (t) => sound('to', { at: t }),
       skip: (dir) => sound(dir > 0 ? 'next' : 'prev'),
       first: () => ({ label: 'Spela eller pausa', keep: true, run: () => sound('toggle') }),
-      last: { label: 'Sluta spela', icon: 'power', keep: true, run: () => sound('stop') },
+      last: { label: 'Sluta spela', icon: 'back', keep: true, run: () => sound('stop') },
     };
     return mediaSpec(src);
   }

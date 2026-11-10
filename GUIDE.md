@@ -195,7 +195,7 @@ vcgencmd get_throttled                # 0x0 means the TV's USB port is enough
 ## Settings and status
 
 The daemon serves a settings page at `http://127.0.0.1:8765/`. On the TV it is
-reached from the quick menu or the home page (Inställningar), where the spatial
+reached from the home page (Inställningar; no menu in the overlay opens it), where the spatial
 navigation and on-screen keyboard work like on any other page; a USB keyboard
 works too, and while one is plugged in the on-screen keyboard stays out of the
 way. The quick menu shows the network, connected gamepads with battery, and
@@ -261,7 +261,7 @@ vanish over the ink), and changes every three minutes. No clock, no date.
 
 - **Anywhere but home**, after ten minutes without a button, the box goes
   home. A game held on its pause panel is quit on the way (its state is
-  saved, as Avsluta does) and a film held on its panel is stopped (its
+  saved, as Sluta spela does) and a film held on its panel is stopped (its
   position is saved); every menu in the overlay closes.
 - **With no pad connected**, the screensaver, at once (within the
   daemon's five-second check). A pad switched on takes it away; so does a
@@ -332,8 +332,10 @@ itself: no menu, notices or logo, only the game. The design is in
   resumes where it was left.
 - **Pausing.** Guide in a game: RetroArch pauses where it is and the
   overlay draws the pause panel over the paused game: Fortsätt spela, Spara
-  läge (a save point of its own), Ladda läge, Starta om, TV-volym (left and
-  right step the TV's volume, A mutes) and Avsluta. Each is one of
+  läge (a save point of its own), Ladda läge, Starta om, TV-volym (L1 R1;
+  marked, left and right step the TV's volume, A mutes), Sluta spela and
+  Mer… (the quick menu, one step in; Hem, Ladda om from it end the game
+  first). Each is one of
   RetroArch's own commands (`PAUSE_TOGGLE`, `SAVE_STATE`, `LOAD_STATE`,
   `RESET`), so carrying on is instant; B or Guide carries on, holding B
   quits. While the panel is open the pads drive it, not the game. (Should
@@ -526,10 +528,16 @@ Its parts, those that apply:
   it plays under the panel, which stays open until B or Home),
   +15 s, +2 min. Left and right go between them.
 - **The queue** (the music's): Förra and Nästa, side by side.
-- **Rows**: Från början; TV-volym (◀ ▶ or L1/R1, A mutes), after what drives
-  what plays; Ljud and Undertexter, their value in a capsule (A steps to
-  the next); Hitta undertexter (a film); Meny (over a site's video); Sluta
-  titta or Sluta spela.
+- **Rows**: Från början; TV-volym (L1 R1; marked, ◀ ▶ and A mutes), after
+  what drives what plays; Ljud and Undertexter, their value in a capsule (A
+  steps to the next); Hitta undertexter (a film); Sluta titta or Sluta
+  spela, the arrow back, last of what plays; Mer… (a film's and a video's:
+  the quick menu, one step in, without its Tillbaka).
+
+Every menu in the overlay alike: the filled row (or button) is X's and
+says so, the way out of what plays is Sluta titta or Sluta spela with the
+arrow back (the power symbol is the TV's alone), and TV-volym says L1 R1,
+and while marked what its keys do.
 
 L2 and R2 work wherever the focus is on the panel, which stays where it
 is: the daemon sends them as `seek` (a direction and how hard, 0 to 1, said
@@ -811,7 +819,7 @@ tried again every three seconds.
 
 - **The quick menu** (`overlay/main-menu.js`): Home opens it over any
   window, the paper card at the right: Tillbaka, Hem, TV-volym,
-  Tangentbord, Ladda om, Stäng av TV:n, Inställningar, and the box's status
+  Tangentbord, Ladda om, Stäng av TV:n, and the box's status
   at the foot. Holding Home goes to the home page. B goes one step back,
   the last step closes it. A choice that opens a page punches its row of
   holes until the page has loaded (the extension says `loaded`). The TV's

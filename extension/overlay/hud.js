@@ -28,10 +28,16 @@ window.PioneerTV = window.PioneerTV || {};
   // element in the title's place (the media panel's). An item: { label,
   // icon, detail, primary, disabled, run, keep (stays open after run), opens
   // (a page: holes are punched on it until that page has loaded), volume
-  // (left and right step the TV's volume), step (left and right do this:
+  // (left and right step the TV's volume), hint (the detail while the row
+  // is marked: what its keys do), step (left and right do this:
   // step(-1 or 1, held)), sub (a function giving the submenu), render (its
   // own element instead of a row), row (items with the same row stand side
   // by side; the d-pad goes between them by where they are) }.
+  // TV-volym, the same in every menu: L1 and R1 step it anywhere; marked,
+  // left and right step it and A mutes.
+  hud.volumeItem = (more = {}) => ({ label: 'TV-volym', icon: 'volume', detail: 'L1 R1', hint: 'A ljud av · ◀ ▶',
+    volume: true, keep: true, run: () => M.bridge.cec('mute'), ...more });
+
   hud.menu = {
     root: null, stack: [], index: 0, items: [],
     isOpen() { return !!(this.root && this.root.isConnected); },
@@ -131,7 +137,8 @@ window.PioneerTV = window.PioneerTV || {};
       el.className = 'pioneertv-menu-item' + (it.primary ? ' pioneertv-menu-primary' : '') + (it.disabled ? ' pioneertv-menu-disabled' : '') + (it.pill ? ' pioneertv-menu-pill' : '');
       el.innerHTML = `<span class="pioneertv-menu-icon">${M.icons.html(it.icon)}</span>`;
       const name = document.createElement('span'); name.className = 'pioneertv-menu-label'; name.textContent = it.label; el.appendChild(name);
-      const detail = it.detail || (it.sub ? '›' : '');
+      // The filled row is X's, wherever the mark is (onKeyDown): it says so.
+      const detail = it.primary ? 'X' : it.detail || (it.sub ? '›' : '');
       if (detail) { const d = document.createElement('span'); d.className = 'pioneertv-menu-detail'; d.textContent = detail; el.appendChild(d); }
       it.el = el;
       return el;
@@ -164,7 +171,11 @@ window.PioneerTV = window.PioneerTV || {};
       return box;
     },
     highlight() {
-      this.items.forEach((it, i) => it.el.classList.toggle('pioneertv-menu-active', i === this.index));
+      this.items.forEach((it, i) => {
+        it.el.classList.toggle('pioneertv-menu-active', i === this.index);
+        const d = it.hint && it.el.querySelector('.pioneertv-menu-detail');
+        if (d) d.textContent = i === this.index ? it.hint : it.detail;
+      });
       const spec = this.stack[this.stack.length - 1];
       if (spec && spec.onHighlight) spec.onHighlight(this.items[this.index]);
     },
