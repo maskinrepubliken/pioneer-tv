@@ -12,6 +12,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import re
 from pathlib import Path
 from typing import Any, Callable, Coroutine
 from urllib.parse import urlparse
@@ -77,6 +78,7 @@ class Server:
             ("GET", "/api/update/status", self.api_update_status),
             ("GET", "/api/games", self.api_games_status),
             ("POST", "/api/games/{action}", self.api_games_action),
+            ("POST", "/api/bilder/{action}", self.api_bilder),
             ("GET", "/api/games/points/{point}.png", self.api_games_point_picture),
             ("GET", "/api/video", self.api_video_status),
             ("GET", "/api/audio", self.api_audio_status),
@@ -282,6 +284,56 @@ class Server:
             return web.json_response({"error": "no_key"}, status=503)
         return await self._forward(request, target, immich.request_headers(request.headers, cfg["api_key"]),
                                    immich.RESPONSE_HEADERS, "immich")
+
+    async def api_bilder(self, request: web.Request) -> web.Response:
+        """The picture viewer's few changes in Immich (its A panel), the
+        only writes the Bilder pages have: favourite {id, on}, trash {id}
+        (to Immich's trash, which keeps it a while), not_photo {id} (into the
+        album Utkorg, made when there is none). /immich/ itself only reads."""
+        cfg = self.cfg.get("immich") or {}
+        url, key = (cfg.get("url") or "").rstrip("/"), cfg.get("api_key", "")
+        if not url or not key:
+            return web.json_response({"ok": False, "message": "no_key"}, status=503)
+        data = await self._json(request)
+        asset = str(data.get("id") or "")
+        if not re.fullmatch(immich.ID, asset):
+            return web.json_response({"ok": False, "message": "okänd bild"}, status=400)
+        headers = {"x-api-key": key, "Accept": "application/json", "Accept-Encoding": "identity"}
+
+        async def call(method: str, path: str, body=None) -> tuple[int, object]:
+            try:
+                async with self._session().request(method, f"{url}/{path}", json=body, headers=headers,
+                                                   timeout=aiohttp.ClientTimeout(total=15)) as resp:
+                    raw = await resp.read()
+                    try:
+                        return resp.status, json.loads(raw) if raw else None
+                    except ValueError:
+                        return resp.status, None
+            except (aiohttp.ClientError, asyncio.TimeoutError):
+                return 0, None
+
+        action = request.match_info["action"]
+        if action == "favorite":
+            code, _ = await call("PUT", f"api/assets/{asset}", {"isFavorite": bool(data.get("on"))})
+        elif action == "trash":
+            code, _ = await call("DELETE", "api/assets", {"ids": [asset], "force": False})
+        elif action == "not_photo":
+            code, albums = await call("GET", "api/albums")
+            outbox = next((a for a in albums or [] if str(a.get("albumName", "")).lower() == "utkorg"), None) if code == 200 else None
+            if code != 200:
+                pass
+            elif outbox:
+                code, _ = await call("PUT", f"api/albums/{outbox['id']}/assets", {"ids": [asset]})
+            else:
+                code, _ = await call("POST", "api/albums", {"albumName": "Utkorg", "assetIds": [asset]})
+        else:
+            return web.json_response({"ok": False, "message": "okänd åtgärd"}, status=404)
+        if code in (200, 201, 204):
+            return web.json_response({"ok": True})
+        message = ("Immich svarar inte" if code == 0 else "Nyckeln får inte ändra i Immich" if code in (401, 403)
+                   else "Bara dina egna bilder går att ändra" if code == 400 else f"Immich svarade {code}")
+        log.warning("immich %s %s: %s", action, asset, code)
+        return web.json_response({"ok": False, "message": message}, status=409)
 
     def _session(self) -> aiohttp.ClientSession:
         if self.proxy_session is None:

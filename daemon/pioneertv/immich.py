@@ -15,9 +15,11 @@ from collections.abc import Mapping
 from urllib.parse import unquote
 
 ID = r"[0-9a-fA-F-]{36}"
-# GET: what the pages read (paths without /api/'s leading slash).
+# GET: what the pages read (paths without /api/'s leading slash); users/me
+# and partners name whose library a picture is in.
 READ = re.compile(rf"^api/(albums|albums/{ID}|timeline/buckets|timeline/bucket|people|people/{ID}|people/{ID}/thumbnail"
-                  rf"|memories|assets/{ID}|assets/{ID}/thumbnail|assets/{ID}/video/playback|server/version)$")
+                  rf"|memories|assets/{ID}|assets/{ID}/thumbnail|assets/{ID}/video/playback|server/version"
+                  rf"|users/me|partners)$")
 # POST: the searches, which only read.
 SEARCH = re.compile(r"^api/search/(metadata|smart|random)$")
 REQUEST_HEADERS = ("Content-Type", "Content-Length", "Accept", "Range", "If-None-Match", "If-Modified-Since")

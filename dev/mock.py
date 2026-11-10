@@ -342,6 +342,8 @@ def daemon(path: str, query: str, method: str) -> tuple[int, str, bytes] | None:
         found = games + films + albums
         found.sort(key=lambda f: not f["recent"])
         return js({"finds": found})
+    if path.startswith("/api/bilder/"):            # the viewer's changes in Immich (server.py api_bilder)
+        return js({"ok": True})
     if path == "/api/video":
         return js({"state": "idle", "item": None, "choice": {}})
     if path == "/api/video/find_subtitles":        # Jellyfin's Open Subtitles, made up
@@ -368,10 +370,12 @@ def _asset(n: int) -> dict:
     day = 1 + n % 27
     video = n % 11 == 5
     return {"id": _uuid(n), "type": "VIDEO" if video else "IMAGE", "duration": 42000 if video else None,
+            "ownerId": _uuid(990 + n % 2),
             "localDateTime": f"{year}-{month:02d}-{day:02d}T{9 + n % 10:02d}:{n % 60:02d}:00.000Z",
             "fileCreatedAt": f"{year}-{month:02d}-{day:02d}T{9 + n % 10:02d}:{n % 60:02d}:00.000Z",
             "isFavorite": n % 7 == 0, "width": 4032, "height": 3024 if n % 3 else 4032,
             "exifInfo": {"city": ["Göteborg", "Lund", "Visby", "Kiruna"][n % 4], "country": "Sverige",
+                         "make": "Apple", "model": "iPhone 13" if n % 2 else "iPhone 15 Pro",
                          "description": "Fika på trappan" if n % 9 == 0 else ""},
             "people": [{"id": _uuid(900 + n % 3), "name": ["Viktor", "Mormor", "Sixten"][n % 3]}] if n % 2 == 0 else []}
 
@@ -404,6 +408,10 @@ def immich(path: str, query: str, method: str, body: dict | None = None) -> tupl
         return js(next((a for a in IMMICH_ASSETS if a["id"] == m.group(1)), IMMICH_ASSETS[0]))
     if path == "api/albums":
         return js([{k: v for k, v in a.items() if k != "ids"} for a in IMMICH_ALBUMS])
+    if path == "api/users/me":
+        return js({"id": _uuid(990), "name": "Viktor"})
+    if path == "api/partners":
+        return js([{"id": _uuid(991), "name": "Katrin", "inTimeline": True}])
     if m := re.match(r"api/albums/([0-9a-f-]{36})$", path):
         a = next((a for a in IMMICH_ALBUMS if a["id"] == m.group(1)), IMMICH_ALBUMS[0])
         return js({k: v for k, v in a.items() if k != "ids"})

@@ -121,14 +121,23 @@ window.PioneerTV = window.PioneerTV || {};
       const r = await post('api/search/smart', { query: words, size: 200, language: 'sv' });
       return ((r.assets && r.assets.items) || []).map(asset);
     },
-    // One, with what the viewer says of it: when, where, who, its text.
+    // Whose libraries there are: one's own and a partner's (Immich's
+    // partner sharing), by the owner's id.
+    owners: once(async () => {
+      const [me, partners] = await Promise.all([json('api/users/me'), json('api/partners?direction=shared-with').catch(() => [])]);
+      const out = new Map([[me.id, me.name || me.email]]);
+      for (const p of partners || []) out.set(p.id, p.name || p.email);
+      return out;
+    }),
+    // One, with what the viewer says of it: when, where, whose, its text.
     async details(id) {
-      const a = await json(`api/assets/${encodeURIComponent(id)}`);
+      const [a, owners] = await Promise.all([json(`api/assets/${encodeURIComponent(id)}`), this.owners().catch(() => new Map())]);
       const exif = a.exifInfo || {};
       return {
         ...asset(a), city: exif.city || '', country: exif.country || '', text: exif.description || '',
         people: (a.people || []).map((p) => p.name).filter(Boolean),
         camera: [exif.make, exif.model].filter(Boolean).join(' '), file: a.originalFileName || '',
+        owner: owners.get(a.ownerId) || (a.owner && a.owner.name) || '',
         width: a.width || exif.exifImageWidth || null, height: a.height || exif.exifImageHeight || null,
       };
     },

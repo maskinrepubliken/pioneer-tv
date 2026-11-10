@@ -10,7 +10,7 @@ class Rules(unittest.TestCase):
     def test_reads(self):
         for path in ("api/albums", f"api/albums/{A}", "api/timeline/buckets", "api/timeline/bucket", "api/people",
                      f"api/people/{A}/thumbnail", "api/memories", f"api/assets/{A}", f"api/assets/{A}/thumbnail",
-                     f"api/assets/{A}/video/playback"):
+                     f"api/assets/{A}/video/playback", "api/users/me", "api/partners"):
             self.assertEqual(immich.target_url("https://b.se/", path, "size=preview"), f"https://b.se/{path}?size=preview")
 
     def test_only_the_searches_are_posted(self):

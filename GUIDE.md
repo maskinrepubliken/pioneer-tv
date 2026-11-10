@@ -521,21 +521,31 @@ API-nycklar; reading is all it needs).
 
 A picture opens the viewer (`players/photo.js`): one over the whole
 screen on ink, Immich's preview (about the screen's size), the next one
-fetched beforehand. Left and right go on (when and where it was taken,
-and who is in it, says itself at the foot for a moment), A opens or
-closes a side panel on paper of what is known of it (Taget, Plats,
-Personer, Längd, Kamera, Storlek, Fil, Text, Favorit: what Immich has),
-X starts or stops the slideshow (a new picture every six seconds, fading
-into the next; clips passed over; the box told something plays, so the
-screensaver keeps away), B closes the panel, else goes back to the grid,
-on the picture last seen. X on a grid is its Bildspel button. The grids'
-pictures are buttons (`cards.js` photo), so the d-pad walks them. A clip
-shows its picture and, for a moment, a notice that X plays it: in mpv as
-a film is (`video.py` `play_immich`, the key as mpv's header, without
-Jellyfin's reports or subtitles; X plays and pauses it there and the
-overlay's timeline says which, A or Home opens its panel, B stops it),
-and the viewer is there again after, on the next one when it played to
-its end.
+fetched beforehand. Left and right go on (when and where it was taken says
+itself at the foot for a moment). A opens a side panel on paper: its date
+as the heading, then Plats, Bibliotek (whose library it is in: one's own
+or a partner's, from `users/me` and `partners`), Kamera and Text, those
+Immich has; under them Favorit (on or off), Ej foto (into the album
+Utkorg, made when there is none) and Ta bort (to Immich's trash, which
+keeps it a while; A twice). Up and down choose, A does it, B closes the
+panel. Those are the only changes the Bilder pages make, through the
+daemon's `POST /api/bilder/favorite|not_photo|trash` (`server.py`
+`api_bilder`); `/immich/` itself only reads. A partner's pictures cannot
+be changed (Immich says so; a notice tells it). X starts or stops the
+slideshow: a new picture every six seconds, each moving while it is shown
+(Ken Burns: from a little closer to a little further or the other way,
+drifting a little), fading into the next; clips passed over; the box told
+something plays, so the screensaver keeps away. B goes back to the grid,
+on the picture last seen (drawn anew if something was changed). X on a
+grid is its Bildspel button. The grids' pictures are buttons (`cards.js`
+photo), so the d-pad walks them. A clip has a small mark in a corner
+with its length; X plays it in mpv as a film is (`video.py`
+`play_immich`, the key as mpv's header, without Jellyfin's reports or
+subtitles; X plays and pauses it there, A or Home opens its panel, B
+stops it), and the viewer is there again after, on the next one when it
+played to its end. Over a film or a clip, left, right and X say where it
+is in a small card where the notices are (playing or paused, the time, a
+thin timeline), for a moment.
 
 ## Video on other sites
 

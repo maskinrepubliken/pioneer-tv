@@ -559,24 +559,26 @@ window.PioneerTV = window.PioneerTV || {};
     if (e.state === 'held') videoPanel(e); else closePanel('video');
   });
 
-  // Left and right over a film (video.py seeks): where it is now, on a
-  // timeline of the panel's look at the foot of the screen, for a moment.
+  // Left and right over a film (video.py seeks), X on a clip: where it is
+  // now, small, where the notices are (a card at the top right: playing or
+  // paused, the time, a thin timeline), for a moment.
   let strip = null, stripTimer = 0;
   function seekStrip(e) {
     clearTimeout(stripTimer);
     if (!e) { if (strip) strip.classList.remove('shown'); return; }
     if (!strip) {
       strip = make('div', 'pioneertv-seekstrip');
-      strip.innerHTML = '<div class="pioneertv-media-track"><div class="pioneertv-media-fill"></div></div>'
-        + '<div class="pioneertv-media-times"><span></span><span class="pioneertv-media-hint"></span><span></span></div>';
+      strip.innerHTML = '<span class="pioneertv-seekstrip-state"></span><div class="pioneertv-seekstrip-body">'
+        + '<div class="pioneertv-media-times"><span></span><span></span></div>'
+        + '<div class="pioneertv-media-track"><div class="pioneertv-media-fill"></div></div></div>';
       document.body.appendChild(strip);
     }
     const len = e.duration || 0, at = Math.max(0, Math.min(len || e.time, e.time || 0));
     strip.querySelector('.pioneertv-media-fill').style.width = len ? `${(at / len) * 100}%` : '0';
-    const [now, hint, left] = strip.querySelectorAll('.pioneertv-media-times span');
+    const [now, left] = strip.querySelectorAll('.pioneertv-media-times span');
     now.textContent = clock(at);
-    hint.textContent = e.paused ? 'Pausad' : '';
     left.textContent = len ? `−${clock(len - at)}` : '';
+    strip.querySelector('.pioneertv-seekstrip-state').innerHTML = GLYPH[e.paused ? 'pause' : 'play'];
     strip.classList.add('shown');
     stripTimer = setTimeout(() => strip.classList.remove('shown'), 2500);
   }
