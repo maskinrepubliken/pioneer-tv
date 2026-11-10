@@ -4,7 +4,9 @@
 // and #/search/<words> are grids of games; the column at the left goes to
 // them, the consoles by their pad. A game opens game.html, which has the
 // daemon play it in RetroArch. X on a recently played game takes it off the
-// list; holding X puts back the last one taken.
+// list; holding X puts back the last one taken. Beside RomM's consoles are
+// the box's own (OWN): games on the web, each opening its page, where the
+// pad is the game's once it runs (content/game.js).
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const R = M.romm;
@@ -21,6 +23,19 @@ window.PioneerTV = window.PioneerTV || {};
     dos: 'floppy', win: 'floppy', amiga: 'floppy', c64: 'floppy', arcade: 'arcade', mame: 'arcade', neogeoaes: 'arcade',
   };
   const platformName = (slug) => PLATFORM_SHORT[slug] || (slug || '').toUpperCase();
+
+  // Consoles of the box's own, not RomM's: their games are pages on the
+  // web (a Godot game exported for the web, say), opened as they are.
+  const OWN = [
+    { slug: 'll', name: 'LL', games: [
+      { id: 'll-wed', name: 'Wed (beta)', url: 'https://spelstudio.lyresten.se/',
+        summary: 'Ett spel från Lyrestens spelstudio, gjort i Godot. En beta: det spelas i webbläsaren, direkt från spelstudion.' },
+    ] },
+  ];
+  const ownGame = (c, g) => ({
+    key: `own:${g.id}`, title: g.name, meta: c.name, shape: 'box', mock: 'box', href: g.url,
+    game: { name: g.name, platform: c.slug, summary: g.summary, own: true },
+  });
   const PLAYERS = (p) => (p === 'flera' ? 'flera spelare' : p ? `${p} spelare` : null);
 
   function when(iso) {
@@ -46,7 +61,7 @@ window.PioneerTV = window.PioneerTV || {};
     return {
       kind: 'grid', title, filter,
       legend: [['A', 'spela']],
-      items: games.map((g) => game(g)), shape: 'box', columns: 6,
+      items: games.map((g) => (g.item ? g.item : game(g))), shape: 'box', columns: 6,
       count: (n, all) => (n === all ? `${all} spel` : `${n} av ${all} spel`),
       empty: 'Inga spel här.',
       info: (it) => {
@@ -55,7 +70,7 @@ window.PioneerTV = window.PioneerTV || {};
           title: g.name,
           meta: [platformName(g.platform), g.year, g.publisher, PLAYERS(g.players)].filter(Boolean).join(' · '),
           text: g.summary,
-          foot: g.lastPlayed ? `Senast: ${when(g.lastPlayed)}` : 'Aldrig spelat',
+          foot: g.own ? 'I webbläsaren' : g.lastPlayed ? `Senast: ${when(g.lastPlayed)}` : 'Aldrig spelat',
         };
       },
     };
@@ -63,9 +78,9 @@ window.PioneerTV = window.PioneerTV || {};
 
   async function start() {
     const [recent, platforms] = await Promise.all([R.recent(), R.platforms()]);
-    const total = platforms.reduce((n, p) => n + p.count, 0);
+    const total = platforms.reduce((n, p) => n + p.count, 0) + OWN.reduce((n, c) => n + c.games.length, 0);
     return {
-      kind: 'shelf', title: 'Spel', count: `${platforms.length} konsoler · ${total} spel`,
+      kind: 'shelf', title: 'Spel', count: `${platforms.length + OWN.length} konsoler · ${total} spel`,
       legend: [['A', 'spela · öppna'], ['X', 'ta bort från senast spelade, håll ner: ångra borttagning']],
       sections: [
         { id: 'recent', label: 'Senast spelade', layout: 'shelf', shape: 'box',
@@ -113,7 +128,14 @@ window.PioneerTV = window.PioneerTV || {};
     await Promise.all([next(), next(), next(), next()]);
   }
 
+  // An own console's games, as the grid takes them (each its item made).
+  const ownGames = (c, only = () => true) => c.games.filter(only).map((g) => ({ ...ownGame(c, g).game, item: ownGame(c, g) }));
+
   async function view([what, a, b]) {
+    if (what === 'own') {
+      const c = OWN.find((x) => x.slug === a);
+      return gridOf(c ? c.name : 'Spel', c ? ownGames(c) : [], false);
+    }
     if (what === 'platform') {
       const [{ games }, platforms] = await Promise.all([R.games({ platformId: Number(a) }), R.platforms()]);
       const p = platforms.find((x) => x.id === Number(a));
@@ -126,7 +148,10 @@ window.PioneerTV = window.PioneerTV || {};
       return gridOf(c ? c.name : 'Samling', games, true);
     }
     if (what === 'search' && a) {
+      const words = a.toLowerCase();
+      const own = OWN.flatMap((c) => ownGames(c, (g) => g.name.toLowerCase().includes(words)));
       const { games } = await R.games({ search: a });
+      games.unshift(...own);
       return { ...gridOf(M.views.searchTitle(a), games, false), count: (n) => M.views.hits(n), empty: M.views.NONE };
     }
     return start();
@@ -141,9 +166,12 @@ window.PioneerTV = window.PioneerTV || {};
         { label: 'Senast spelade', icon: 'clock', href: '#/', key: 'rail:recent' },
         { label: 'Samlingar', icon: 'stack', href: '#/collections', key: 'rail:collections', active: what === 'collections' || what === 'collection' },
       ] },
-      { label: 'Konsoler', items: platforms.map((p) => ({
-        label: PLATFORM_SHORT[p.slug] || p.name, icon: CONSOLE_ICON[p.slug], href: `#/platform/${p.id}`, key: `platform:${p.id}`,
-      })) },
+      { label: 'Konsoler', items: [
+        ...platforms.map((p) => ({
+          label: PLATFORM_SHORT[p.slug] || p.name, icon: CONSOLE_ICON[p.slug], href: `#/platform/${p.id}`, key: `platform:${p.id}`,
+        })),
+        ...OWN.map((c) => ({ label: c.name, href: `#/own/${c.slug}`, key: `own:${c.slug}` })),
+      ].sort((x, y) => x.label.localeCompare(y.label, 'sv')) },
     ];
   }
 

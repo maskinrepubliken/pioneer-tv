@@ -292,7 +292,11 @@ Samlingar, each collection as a card (its first six covers in a pile, its
 name and how many), A opening it; the
 consoles in the column at the left, each by its pad (or its initial); each
 console's games with covers; a game opens `game.html`, which has it
-played. RomM's own Favourites collection (the one with `is_favorite`) is
+played. Beside RomM's consoles are the box's own (`OWN` in
+`libraries/spel.js`), whose games are pages on the web: LL, with Wed
+(beta), a Godot game at https://spelstudio.lyresten.se/. A opens its page;
+once Godot has loaded (its canvas fills the window, its `#status` screen
+gone) the pad is the game's (`content/game.js`), and Home leaves it. RomM's own Favourites collection (the one with `is_favorite`) is
 not listed. On Senast spelade X takes a game off the list at once, one
 after the other;
 holding X (Ctrl+Z) puts back the last one taken, then the one before.

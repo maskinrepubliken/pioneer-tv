@@ -1,7 +1,8 @@
 // Pioneer TV game mode.
 //
-// While a browser game has the screen (RomM's EmulatorJS player, or any page
-// with a big canvas in fullscreen), the pad must reach the page as a real
+// While a browser game has the screen (RomM's EmulatorJS player, a Godot
+// game for the web once it has loaded, or any page with a big canvas in
+// fullscreen), the pad must reach the page as a real
 // gamepad. The daemon stops translating it into key presses and pointer
 // motion while we send a heartbeat; Guide (menu, hold: home) still reaches
 // the shell. Our own overlays pause game mode
@@ -32,6 +33,14 @@ window.PioneerTV = window.PioneerTV || {};
     if (canvas && visible(canvas) && canvas.clientWidth > 200 && canvas.clientHeight > 150) {
       const start = document.querySelector('.ejs_start_button, [class*="ejs_start"]');
       return !(start && visible(start));
+    }
+    // A Godot game exported for the web (LL's, libraries/spel.js): its
+    // canvas fills the window, and its loading screen (#status) is gone.
+    const godot = document.querySelector('canvas#canvas');
+    const status = document.getElementById('status');
+    if (godot && document.getElementById('status-progress') && visible(godot) && !(status && visible(status))) {
+      const r = godot.getBoundingClientRect();
+      if (r.width * r.height > window.innerWidth * window.innerHeight * 0.5) return true;
     }
     const other = document.querySelector('canvas');
     if (other && document.fullscreenElement && visible(other)) {
