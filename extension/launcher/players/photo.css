@@ -54,8 +54,6 @@
 .pv-info-list dt:first-child { margin-top: 0; }
 .pv-info-list dd { margin: 0.35rem 0 0; font: 1.15rem/1.35 var(--pioneertv-font-prose); overflow-wrap: anywhere; }
 .pv-info-list .pv-info-wait { color: var(--pioneertv-ink-muted); font-style: italic; margin-top: 1rem; }
-.pv-info-keys { margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; font-size: 0.95rem; }
-.pv-info-keys .credit { display: none; }
 
 /* The panel's choices: Favorit, Ej foto, Ta bort; the marked one outlined. */
 .pv-actions { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; }

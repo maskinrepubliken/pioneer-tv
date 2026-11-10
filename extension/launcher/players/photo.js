@@ -3,8 +3,8 @@
 // size). Left and right go to the one before and after (when and where it
 // was taken says itself for a moment), A opens a side panel: when, where,
 // whose library, the camera, its text, and what may be done to it (Favorit, Ej foto: into
-// the album Utkorg, Ta bort: to Immich's trash; up and down choose, A
-// does it, B closes it). X starts or stops the slideshow (a new picture
+// the album Utkorg, Ta bort: to Immich's trash; a clip's Spela first; up
+// and down choose, A does it, B closes it). X starts or stops the slideshow (a new picture
 // every few seconds, slowly closer or further, drifting, the one fading
 // into the next), B goes back to the grid. A clip has a small mark in a
 // corner; X plays it on the box in mpv (players/video.js: X plays and
@@ -57,8 +57,7 @@ window.PioneerTV = window.PioneerTV || {};
     part.infoTitle = el('h2', 'pv-info-title');
     part.infoList = el('dl', 'pv-info-list');
     part.actions = el('div', 'pv-actions');
-    part.infoKeys = el('footer', 'legend pv-info-keys');
-    part.info.append(part.infoTitle, part.infoList, part.actions, part.infoKeys);
+    part.info.append(part.infoTitle, part.infoList, part.actions);
     part.count = el('p', 'pv-count');
     part.state = el('p', 'pv-state');
     root.append(...layers, part.clip, caption, part.count, part.state, part.info);
@@ -134,6 +133,8 @@ window.PioneerTV = window.PioneerTV || {};
   // under them what may be done to it, one marked (up and down).
   function actionsOf(a) {
     return [
+      // A clip: Spela first, X's as everywhere in the viewer.
+      ...(a.video ? [{ key: 'play', icon: 'play', label: 'Spela', value: 'X' }] : []),
       { key: 'favorite', icon: 'heart', label: a.favorite ? 'Favorit' : 'Gör till favorit', value: a.favorite ? 'Ja' : '' },
       { key: 'not_photo', icon: 'folder', label: 'Ej foto', value: 'till Utkorg' },
       { key: 'trash', icon: 'backspace', label: sure ? 'Tryck A igen' : 'Ta bort', value: sure ? 'till papperskorgen' : '' },
@@ -157,7 +158,6 @@ window.PioneerTV = window.PioneerTV || {};
       if (act.value) row.appendChild(el('span', 'pv-action-value', act.value));
       part.actions.appendChild(row);
     });
-    V.legend(part.infoKeys, [['arrows', 'välj · bläddra'], ['A', 'gör det'], ['X', a.video ? 'spela' : show ? 'stoppa bildspelet' : 'bildspel'], ['B', 'stäng']]);
   }
   const redraw = () => infoOf(list[at], details.get(list[at].id) || null);
   function panel(open) {
@@ -171,6 +171,7 @@ window.PioneerTV = window.PioneerTV || {};
   async function act(key) {
     const a = list[at];
     if (!a) return;
+    if (key === 'play') { panel(false); playClip(); return; }
     if (key === 'trash' && !sure) { sure = Date.now(); redraw(); setTimeout(() => { if (sure && Date.now() - sure >= SURE_MS) { sure = 0; redraw(); } }, SURE_MS); return; }
     sure = 0;
     const body = { id: a.id, ...(key === 'favorite' ? { on: !a.favorite } : {}) };

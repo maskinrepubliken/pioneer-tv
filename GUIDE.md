@@ -525,7 +525,7 @@ fetched beforehand. Left and right go on (when and where it was taken says
 itself at the foot for a moment). A opens a side panel on paper: its date
 as the heading, then Plats, Bibliotek (whose library it is in: one's own
 or a partner's, from `users/me` and `partners`), Kamera and Text, those
-Immich has; under them Favorit (on or off), Ej foto (into the album
+Immich has; under them, a clip's Spela first (X), then Favorit (on or off), Ej foto (into the album
 Utkorg, made when there is none) and Ta bort (to Immich's trash, which
 keeps it a while; A twice). Up and down choose, A does it, B closes the
 panel. Those are the only changes the Bilder pages make, through the
