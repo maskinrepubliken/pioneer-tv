@@ -682,7 +682,8 @@ class Server:
         return web.json_response(audio.status() if audio else {"state": "idle"})
 
     async def api_audio_action(self, request: web.Request) -> web.Response:
-        """play {queue, index} (songs from Jellyfin), toggle, pause, resume, seek {by}, to {at}, next, prev, stop."""
+        """play {queue, index} (songs from Jellyfin), toggle, pause, resume, seek {by}, to {at}, next, prev, stop,
+        shuffle (Blanda on or off), repeat (Upprepa: off, all, one)."""
         audio = self.hooks.get("audio")
         if not audio:
             return web.json_response({"ok": False, "message": "inte tillgängligt"}, status=503)
@@ -703,6 +704,10 @@ class Server:
             await (audio.seek(value) if action == "seek" else audio.to(value))
         elif action in ("toggle", "pause", "resume", "next", "prev", "stop"):
             await getattr(audio, action)()
+        elif action == "shuffle":
+            await audio.toggle_shuffle()
+        elif action == "repeat":
+            await audio.cycle_repeat()
         else:
             return web.json_response({"ok": False, "message": "okänd åtgärd"}, status=404)
         return web.json_response({"ok": ok, "message": msg, **audio.status()}, status=200 if ok else 409)

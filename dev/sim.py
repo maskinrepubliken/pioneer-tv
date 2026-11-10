@@ -311,7 +311,8 @@ class Daemon:
         item = self.queue[self.index] if 0 <= self.index < len(self.queue) else None
         return {"state": self.audio.state, "kind": self.kind, "item": item, "index": self.index, "count": len(self.queue),
                 "time": round(self.audio.time, 1), "duration": self.audio.duration,
-                "next": [{"name": s.get("name"), "artist": s.get("artist")} for s in self.queue[self.index + 1:self.index + 7]]}
+                "next": [{"name": s.get("name"), "artist": s.get("artist"), "seconds": s.get("seconds")} for s in self.queue[self.index + 1:self.index + 101]],
+                "shuffle": getattr(self, "shuffle", False), "repeat": getattr(self, "repeat", "off")}
 
     def audio_say(self) -> None:
         self.event("audio", **self.audio_status())
@@ -366,6 +367,13 @@ class Daemon:
                 self.audio_load(self.index - 1)
         elif action == "stop":
             self.audio_stop()
+        elif action == "shuffle":                 # audio.py shuffles; here only the word changes
+            self.shuffle = not getattr(self, "shuffle", False)
+            self.audio_say()
+        elif action == "repeat":
+            modes = ("off", "all", "one")
+            self.repeat = modes[(modes.index(getattr(self, "repeat", "off")) + 1) % 3]
+            self.audio_say()
         return {"ok": True, "message": "", **self.audio_status()}
 
     # ------------------------------------------------------------ a film (video.py)

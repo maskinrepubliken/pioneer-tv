@@ -14,7 +14,12 @@ Jellyfin hears what plays, as for films
 
 The state goes to every page and the overlay as an "audio" event:
 {state: idle | playing | paused | loading, kind, item, index, count, time,
-duration, next (the next few songs' names)}, at each change and every few seconds while it plays.
+duration, next (the songs after it, up to NEXT_SAID), shuffle, repeat (off |
+all | one)}, at each change and every few seconds while it plays.
+
+Blanda shuffles the rest of the queue after the song that plays, and puts
+it back in its order when turned off; Upprepa goes from off to the whole
+queue to the one song.
 """
 from __future__ import annotations
 
@@ -23,6 +28,7 @@ import json
 import logging
 import os
 import pwd
+import random
 import time
 from pathlib import Path
 from typing import Callable, Coroutine
@@ -38,6 +44,8 @@ TICKS = 10_000_000              # Jellyfin counts time in 100 ns ticks
 REPORT_EVERY = 30               # seconds between progress reports to Jellyfin
 SAY_EVERY = 5                   # seconds between "audio" events while it plays
 SONG_FIELDS = ("id", "name", "artist", "album", "seconds", "cover", "thumb")
+NEXT_SAID = 100                 # songs after the one playing, named in the state
+REPEATS = ("off", "all", "one")
 
 
 class Audio:
@@ -56,6 +64,9 @@ class Audio:
         self.reported = 0.0
         self.said = 0.0
         self.lock = asyncio.Lock()
+        self.shuffle = False
+        self.ordered: list[dict] = []   # the queue in its own order, while shuffled
+        self.repeat = "off"
 
     # ------------------------------------------------------------ config
     @property
@@ -77,7 +88,9 @@ class Audio:
         item = self.item()
         return {"state": self.state, "kind": self.kind, "item": item, "index": self.index, "count": len(self.queue),
                 "time": round(self.time, 1), "duration": self.duration,
-                "next": [{"name": s.get("name"), "artist": s.get("artist")} for s in self.queue[self.index + 1:self.index + 7]]}
+                "next": [{"name": s.get("name"), "artist": s.get("artist"), "seconds": s.get("seconds")}
+                         for s in self.queue[self.index + 1:self.index + 1 + NEXT_SAID]],
+                "shuffle": self.shuffle, "repeat": self.repeat}
 
     def active(self) -> bool:
         """Something to show: playing, paused or on its way."""
@@ -95,8 +108,35 @@ class Audio:
         if not self.jcfg.get("url") or not self.jcfg.get("api_key"):
             return False, "no_key"
         await self._report_stop()
-        self.queue, self.kind = songs, "music"
-        return await self._load(max(0, min(len(songs) - 1, int(index or 0))))
+        self.queue, self.kind, self.ordered = songs, "music", []
+        index = max(0, min(len(songs) - 1, int(index or 0)))
+        if self.shuffle:                              # still on from before: this queue shuffled too
+            self.ordered = list(songs)
+            rest = songs[:index] + songs[index + 1:]
+            random.shuffle(rest)
+            self.queue, index = [songs[index]] + rest, 0
+        return await self._load(index)
+
+    async def toggle_shuffle(self) -> None:
+        """Blanda: the songs after this one in another order, or back in theirs."""
+        if self.kind == "music" and self.item():
+            now = self.item()
+            if not self.shuffle:
+                self.ordered = list(self.queue)
+                rest = self.queue[:self.index] + self.queue[self.index + 1:]
+                random.shuffle(rest)
+                self.queue, self.index = [now] + rest, 0
+            else:
+                self.queue = self.ordered or self.queue
+                self.index = next((i for i, s in enumerate(self.queue) if s is now), 0)
+                self.ordered = []
+        self.shuffle = not self.shuffle
+        await self.say()
+
+    async def cycle_repeat(self) -> None:
+        """Upprepa: off, the whole queue, the one song."""
+        self.repeat = REPEATS[(REPEATS.index(self.repeat) + 1) % len(REPEATS)]
+        await self.say()
 
     async def toggle(self) -> None:
         if self.state == "playing":
@@ -133,9 +173,9 @@ class Audio:
         await self.say()
 
     async def next(self) -> None:
-        if self.kind == "music" and self.index < len(self.queue) - 1:
+        if self.kind == "music" and (self.index < len(self.queue) - 1 or self.repeat == "all"):
             await self._report_stop()
-            await self._load(self.index + 1)
+            await self._load((self.index + 1) % len(self.queue))
 
     async def prev(self) -> None:
         """Back to the start of the song, or to the one before when near its start."""
@@ -156,7 +196,7 @@ class Audio:
         await self._report_stop()
         await self._command(["stop"])
         self.queue, self.index, self.kind, self.state = [], -1, "", "idle"
-        self.time, self.duration = 0.0, None
+        self.time, self.duration, self.ordered = 0.0, None, []
         await self.say()
 
     # ------------------------------------------------------------ mpv
@@ -247,8 +287,10 @@ class Audio:
             reason = msg.get("reason")
             if reason == "eof" and self.kind == "music":
                 await self._played()
-                if self.index < len(self.queue) - 1:
-                    await self._load(self.index + 1)
+                if self.repeat == "one":
+                    await self._load(self.index)
+                elif self.index < len(self.queue) - 1 or self.repeat == "all":
+                    await self._load((self.index + 1) % len(self.queue))
                 else:
                     log.info("audio: the end of the queue")
                     await self.stop()

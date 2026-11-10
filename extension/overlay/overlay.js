@@ -386,6 +386,14 @@ window.PioneerTV = window.PioneerTV || {};
       items.push(it);
     }
     if (src.find) items.push({ label: 'Hitta undertexter', icon: 'search', sub: () => findSpec(src) });
+    // The music's Blanda and Upprepa, their value in a capsule; A changes it.
+    if (src.modes) {
+      const REPEAT = { off: 'Av', all: 'Alla låtar', one: 'Den här låten' };
+      const shuffle = pill({ label: 'Blanda', icon: 'shuffle', keep: true, run: () => sound('shuffle') }, '');
+      const repeat = pill({ label: 'Upprepa', icon: 'repeat', keep: true, run: () => sound('repeat') }, '');
+      m.parts.push(() => { setDetail(shuffle, src.shuffle ? 'På' : 'Av'); setDetail(repeat, REPEAT[src.repeat] || 'Av'); });
+      items.push(shuffle, repeat);
+    }
     // Sluta titta (or spela) last of what plays, then Mer…: the quick menu.
     items.push(src.last);
     if (src.more) items.push(src.more);
@@ -614,7 +622,8 @@ window.PioneerTV = window.PioneerTV || {};
     const it = s.item || {};
     return { title: it.name, sub: [it.artist, it.album].filter(Boolean).join(' · '),
       cover: it.cover || it.thumb || '', live: s.live, time: s.time || 0, duration: s.duration || it.seconds || 0,
-      paused: s.state !== 'playing', index: s.index, count: s.kind === 'music' ? s.count : 0, state: s.state };
+      paused: s.state !== 'playing', index: s.index, count: s.kind === 'music' ? s.count : 0, state: s.state,
+      shuffle: !!s.shuffle, repeat: s.repeat || 'off' };
   }
   b.on('audio', (s) => {
     audioState = s;
@@ -635,7 +644,11 @@ window.PioneerTV = window.PioneerTV || {};
       to: (t) => sound('to', { at: t }),
       skip: (dir) => sound(dir > 0 ? 'next' : 'prev'),
       first: () => ({ label: 'Spela eller pausa', keep: true, run: () => sound('toggle') }),
-      last: { label: 'Sluta spela', icon: 'back', keep: true, run: () => sound('stop') },
+      // Blanda and Upprepa among its rows; Sluta spela stops it (the stop
+      // symbol: the music is the box's own); Tillbaka, to the quick menu.
+      modes: true,
+      last: { label: 'Sluta spela', icon: 'stop', keep: true, run: () => sound('stop') },
+      more: { label: 'Tillbaka', icon: 'back', keep: true, run: () => menu.back() },
     };
     return mediaSpec(src);
   }

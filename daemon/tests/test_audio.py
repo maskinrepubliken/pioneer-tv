@@ -126,5 +126,31 @@ class Playing(unittest.IsolatedAsyncioTestCase):
         self.assertIn(("/Sessions/Playing/Stopped", "long1"), self.reports)
 
 
+    async def test_shuffle_and_back_in_order(self):
+        songs = [{"id": f"long{i}", "name": str(i)} for i in range(8)]
+        await self.audio.play(songs, 2)
+        await self.until(lambda: self.audio.state == "playing", "the song playing")
+        await self.audio.toggle_shuffle()
+        self.assertTrue(self.audio.status()["shuffle"])
+        self.assertEqual((self.audio.index, self.audio.item()["id"]), (0, "long2"))   # it plays on, first now
+        self.assertEqual(sorted(s["id"] for s in self.audio.queue), sorted(s["id"] for s in songs))
+        await self.audio.toggle_shuffle()
+        self.assertEqual([s["id"] for s in self.audio.queue], [s["id"] for s in songs])
+        self.assertEqual(self.audio.index, 2)
+        self.assertEqual(len(self.audio.status()["next"]), 5)                       # every song after it
+        await self.audio.stop()
+
+    async def test_repeat_goes_round(self):
+        self.assertEqual(self.audio.repeat, "off")
+        for want in ("all", "one", "off"):
+            await self.audio.cycle_repeat()
+            self.assertEqual(self.audio.status()["repeat"], want)
+        await self.audio.cycle_repeat()                                              # the whole queue
+        await self.audio.play([{"id": "long1", "name": "Ett"}, {"id": "long2", "name": "Två"}], 1)
+        await self.until(lambda: self.audio.state == "playing", "the song playing")
+        await self.audio.next()                                                      # the last: round to the first
+        self.assertEqual(self.audio.index, 0)
+        await self.audio.stop()
+
 if __name__ == "__main__":
     unittest.main()
