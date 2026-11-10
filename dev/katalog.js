@@ -128,7 +128,7 @@
         { name: 'Spelets pausmeny, inget sparat läge', under: GAME_PICTURE, url: OVERLAY,
           setup: ({ P }) => P.bridge.emit('games', { state: 'held', title: 'Super Mario World', point: null, players: ['Rosa handkontroll'] }) },
         { name: 'Filmens pausmeny', under: FILM_PICTURE, url: OVERLAY,
-          setup: ({ P }) => P.bridge.emit('video', { state: 'held', title: 'Avsnitt 3',
+          setup: ({ P }) => P.bridge.emit('video', { state: 'held', title: 'Avsnitt 3', time: 1210, duration: 2700,
             audio: [{ id: 1, label: 'Engelska', selected: true }, { id: 2, label: 'Svenska · Kommentar' }],
             subtitles: [{ id: 1, label: 'Svenska' }, { id: 2, label: 'Engelska' }] }) },
         { name: 'Filmens pausmeny: Hitta undertexter', under: FILM_PICTURE, url: OVERLAY,
@@ -140,7 +140,8 @@
             m.activate();
           } },
         { name: 'Filmen: spolning med ◀ ▶', under: FILM_PICTURE, url: OVERLAY,
-          setup: ({ P }) => P.bridge.emit('video', { state: 'seeked', time: 1210, duration: 2700, paused: false }),
+          // Said again before it goes, so it stays in sight here.
+          setup: ({ P }) => { const say = () => P.bridge.emit('video', { state: 'seeked', time: 1210, duration: 2700, paused: false }); say(); setInterval(say, 2000); },
           note: 'Vänster och höger medan filmen spelar (video.py seeked): var den är, en stund. mpv ritar inget eget.' },
         { name: 'Musikens panel', under: HOME, url: OVERLAY,
           setup: ({ P }) => {
