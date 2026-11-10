@@ -129,4 +129,8 @@
   box-shadow: none !important; border-radius: var(--pioneertv-radius-card) !important;
 }
 .tiles-channel.pioneertv-focus .tiles-band, .tiles-channel[aria-busy] .tiles-band { background: var(--pioneertv-ochre); }
-.tiles-channel-text .pioneertv-menu-opening { display: block; width: 80%; margin: 0 0 0.35em; }
+/* On its way: the row of holes in place of everything on the card, one
+   size on every card, in its middle. */
+.tiles-channel[aria-busy] .tiles-channel-text > :not(.pioneertv-menu-opening) { display: none; }
+.tiles-channel[aria-busy] .tiles-channel-text { align-self: stretch; align-items: center; justify-content: center; }
+.tiles-channel-text .pioneertv-menu-opening { display: block; width: 7.5em; margin: 0; }
