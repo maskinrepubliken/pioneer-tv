@@ -132,7 +132,7 @@ window.PioneerTV = window.PioneerTV || {};
   if (hasExt) {
     chrome.runtime.onMessage.addListener((msg) => {
       if (msg.type !== 'event') return;
-      if (msg.name === 'webvideo' && msg.frame === FRAME) act(msg);
+      if (msg.name === 'webvideo' && msg.target === 'page' && msg.frame === FRAME && msg.action) act(msg);
       else if (msg.name === 'media' && !TOP) {
         if (msg.action === 'pause') {
           held = [...document.querySelectorAll('video, audio')].filter((m) => !m.paused && !m.ended);

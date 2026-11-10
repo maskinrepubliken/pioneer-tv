@@ -72,6 +72,9 @@ async function handleDaemonMessage(msg) {
     if (msg.name === 'back') return goBack();
     if (msg.name === 'settings') return openSettings(msg.section);
     if (msg.name === 'navigate') return navigateActive(msg.url);
+    // The overlay's own (a page's video as it is, for its panel) stay here:
+    // passed down, webvideo.js would answer each, and round it would go.
+    if (msg.target === 'overlay') return;
     return forwardToActiveTab(msg);
   }
 }
