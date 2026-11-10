@@ -6,8 +6,8 @@
 // new each time. Its walls are hung full of pictures in frames, one kind
 // only: Bilder's photos (Immich's, some 1600 at random each time), else
 // the covers kept on the box (the daemon's /api/finds); small ones along
-// the ways, larger in the rooms, great ones in gold. Now
-// and then the walker stops at a wall, turns to it and looks a while:
+// the ways (about a third of the faces), more and larger in the rooms,
+// great ones in gold. Often the walker stops at a wall, turns to it and looks a while:
 // hud.look(items) is told what hangs there (saver.js shows it, sharp, and
 // what it is), hud.leave() when it walks on.
 //
@@ -219,14 +219,15 @@ window.PioneerTV = window.PioneerTV || {};
   const LOOK_S = 7;                      // seconds a wall is looked at
   const PHOTO_CALLS = 2;                 // Immich's random pictures, 800 a call
   // How the ways are hung, and each kind of room (the garden's hedges bare).
-  const WAYS = [['small', 0.14], ['medium', 0.24], ['pair', 0.4], ['row', 0.52], ['square', 0.64], ['tall', 0.76],
-    ['triptych', 0.86], ['salon', 0.94], ['large', 0.98]];
+  // About a third of the ways' faces carry something, mostly one picture;
+  // a room's more, but not every face.
+  const WAYS = [['small', 0.1], ['medium', 0.2], ['pair', 0.25], ['large', 0.29], ['tall', 0.32], ['row', 0.34], ['triptych', 0.36]];
   const ROOMS_HUNG = {
-    gallery: [['epic', 0.4], ['large', 0.7], ['gallery', 0.85], ['triptych', 1]],
-    crypt: [['small', 0.25], ['pair', 0.45], ['tall', 0.6]],
-    library: [['salon', 0.4], ['square', 0.7], ['row', 1]],
-    cellar: [['small', 0.35], ['pair', 0.55]],
-    other: [['epic', 0.2], ['large', 0.36], ['gallery', 0.5], ['triptych', 0.64], ['salon', 0.78], ['square', 0.88], ['row', 1]],
+    gallery: [['epic', 0.3], ['large', 0.55], ['gallery', 0.65], ['triptych', 0.72]],
+    crypt: [['small', 0.2], ['medium', 0.3]],
+    library: [['salon', 0.15], ['square', 0.3], ['medium', 0.5]],
+    cellar: [['small', 0.25]],
+    other: [['epic', 0.15], ['large', 0.3], ['medium', 0.42], ['gallery', 0.5], ['triptych', 0.56]],
   };
   function hangs(tx, ty, face, room) {
     const k = hash(tx * 4 + face, ty, 22);
@@ -391,10 +392,10 @@ window.PioneerTV = window.PioneerTV || {};
         for (const k of visited) { const [i, j] = k.split(',').map(Number); if (Math.abs(i - me.ci) + Math.abs(j - me.cj) > 60) visited.delete(k); }
       }
       here = [Math.floor((me.ci * 2 + 1) / SIDE), Math.floor((me.cj * 2 + 1) / SIDE)];
-      // Now and then (every few cells, never twice running) a wall of this
-      // cell with pictures on it: turned to, and looked at a while.
+      // Often (most cells but the one after a look) a wall of this cell with
+      // pictures on it: turned to, and looked at a while.
       since++;
-      if (since < 3 || Math.random() > 0.45) return;
+      if (since < 2 || Math.random() > 0.8) return;
       const walls = DIRS.filter(([dx, dy]) => !open(me.ci, me.cj, dx, dy)).map(([dx, dy]) => {
         const face = dx === 1 ? 1 : dx === -1 ? 0 : dy === 1 ? 3 : 2;
         const hung = hungAt(me.ci * 2 + 1 + dx, me.cj * 2 + 1 + dy, face, [me.ci * 2 + 1, me.cj * 2 + 1]);

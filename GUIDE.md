@@ -971,18 +971,18 @@ tried again every three seconds.
     800, a fresh lot each time the screensaver starts, through `/immich/`),
     else, with no Immich, the covers kept on the box (`/api/finds?n=600`).
     They are drawn into the wall's columns as the torch lights them: along
-    the ways three faces in four, one picture or two side by side, three in
-    a row, four in a square, two above each other, a triptych or a salon of
-    six; in the rooms every face (but the garden's hedges), each kind of
-    room hung its own way (the gallery's great ones, the library's salons,
-    the crypt's and the cellar's few and small). Frames of many kinds: dark
+    the ways about a third of the faces, mostly one picture, now and then
+    two side by side, two above each other, three in a row or a triptych;
+    in the rooms more of them, but not every face (and none on the garden's
+    hedges), each kind of room hung its own way (the gallery's great ones,
+    the library's salons, the crypt's and the cellar's few and small). Frames of many kinds: dark
     wood, black, silver, white with a wide mat, gilt, and gilt with a dark
     rim within for the great ones. None on a door. Each is drawn 64 px
     square, kept in its own shape by its frame. The maze starts somewhere
     new each time (a cell far off, `wander()`), and has more parts and rooms:
     besides the hall of pillars, the garden, the ballroom and the treasury,
     a long gallery, a crypt of slate pillars, a library in wood and a cellar
-    of earth. Every few cells the walker stops at a wall of
+    of earth. Most cells (not the one after a look) the walker stops at a wall of
     its cell with pictures on it, turns to it and looks a while (seven
     seconds): what hangs there comes up sharp over the maze (saver.js,
     `hud.look`: a covers' own picture, a photo's Immich preview), each in
