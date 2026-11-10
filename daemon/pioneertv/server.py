@@ -290,7 +290,8 @@ class Server:
         only writes the Bilder pages have: favourite {id, on}, trash {id}
         (to Immich's trash, which keeps it a while), not_photo {id} (the
         original kept in the Google Drive's folder first, drive.py, then to
-        the trash). /immich/ itself only reads."""
+        the trash; cancel {id} calls a move off while it is on its way).
+        /immich/ itself only reads."""
         cfg = self.cfg.get("immich") or {}
         url, key = (cfg.get("url") or "").rstrip("/"), cfg.get("api_key", "")
         if not url or not key:
@@ -301,7 +302,7 @@ class Server:
             return web.json_response({"ok": False, "message": "okänd bild"}, status=400)
         headers = {"x-api-key": key, "Accept": "application/json", "Accept-Encoding": "identity"}
 
-        async def call(method: str, path: str, body=None) -> tuple[int, object]:
+        async def call(method: str, path: str, body=None, headers=headers) -> tuple[int, object]:
             try:
                 async with self._session().request(method, f"{url}/{path}", json=body, headers=headers,
                                                    timeout=aiohttp.ClientTimeout(total=15)) as resp:
@@ -314,23 +315,64 @@ class Server:
                 return 0, None
 
         action = request.match_info["action"]
+        if not hasattr(self, "_moves"):
+            self._moves: dict[str, asyncio.Task] = {}
+        if action == "cancel":
+            task = self._moves.get(asset)
+            if task and not task.done():
+                task.cancel()
+            return web.json_response({"ok": True})
+        if action not in ("favorite", "trash", "not_photo"):
+            return web.json_response({"ok": False, "message": "okänd åtgärd"}, status=404)
+        # Immich lets only a picture's owner change it: the partner's own
+        # pictures with the partner's key (both are the box's users alike).
+        code, info = await call("GET", f"api/assets/{asset}")
+        owner = (info or {}).get("ownerId") if code == 200 else None
+        if owner and owner != await self._immich_user(url, key):
+            partner = cfg.get("partner_api_key", "")
+            if not partner or await self._immich_user(url, partner) != owner:
+                name = ((info or {}).get("owner") or {}).get("name") or "partnern"
+                return web.json_response({"ok": False, "message": f"Lägg in {name}s API-nyckel under Inställningar → Tjänster → Immich"},
+                                         status=409)
+            headers = {**headers, "x-api-key": partner}
         if action == "favorite":
-            code, _ = await call("PUT", f"api/assets/{asset}", {"isFavorite": bool(data.get("on"))})
+            code, _ = await call("PUT", f"api/assets/{asset}", {"isFavorite": bool(data.get("on"))}, headers)
         elif action == "trash":
-            code, _ = await call("DELETE", "api/assets", {"ids": [asset], "force": False})
-        elif action == "not_photo":
-            ok, message = await self._to_drive(url, headers, asset)
+            code, _ = await call("DELETE", "api/assets", {"ids": [asset], "force": False}, headers)
+        else:
+            task = self._moves[asset] = asyncio.create_task(self._to_drive(url, headers, asset))
+            try:
+                ok, message = await task
+            except asyncio.CancelledError:
+                if not task.cancelled():
+                    raise                            # the request itself went
+                return web.json_response({"ok": False, "message": "cancelled"}, status=409)
+            finally:
+                self._moves.pop(asset, None)
             if not ok:
                 return web.json_response({"ok": False, "message": message}, status=409)
-            code, _ = await call("DELETE", "api/assets", {"ids": [asset], "force": False})
-        else:
-            return web.json_response({"ok": False, "message": "okänd åtgärd"}, status=404)
+            code, _ = await call("DELETE", "api/assets", {"ids": [asset], "force": False}, headers)
         if code in (200, 201, 204):
             return web.json_response({"ok": True})
         message = ("Immich svarar inte" if code == 0 else "Nyckeln får inte ändra i Immich" if code in (401, 403)
                    else "Bara dina egna bilder går att ändra" if code == 400 else f"Immich svarade {code}")
         log.warning("immich %s %s: %s", action, asset, code)
         return web.json_response({"ok": False, "message": message}, status=409)
+
+    async def _immich_user(self, url: str, key: str) -> str | None:
+        """Whose an Immich key is (its user's id), asked once a key."""
+        if not hasattr(self, "_immich_users"):
+            self._immich_users: dict[tuple, str] = {}
+        if (url, key) not in self._immich_users:
+            try:
+                async with self._session().get(f"{url}/api/users/me", headers={"x-api-key": key, "Accept-Encoding": "identity"},
+                                               timeout=aiohttp.ClientTimeout(total=10)) as resp:
+                    if resp.status != 200:
+                        return None
+                    self._immich_users[(url, key)] = json.loads(await resp.read()).get("id")
+            except (aiohttp.ClientError, asyncio.TimeoutError, ValueError):
+                return None
+        return self._immich_users[(url, key)]
 
     async def _to_drive(self, url: str, headers: dict, asset: str) -> tuple[bool, str]:
         """An asset's original, from Immich into the Google Drive's folder."""
@@ -518,9 +560,13 @@ class Server:
             (vc, version), (me, user) = await asyncio.gather(
                 ask(f"{url}/api/server/version", {}), ask(f"{url}/api/users/me", {"x-api-key": key}))
             v = ".".join(str(version.get(k)) for k in ("major", "minor", "patch")) if vc == 200 else None
-            if me == 200:
-                return {"state": "ok", "version": v, "user": user.get("name") or user.get("email")}
-            return {"state": "auth" if me in (401, 403) else "down", "version": v}
+            if me != 200:
+                return {"state": "auth" if me in (401, 403) else "down", "version": v}
+            users = [user.get("name") or user.get("email")]
+            if cfg.get("partner_api_key"):
+                pc, partner = await ask(f"{url}/api/users/me", {"x-api-key": cfg["partner_api_key"]})
+                users.append((partner.get("name") or partner.get("email")) if pc == 200 else "partnerns nyckel godtas inte")
+            return {"state": "ok", "version": v, "user": " · ".join(users)}
 
         if not hasattr(self, "_drive"):
             self._drive = drive.Drive(self.cfg)

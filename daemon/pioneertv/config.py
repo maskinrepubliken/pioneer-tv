@@ -100,8 +100,10 @@ DEFAULTS: dict[str, Any] = {
     # administrator). See /jellyfin/ in server.py.
     "jellyfin": {"url": "", "api_key": "", "user": ""},
     # Immich for the Bilder pages: base URL and an API key (Immich: Kontoinställningar
-    # → API-nycklar). See /immich/ in server.py.
-    "immich": {"url": "", "api_key": ""},
+    # → API-nycklar). See /immich/ in server.py. partner_api_key: one of the
+    # partner's (Immich's partner sharing), so their own pictures can be
+    # changed too (server.py api_bilder).
+    "immich": {"url": "", "api_key": "", "partner_api_key": ""},
     # Google Drive, for Bilder's Ej foto (drive.py): rclone authorize's token,
     # and the folder the pictures go to.
     "drive": {"token": "", "folder": "Ej foto", "dir": "/var/lib/pioneer-tv/drive", "rclone": "rclone"},

@@ -1,5 +1,6 @@
 """The daemon's /immich/ route and /api/bilder against a fake Immich.
 Needs aiohttp: `python -m unittest tests.test_server_immich` from daemon/."""
+import asyncio
 import json
 import sys
 import tempfile
@@ -13,6 +14,8 @@ from pioneertv import config
 from pioneertv.server import Server
 
 A = "4f1c2a9e-1b2c-4d3e-8f90-123456789abc"
+K = "5f1c2a9e-1b2c-4d3e-8f90-123456789abc"          # the partner's (Katrin's)
+USERS = {"good": "u-lyret", "kat": "u-puffen"}
 
 
 async def nothing(_msg: dict) -> None:
@@ -25,8 +28,15 @@ class Immich(unittest.IsolatedAsyncioTestCase):
         self.albums = [{"id": "a1", "albumName": "Fjällen"}]
 
         async def any_(request: web.Request) -> web.Response:
-            if request.headers.get("x-api-key") != "good":
+            who = USERS.get(request.headers.get("x-api-key"))
+            if not who:
                 return web.json_response({}, status=401)
+            if request.path == "/api/users/me":
+                return web.json_response({"id": who})
+            if request.path == f"/api/assets/{K}" and request.method == "GET":
+                return web.json_response({"id": K, "ownerId": "u-puffen", "owner": {"name": "Puffen"}, "originalFileName": "k.jpg"})
+            if request.path == f"/api/assets/{K}" and who != "u-puffen":
+                return web.json_response({"message": "Not found or no asset.update access"}, status=400)
             body = await request.read()
             self.heard.append((request.method, request.path, json.loads(body) if body else None))
             if request.method == "GET" and request.path == "/api/albums":
@@ -34,7 +44,7 @@ class Immich(unittest.IsolatedAsyncioTestCase):
             if request.path == f"/api/assets/{A}/original":
                 return web.Response(body=b"the original")
             if request.path == f"/api/assets/{A}" and request.method == "GET":
-                return web.json_response({"id": A, "originalFileName": "IMG_0001.HEIC"})
+                return web.json_response({"id": A, "ownerId": "u-lyret", "originalFileName": "IMG_0001.HEIC"})
             if request.path.startswith("/api/assets") and request.method in ("PUT", "DELETE"):
                 return web.Response(status=204)
             return web.json_response({"path": request.path})
@@ -82,6 +92,20 @@ class Immich(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.heard[-1], ("DELETE", "/api/assets", {"ids": [A], "force": False}))
         self.assertIn("scope = drive.file", (Path(tmp.name) / "drive" / "rclone.conf").read_text())
 
+    async def test_a_move_called_off(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        rclone = Path(tmp.name) / "rclone"
+        rclone.write_text(f"#!{sys.executable}\nimport time\ntime.sleep(30)\n")   # an upload that takes its time
+        rclone.chmod(0o755)
+        self.cfg["drive"] = {"token": '{"access_token": "x"}', "folder": "Ej foto", "dir": str(Path(tmp.name) / "drive"), "rclone": str(rclone)}
+        moving = asyncio.create_task(self.client.post("/api/bilder/not_photo", json={"id": A}))
+        await asyncio.sleep(0.5)
+        await self.client.post("/api/bilder/cancel", json={"id": A})
+        r = await asyncio.wait_for(moving, 5)
+        self.assertEqual((await r.json())["message"], "cancelled")
+        self.assertNotIn("DELETE", [m for m, _, _ in self.heard])     # still in Immich
+
     def test_both_kinds_of_token(self):
         from pioneertv.drive import parse_token
         import base64
@@ -90,6 +114,14 @@ class Immich(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(parse_token(blob), ('{"access_token": "a"}', {"client_id": "c", "client_secret": "s"}))
         with self.assertRaises(ValueError):
             parse_token("nonsense")
+
+    async def test_the_partners_own_with_the_partners_key(self):
+        r = await self.client.post("/api/bilder/favorite", json={"id": K, "on": True})
+        self.assertEqual((await r.json())["message"], "Lägg in Puffens API-nyckel under Inställningar → Tjänster → Immich")
+        self.cfg["immich"]["partner_api_key"] = "kat"
+        r = await self.client.post("/api/bilder/favorite", json={"id": K, "on": True})
+        self.assertEqual((await r.json())["ok"], True)
+        self.assertEqual(self.heard[-1], ("PUT", f"/api/assets/{K}", {"isFavorite": True}))
 
     async def test_refused(self):
         self.assertEqual((await self.client.post("/api/bilder/trash", json={"id": "../users"})).status, 400)

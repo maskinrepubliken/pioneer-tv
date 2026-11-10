@@ -537,8 +537,14 @@ Tjänster: `rclone authorize drive eyJzY29wZSI6ImRyaXZlLmZpbGUifQ` on a
 computer with a browser (the base64 asks for drive.file), its answer pasted
 there. Those are the only changes the Bilder pages make, through the
 daemon's `POST /api/bilder/favorite|not_photo|trash` (`server.py`
-`api_bilder`); `/immich/` itself only reads. A partner's pictures cannot
-be changed (Immich says so; a notice tells it). X starts or stops the
+`api_bilder`); `/immich/` itself only reads. Immich lets only a picture's
+owner change it, so a partner's own pictures are changed with the
+partner's key (Inställningar → Tjänster → Immich, Partnerns API-nyckel;
+the daemon asks whose a picture is, and whose each key is); without it a
+notice says to put it there. While Ej foto is on its way the row says
+Avbryt flytten, with the row of holes a home page tile has, and A calls
+it off (`cancel`: the download or rclone stopped, the picture left in
+Immich). X starts or stops the
 slideshow: a new picture every six seconds, each moving while it is shown
 (Ken Burns: from a little closer to a little further or the other way,
 drifting a little), fading into the next; clips passed over; the box told

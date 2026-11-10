@@ -41,6 +41,7 @@ window.PioneerTV = window.PioneerTV || {};
   let root = null, layers = [], front = 0, caption = null, part = {};
   let list = [], at = 0, show = false, timer = 0, captionTimer = 0, said = 0;
   let choice = 0, sure = 0, changed = false;
+  let moving = null;                 // { id, holes, stop } while Ej foto is on its way to the Drive
   const details = new Map();       // asset id -> its details, once asked
 
   function build() {
@@ -207,7 +208,7 @@ window.PioneerTV = window.PioneerTV || {};
       ...(a.video ? [{ key: 'play', icon: clipOn() && !clipOn().paused ? 'pause' : 'play', label: clipOn() && !clipOn().paused ? 'Pausa' : 'Spela', value: 'X' }] : []),
       // Only a shortcut at a row's right (X), never anything else.
       { key: 'favorite', icon: 'heart', label: a.favorite ? 'Ta bort som favorit' : 'Gör till favorit' },
-      { key: 'not_photo', icon: 'folder', label: 'Ej foto, flytta till filer' },
+      { key: 'not_photo', icon: 'folder', label: moving && moving.id === a.id ? 'Avbryt flytten' : 'Ej foto, flytta till filer' },
       { key: 'trash', icon: 'backspace', label: sure ? 'Tryck A igen för att ta bort' : 'Ta bort' },
     ];
   }
@@ -226,6 +227,9 @@ window.PioneerTV = window.PioneerTV || {};
     actionsOf(a).forEach((act, i) => {
       const row = el('div', `pv-action${i === choice ? ' pv-marked' : ''}${act.key === 'trash' && sure ? ' pv-sure' : ''}`);
       row.append(M.icons.svg(act.icon), el('span', 'pv-action-label', act.label));
+      // On its way: the row of holes punched one at a time, as a tile of
+      // the home page going to its page.
+      if (act.key === 'not_photo' && moving && moving.id === a.id) row.appendChild(moving.holes);
       if (act.value) row.appendChild(el('span', 'pv-action-value', act.value));
       part.actions.appendChild(row);
     });
@@ -238,20 +242,58 @@ window.PioneerTV = window.PioneerTV || {};
     if (open) { redraw(); caption.classList.remove('pv-shown'); }
   }
 
+  // A row of holes, punched one after the other and over again until it
+  // stops (shared/tiles.js punch's look).
+  function holes() {
+    const ns = 'http://www.w3.org/2000/svg', N = 7, PITCH = 20;
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('class', 'pv-holes');
+    svg.setAttribute('viewBox', `0 0 ${N * PITCH} ${PITCH}`);
+    const dots = [];
+    for (let i = 0; i < N; i++) {
+      const c = document.createElementNS(ns, 'circle');
+      c.setAttribute('cx', String(i * PITCH + PITCH / 2));
+      c.setAttribute('cy', String(PITCH / 2));
+      c.setAttribute('r', '6');
+      svg.appendChild(c);
+      dots.push(c);
+    }
+    let step = 0;
+    const draw = () => { const lit = step++ % (N + 2); dots.forEach((d, i) => d.classList.toggle('punched', i < lit)); };
+    draw();
+    const timer = setInterval(draw, 160);
+    return { svg, stop: () => clearInterval(timer) };
+  }
+
   // What the panel's choice does, in Immich (the daemon's /api/bilder).
   async function act(key) {
     const a = list[at];
     if (!a) return;
+    // Ej foto on its way: A again calls it off.
+    if (key === 'not_photo' && moving) {
+      if (moving.id === a.id) fetch('/api/bilder/cancel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: a.id }) });
+      return;
+    }
     if (key === 'play') { playHere(); return; }
     if (key === 'trash' && !sure) { sure = Date.now(); redraw(); setTimeout(() => { if (sure && Date.now() - sure >= SURE_MS) { sure = 0; redraw(); } }, SURE_MS); return; }
     sure = 0;
-    if (key === 'not_photo') M.hud.toast('Flyttar till Google Drive…', 'folder', 8000);
+    if (key === 'not_photo') {
+      const h = holes();
+      moving = { id: a.id, holes: h.svg, stop: h.stop };
+      redraw();
+    }
     const body = { id: a.id, ...(key === 'favorite' ? { on: !a.favorite } : {}) };
     let r;
     try {
       r = await (await fetch(`/api/bilder/${key}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })).json();
     } catch { r = { ok: false, message: 'Boxen svarar inte' }; }
-    if (!r.ok) { M.hud.toast(r.message === 'no_key' ? 'Immich saknar nyckel' : r.message || 'Det gick inte', 'info'); redraw(); return; }
+    if (key === 'not_photo') { moving.stop(); moving = null; }
+    if (!r.ok) {
+      const text = r.message === 'cancelled' ? 'Flytten avbröts' : r.message === 'no_key' ? 'Immich saknar nyckel' : r.message || 'Det gick inte';
+      M.hud.toast(text, 'info');
+      if (list[at]) redraw();
+      return;
+    }
     changed = true;
     if (key === 'favorite') {
       a.favorite = !a.favorite;
@@ -259,7 +301,10 @@ window.PioneerTV = window.PioneerTV || {};
       redraw();
     } else {
       // In the Drive and the trash, or the trash: out of the list, on to the next.
-      list.splice(at, 1);
+      const i = list.indexOf(a);
+      if (i < 0) return;
+      list.splice(i, 1);
+      if (i < at) at--;
       M.hud.toast(key === 'not_photo' ? 'Flyttad till Google Drive' : 'Lagd i papperskorgen', key === 'not_photo' ? 'folder' : 'check');
       if (!list.length) { viewer.close(); return; }
       at %= list.length;

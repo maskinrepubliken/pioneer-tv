@@ -73,3 +73,10 @@
 .pv-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: transparent; opacity: 0; }
 .pv-video.pv-on { opacity: 1; }
 .pv-clip-state { display: inline-flex; }
+
+/* Ej foto on its way: the row of holes (as a home page tile's), at the row's right. */
+.pv-action .pv-holes { margin-left: auto; width: 6.3rem; height: 0.9rem; flex: none; overflow: visible; }
+.pv-holes circle { fill: transparent; stroke: rgba(244, 239, 228, 0.5); stroke-width: 2; }
+.pv-holes circle.punched { fill: var(--pioneertv-ochre); stroke: var(--pioneertv-ochre); }
+.pv-action.pv-marked .pv-holes circle { stroke: var(--pioneertv-on-ochre); }
+.pv-action.pv-marked .pv-holes circle.punched { fill: var(--pioneertv-on-ochre); stroke: var(--pioneertv-on-ochre); }

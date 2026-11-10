@@ -80,6 +80,9 @@ class Drive:
         except asyncio.TimeoutError:
             proc.kill()
             return -1, "timeout"
+        except asyncio.CancelledError:              # the move called off (server.py): rclone goes too
+            proc.kill()
+            raise
         return proc.returncode, (err or out).decode(errors="replace")[-300:]
 
     async def put(self, path: Path, name: str) -> tuple[bool, str]:

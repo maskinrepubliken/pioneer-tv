@@ -84,6 +84,7 @@ SCHEMA: list[dict] = [
         "fields": [
             {"path": "immich.url", "type": "text", "label": "Adress till Immich"},
             {"path": "immich.api_key", "type": "text", "label": "API-nyckel", "secret": True},
+            {"path": "immich.partner_api_key", "type": "text", "label": "Partnerns API-nyckel (så att deras bilder också kan ändras)", "secret": True},
         ],
     },
     {
