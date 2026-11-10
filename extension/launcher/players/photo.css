@@ -41,8 +41,7 @@
 .pv-info {
   position: absolute; top: 1.4rem; right: 1.4rem; bottom: 1.4rem; width: 23rem; box-sizing: border-box;
   display: flex; flex-direction: column; padding: 1.6rem 1.6rem 1.4rem; overflow: hidden;
-  background: #17120f; color: #f4efe4;
-  border: 1px solid rgba(244, 239, 228, 0.18); border-radius: var(--pioneertv-radius-l);
+  background: #17120f; color: #f4efe4; border: 0; border-radius: var(--pioneertv-radius-l);
 }
 .pv-info[hidden] { display: none; }
 .pv-info-title { margin: 0 0 1.2rem; font: italic 400 1.6rem/1.15 var(--pioneertv-font-prose); }
@@ -52,7 +51,7 @@
 .pv-info-list dd { margin: 0.35rem 0 0; font: 1.15rem/1.35 var(--pioneertv-font-prose); overflow-wrap: anywhere; }
 .pv-info-list .pv-info-wait { color: rgba(244, 239, 228, 0.6); font-style: italic; margin-top: 1rem; }
 
-/* Its choices: Spela, Favorit, Ej foto, Ta bort; the marked one in ochre. */
+/* Its choices: Spela, Favorit, Ej foto, Ta bort; the marked one ringed, as in every menu. */
 .pv-actions { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; }
 .pv-action {
   display: flex; align-items: center; gap: 0.7rem; padding: 0.7rem 1rem 0.7rem 0.85rem;
@@ -61,12 +60,9 @@
 }
 .pv-action svg { width: 1.2rem; height: 1.2rem; color: rgba(244, 239, 228, 0.7); flex: none; }
 .pv-action-value { margin-left: auto; font: 400 0.85rem/1 var(--pioneertv-font-mono); color: rgba(244, 239, 228, 0.55); }
-.pv-action.pv-marked { background: var(--pioneertv-ochre); border-color: var(--pioneertv-ochre); color: var(--pioneertv-on-ochre); }
-.pv-action.pv-marked svg, .pv-action.pv-marked .pv-action-value { color: var(--pioneertv-on-ochre); }
+.pv-action.pv-marked { outline: 0.25rem solid var(--pioneertv-focus); outline-offset: 0.3rem; }
 .pv-action.pv-sure { border-color: #e0634f; color: #f08a78; }
 .pv-action.pv-sure svg { color: #f08a78; }
-.pv-action.pv-sure.pv-marked { background: #c4432f; border-color: #c4432f; color: #fff; }
-.pv-action.pv-sure.pv-marked svg { color: #fff; }
 .pv-layer img { transform-origin: center; will-change: transform; }
 
 /* A clip playing right here, over its picture once it plays. */
@@ -78,5 +74,3 @@
 .pv-action .pv-holes { margin-left: auto; width: 6.3rem; height: 0.9rem; flex: none; overflow: visible; }
 .pv-holes circle { fill: transparent; stroke: rgba(244, 239, 228, 0.5); stroke-width: 2; }
 .pv-holes circle.punched { fill: var(--pioneertv-ochre); stroke: var(--pioneertv-ochre); }
-.pv-action.pv-marked .pv-holes circle { stroke: var(--pioneertv-on-ochre); }
-.pv-action.pv-marked .pv-holes circle.punched { fill: var(--pioneertv-on-ochre); stroke: var(--pioneertv-on-ochre); }
