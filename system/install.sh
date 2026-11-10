@@ -93,7 +93,8 @@ apt-get install -y --no-upgrade --no-install-recommends chromium \
 # Nice to have; not present on every image.
 # bluez-firmware carries the onboard chip's patch file; the kernel (hci_bcm)
 # attaches the chip itself on Bookworm, no hciuart service needed.
-for p in bluez-firmware firmware-brcm80211 libwidevinecdm0 fonts-noto-color-emoji; do
+# rclone: Bilder's Ej foto into Google Drive (daemon/pioneertv/drive.py).
+for p in bluez-firmware firmware-brcm80211 libwidevinecdm0 fonts-noto-color-emoji rclone; do
   apt-get install -y --no-upgrade --no-install-recommends "$p" || echo "warning: $p not available, continuing"
 done
 fi

@@ -2,8 +2,8 @@
 // screen, on ink, as large as they go (Immich's preview, about the screen's
 // size). Left and right go to the one before and after (when and where it
 // was taken says itself for a moment), A opens a side panel: when, where,
-// whose library, the camera, its text, and what may be done to it (Favorit, Ej foto: into
-// the album Utkorg, Ta bort: to Immich's trash; a clip's Spela first; up
+// whose library, the camera, its text, and what may be done to it (Favorit, Ej foto: kept
+// in Google Drive and taken out of Immich, Ta bort: to Immich's trash; a clip's Spela first; up
 // and down choose, A does it, B closes it). X starts or stops the slideshow (a new picture
 // every few seconds, slowly closer or further, drifting, the one fading
 // into the next), B goes back to the grid. A clip plays right here, on
@@ -205,9 +205,10 @@ window.PioneerTV = window.PioneerTV || {};
     return [
       // A clip: Spela (or Pausa) first, X's as everywhere in the viewer.
       ...(a.video ? [{ key: 'play', icon: clipOn() && !clipOn().paused ? 'pause' : 'play', label: clipOn() && !clipOn().paused ? 'Pausa' : 'Spela', value: 'X' }] : []),
-      { key: 'favorite', icon: 'heart', label: a.favorite ? 'Favorit' : 'Gör till favorit', value: a.favorite ? 'Ja' : '' },
-      { key: 'not_photo', icon: 'folder', label: 'Ej foto', value: 'till Utkorg' },
-      { key: 'trash', icon: 'backspace', label: sure ? 'Tryck A igen' : 'Ta bort', value: sure ? 'till papperskorgen' : '' },
+      // Only a shortcut at a row's right (X), never anything else.
+      { key: 'favorite', icon: 'heart', label: a.favorite ? 'Ta bort som favorit' : 'Gör till favorit' },
+      { key: 'not_photo', icon: 'folder', label: 'Ej foto, flytta till filer' },
+      { key: 'trash', icon: 'backspace', label: sure ? 'Tryck A igen för att ta bort' : 'Ta bort' },
     ];
   }
   function infoOf(a, d) {
@@ -244,6 +245,7 @@ window.PioneerTV = window.PioneerTV || {};
     if (key === 'play') { playHere(); return; }
     if (key === 'trash' && !sure) { sure = Date.now(); redraw(); setTimeout(() => { if (sure && Date.now() - sure >= SURE_MS) { sure = 0; redraw(); } }, SURE_MS); return; }
     sure = 0;
+    if (key === 'not_photo') M.hud.toast('Flyttar till Google Drive…', 'folder', 8000);
     const body = { id: a.id, ...(key === 'favorite' ? { on: !a.favorite } : {}) };
     let r;
     try {
@@ -255,12 +257,10 @@ window.PioneerTV = window.PioneerTV || {};
       a.favorite = !a.favorite;
       M.hud.toast(a.favorite ? 'Favorit' : 'Inte favorit längre', 'heart');
       redraw();
-    } else if (key === 'not_photo') {
-      M.hud.toast('Lagd i Utkorg', 'folder');
     } else {
-      // In the trash: out of the list, on to the next.
+      // In the Drive and the trash, or the trash: out of the list, on to the next.
       list.splice(at, 1);
-      M.hud.toast('Lagd i papperskorgen', 'check');
+      M.hud.toast(key === 'not_photo' ? 'Flyttad till Google Drive' : 'Lagd i papperskorgen', key === 'not_photo' ? 'folder' : 'check');
       if (!list.length) { viewer.close(); return; }
       at %= list.length;
       draw(false);
@@ -328,6 +328,7 @@ window.PioneerTV = window.PioneerTV || {};
   }
 
   const viewer = {
+    noKeyboard: true,                // Y (Sök) does nothing over it (main.js)
     isOpen() { return !!root && !root.hidden; },
     open(assets, index = 0, { slideshow: start = false } = {}) {
       if (!assets || !assets.length) return;

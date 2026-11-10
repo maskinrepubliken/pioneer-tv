@@ -525,10 +525,17 @@ fetched beforehand. Left and right go on (when and where it was taken says
 itself at the foot for a moment). A opens a side panel on paper: its date
 as the heading, then Plats, Bibliotek (whose library it is in: one's own
 or a partner's, from `users/me` and `partners`), Kamera and Text, those
-Immich has; under them, a clip's Spela first (X), then Favorit (on or off), Ej foto (into the album
-Utkorg, made when there is none) and Ta bort (to Immich's trash, which
+Immich has; under them, a clip's Spela first (X), then Favorit (on or off), Ej foto, flytta till
+filer (the original kept in Google Drive's folder Ej foto first, `drive.py`
+with rclone, scope drive.file: the box sees only what it put there; then
+to Immich's trash) and Ta bort (to Immich's trash, which
 keeps it a while; A twice). Up and down choose, A does it, B closes the
-panel. Those are the only changes the Bilder pages make, through the
+panel. Only a shortcut stands at a row's right (X), never anything else.
+Y (Sök) does nothing over the viewer, Spelas nu or a film on its way
+(`noKeyboard`, main.js). Google Drive's token is under Inställningar →
+Tjänster: `rclone authorize drive eyJzY29wZSI6ImRyaXZlLmZpbGUifQ` on a
+computer with a browser (the base64 asks for drive.file), its answer pasted
+there. Those are the only changes the Bilder pages make, through the
 daemon's `POST /api/bilder/favorite|not_photo|trash` (`server.py`
 `api_bilder`); `/immich/` itself only reads. A partner's pictures cannot
 be changed (Immich says so; a notice tells it). X starts or stops the

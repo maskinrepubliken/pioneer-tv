@@ -183,10 +183,10 @@ window.PioneerTV = window.PioneerTV || {};
         M.hud.toast(r.ok === false ? (r.message || 'Det gick inte att spara') : 'Läget är sparat', r.ok === false ? 'info' : 'check');
         if (r.ok !== false && held && held.kind === 'game') gamePanel({ ...e, points: r.points || [] }, 1);   // Ladda läge has a time now
       } },
-      { label: 'Ladda läge', icon: 'clock', detail: points.length ? when(points[0].at) : 'inget sparat', disabled: !points.length,
+      // The detail at a row's right is for shortcuts alone: the time in the name.
+      { label: points.length ? `Ladda läge från ${when(points[0].at)}` : 'Ladda läge', icon: 'clock', disabled: !points.length,
         run: pick(() => games('/resume', { load: 'point' })) },
-      { label: 'Fler lägen', icon: 'stack', detail: points.length > 1 ? `${points.length} sparade` : '', disabled: points.length < 2,
-        sub: () => pointsSpec(points) },
+      { label: 'Fler lägen', icon: 'stack', disabled: points.length < 2, sub: () => pointsSpec(points) },
       { label: 'Starta om', icon: 'reload', run: pick(() => games('/resume', { load: 'none' })) },
       M.hud.volumeItem(),
       { label: 'Sluta spela', icon: 'stop', detail: 'håll B', run: pick(() => games('/quit')) },

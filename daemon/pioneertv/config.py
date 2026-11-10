@@ -102,6 +102,9 @@ DEFAULTS: dict[str, Any] = {
     # Immich for the Bilder pages: base URL and an API key (Immich: Kontoinställningar
     # → API-nycklar). See /immich/ in server.py.
     "immich": {"url": "", "api_key": ""},
+    # Google Drive, for Bilder's Ej foto (drive.py): rclone authorize's token,
+    # and the folder the pictures go to.
+    "drive": {"token": "", "folder": "Ej foto", "dir": "/var/lib/pioneer-tv/drive", "rclone": "rclone"},
     # Games: played in RetroArch on the TV's display (games.py). A console is
     # offered when its core is in place; pioneer-tv-cores.service installs
     # Debian's and builds the rest (system/build-cores.sh).

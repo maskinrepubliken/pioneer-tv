@@ -95,7 +95,7 @@
     // B home in the simulator (dev/sim.html), which plays the extension's part.
     if (path === '/api/home') { try { if (window.parent !== window) window.parent.postMessage({ sim: 'home' }, '*'); } catch {} }
     if (path === '/api/services') return wait({ romm: { state: 'ok', version: '5.4.0', user: 'lyret' },
-      jellyfin: { state: 'down' }, immich: { state: 'unset' } }, 900);
+      jellyfin: { state: 'down' }, immich: { state: 'unset' }, drive: { state: 'unset' } }, 900);
     if (path === '/api/cec/raw') return wait({ ok: true, output: 'Transmit from Playback Device 1 to TV (4 to 0):\n\tGIVE_DEVICE_POWER_STATUS (0x8f)\n    Received from TV (0):\n\tREPORT_POWER_STATUS (0x90):\n\t\tpwr-state: on (0x00)' }, 400);
     if (path === '/api/images') return wait({ enabled: true, files: 2814, bytes: 412e6, max_bytes: 10240 * 1024 * 1024, max_px: 600, prefetch_at: '03:30',
       last_night: { new: 2810, had: 4, failed: 0, seconds: 1460, time: Date.now() / 1000 - 30000 } });
@@ -419,7 +419,8 @@
     // (/etc/pioneer-tv/settings.json), not set here.
     async services(show) {
       const [s, st] = await Promise.all([settings(), status()]);
-      const at = { romm: h('div', {}, serviceCard()), jellyfin: h('div', {}, serviceCard()), immich: h('div', {}, serviceCard()) };
+      const at = { romm: h('div', {}, serviceCard()), jellyfin: h('div', {}, serviceCard()), immich: h('div', {}, serviceCard()),
+        drive: h('div', {}, serviceCard()) };
       const t = st.tailscale;
       show(h('h1', {}, 'Tjänster'),
         h('p', { class: 'muted' }, 'Spelen kommer från RomM, filmerna och musiken från Jellyfin, bilderna från Immich. Nycklarna visas inte; ett tomt fält behåller den som är satt. Rutorna på startsidan står i /etc/pioneer-tv/settings.json.'),
@@ -428,11 +429,15 @@
         t.installed && t.state !== 'running' ? rows(row({ label: 'Starta Tailscale', run: () => sysAction('tailscale_up') })) : '',
         h('h2', {}, 'RomM'), at.romm, rows(...fieldRows(s, 'romm')),
         h('h2', {}, 'Jellyfin'), at.jellyfin, rows(...fieldRows(s, 'jellyfin')),
-        h('h2', {}, 'Immich'), at.immich, rows(...fieldRows(s, 'immich')));
+        h('h2', {}, 'Immich'), at.immich, rows(...fieldRows(s, 'immich')),
+        h('h2', {}, 'Google Drive'),
+        h('p', { class: 'muted' }, 'Bilder som markeras Ej foto flyttas hit från Immich. Token: kör rclone authorize drive eyJzY29wZSI6ImRyaXZlLmZpbGUifQ på en dator med webbläsare och klistra in svaret; boxen ser bara filerna den själv lägger dit.'),
+        at.drive, rows(...fieldRows(s, 'drive')));
       const svc = await api('GET', '/api/services').catch(() => ({}));
       at.romm.replaceChildren(serviceCard(svc.romm || { state: 'down' }));
       at.jellyfin.replaceChildren(serviceCard(svc.jellyfin || { state: 'down' }));
       at.immich.replaceChildren(serviceCard(svc.immich || { state: 'down' }));
+      at.drive.replaceChildren(serviceCard(svc.drive || { state: 'down' }));
     },
 
     async system(show) {

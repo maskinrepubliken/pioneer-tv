@@ -20,7 +20,7 @@ from urllib.parse import urlparse
 import aiohttp
 from aiohttp import WSMsgType, web
 
-from . import imagecache, immich, jellyfin, romm, schedule, settings, sysinfo, updater, wifitest
+from . import drive, imagecache, immich, jellyfin, romm, schedule, settings, sysinfo, updater, wifitest
 from .covers import Covers, Passed
 from .overlay import Router
 
@@ -288,8 +288,9 @@ class Server:
     async def api_bilder(self, request: web.Request) -> web.Response:
         """The picture viewer's few changes in Immich (its A panel), the
         only writes the Bilder pages have: favourite {id, on}, trash {id}
-        (to Immich's trash, which keeps it a while), not_photo {id} (into the
-        album Utkorg, made when there is none). /immich/ itself only reads."""
+        (to Immich's trash, which keeps it a while), not_photo {id} (the
+        original kept in the Google Drive's folder first, drive.py, then to
+        the trash). /immich/ itself only reads."""
         cfg = self.cfg.get("immich") or {}
         url, key = (cfg.get("url") or "").rstrip("/"), cfg.get("api_key", "")
         if not url or not key:
@@ -318,14 +319,10 @@ class Server:
         elif action == "trash":
             code, _ = await call("DELETE", "api/assets", {"ids": [asset], "force": False})
         elif action == "not_photo":
-            code, albums = await call("GET", "api/albums")
-            outbox = next((a for a in albums or [] if str(a.get("albumName", "")).lower() == "utkorg"), None) if code == 200 else None
-            if code != 200:
-                pass
-            elif outbox:
-                code, _ = await call("PUT", f"api/albums/{outbox['id']}/assets", {"ids": [asset]})
-            else:
-                code, _ = await call("POST", "api/albums", {"albumName": "Utkorg", "assetIds": [asset]})
+            ok, message = await self._to_drive(url, headers, asset)
+            if not ok:
+                return web.json_response({"ok": False, "message": message}, status=409)
+            code, _ = await call("DELETE", "api/assets", {"ids": [asset], "force": False})
         else:
             return web.json_response({"ok": False, "message": "okänd åtgärd"}, status=404)
         if code in (200, 201, 204):
@@ -334,6 +331,35 @@ class Server:
                    else "Bara dina egna bilder går att ändra" if code == 400 else f"Immich svarade {code}")
         log.warning("immich %s %s: %s", action, asset, code)
         return web.json_response({"ok": False, "message": message}, status=409)
+
+    async def _to_drive(self, url: str, headers: dict, asset: str) -> tuple[bool, str]:
+        """An asset's original, from Immich into the Google Drive's folder."""
+        if not hasattr(self, "_drive"):
+            self._drive = drive.Drive(self.cfg)
+        if not self._drive.ready():
+            return False, "Google Drive är inte kopplat (Inställningar → Tjänster)"
+        tmp = self._drive.root / "tmp"
+        try:
+            async with self._session().get(f"{url}/api/assets/{asset}", headers=headers,
+                                           timeout=aiohttp.ClientTimeout(total=15)) as resp:
+                info = json.loads(await resp.read()) if resp.status == 200 else {}
+            name = str(info.get("originalFileName") or f"{asset}.jpg")
+            tmp.mkdir(parents=True, exist_ok=True)
+            path = tmp / asset
+            async with self._session().get(f"{url}/api/assets/{asset}/original", headers=headers,
+                                           timeout=aiohttp.ClientTimeout(total=600)) as resp:
+                if resp.status != 200:
+                    return False, "Immich lämnade inte ut originalet"
+                with path.open("wb") as f:
+                    async for chunk in resp.content.iter_chunked(1 << 20):
+                        f.write(chunk)
+        except (aiohttp.ClientError, asyncio.TimeoutError, ValueError, OSError) as exc:
+            log.warning("immich original %s: %s", asset, exc)
+            return False, "Immich svarar inte"
+        try:
+            return await self._drive.put(path, name)
+        finally:
+            path.unlink(missing_ok=True)
 
     def _session(self) -> aiohttp.ClientSession:
         if self.proxy_session is None:
@@ -496,8 +522,10 @@ class Server:
                 return {"state": "ok", "version": v, "user": user.get("name") or user.get("email")}
             return {"state": "auth" if me in (401, 403) else "down", "version": v}
 
-        rm, jf, im = await asyncio.gather(check_romm(), check_jellyfin(), check_immich())
-        return web.json_response({"romm": rm, "jellyfin": jf, "immich": im})
+        if not hasattr(self, "_drive"):
+            self._drive = drive.Drive(self.cfg)
+        rm, jf, im, gd = await asyncio.gather(check_romm(), check_jellyfin(), check_immich(), self._drive.status())
+        return web.json_response({"romm": rm, "jellyfin": jf, "immich": im, "drive": gd})
 
     # ------------------------------------------------------------ API
     async def _json(self, request: web.Request) -> dict:

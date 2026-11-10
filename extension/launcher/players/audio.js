@@ -147,6 +147,7 @@ window.PioneerTV = window.PioneerTV || {};
   let at = null;                   // the marked button or row
   const length = () => state.duration || (state.item && state.item.seconds) || 0;
   const nowPlaying = {
+    noKeyboard: true,                // Y (Sök) does nothing over it (main.js)
     isOpen() { return !!np && !np.hidden; },
     open() {
       if (state.state === 'idle') return;

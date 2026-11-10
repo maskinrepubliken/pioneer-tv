@@ -34,39 +34,39 @@
 .pv-count:empty, .pv-state:empty { display: none; }
 .pv-caption.pv-shown ~ .pv-count, .pv-showing .pv-state { opacity: 1; }
 
-/* The side panel (A): the picture's facts on paper, at the right; the
-   picture makes room for it. */
+/* The side panel (A): the picture's facts on ink, at the right, its
+   choices outlined on it; the picture makes room for it. */
 .pv-with-info .pv-layer { right: 26rem; }
 .pv-with-info .pv-count { right: 28rem; }
 .pv-info {
   position: absolute; top: 1.4rem; right: 1.4rem; bottom: 1.4rem; width: 23rem; box-sizing: border-box;
-  display: flex; flex-direction: column; padding: 1.6rem 1.6rem 1.2rem; overflow: hidden;
-  background: var(--pioneertv-paper); color: var(--pioneertv-ink);
-  border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-l);
+  display: flex; flex-direction: column; padding: 1.6rem 1.6rem 1.4rem; overflow: hidden;
+  background: #17120f; color: #f4efe4;
+  border: 1px solid rgba(244, 239, 228, 0.18); border-radius: var(--pioneertv-radius-l);
 }
 .pv-info[hidden] { display: none; }
-.pv-info-title {
-  margin: 0 0 1.2rem; font: 900 1.6rem/1.05 var(--pioneertv-font-display); text-transform: uppercase; letter-spacing: -0.01em;
-}
+.pv-info-title { margin: 0 0 1.2rem; font: italic 400 1.6rem/1.15 var(--pioneertv-font-prose); }
 .pv-info-list { margin: 0; flex: 1; min-height: 0; overflow: hidden; }
-.pv-info-title { font: italic 400 1.6rem/1.15 var(--pioneertv-font-prose) !important; text-transform: none !important; }
-.pv-info-list dt { font: 400 0.8rem/1 var(--pioneertv-font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--pioneertv-ink-faint); margin-top: 1rem; }
+.pv-info-list dt { font: 400 0.8rem/1 var(--pioneertv-font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: rgba(244, 239, 228, 0.5); margin-top: 1rem; }
 .pv-info-list dt:first-child { margin-top: 0; }
 .pv-info-list dd { margin: 0.35rem 0 0; font: 1.15rem/1.35 var(--pioneertv-font-prose); overflow-wrap: anywhere; }
-.pv-info-list .pv-info-wait { color: var(--pioneertv-ink-muted); font-style: italic; margin-top: 1rem; }
+.pv-info-list .pv-info-wait { color: rgba(244, 239, 228, 0.6); font-style: italic; margin-top: 1rem; }
 
-/* The panel's choices: Favorit, Ej foto, Ta bort; the marked one outlined. */
+/* Its choices: Spela, Favorit, Ej foto, Ta bort; the marked one in ochre. */
 .pv-actions { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; }
 .pv-action {
   display: flex; align-items: center; gap: 0.7rem; padding: 0.7rem 1rem 0.7rem 0.85rem;
-  border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-pill); background: var(--pioneertv-paper);
-  font: 600 1.05rem/1 var(--pioneertv-font-ui);
+  border: 1px solid rgba(244, 239, 228, 0.28); border-radius: var(--pioneertv-radius-pill); background: transparent;
+  font: 600 1.05rem/1 var(--pioneertv-font-ui); color: #f4efe4;
 }
-.pv-action svg { width: 1.2rem; height: 1.2rem; color: var(--pioneertv-ink-muted); flex: none; }
-.pv-action-value { margin-left: auto; font: 400 0.85rem/1 var(--pioneertv-font-mono); color: var(--pioneertv-ink-faint); }
-.pv-action.pv-marked { outline: 0.25rem solid var(--pioneertv-focus); outline-offset: 0.2rem; }
-.pv-action.pv-sure { border-color: var(--pioneertv-alarm); color: var(--pioneertv-alarm); }
-.pv-action.pv-sure svg, .pv-action.pv-sure .pv-action-value { color: var(--pioneertv-alarm); }
+.pv-action svg { width: 1.2rem; height: 1.2rem; color: rgba(244, 239, 228, 0.7); flex: none; }
+.pv-action-value { margin-left: auto; font: 400 0.85rem/1 var(--pioneertv-font-mono); color: rgba(244, 239, 228, 0.55); }
+.pv-action.pv-marked { background: var(--pioneertv-ochre); border-color: var(--pioneertv-ochre); color: var(--pioneertv-on-ochre); }
+.pv-action.pv-marked svg, .pv-action.pv-marked .pv-action-value { color: var(--pioneertv-on-ochre); }
+.pv-action.pv-sure { border-color: #e0634f; color: #f08a78; }
+.pv-action.pv-sure svg { color: #f08a78; }
+.pv-action.pv-sure.pv-marked { background: #c4432f; border-color: #c4432f; color: #fff; }
+.pv-action.pv-sure.pv-marked svg { color: #fff; }
 .pv-layer img { transform-origin: center; will-change: transform; }
 
 /* A clip playing right here, over its picture once it plays. */

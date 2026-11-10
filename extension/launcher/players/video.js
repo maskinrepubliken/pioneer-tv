@@ -11,6 +11,7 @@ window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const player = {
     state: 'idle',                    // idle | starting | running | ended | error
+    noKeyboard: true,                 // Y (Sök) does nothing over it (main.js)
     isOpen() { return M.screen.isOpen(); },
     show(text, hint) {
       M.screen.show(text, hint);

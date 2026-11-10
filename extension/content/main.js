@@ -18,7 +18,9 @@
   const b = M.bridge;
   // Y: the keyboard. The menus and the toasts are the
   // overlay's (overlay/), never the page's: Home goes there.
-  b.on('keyboard', () => M.keyboard.toggle());
+  // Not over a layer that has the whole screen (a picture, Spelas nu, a
+  // film on its way): there is nothing there to type into.
+  b.on('keyboard', () => { if (!(M.nav.captured && M.nav.captured.noKeyboard)) M.keyboard.toggle(); });
   b.on('escape', () => {
     if (M.keyboard.isOpen()) M.keyboard.close();
   });

@@ -86,6 +86,13 @@ SCHEMA: list[dict] = [
             {"path": "immich.api_key", "type": "text", "label": "API-nyckel", "secret": True},
         ],
     },
+    {
+        "id": "drive", "title": "Google Drive",
+        "fields": [
+            {"path": "drive.token", "type": "text", "label": "Token från rclone authorize (för Ej foto)", "secret": True},
+            {"path": "drive.folder", "type": "text", "label": "Mappen bilderna flyttas till"},
+        ],
+    },
 ]
 
 
