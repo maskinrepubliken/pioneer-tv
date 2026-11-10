@@ -187,7 +187,7 @@ class GamesTests(unittest.IsolatedAsyncioTestCase):
         g.game = {"id": 7, "name": "Testspel", "platform": "snes", "path": str(game_path)}
         g.write_config("snes9x")
         g.proc = await asyncio.create_subprocess_exec(sys.executable, "-c", FAKE_RA, str(self.cfg["games"]["port"]),
-                                                      str(Path(self.dir.name) / "shot.png"), str(g._auto_state()), str(self.heard))
+                                                      str(g._screen()), str(g._auto_state()), str(self.heard))
         await asyncio.sleep(0.3)
         g.state = "running"
         g.pads.shared["games"] = True
@@ -208,9 +208,20 @@ class GamesTests(unittest.IsolatedAsyncioTestCase):
         held = [e for e in self.events if e.get("state") == "held"][0]
         self.assertEqual(held["name"], "games")
         self.assertEqual(held["title"], "Testspel")
-        self.assertEqual(await g.save_point(), (True, ""))       # SAVE_STATE, and it becomes the point
-        self.assertTrue(g._point_path().is_file())
-        self.assertEqual(await g.resume("point"), (True, ""))
+        self.assertEqual(await g.save_point(), (True, ""))       # SAVE_STATE, and it becomes a point, with its picture
+        first = g.points()
+        self.assertEqual(len(first), 1)
+        self.assertTrue(first[0]["picture"])
+        g._auto_state().write_bytes(b"later")
+        self.assertEqual(await g.save_point(), (True, ""))       # another, beside it
+        points = g.points()
+        self.assertEqual(len(points), 2)
+        self.assertNotEqual(points[0]["id"], first[0]["id"])     # the newest first
+        self.assertEqual(await g.resume("point", first[0]["id"]), (True, ""))   # Fler lägen: an older one
+        self.assertEqual(g._auto_state().read_bytes(), b"state")
+        await g.on_system("menu")
+        await asyncio.sleep(0.1)
+        self.assertEqual(await g.resume("point"), (True, ""))   # Ladda läge: the newest
         self.assertEqual(g.state, "running")
         self.assertTrue(g.pads.shared["games"])
         await asyncio.sleep(0.1)                                 # the stand-in hears it
@@ -235,6 +246,21 @@ class GamesTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(g.state, "idle")
         self.assertIn("SAVE_STATE", heard())
         self.assertIn("exited", [e.get("state") for e in self.events])
+
+
+class Points(unittest.TestCase):
+    def test_the_one_point_of_before_becomes_the_first(self):
+        d = tempfile.TemporaryDirectory()
+        self.addCleanup(d.cleanup)
+        cfg = config._merge(config.DEFAULTS, {"games": {"dir": d.name}})
+        g = Games(cfg, nothing, Pads([]), Dispatcher())
+        g.game = {"id": 9, "name": "X", "path": "/x/X.smc"}
+        (Path(d.name) / "points").mkdir()
+        (Path(d.name) / "points" / "9.state").write_bytes(b"old")
+        [p] = g.points()
+        self.assertFalse(p["picture"])
+        self.assertEqual(g.point_file(p["id"]).read_bytes(), b"old")
+        self.assertIsNone(g.point_file("../9"))
 
 
 class PadLetters(unittest.TestCase):

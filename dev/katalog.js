@@ -66,6 +66,8 @@
   // A site's video, as content/webvideo.js says it is.
   const WEBVIDEO = { frame: 'f1', top: true, present: true, title: 'Rapport 19.30', area: 1, time: 754, duration: 1800, end: 1800,
     live: false, paused: true, subs: [{ id: 0, label: 'Svenska', selected: true }, { id: 1, label: 'Svenska (textning)' }] };
+  // A game's save points (games.py), the newest first; no pictures here.
+  const POINTS = [3600, 86400 + 600, 4 * 86400].map((ago, i) => ({ id: String(i + 1), at: Date.now() / 1000 - ago, picture: false }));
   const FILM_PICTURE = '/jellyfin/Items/serie1-s1e3/Images/Primary?tag=p';
   const LONG = 600000;
   // zoom: the part of the screen a small view shows, [x, y, width] of 1280x720.
@@ -124,7 +126,14 @@
         { name: 'Sök: var', under: HOME, url: OVERLAY,
           setup: ({ P, doc }) => { panel('search')({ P }); const f = doc.querySelector('.pioneertv-search-field input'); f.value = 'mario'; P.keyboard.done(); } },
         { name: 'Spelets pausmeny', under: GAME_PICTURE, url: OVERLAY,
-          setup: ({ P }) => P.bridge.emit('games', { state: 'held', title: 'Tetris & Dr. Mario', point: Date.now() / 1000 - 3600, players: ['Rosa handkontroll', 'Grön handkontroll'] }) },
+          setup: ({ P }) => P.bridge.emit('games', { state: 'held', title: 'Tetris & Dr. Mario', points: POINTS, players: ['Rosa handkontroll', 'Grön handkontroll'] }) },
+        { name: 'Spelets pausmeny: Fler lägen', under: GAME_PICTURE, url: OVERLAY,
+          setup: ({ P }) => {
+            P.bridge.emit('games', { state: 'held', title: 'Tetris & Dr. Mario', points: POINTS, players: ['Rosa handkontroll'] });
+            const m = P.hud.menu;
+            m.index = m.items.findIndex((it) => it.label === 'Fler lägen');
+            m.activate();
+          } },
         { name: 'Spelets pausmeny, inget sparat läge', under: GAME_PICTURE, url: OVERLAY,
           setup: ({ P }) => P.bridge.emit('games', { state: 'held', title: 'Super Mario World', point: null, players: ['Rosa handkontroll'] }) },
         { name: 'Filmens pausmeny', under: FILM_PICTURE, url: OVERLAY,

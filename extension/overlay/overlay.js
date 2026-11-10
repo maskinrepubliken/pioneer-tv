@@ -159,11 +159,13 @@ window.PioneerTV = window.PioneerTV || {};
     if (held && held.kind === kind && menu.isOpen()) { chose = true; held = null; menu.close(); }
   }
 
-  // A game (games.py): Fortsätt spela, Spara läge, Ladda läge, Starta om,
-  // TV-volym, Sluta spela, Mer… (the quick menu, whose way to another page
+  // A game (games.py): Fortsätt spela, Spara läge (a save point more each
+  // time), Ladda läge (the newest), Fler lägen (every one, with its picture),
+  // Starta om, TV-volym, Sluta spela, Mer… (the quick menu, whose way to another page
   // ends the game first); each one of RetroArch's own commands. Holding B quits.
   const games = (path, body) => post(`/api/games${path}`, body);
   function gamePanel(e, at = 0) {
+    const points = e.points || (e.point ? [{ id: null, at: e.point }] : []);
     const note = document.createElement('div');
     note.className = 'pioneertv-menu-note';
     (e.players || []).forEach((name, i) => {
@@ -177,10 +179,12 @@ window.PioneerTV = window.PioneerTV || {};
       { label: 'Spara läge', icon: 'check', primary: true, keep: true, run: async () => {
         const r = await games('/save_point');
         M.hud.toast(r.ok === false ? (r.message || 'Det gick inte att spara') : 'Läget är sparat', r.ok === false ? 'info' : 'check');
-        if (r.ok !== false && held && held.kind === 'game') gamePanel({ ...e, point: Date.now() / 1000 }, 1);   // Ladda läge has a time now
+        if (r.ok !== false && held && held.kind === 'game') gamePanel({ ...e, points: r.points || [] }, 1);   // Ladda läge has a time now
       } },
-      { label: 'Ladda läge', icon: 'clock', detail: e.point ? hhmm(e.point) : 'inget sparat', disabled: !e.point,
+      { label: 'Ladda läge', icon: 'clock', detail: points.length ? when(points[0].at) : 'inget sparat', disabled: !points.length,
         run: pick(() => games('/resume', { load: 'point' })) },
+      { label: 'Fler lägen', icon: 'stack', detail: points.length > 1 ? `${points.length} sparade` : '', disabled: points.length < 2,
+        sub: () => pointsSpec(points) },
       { label: 'Starta om', icon: 'reload', run: pick(() => games('/resume', { load: 'none' })) },
       M.hud.volumeItem(),
       { label: 'Sluta spela', icon: 'back', detail: 'håll B', run: pick(() => games('/quit')) },
@@ -188,6 +192,28 @@ window.PioneerTV = window.PioneerTV || {};
     ], note, at, () => games('/resume', { load: 'auto' }));
   }
   b.on('games', (e) => (e.state === 'held' ? gamePanel(e) : closePanel('game')));
+  // When a save point was saved: the time today, else the day too.
+  function when(t) {
+    const d = new Date(t * 1000), today = new Date();
+    const days = Math.round((new Date(today).setHours(0, 0, 0, 0) - new Date(d).setHours(0, 0, 0, 0)) / 86400000);
+    return days <= 0 ? hhmm(t) : days === 1 ? `igår ${hhmm(t)}` : `${d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' })} ${hhmm(t)}`;
+  }
+  // Fler lägen: every save point of the game, the newest first, each with
+  // the picture of where it was; A loads it.
+  function pointsSpec(points) {
+    return { title: 'Sparade lägen', items: points.map((p, i) => ({
+      label: when(p.at), keep: false, run: pick(() => games('/resume', { load: 'point', point: p.id })),
+      render: () => {
+        const row = make('div', 'pioneertv-menu-item pioneertv-point');
+        const pic = make('span', 'pioneertv-point-picture');
+        if (p.picture) pic.innerHTML = `<img alt="" src="/api/games/points/${encodeURIComponent(p.id)}.png">`;
+        const words = make('span', 'pioneertv-subhit-words');
+        words.append(make('span', 'pioneertv-subhit-name', when(p.at)), make('span', 'pioneertv-subhit-detail', i === 0 ? 'det senaste' : ''));
+        row.append(pic, words);
+        return row;
+      },
+    })) };
+  }
 
   // ------------------------------------------------------------ the media panel
   // One panel for whatever plays: a film in mpv (video.py), a site's video

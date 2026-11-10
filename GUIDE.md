@@ -332,8 +332,11 @@ itself: no menu, notices or logo, only the game. The design is in
   resumes where it was left.
 - **Pausing.** Guide in a game: RetroArch pauses where it is and the
   overlay draws the pause panel over the paused game: Fortsätt spela (the
-  mark starts there: A), Spara läge (the filled one, X: a save point of
-  its own, one per game, each save in place of the last), Ladda läge, Starta om, TV-volym (L1 R1;
+  mark starts there: A), Spara läge (the filled one, X: a save point more
+  each time, with a picture of the game where it was, RetroArch's
+  `SCREENSHOT`; the newest 20 of each game kept in `points/<rom>/`), Ladda
+  läge (the newest), Fler lägen (every one, the newest first, with its
+  picture: `/api/games/points/<id>.png`), Ladda läge, Starta om, TV-volym (L1 R1;
   marked, left and right step the TV's volume, A mutes), Sluta spela and
   Mer… (the quick menu, one step in; Hem, Ladda om from it end the game
   first). Each is one of

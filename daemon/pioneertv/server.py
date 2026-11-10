@@ -76,6 +76,7 @@ class Server:
             ("GET", "/api/update/status", self.api_update_status),
             ("GET", "/api/games", self.api_games_status),
             ("POST", "/api/games/{action}", self.api_games_action),
+            ("GET", "/api/games/points/{point}.png", self.api_games_point_picture),
             ("GET", "/api/video", self.api_video_status),
             ("GET", "/api/audio", self.api_audio_status),
             ("GET", "/api/channels", self.api_channels),
@@ -567,6 +568,14 @@ class Server:
         games = self.hooks.get("games")
         return web.json_response(games.status() if games else {"platforms": [], "state": "idle", "game": None})
 
+    async def api_games_point_picture(self, request: web.Request) -> web.Response:
+        """A save point's picture, of the game being played (Fler lägen)."""
+        games = self.hooks.get("games")
+        path = games.point_file(request.match_info["point"], ".png") if games else None
+        if not path:
+            raise web.HTTPNotFound()
+        return web.FileResponse(path, headers={"Cache-Control": "max-age=86400"})
+
     async def api_games_action(self, request: web.Request) -> web.Response:
         games = self.hooks.get("games")
         if not games:
@@ -582,9 +591,11 @@ class Server:
             if ok:
                 await self.quiet("ett spel")
         elif action == "resume":
-            ok, msg = await games.resume(str(data.get("load", "auto")))
+            point = data.get("point")
+            ok, msg = await games.resume(str(data.get("load", "auto")), str(point) if point is not None else None)
         elif action == "save_point":
             ok, msg = await games.save_point()
+            return web.json_response({"ok": ok, "message": msg, "points": games.points()}, status=200 if ok else 409)
         elif action == "pause":
             await games.hold()
             ok, msg = True, ""

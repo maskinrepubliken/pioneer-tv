@@ -158,3 +158,11 @@ html, body { margin: 0; height: 100%; background: transparent !important; overfl
 .pioneertv-subhit-words { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
 .pioneertv-subhit-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pioneertv-subhit-detail { font: 400 14px/1.2 var(--pioneertv-font-mono); color: var(--pioneertv-ink-muted); }
+
+/* Fler lägen: a save point, the picture of the game where it was beside its time. */
+.pioneertv-point { gap: 16px; padding-top: 8px; padding-bottom: 8px; border-radius: var(--pioneertv-radius-m); }
+.pioneertv-point-picture {
+  flex: none; width: 112px; height: 84px; border-radius: 6px; overflow: hidden;
+  background: var(--pioneertv-paper-sunken); border: 1px solid var(--pioneertv-line);
+}
+.pioneertv-point-picture img { width: 100%; height: 100%; object-fit: cover; display: block; }

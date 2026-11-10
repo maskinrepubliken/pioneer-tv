@@ -90,6 +90,9 @@ input_r_y_minus_axis = "-4"
 """
 PADS = ["8BitDo Ultimate 2C Wireless Controller"]
 
+# Save points kept for each game (Spara läge), the newest.
+MAX_POINTS = 20
+
 
 def autoconfig(name: str, platform: str | None) -> str:
     """RetroArch's autoconfig for one pad, its letters as the console reads them."""
@@ -243,12 +246,13 @@ class Games:
         return [p for p in (self.gcfg.get("cores") or {}) if self.core_for(p)]
 
     def status(self) -> dict:
-        point = self._point_path()
+        points = self.points()
         return {
             "platforms": self.platforms(),
             "state": self.state,
             "game": {k: self.game[k] for k in ("id", "name", "platform")} if self.game else None,
-            "point": point.stat().st_mtime if point and point.is_file() else None,
+            "point": points[0]["at"] if points else None,
+            "points": points,
             "players": self.seated if self.state != "idle" and self.seated else self._players()[1],
         }
 
@@ -260,8 +264,41 @@ class Games:
         """Where the game was left: RetroArch's slot 1, written by SAVE_STATE."""
         return self.root / "states" / f"{self._base()}.state1"
 
-    def _point_path(self) -> Path | None:
-        return self.root / "points" / f"{self.game['id']}.state" if self.game else None
+    # Spara läge's save points: a folder of them for each game, each a state
+    # and (when RetroArch drew one) a picture of the game where it was,
+    # named by when it was saved. The newest MAX_POINTS are kept.
+    def _points_dir(self) -> Path | None:
+        if not self.game:
+            return None
+        folder = self.root / "points" / str(self.game["id"])
+        old = self.root / "points" / f"{self.game['id']}.state"     # one point a game, as it was
+        if old.is_file():
+            folder.mkdir(parents=True, exist_ok=True)
+            old.rename(folder / f"{int(old.stat().st_mtime)}.state")
+            self._own(folder)
+        return folder
+
+    def points(self) -> list[dict]:
+        """The game's save points, the newest first: {id, at, picture}."""
+        folder = self._points_dir()
+        if not folder or not folder.is_dir():
+            return []
+        out = []
+        for state in folder.glob("*.state"):
+            if state.stem.isdigit():
+                out.append({"id": state.stem, "at": state.stat().st_mtime, "picture": state.with_suffix(".png").is_file()})
+        return sorted(out, key=lambda p: p["at"], reverse=True)
+
+    def point_file(self, point: str, suffix: str = ".state") -> Path | None:
+        folder = self._points_dir()
+        if not folder or not str(point).isdigit():
+            return None
+        path = folder / f"{point}{suffix}"
+        return path if path.is_file() else None
+
+    def _screen(self) -> Path:
+        """Where RetroArch's SCREENSHOT puts the picture: the game's name."""
+        return self.root / "screens" / f"{self._base()}.png"
 
     # ------------------------------------------------------------ the API
     def _busy(self) -> bool:
@@ -277,20 +314,36 @@ class Games:
         self.task = asyncio.create_task(self._play(rom_id))
         return True, ""
 
-    async def resume(self, load: str = "auto") -> tuple[bool, str]:
-        """The held game again: load "auto" (where it is), "point" (Spara läge's) or "none" (from the start)."""
+    async def resume(self, load: str = "auto", point: str | None = None) -> tuple[bool, str]:
+        """The held game again: load "auto" (where it is), "point" (a save
+        point: the one asked for, or the newest) or "none" (from the start)."""
         if self.state != "held":
             return False, "inget pausat spel"
-        return await self._unhold(load)
+        return await self._unhold(load, point)
 
     async def save_point(self) -> tuple[bool, str]:
-        """Spara läge: the game where it is held becomes its save point."""
+        """Spara läge: the game where it is held becomes a save point of its
+        own, with a picture of it; the oldest go past MAX_POINTS."""
         if self.state != "held" or not self.game or not await self._save_state() or not self._auto_state().is_file():
             return False, "inget att spara"
-        point = self._point_path()
-        point.parent.mkdir(parents=True, exist_ok=True)
+        folder = self._points_dir()
+        folder.mkdir(parents=True, exist_ok=True)
+        stamp = int(time.time())
+        while (folder / f"{stamp}.state").exists():
+            stamp += 1
+        point = folder / f"{stamp}.state"
         shutil.copyfile(self._auto_state(), point)
-        self._own(point)
+        screen = self._screen()
+        before = screen.stat().st_mtime if screen.is_file() else 0
+        self.command("SCREENSHOT")
+        if await self._wait_written(screen, before, 2):
+            shutil.copyfile(screen, point.with_suffix(".png"))
+        for old in self.points()[MAX_POINTS:]:
+            for suffix in (".state", ".png"):
+                (folder / f"{old['id']}{suffix}").unlink(missing_ok=True)
+        self._own(folder)
+        for f in folder.iterdir():
+            self._own(f)
         return True, ""
 
     async def _wait_written(self, path: Path | None, before: float, seconds: float) -> bool:
@@ -648,17 +701,18 @@ history_list_enable = "false"
         self.pads.shared["games"] = False
         for pad in self.pads.pads():
             await pad.release_everything()
-        point = self._point_path()
+        points = self.points()
         await self._event("held", title=self.game["name"] if self.game else "",
-                          point=point.stat().st_mtime if point and point.is_file() else None,
+                          point=points[0]["at"] if points else None, points=points,
                           players=self.seated or self._players()[1])
 
-    async def _unhold(self, load: str) -> tuple[bool, str]:
+    async def _unhold(self, load: str, point: str | None = None) -> tuple[bool, str]:
         if load == "point":
-            point = self._point_path()
-            if not point or not point.is_file():
+            newest = self.points()
+            state = self.point_file(point) if point else (self.point_file(newest[0]["id"]) if newest else None)
+            if not state:
                 return False, "inget sparat läge"
-            shutil.copyfile(point, self._auto_state())
+            shutil.copyfile(state, self._auto_state())
             self._own(self._auto_state())
             self.command("LOAD_STATE")
         elif load == "none":
@@ -678,7 +732,7 @@ history_list_enable = "false"
             asyncio.create_task(self._unhold("auto"))           # Home again: carry on
         elif name == "menu":
             asyncio.create_task(self.hold())
-        elif name == "back" and self.state == "held":            # hold B on the panel: Avsluta
+        elif name == "back" and self.state == "held":            # hold B on the panel: Sluta spela
             asyncio.create_task(self.quit())
         elif name == "home":
             async def home() -> None:
