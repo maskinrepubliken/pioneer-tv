@@ -538,14 +538,19 @@ drifting a little), fading into the next; clips passed over; the box told
 something plays, so the screensaver keeps away. B goes back to the grid,
 on the picture last seen (drawn anew if something was changed). X on a
 grid is its Bildspel button. The grids' pictures are buttons (`cards.js`
-photo), so the d-pad walks them. A clip has a small mark in a corner
-with its length; X plays it in mpv as a film is (`video.py`
-`play_immich`, the key as mpv's header, without Jellyfin's reports or
-subtitles; X plays and pauses it there, A or Home opens its panel, B
-stops it), and the viewer is there again after, on the next one when it
-played to its end. Over a film or a clip, left, right and X say where it
-is in a small card where the notices are (playing or paused, the time, a
-thin timeline), for a moment.
+photo), so the d-pad walks them. A clip plays right in the viewer, over
+its picture (a `<video>` of Immich's `video/playback`, through
+`/immich/`): X plays and pauses it, L2 and R2 glide a mark through it
+(the daemon's `seek`, the page's while no overlay menu is open; it goes
+where they are let go, a short touch is ten seconds), left and right go
+on as for pictures, the panel is the same (Spela or Pausa first); a small
+mark in a corner says playing or paused and the time. Played to its end,
+the viewer goes on to the next. A clip the browser cannot play goes to mpv
+instead (`video.py` `play_immich`, the key as mpv's header; X plays and
+pauses it there, A or Home opens its panel, B stops it), and the viewer is
+there again after. Over a film or a clip in mpv, left, right and X say
+where it is in a small card where the notices are (playing or paused, the
+time, a thin timeline), for a moment.
 
 ## Video on other sites
 

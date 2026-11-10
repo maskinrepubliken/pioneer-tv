@@ -6,12 +6,15 @@
 // the album Utkorg, Ta bort: to Immich's trash; a clip's Spela first; up
 // and down choose, A does it, B closes it). X starts or stops the slideshow (a new picture
 // every few seconds, slowly closer or further, drifting, the one fading
-// into the next), B goes back to the grid. A clip has a small mark in a
-// corner; X plays it on the box in mpv (players/video.js: X plays and
-// pauses it there, A or Home opens its panel, B stops it), and the viewer
-// is there again after, on the next one when it played to its end. While
-// the slideshow runs, the box is told something plays, so the screensaver
-// keeps away. Styled by photo.css.
+// into the next), B goes back to the grid. A clip plays right here, on
+// its picture: X plays and pauses it, L2 and R2 glide a mark through it
+// (what plays goes where they are let go), left and right go on as ever,
+// the panel is the same; a small mark in a corner says playing or paused
+// and the time. Played to its end, the viewer goes on to the next. A clip
+// the browser cannot play goes to mpv instead (players/video.js), and the
+// viewer is there again after. While the slideshow runs, the box is told
+// something plays, so the screensaver keeps away (a playing clip says so
+// itself, as every page's video: main.js). Styled by photo.css.
 //
 //   M.players.photo.open(assets, index, { slideshow })   assets as sources/immich.js gives them
 window.PioneerTV = window.PioneerTV || {};
@@ -47,10 +50,11 @@ window.PioneerTV = window.PioneerTV || {};
     layers = [el('div', 'pv-layer'), el('div', 'pv-layer')];
     caption = el('div', 'pv-caption');
     for (const name of ['when', 'where', 'text']) { part[name] = el('p', `pv-${name}`); caption.appendChild(part[name]); }
-    // A clip: a small mark in the corner, its length beside.
+    // A clip: a small mark in the corner, playing or paused, the time.
     part.clip = el('div', 'pv-clip');
+    part.clipState = el('span', 'pv-clip-state');
     part.clipLen = el('span');
-    part.clip.append(M.icons.svg('play'), part.clipLen);
+    part.clip.append(part.clipState, part.clipLen);
     // The side panel (A): what is known of it, and what may be done to it.
     part.info = el('aside', 'pv-info');
     part.info.hidden = true;
@@ -79,6 +83,8 @@ window.PioneerTV = window.PioneerTV || {};
     const moving = show && !a.video;
     const shown = () => {
       if (moving) burns(img);
+      // The one going: its clip still, so it is not heard behind.
+      for (const v of layers[front].querySelectorAll('video')) v.pause();
       back.classList.toggle('pv-fade', !!fade);
       back.classList.add('pv-on');
       layers[front].classList.toggle('pv-fade', !!fade);
@@ -90,7 +96,7 @@ window.PioneerTV = window.PioneerTV || {};
     img.src = I.picture(a.id, 'preview');
     back.appendChild(img);
     part.clip.hidden = !a.video;
-    part.clipLen.textContent = a.video && a.seconds ? clock(a.seconds) : '';
+    clipMark();
     part.count.textContent = list.length > 1 ? `${at + 1} av ${list.length}` : '';
     sure = 0;
     describe(a);
@@ -98,6 +104,70 @@ window.PioneerTV = window.PioneerTV || {};
     const next = list[(at + 1) % list.length];
     if (next && next !== a) { const pre = new Image(); pre.src = I.picture(next.id, 'preview'); }
   }
+  // ---------------------------------------------------------- a clip, here
+  // The clip on screen: a video over its picture, made when X first asks.
+  const clipOn = () => layers[front].querySelector('video');
+  function clipMark() {
+    const a = list[at];
+    if (!a || !a.video) return;
+    const v = clipOn();
+    const len = (v && isFinite(v.duration) && v.duration) || a.seconds || 0;
+    const now = target != null ? target : v ? v.currentTime : 0;
+    part.clipState.innerHTML = M.icons.svg(v && !v.paused ? 'play' : 'pause').outerHTML;
+    part.clipLen.textContent = v || target != null ? `${clock(now)} / ${clock(len)}` : clock(len);
+  }
+  function playHere() {
+    const a = list[at];
+    if (!a || !a.video) return;
+    if (show) slideshow(false);
+    let v = clipOn();
+    if (!v) {
+      v = el('video', 'pv-video');
+      v.src = I.clip(a.id);
+      v.playsInline = true;
+      v.preload = 'auto';
+      for (const ev of ['play', 'pause', 'timeupdate', 'loadedmetadata']) v.addEventListener(ev, () => { if (list[at] === a) { clipMark(); if (!part.info.hidden) redraw(); } });
+      v.addEventListener('playing', () => v.classList.add('pv-on'));
+      v.addEventListener('ended', () => { if (list[at] === a) step(1, false); });
+      // One the browser cannot play: mpv plays it instead.
+      v.addEventListener('error', () => { if (list[at] === a) { v.remove(); playClip(); } });
+      layers[front].appendChild(v);
+    }
+    if (v.paused) v.play().catch(() => {}); else v.pause();
+  }
+
+  // L2 and R2 on a clip (the daemon's seek, the page's while no menu of the
+  // overlay is open): a mark glides through it, the harder the faster, and
+  // it goes where they are let go; a short light touch is ten seconds.
+  let scrub = null, target = null;
+  M.bridge.on('seek', (e) => {
+    const v = viewer.isOpen() && clipOn();
+    if (!v || !isFinite(v.duration)) return;
+    const amount = Math.max(0, Math.min(1, Number(e.amount) || 0));
+    if (amount > 0) {
+      if (!scrub) scrub = { from: v.currentTime, at: performance.now() };
+      scrub.dir = e.dir < 0 ? -1 : 1;
+      scrub.amount = amount;
+      if (target == null) target = v.currentTime;
+      return;
+    }
+    if (!scrub) return;
+    let to = target == null ? v.currentTime : target;
+    if (Math.abs(to - scrub.from) < 1) to = scrub.from + scrub.dir * 10;
+    scrub = null; target = null;
+    v.currentTime = Math.max(0, Math.min(v.duration - 0.3, to));
+    clipMark();
+  });
+  setInterval(() => {
+    const v = scrub && clipOn();
+    if (!v || target == null) return;
+    const t = performance.now(), dt = (t - scrub.at) / 1000;
+    scrub.at = t;
+    const whole = v.duration || 60, slow = Math.max(1, whole / 120), fast = Math.max(10, whole / 6);
+    target = Math.max(0, Math.min(whole - 0.3, target + scrub.dir * (slow + (fast - slow) * scrub.amount * scrub.amount) * dt));
+    clipMark();
+  }, 50);
+
   function burns(img) {
     const r = () => Math.random() * 2 - 1;
     const near = 1.12, far = 1.0;
@@ -133,8 +203,8 @@ window.PioneerTV = window.PioneerTV || {};
   // under them what may be done to it, one marked (up and down).
   function actionsOf(a) {
     return [
-      // A clip: Spela first, X's as everywhere in the viewer.
-      ...(a.video ? [{ key: 'play', icon: 'play', label: 'Spela', value: 'X' }] : []),
+      // A clip: Spela (or Pausa) first, X's as everywhere in the viewer.
+      ...(a.video ? [{ key: 'play', icon: clipOn() && !clipOn().paused ? 'pause' : 'play', label: clipOn() && !clipOn().paused ? 'Pausa' : 'Spela', value: 'X' }] : []),
       { key: 'favorite', icon: 'heart', label: a.favorite ? 'Favorit' : 'Gör till favorit', value: a.favorite ? 'Ja' : '' },
       { key: 'not_photo', icon: 'folder', label: 'Ej foto', value: 'till Utkorg' },
       { key: 'trash', icon: 'backspace', label: sure ? 'Tryck A igen' : 'Ta bort', value: sure ? 'till papperskorgen' : '' },
@@ -171,7 +241,7 @@ window.PioneerTV = window.PioneerTV || {};
   async function act(key) {
     const a = list[at];
     if (!a) return;
-    if (key === 'play') { panel(false); playClip(); return; }
+    if (key === 'play') { playHere(); return; }
     if (key === 'trash' && !sure) { sure = Date.now(); redraw(); setTimeout(() => { if (sure && Date.now() - sure >= SURE_MS) { sure = 0; redraw(); } }, SURE_MS); return; }
     sure = 0;
     const body = { id: a.id, ...(key === 'favorite' ? { on: !a.favorite } : {}) };
@@ -206,6 +276,7 @@ window.PioneerTV = window.PioneerTV || {};
 
   function step(by, fade) {
     if (!list.length) return;
+    scrub = null; target = null;
     at = (at + by + list.length) % list.length;
     draw(fade);
   }
@@ -242,6 +313,7 @@ window.PioneerTV = window.PioneerTV || {};
     M.bridge.daemon({ type: 'activity', playing: true });
   }
 
+  // In mpv instead, when the browser cannot play it.
   function playClip() {
     const a = list[at];
     if (!a || !a.video || !M.players.video) return;
@@ -275,6 +347,8 @@ window.PioneerTV = window.PioneerTV || {};
     close() {
       if (!this.isOpen()) return;
       slideshow(false);
+      for (const v of root.querySelectorAll('video')) v.pause();
+      scrub = null; target = null;
       root.hidden = true;
       if (M.nav.captured === this) M.nav.captured = null;
       // Something was changed (a favourite, the trash): the view anew.
@@ -292,7 +366,7 @@ window.PioneerTV = window.PioneerTV || {};
       if (e.key === 'Escape') { if (open) panel(false); else this.close(); return; }
       if (e.key === ' ') {
         if (e.repeat) return;
-        if (list[at] && list[at].video) { playClip(); return; }
+        if (list[at] && list[at].video) { playHere(); return; }
         slideshow(!show);
         if (open) redraw(); else if (!show) showCaption();
         return;

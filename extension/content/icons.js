@@ -39,6 +39,7 @@ window.PioneerTV = window.PioneerTV || {};
     film: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5v14M17 5v14M3 9h4M3 15h4M17 9h4M17 15h4"/>',
     play: '<path d="M8 6v12l10-6z"/>',
     stop: '<rect x="6" y="6" width="12" height="12" rx="1.5"/>',
+    pause: '<path d="M9 6v12M15 6v12"/>',
     repeat: '<path d="M17 3l3 3-3 3"/><path d="M4 11V9a3 3 0 0 1 3-3h13"/><path d="M7 21l-3-3 3-3"/><path d="M20 13v2a3 3 0 0 1-3 3H4"/>',
     shuffle: '<path d="M3 7h3.5c2 0 3.2 1 4.3 2.6l2.4 4.8c1.1 1.6 2.3 2.6 4.3 2.6H21"/><path d="M3 17h3.5c1.4 0 2.4-.5 3.2-1.3M14.3 8.3C15.1 7.5 16.1 7 17.5 7H21"/><path d="M18.5 4.5L21 7l-2.5 2.5M18.5 14.5L21 17l-2.5 2.5"/>',
     // The browse page's fixed ways in (its column): what was played last,

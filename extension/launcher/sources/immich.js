@@ -74,6 +74,8 @@ window.PioneerTV = window.PioneerTV || {};
     // (about the screen's size) or 'fullsize'.
     picture: (id, size = 'thumbnail') => `/immich/api/assets/${encodeURIComponent(id)}/thumbnail?size=${size}`,
     face: (id) => `/immich/api/people/${encodeURIComponent(id)}/thumbnail`,
+    // A clip, as Immich plays it (its own encoding where it made one).
+    clip: (id) => `/immich/api/assets/${encodeURIComponent(id)}/video/playback`,
     // The albums, the one changed last first: { id, name, count, cover }.
     albums: once(async () => (await json('api/albums'))
       .map((a) => ({ id: a.id, name: a.albumName, count: a.assetCount, cover: a.albumThumbnailAssetId, last: a.endDate || a.updatedAt }))
