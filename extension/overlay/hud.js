@@ -137,8 +137,10 @@ window.PioneerTV = window.PioneerTV || {};
       el.className = 'pioneertv-menu-item' + (it.primary ? ' pioneertv-menu-primary' : '') + (it.disabled ? ' pioneertv-menu-disabled' : '') + (it.pill ? ' pioneertv-menu-pill' : '');
       el.innerHTML = `<span class="pioneertv-menu-icon">${M.icons.html(it.icon)}</span>`;
       const name = document.createElement('span'); name.className = 'pioneertv-menu-label'; name.textContent = it.label; el.appendChild(name);
-      // The filled row is X's, wherever the mark is (onKeyDown): it says so.
-      const detail = it.primary ? 'X' : it.detail || (it.sub ? '›' : '');
+      // The filled row is X's, wherever the mark is (onKeyDown): it says so
+      // (the media panel's round play button does not need to). A row
+      // opening a menu shows ›, unless it says otherwise (detail '').
+      const detail = it.primary ? 'X' : 'detail' in it ? it.detail : it.sub ? '›' : '';
       if (detail) { const d = document.createElement('span'); d.className = 'pioneertv-menu-detail'; d.textContent = detail; el.appendChild(d); }
       it.el = el;
       return el;
@@ -224,7 +226,8 @@ window.PioneerTV = window.PioneerTV || {};
       const handled = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Escape', ' '];
       if (!handled.includes(e.key)) return;
       e.preventDefault(); e.stopImmediatePropagation();
-      // X: the filled row (Fortsätt, Hem, the first channel), wherever the highlight is.
+      // X: the filled row (Spara läge, the media's play, the first place to
+      // search), wherever the highlight is; a menu without one has no X.
       if (e.key === ' ') {
         const i = this.items.findIndex((it) => it.primary && !it.disabled);
         if (i >= 0 && !e.repeat) { this.index = i; this.highlight(); this.activate(); }

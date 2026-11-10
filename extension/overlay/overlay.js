@@ -152,7 +152,7 @@ window.PioneerTV = window.PioneerTV || {};
   });
   // Mer… on a game's or a film's panel: the quick menu, one step in; what
   // goes to another page from it ends what plays first (stop).
-  const more = (stop) => ({ label: 'Mer…', icon: 'menu', sub: () => M.mainMenu.spec({
+  const more = (stop) => ({ label: 'Mer…', icon: 'menu', detail: '', sub: () => M.mainMenu.spec({
     leave: (go) => { chose = true; menu.close(); Promise.resolve(stop && stop()).then(go); },
   }) });
   function closePanel(kind) {
@@ -172,8 +172,9 @@ window.PioneerTV = window.PioneerTV || {};
       note.appendChild(p);
     });
     panel('game', e, e.title, [
-      { label: 'Fortsätt spela', icon: 'play', primary: true, run: pick(() => games('/resume', { load: 'auto' })) },
-      { label: 'Spara läge', icon: 'check', keep: true, run: async () => {
+      // Fortsätt spela has the mark (A); the filled one, X, saves.
+      { label: 'Fortsätt spela', icon: 'play', run: pick(() => games('/resume', { load: 'auto' })) },
+      { label: 'Spara läge', icon: 'check', primary: true, keep: true, run: async () => {
         const r = await games('/save_point');
         M.hud.toast(r.ok === false ? (r.message || 'Det gick inte att spara') : 'Läget är sparat', r.ok === false ? 'info' : 'check');
         if (r.ok !== false && held && held.kind === 'game') gamePanel({ ...e, point: Date.now() / 1000 }, 1);   // Ladda läge has a time now
@@ -315,8 +316,6 @@ window.PioneerTV = window.PioneerTV || {};
       return btn;
     };
     const play = round('pioneertv-media-play', '', first.label, first.label);
-    // The filled one is X's, as in every menu.
-    play.appendChild(make('span', 'pioneertv-media-key', 'X'));
     m.parts.push(() => {
       // Plays or pauses under the panel, which stays open: a film or a video
       // the panel paused says Fortsätt, the music Spela.

@@ -331,8 +331,9 @@ itself: no menu, notices or logo, only the game. The design is in
   RetroArch as the kiosk user on the TV's display, over Chromium. A game
   resumes where it was left.
 - **Pausing.** Guide in a game: RetroArch pauses where it is and the
-  overlay draws the pause panel over the paused game: Fortsätt spela, Spara
-  läge (a save point of its own), Ladda läge, Starta om, TV-volym (L1 R1;
+  overlay draws the pause panel over the paused game: Fortsätt spela (the
+  mark starts there: A), Spara läge (the filled one, X: a save point of
+  its own, one per game, each save in place of the last), Ladda läge, Starta om, TV-volym (L1 R1;
   marked, left and right step the TV's volume, A mutes), Sluta spela and
   Mer… (the quick menu, one step in; Hem, Ladda om from it end the game
   first). Each is one of
@@ -534,8 +535,9 @@ Its parts, those that apply:
   spela, the arrow back, last of what plays; Mer… (a film's and a video's:
   the quick menu, one step in, without its Tillbaka).
 
-Every menu in the overlay alike: the filled row (or button) is X's and
-says so, the way out of what plays is Sluta titta or Sluta spela with the
+Every menu in the overlay alike: the filled row (or button), where there
+is one (the quick menu has none), is X's and says so (the round play
+button does not need to); Mer… says nothing; the way out of what plays is Sluta titta or Sluta spela with the
 arrow back (the power symbol is the TV's alone), and TV-volym says L1 R1,
 and while marked what its keys do.
 

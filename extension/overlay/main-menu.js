@@ -66,7 +66,7 @@ window.PioneerTV = window.PioneerTV || {};
         ...[M.media && M.media.nowRow()].filter(Boolean),
         // From a panel (Mer…) the panel has its own way out: Sluta titta, Sluta spela.
         ...(inPanel ? [] : [{ label: 'Tillbaka', icon: 'back', detail: 'håll B', run: () => b.back() }]),
-        { label: 'Hem', icon: 'home', primary: true, run: away(() => b.home()) },
+        { label: 'Hem', icon: 'home', run: away(() => b.home()) },
         M.hud.volumeItem({ disabled: !tv }),
         { label: 'Tangentbord', icon: 'keyboard', detail: 'Y', run: () => b.keyboard() },
         { label: 'Ladda om sidan', icon: 'reload', run: away(() => b.reload()) },
