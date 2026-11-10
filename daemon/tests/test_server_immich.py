@@ -82,6 +82,15 @@ class Immich(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.heard[-1], ("DELETE", "/api/assets", {"ids": [A], "force": False}))
         self.assertIn("scope = drive.file", (Path(tmp.name) / "drive" / "rclone.conf").read_text())
 
+    def test_both_kinds_of_token(self):
+        from pioneertv.drive import parse_token
+        import base64
+        self.assertEqual(parse_token('{"access_token": "a"}'), ('{"access_token": "a"}', {}))
+        blob = base64.b64encode(json.dumps({"client_id": "c", "client_secret": "s", "token": '{"access_token": "a"}'}).encode()).decode().rstrip("=")
+        self.assertEqual(parse_token(blob), ('{"access_token": "a"}', {"client_id": "c", "client_secret": "s"}))
+        with self.assertRaises(ValueError):
+            parse_token("nonsense")
+
     async def test_refused(self):
         self.assertEqual((await self.client.post("/api/bilder/trash", json={"id": "../users"})).status, 400)
         self.assertEqual((await self.client.post("/api/bilder/share", json={"id": A})).status, 404)

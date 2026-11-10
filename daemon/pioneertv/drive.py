@@ -13,6 +13,7 @@ root alone, written anew only when the setting changes.
 from __future__ import annotations
 
 import asyncio
+import base64
 import hashlib
 import json
 import logging
@@ -24,6 +25,21 @@ from pathlib import Path
 log = logging.getLogger("pioneertv.drive")
 
 REMOTE = "box"
+
+
+def parse_token(given: str) -> tuple[str, dict]:
+    """rclone authorize's answer: the token's JSON (older rclone), or (newer)
+    base64 of {client_id, client_secret, token}. The token, and the client
+    it was given to; ValueError when it is neither."""
+    try:
+        json.loads(given)
+        return given, {}
+    except ValueError:
+        pass
+    blob = json.loads(base64.b64decode(given + "=" * (-len(given) % 4)))
+    token = blob["token"] if isinstance(blob.get("token"), str) else json.dumps(blob["token"])
+    json.loads(token)
+    return token, {k: str(blob.get(k) or "") for k in ("client_id", "client_secret")}
 
 
 class Drive:
@@ -43,14 +59,15 @@ class Drive:
 
     def _conf(self) -> Path:
         """rclone's config, written when the token in the settings is new."""
-        token = str(self.dcfg.get("token") or "").strip()
-        json.loads(token)                         # a token is rclone authorize's JSON; else ValueError
+        given = str(self.dcfg.get("token") or "").strip()
+        token, client = parse_token(given)
         self.root.mkdir(parents=True, exist_ok=True)
         os.chmod(self.root, 0o700)
         conf, mark = self.root / "rclone.conf", self.root / "token.sha256"
-        digest = hashlib.sha256(token.encode()).hexdigest()
+        digest = hashlib.sha256(given.encode()).hexdigest()
         if not conf.is_file() or not mark.is_file() or mark.read_text() != digest:
-            conf.write_text(f"[{REMOTE}]\ntype = drive\nscope = drive.file\ntoken = {token}\n")
+            lines = [f"[{REMOTE}]", "type = drive", "scope = drive.file", *(f"{k} = {v}" for k, v in client.items() if v), f"token = {token}"]
+            conf.write_text("\n".join(lines) + "\n")
             os.chmod(conf, 0o600)
             mark.write_text(digest)
         return conf
@@ -73,7 +90,7 @@ class Drive:
         folder = str(self.dcfg.get("folder") or "Ej foto").strip("/")
         try:
             code, said = await self._rclone("copyto", str(path), f"{REMOTE}:{folder}/{name}")
-        except (OSError, ValueError) as exc:
+        except (OSError, ValueError, KeyError) as exc:
             log.warning("drive: %s", exc)
             return False, "Google Drive kunde inte nås"
         if code != 0:
@@ -89,6 +106,6 @@ class Drive:
             return {"state": "down", "server": "rclone saknas"}
         try:
             code, _ = await self._rclone("lsjson", f"{REMOTE}:", "--dirs-only", "--max-depth", "1", timeout=20)
-        except (OSError, ValueError):
+        except (OSError, ValueError, KeyError):
             return {"state": "auth"}
         return {"state": "ok", "server": f"mappen {self.dcfg.get('folder') or 'Ej foto'}"} if code == 0 else {"state": "auth"}
