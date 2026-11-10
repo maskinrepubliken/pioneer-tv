@@ -378,8 +378,9 @@ playlists as cards (like Spel's collections), with Album and Artister in
 the column at the left; Album is shelves of covers, Artister their names alone, long, in three columns (they have no pictures; grid.js look names); a playlist or an album lists its songs beside
 its cover, with Spela and Blanda; an artist has Blanda allt (filled, X)
 and Spela allt at the heading's right, round buttons as Sök is with the
-name beside (a view's `actions`, drawn in the heading by `page.js`; Musik's
-start has its Blanda allt there too). Album and Artister are grids like a
+name beside (a view's `actions`, drawn in the heading by `page.js`). On
+Musik's start, among the playlists, X is Blanda allt, with no button (the
+legend says it). Album and Artister are grids like a
 console's games: Sök filters them. Sök (the round
 button, or Y) searches songs, albums and artists. Films, series and clips have
 their own page ([Film and series](#film-and-series)).
@@ -928,7 +929,13 @@ tried again every three seconds.
     first), standing on the floor; it is come upon, not hunted (only one a
     few cells off is gone for). Picked up, a notice says so ("Hittade
     GoldenEye 007 · spelat nyss", its kind's icon), and the last four are
-    carried in a row at the top left. The
+    carried in a row at the top left. The same covers hang on the walls in
+    frames, drawn into the wall's columns as the torch lights them: about
+    one face in eight along the ways (mostly small, a few medium, now and
+    then a large one in gold), more in the rooms (medium, large, and great
+    gilded centrepieces filling most of a wall); none in the garden or on a
+    door. Each is the cover drawn 64 px square, kept in its own shape by
+    its frame. The
     textures are Screaming Brain Studios' [Tiny Texture Pack
     1](https://opengameart.org/content/tiny-texture-pack-1) (CC0), made
     64 px and fewer colours (`overlay/maze/textures.png`).

@@ -4,7 +4,10 @@
 // of pillars, a garden under the stars, a ballroom, a treasury), all of it
 // dark but for the torch one carries, which flickers. Along the way lie the covers kept on the
 // box, games', films', series' and albums' (the daemon's /api/finds); the
-// walker goes and picks each up, and the screen says what was found.
+// walker goes and picks each up, and the screen says what was found. The
+// same pictures hang on the walls in frames: small ones along the ways,
+// larger in the rooms, and now and then a great one in gold, a room's
+// centrepiece.
 //
 // A raycaster on a small canvas (320 by 180, scaled up with its pixels
 // kept square), twenty frames a second: the walls one column at a time,
@@ -189,6 +192,30 @@ window.PioneerTV = window.PioneerTV || {};
     return f;
   }
 
+  // ------------------------------------------------------------ the pictures on the walls
+  // A wall's face (its tile, and which way it looks: 0 east, 1 west, 2
+  // south, 3 north) carries a picture or not, the same every time: about
+  // one in eight along the ways, mostly small; in a room more of them, and
+  // larger, and a great one in a gilded frame. Its size is a share of the
+  // wall's height; its frame's width the same.
+  const SIZES = {
+    small: { h: 0.26, frame: 0.025, gold: false },
+    medium: { h: 0.4, frame: 0.03, gold: false },
+    large: { h: 0.56, frame: 0.045, gold: true },
+    epic: { h: 0.8, frame: 0.065, gold: true },
+  };
+  function hangs(tx, ty, face, room) {
+    const r = hash(tx * 4 + face, ty, 21);
+    if (room) {
+      if (room.kind === 'garden' || r > 0.55) return null;
+      const k = hash(tx * 4 + face, ty, 22);
+      return SIZES[k < 0.22 ? 'epic' : k < 0.6 ? 'large' : 'medium'];
+    }
+    if (r > 0.12) return null;
+    const k = hash(tx * 4 + face, ty, 22);
+    return SIZES[k < 0.68 ? 'small' : k < 0.95 ? 'medium' : 'large'];
+  }
+
   // ------------------------------------------------------------ textures
   // Each texture at SHADES darknesses, as rows of 32-bit pixels.
   function shadeTables(img) {
@@ -230,6 +257,53 @@ window.PioneerTV = window.PioneerTV || {};
 
     // Where one is: in tiles, facing a, walking from cell to cell.
     const me = { x: 1.5, y: 1.5, a: 0, ci: 0, cj: 0 };
+
+    // The pictures for the walls: each find's cover drawn small (PIC by PIC,
+    // stretched; its own shape kept as the frame's), once it has loaded.
+    const PIC = 64;
+    const wallPics = new Map();          // url -> { data, ratio } | null while loading
+    function wallPicture(f) {
+      if (wallPics.has(f.url)) return wallPics.get(f.url);
+      wallPics.set(f.url, null);
+      const im = new Image();
+      im.onload = () => {
+        try {
+          const c = document.createElement('canvas');
+          c.width = PIC; c.height = PIC;
+          const g = c.getContext('2d', { willReadFrequently: true });
+          g.drawImage(im, 0, 0, PIC, PIC);
+          wallPics.set(f.url, { data: new Uint32Array(g.getImageData(0, 0, PIC, PIC).data.buffer.slice(0)),
+            ratio: Math.max(0.55, Math.min(1.6, im.naturalWidth / im.naturalHeight)) });
+        } catch { /* a picture that may not be read: the wall stays bare */ }
+      };
+      im.src = f.url;
+      if (wallPics.size > 160) wallPics.delete(wallPics.keys().next().value);
+      return null;
+    }
+    // A pixel in the torchlight, as the textures are (shadeTables).
+    const K = Array.from({ length: SHADES }, (_, s) => (1 - s / SHADES) ** 1.6);
+    const lit = (p, shade) => {
+      const k = K[shade];
+      const r = (p & 255) * k, g = ((p >>> 8) & 255) * k, b = ((p >>> 16) & 255) * k;
+      return 0xff000000 | (Math.min(255, b * 0.82) << 16) | (Math.min(255, g * 0.95) << 8) | Math.min(255, r * 1.08);
+    };
+    const WOOD = 0xff22344f, WOOD_EDGE = 0xff142233;            // dark wood (as ABGR)
+    const GOLD = 0xff3aa4d8, GOLD_EDGE = 0xff1d6a9a;            // gilt and its shadow
+    // The picture on the face a column hits, where it sits on the face (u
+    // across, 0 to 1), or null.
+    function painting(mx, my, face, front) {
+      if (!finds.length) return null;
+      const room = roomAt(Math.floor(front[0] / 2), Math.floor(front[1] / 2));
+      const size = hangs(mx, my, face, room);
+      if (!size) return null;
+      const f = finds[Math.floor(hash(mx * 4 + face, my, 23) * finds.length)];
+      const pic = wallPicture(f);
+      if (!pic) return null;
+      const h = size.h, w = Math.min(0.9, h * pic.ratio);
+      // A little above the middle, where eyes are; a great one, the middle.
+      const v0 = (size.h > 0.7 ? 0.5 : 0.44) - h / 2;
+      return { pic, size, u0: 0.5 - w / 2, u1: 0.5 + w / 2, v0, v1: v0 + h };
+    }
     let path = [];                       // cells still to walk to
     let pause = 0;                       // seconds standing still
     const visited = new Set(['0,0']);
@@ -384,14 +458,42 @@ window.PioneerTV = window.PioneerTV || {};
         if ((side === 0 && rx > 0) || (side === 1 && ry < 0)) u = TEX - 1 - u;
         const which = (hit || 1) - 1;
         // The sides facing north and south a little darker, as walls in the old games were.
-        const levels = tex[which][Math.min(SHADES - 1, shadeOf(dist, light) + side * 2)];
+        const shade = Math.min(SHADES - 1, shadeOf(dist, light) + side * 2);
+        const levels = tex[which][shade];
         const step = TEX / lineH;
         let v = 0;
         if (top < 0) { v = -top * step; top = 0; }
         if (bottom > H) bottom = H;
-        for (let y = top; y < bottom; y++) {
-          px[y * W + x] = levels[(Math.floor(v) & (TEX - 1)) * TEX + u];
-          v += step;
+        // A picture on this face (not on a door, a hedge, the sky), and
+        // whether this column crosses it.
+        const face = side === 0 ? (stepX > 0 ? 1 : 0) : (stepY > 0 ? 3 : 2);
+        const front = side === 0 ? [mx - stepX, my] : [mx, my - stepY];
+        const art = which !== T.door && which !== T.hedge && dist < 9 ? painting(mx, my, face, front) : null;
+        const uf = (u + 0.5) / TEX;
+        if (art && uf >= art.u0 && uf <= art.u1) {
+          const { pic, size } = art;
+          const fw = size.frame, fh = size.frame;
+          const inX = uf > art.u0 + fw && uf < art.u1 - fw;
+          const pu = Math.min(PIC - 1, Math.floor(((uf - art.u0 - fw) / (art.u1 - art.u0 - 2 * fw)) * PIC));
+          const edgeX = uf < art.u0 + fw * 0.35 || uf > art.u1 - fw * 0.35;
+          for (let y = top; y < bottom; y++) {
+            const vf = v / TEX;
+            let p;
+            if (vf < art.v0 || vf > art.v1) p = levels[(Math.floor(v) & (TEX - 1)) * TEX + u];
+            else if (inX && vf > art.v0 + fh && vf < art.v1 - fh) {
+              p = lit(pic.data[Math.min(PIC - 1, Math.floor(((vf - art.v0 - fh) / (art.v1 - art.v0 - 2 * fh)) * PIC)) * PIC + pu], shade);
+            } else {
+              const edge = edgeX || vf < art.v0 + fh * 0.35 || vf > art.v1 - fh * 0.35;
+              p = lit(size.gold ? (edge ? GOLD_EDGE : GOLD) : (edge ? WOOD_EDGE : WOOD), shade);
+            }
+            px[y * W + x] = p;
+            v += step;
+          }
+        } else {
+          for (let y = top; y < bottom; y++) {
+            px[y * W + x] = levels[(Math.floor(v) & (TEX - 1)) * TEX + u];
+            v += step;
+          }
         }
       }
       ctx.putImageData(frame, 0, 0);

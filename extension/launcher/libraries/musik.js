@@ -5,7 +5,8 @@
 // #/search/<words> what was found. A song plays from where it is in its
 // list, on the box itself (players/audio.js, the daemon's audio.py), while
 // Spelas nu is open over the page. X on an album, a playlist or an artist
-// plays it at once; elsewhere it is the filled button's (Blanda allt, Spela).
+// plays it at once (on the start, among the playlists, X is Blanda allt);
+// elsewhere it is the filled button's (Blanda allt, Spela).
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const J = M.jellyfin;
@@ -52,8 +53,8 @@ window.PioneerTV = window.PioneerTV || {};
   async function start() {
     const playlists = await J.playlists();
     return {
-      kind: 'shelf', title: 'Musik', legend: [['A', 'öppna'], ['X', 'spela']],
-      actions: [{ label: 'Blanda allt', icon: 'shuffle', primary: true, key: 'shuffle', run: tryPlay(() => J.shuffleAll(), false) }],
+      // Blanda allt is X's here, without a button of its own (onKey).
+      kind: 'shelf', title: 'Musik', legend: [['A', 'öppna'], ['X', 'blanda allt']],
       sections: [
         { label: 'Spellistor', layout: 'stacks', columns: 4, shape: 'square', items: playlists.map(group),
           empty: 'Inga spellistor än. Gör en i Jellyfin på datorn eller telefonen.' },
@@ -144,6 +145,8 @@ window.PioneerTV = window.PioneerTV || {};
   }
   function onKey(e) {
     if (e.key !== ' ') return false;
+    // The start (the playlists): X shuffles all the music.
+    if ((location.hash || '#/') === '#/') { if (!e.repeat) tryPlay(() => J.shuffleAll(), false)(); return true; }
     const active = document.activeElement;
     const key = (active && active.dataset && active.dataset.key) || '';
     if (/^(album|playlist|artist):/.test(key)) { if (!e.repeat) playGroup(active); return true; }
