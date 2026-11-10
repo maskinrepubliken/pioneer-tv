@@ -28,7 +28,10 @@
   }
   async function askOnAir() {
     if (!live.some((it) => slug(it.url))) return;
-    try { onAir = (await (await fetch('/api/channels')).json()) || {}; } catch { return; }
+    // The box's page is the extension's (the background asks the daemon);
+    // in the simulator the daemon serves the page itself.
+    const ext = globalThis.chrome && chrome.runtime && chrome.runtime.id;
+    try { onAir = (await (ext ? b.api('GET', '/api/channels') : fetch('/api/channels').then((r) => r.json()))) || {}; } catch { return; }
     showOnAir();
   }
   setInterval(askOnAir, 60000);
