@@ -153,7 +153,9 @@ window.PioneerTV = window.PioneerTV || {};
   // A picture of Bilder's, close to the next: the picture alone, a clip with
   // its length on it (item.video: seconds, or true).
   function photo(item) {
-    const a = el('a', 'card card--photo pioneertv-card');
+    // A button when it opens no address (the viewer), so the d-pad stops on it.
+    const a = el(item.href ? 'a' : 'button', 'card card--photo pioneertv-card');
+    if (!item.href) a.type = 'button';
     link(a, item);
     a.appendChild(V.cover(item.picture, item.title || ''));
     if (item.video) {

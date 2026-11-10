@@ -16,14 +16,15 @@ window.PioneerTV = window.PioneerTV || {};
       M.screen.show(text, hint);
       M.nav.captured = this;
     },
-    close() {
+    close(ended = false) {
       M.screen.hide();
       this.state = 'idle';
       if (M.nav.captured === this) M.nav.captured = null;
-      // after: what was under it takes the pad again (the picture viewer).
+      // after(ended): what was under it takes the pad again (the picture
+      // viewer, on to the next when the clip played to its end).
       const after = this.after;
       this.after = null;
-      if (after) after();
+      if (after) after(ended);
       else if (M.browse) M.browse.route();
     },
     // Only B does anything here (once the video has ended or failed); while
@@ -72,6 +73,8 @@ window.PioneerTV = window.PioneerTV || {};
     if (e.state === 'running') {
       player.state = 'running';
       M.screen.show('');               // mpv covers it; nothing to read behind
+    } else if (e.state === 'ended' && player.after) {
+      player.close(true);               // a clip of Bilder's: the viewer goes on to the next
     } else if (e.state === 'ended') {
       player.state = 'ended';
       player.show('Slut', 'Tryck B för att fortsätta');

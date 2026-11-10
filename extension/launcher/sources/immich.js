@@ -128,6 +128,8 @@ window.PioneerTV = window.PioneerTV || {};
       return {
         ...asset(a), city: exif.city || '', country: exif.country || '', text: exif.description || '',
         people: (a.people || []).map((p) => p.name).filter(Boolean),
+        camera: [exif.make, exif.model].filter(Boolean).join(' '), file: a.originalFileName || '',
+        width: a.width || exif.exifImageWidth || null, height: a.height || exif.exifImageHeight || null,
       };
     },
   };

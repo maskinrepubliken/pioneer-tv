@@ -7,14 +7,13 @@
 .pv-layer.pv-on { opacity: 1; }
 .pv-layer.pv-fade { transition: opacity 0.9s ease; }
 .pv-layer img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
-.pv-clip { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; pointer-events: none; }
-.pv-clip[hidden] { display: none; }
-.pv-ring {
-  width: 6rem; height: 6rem; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%;
-  background: rgba(13, 11, 10, 0.6); border: 2px solid rgba(244, 239, 228, 0.85);
+.pv-clip {
+  position: absolute; left: 50%; top: 1.6rem; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.5rem 1rem 0.5rem 0.8rem; border-radius: var(--pioneertv-radius-pill); background: rgba(13, 11, 10, 0.7);
+  font: 500 1rem/1 var(--pioneertv-font-ui); opacity: 0; transition: opacity 0.4s ease; pointer-events: none;
 }
-.pv-ring svg { width: 2.6rem; height: 2.6rem; }
-.pv-clip-says { font: 400 1rem/1 var(--pioneertv-font-mono); padding: 0.3rem 0.7rem; border-radius: 0.4rem; background: rgba(13, 11, 10, 0.6); }
+.pv-clip.pv-shown { opacity: 1; }
+.pv-clip svg { width: 1.1rem; height: 1.1rem; }
 .pv-caption {
   position: absolute; left: 0; right: 0; bottom: 0; padding: 4rem 4vw 2.2rem;
   background: linear-gradient(to top, rgba(13, 11, 10, 0.85), rgba(13, 11, 10, 0)); opacity: 0; transition: opacity 0.4s ease;
@@ -34,3 +33,25 @@
 .pv-state { left: 2rem; }
 .pv-count:empty, .pv-state:empty { display: none; }
 .pv-caption.pv-shown ~ .pv-count, .pv-showing .pv-state { opacity: 1; }
+
+/* The side panel (A): the picture's facts on paper, at the right; the
+   picture makes room for it. */
+.pv-with-info .pv-layer { right: 26rem; }
+.pv-with-info .pv-count { right: 28rem; }
+.pv-info {
+  position: absolute; top: 1.4rem; right: 1.4rem; bottom: 1.4rem; width: 23rem; box-sizing: border-box;
+  display: flex; flex-direction: column; padding: 1.6rem 1.6rem 1.2rem; overflow: hidden;
+  background: var(--pioneertv-paper); color: var(--pioneertv-ink);
+  border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-l);
+}
+.pv-info[hidden] { display: none; }
+.pv-info-title {
+  margin: 0 0 1.2rem; font: 900 1.6rem/1.05 var(--pioneertv-font-display); text-transform: uppercase; letter-spacing: -0.01em;
+}
+.pv-info-list { margin: 0; flex: 1; min-height: 0; overflow: hidden; }
+.pv-info-list dt { font: 400 0.8rem/1 var(--pioneertv-font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--pioneertv-ink-faint); margin-top: 1rem; }
+.pv-info-list dt:first-child { margin-top: 0; }
+.pv-info-list dd { margin: 0.35rem 0 0; font: 1.15rem/1.35 var(--pioneertv-font-prose); overflow-wrap: anywhere; }
+.pv-info-list .pv-info-wait { color: var(--pioneertv-ink-muted); font-style: italic; margin-top: 1rem; }
+.pv-info-keys { margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; font-size: 0.95rem; }
+.pv-info-keys .credit { display: none; }

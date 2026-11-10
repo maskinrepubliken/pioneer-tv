@@ -233,6 +233,10 @@ class Playing(Base):
         self.assertIn(f"https://bilder.example.se/api/assets/{clip}/video/playback", (self.dir / "args.json").read_text())
         conf = (self.video.root / "mpv" / "mpv.conf").read_text()
         self.assertIn("x-api-key: imm1ch", conf)
+        keys = (self.video.root / "mpv" / "input.conf").read_text()
+        self.assertIn("SPACE cycle pause; script-message pioneer-seek 0", keys)   # X plays and pauses a clip (the timeline says which)
+        self.assertIn("ENTER script-message pioneer-panel", keys)                # A: its panel
+        self.assertIn("ESC quit", keys)
         self.assertNotIn("k3y", conf)
         await self.video.stop()
         await self.wait_for("stopped")

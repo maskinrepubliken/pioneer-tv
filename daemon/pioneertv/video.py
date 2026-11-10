@@ -103,6 +103,13 @@ UP script-message pioneer-seek 0
 DOWN script-message pioneer-seek 0
 """
 OVERLAY_CONF = "osd-level=0\nosd-bar=no\n"
+# A clip of Bilder's (Immich): X plays and pauses it, A (and Home) hold it
+# with the panel, B stops it (back to the picture viewer).
+CLIP_KEYS = """\
+SPACE cycle pause; script-message pioneer-seek 0
+ENTER script-message pioneer-panel
+ESC quit
+"""
 # Subtitles searched for on the internet: these languages, the best few of each.
 SUBTITLE_LANGUAGES = ("swe", "eng")
 SUBTITLE_HITS = 8
@@ -356,7 +363,11 @@ class Video:
         key = (f"x-api-key: {self.icfg['api_key']}" if self.item and self.item.get("immich")
                else f"X-Emby-Token: {self.jcfg['api_key']}")
         (conf / "mpv.conf").write_text(MPV_CONF + (OVERLAY_CONF if overlay else "") + f"http-header-fields={key}\n")
-        (conf / "input.conf").write_text(PANEL_KEYS + PANEL_SEEK if overlay else PAUSE_KEYS + INPUT_CONF)
+        if self.item and self.item.get("immich"):
+            keys = CLIP_KEYS + (PANEL_SEEK if overlay else INPUT_CONF)
+        else:
+            keys = PANEL_KEYS + PANEL_SEEK if overlay else PAUSE_KEYS + INPUT_CONF
+        (conf / "input.conf").write_text(keys)
         for f in (conf / "mpv.conf", conf / "input.conf"):
             os.chmod(f, 0o600)
         self._own(conf)
@@ -538,6 +549,8 @@ class Video:
             return
         if by:
             await self.seek(by)
+        else:
+            await asyncio.sleep(0.15)                # A on a clip: mpv says it paused, or not, first
         await self._event("seeked", time=self.position, duration=self.length(), paused=self.paused)
 
     async def resume(self) -> None:

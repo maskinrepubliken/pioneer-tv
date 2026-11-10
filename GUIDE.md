@@ -521,15 +521,21 @@ API-nycklar; reading is all it needs).
 
 A picture opens the viewer (`players/photo.js`): one over the whole
 screen on ink, Immich's preview (about the screen's size), the next one
-fetched beforehand. Left and right go on, A shows when and where it was
-taken and who is in it (it shows by itself for a moment after a move), X
-starts or stops the slideshow (a new picture every six seconds, fading
+fetched beforehand. Left and right go on (when and where it was taken,
+and who is in it, says itself at the foot for a moment), A opens or
+closes a side panel on paper of what is known of it (Taget, Plats,
+Personer, Längd, Kamera, Storlek, Fil, Text, Favorit: what Immich has),
+X starts or stops the slideshow (a new picture every six seconds, fading
 into the next; clips passed over; the box told something plays, so the
-screensaver keeps away), B goes back to the grid, on the picture last
-seen. X on a grid is its Bildspel button. A clip shows its picture with a
-play ring; A plays it in mpv as a film is (`video.py` `play_immich`, the
-key as mpv's header, without Jellyfin's reports or subtitles), and the
-viewer is there again after.
+screensaver keeps away), B closes the panel, else goes back to the grid,
+on the picture last seen. X on a grid is its Bildspel button. The grids'
+pictures are buttons (`cards.js` photo), so the d-pad walks them. A clip
+shows its picture and, for a moment, a notice that X plays it: in mpv as
+a film is (`video.py` `play_immich`, the key as mpv's header, without
+Jellyfin's reports or subtitles; X plays and pauses it there and the
+overlay's timeline says which, A or Home opens its panel, B stops it),
+and the viewer is there again after, on the next one when it played to
+its end.
 
 ## Video on other sites
 
