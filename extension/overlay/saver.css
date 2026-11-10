@@ -32,17 +32,31 @@
 .pioneertv-saver.resting .fractal, .pioneertv-saver.resting .tao { display: none; }
 
 /* ---- the maze (maze.js): its small picture scaled up, its pixels kept
-   square; the last few found carried in a row at the top left, small (what
-   was just found is said in a notice). ---- */
+   square; what the walker looks at comes up sharp over it, each in its
+   frame, what it is under it, fading in and out. ---- */
 .pioneertv-saver .maze {
   position: absolute; inset: 0; width: 100%; height: 100%; display: block;
   image-rendering: pixelated; image-rendering: crisp-edges;
 }
-.pioneertv-saver .maze-carried {
-  position: absolute; left: 3vw; top: 4vh; display: flex; gap: 0.6vw; align-items: flex-end;
+.pioneertv-saver .maze-look {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 3vw; padding: 0 5vw;
+  background: radial-gradient(ellipse at center, rgba(8, 6, 5, 0.35), rgba(8, 6, 5, 0.85));
+  opacity: 0; transition: opacity 0.9s ease; pointer-events: none;
 }
-.pioneertv-saver .maze-carried img {
-  height: 5.2vw; max-width: 7vw; object-fit: contain; border-radius: 0.2vw;
-  border: 0.15vw solid var(--pioneertv-paper);
+.pioneertv-saver .maze-look.shown { opacity: 1; }
+.pioneertv-saver .maze-look figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 1.4vh; min-width: 0; }
+.pioneertv-saver .maze-frame {
+  padding: 1.1vw; border-radius: 0.3vw; box-shadow: 0 1.2vw 3vw rgba(0, 0, 0, 0.6);
+  background: linear-gradient(145deg, #e3b54d, #9a6a1d 55%, #d8a43a); border: 0.25vw solid #5a3b12;
 }
-.pioneertv-saver.resting .maze, .pioneertv-saver.resting .maze-carried { display: none; }
+.pioneertv-saver .maze-frame img {
+  display: block; max-height: calc(62vh / max(1, var(--n) - 1.5)); max-width: calc(78vw / var(--n));
+  object-fit: contain; box-shadow: inset 0 0 0 0.15vw rgba(0, 0, 0, 0.5);
+}
+.pioneertv-saver .maze-look figcaption {
+  display: flex; flex-direction: column; align-items: center; gap: 0.4vh; max-width: calc(78vw / var(--n));
+  color: #f4efe4; text-align: center; text-shadow: 0 0.2vw 0.6vw rgba(0, 0, 0, 0.8);
+}
+.pioneertv-saver .maze-look figcaption b { font: italic 400 1.9vw/1.15 var(--pioneertv-font-prose); }
+.pioneertv-saver .maze-look figcaption span { font: 400 1.05vw/1.2 var(--pioneertv-font-mono); letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.8; }
+.pioneertv-saver.resting .maze, .pioneertv-saver.resting .maze-look { display: none; }

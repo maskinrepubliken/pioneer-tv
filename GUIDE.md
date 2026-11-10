@@ -966,16 +966,7 @@ tried again every three seconds.
     marble, or a treasury where many things lie (`visit(kind)` goes
     straight to one, for the catalogue). The walker steers by a point a little ahead
     along its way (round corners, no turning on the spot facing a wall),
-    goes for a thing lying near, else the nearest cell not yet
-    walked; slowly, a stroll. About one cell in thirty has a cover, large,
-    standing on the floor: a game's, a film's or a series' (a few albums')
-    from the daemon's `/api/finds`
-    (`covers.py` finds: first what was played lately, RomM's last played and
-    Jellyfin's begun and seen, then others at random, those kept on the box
-    first), standing on the floor; it is come upon, not hunted (only one a
-    few cells off is gone for). Picked up, a notice says so ("Hittade
-    GoldenEye 007 · spelat nyss", its kind's icon), and the last four are
-    carried in a row at the top left. The walls are hung full of pictures,
+    goes for the nearest cell not yet walked; slowly, a stroll. The walls are hung full of pictures,
     the covers and a fresh handful of Bilder's own (Immich's
     `search/random`, through `/immich/`, each time the screensaver starts),
     drawn into the wall's columns as the torch lights them: along the ways
@@ -983,7 +974,15 @@ tried again every three seconds.
     four in a square, in dark wood; in the rooms every face (but the
     garden's hedges), larger, and great ones in gold, the rooms'
     centrepieces. None on a door. Each is drawn 64 px square, kept in its
-    own shape by its frame. The
+    own shape by its frame. Every few cells the walker stops at a wall of
+    its cell with pictures on it, turns to it and looks a while (seven
+    seconds): what hangs there comes up sharp over the maze (saver.js,
+    `hud.look`: a covers' own picture, a photo's Immich preview), each in
+    a gilded frame, and under it what it is: a photo's date and place, a
+    game's, a film's or an album's name and, when it was played or seen
+    lately (`covers.py` finds: first what was played lately, RomM's last
+    played and Jellyfin's begun and seen), "spelat nyss" or "sett nyss";
+    faded in and out. Nothing lies on the floor any more. The
     textures are Screaming Brain Studios' [Tiny Texture Pack
     1](https://opengameart.org/content/tiny-texture-pack-1) (CC0), made
     64 px and fewer colours (`overlay/maze/textures.png`).

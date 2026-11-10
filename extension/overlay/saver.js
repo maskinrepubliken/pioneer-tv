@@ -1,10 +1,11 @@
 // Pioneer TV screensaver, drawn by the overlay over every window, one of
 // two (Inställningar → TV, ui.screensaver):
 //
-//   labyrint (the default): a maze without end, walked by itself, where
-//   the covers kept on the box lie to be found and picked up (maze.js);
-//   what was found is said in a notice, and the last few are carried in a
-//   row at the left.
+//   labyrint (the default): a maze without end, walked by itself, its
+//   walls hung full of pictures (maze.js); now and then the walker stops
+//   and looks at a wall, and its pictures come up sharp over it, with what
+//   each is: when a picture was taken and where, a game or a film by its
+//   name and whether it was played or seen lately.
 //   eld: the Mandelbrot set like an open fire (mandelbrot.js) and a line of
 //   the Tao Te Ching (tao.js).
 //
@@ -17,14 +18,13 @@
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const LINE_MS = 3 * 60 * 1000;        // a new line every three minutes
-  const SAID_MS = 5000;                 // what was found, said this long
   let root = null, rest = null;
   let kind = null;                      // the one drawn: 'labyrint' or 'eld'
   let drawer = null;                    // its { start, stop }
   // The fire's parts.
   let quote = null, where = null, box = null, order = [], lineTimer = null;
-  // The maze's.
-  let carried = null;
+  // The maze's: what the walker looks at, sharp.
+  let looking = null;
 
   let chosen = null;                    // as(): the catalogue's choice over the settings'
   let once = null;                      // show(kind): a preview's, this time only
@@ -60,29 +60,54 @@ window.PioneerTV = window.PioneerTV || {};
       drawer = M.mandelbrot(canvas);
     } else {
       canvas.className = 'maze';
-      carried = document.createElement('div');
-      carried.className = 'maze-carried';
-      root.prepend(canvas, carried);
-      drawer = M.maze(canvas, { found: tell });
+      looking = document.createElement('div');
+      looking.className = 'maze-look';
+      root.prepend(canvas, looking);
+      drawer = M.maze(canvas, { look, leave });
       saver.maze = drawer;               // its debug(), for the catalogue and tests
     }
   }
 
-  // ---------------------------------------------------------- the maze's words
-  // What was found is said as any notice is (hud.js toast), its icon its
-  // kind's; the last four found are carried in a row at the top left.
-  const ICON = { spel: 'gamepad', film: 'film', serie: 'tv', album: 'vinyl' };
+  // ---------------------------------------------------------- the maze's pictures
+  // What hangs on the wall looked at, each sharp in its frame, and under it
+  // what it is; faded in once the pictures have come, out as it walks on.
   const LATELY = { spel: 'spelat nyss', album: 'spelat nyss' };
-  function tell(f, all) {
-    const when = f.recent ? ` · ${LATELY[f.kind] || 'sett nyss'}` : '';
-    M.hud.toast(`Hittade ${f.title}${when}`, ICON[f.kind] || 'stack', SAID_MS);
-    carried.innerHTML = '';
-    for (const c of all.slice(-4)) {
+  const MONTHS = ['januari', 'februari', 'mars', 'april', 'maj', 'juni', 'juli', 'augusti', 'september', 'oktober', 'november', 'december'];
+  function said(it) {
+    if (it.photo) {
+      const d = it.taken ? new Date(it.taken) : null;
+      const when = d && !isNaN(d) ? `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}` : '';
+      return [when, it.city].filter(Boolean);
+    }
+    return [it.title, it.recent ? LATELY[it.kind] || 'sett nyss' : ''].filter(Boolean);
+  }
+  let lookTimer = 0;
+  function look(items) {
+    clearTimeout(lookTimer);
+    looking.innerHTML = '';
+    looking.style.setProperty('--n', String(items.length));
+    const loads = items.map((it) => {
+      const fig = document.createElement('figure');
+      const frame = document.createElement('div');
+      frame.className = 'maze-frame';
       const im = document.createElement('img');
       im.alt = '';
-      im.src = c.url;
-      carried.appendChild(im);
-    }
+      im.src = it.big || it.url;
+      frame.appendChild(im);
+      const cap = document.createElement('figcaption');
+      const [first, second] = said(it);
+      if (first) cap.appendChild(Object.assign(document.createElement('b'), { textContent: first }));
+      if (second) cap.appendChild(Object.assign(document.createElement('span'), { textContent: second }));
+      fig.append(frame, cap);
+      looking.appendChild(fig);
+      return new Promise((done) => { im.onload = im.onerror = done; });
+    });
+    Promise.all(loads).then(() => { if (looking.firstChild) looking.classList.add('shown'); });
+  }
+  function leave() {
+    looking.classList.remove('shown');
+    clearTimeout(lookTimer);
+    lookTimer = setTimeout(() => { if (!looking.classList.contains('shown')) looking.innerHTML = ''; }, 900);
   }
 
   // ---------------------------------------------------------- the fire's words

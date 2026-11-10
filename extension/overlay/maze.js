@@ -2,12 +2,13 @@
 // manner of the old dungeon games (Ultima Underworld): parts of it in
 // their own stones (walls, floors, ceilings), now and then a room (a hall
 // of pillars, a garden under the stars, a ballroom, a treasury), all of it
-// dark but for the torch one carries, which flickers. Along the way lie the covers kept on the
-// box, games', films', series' and albums' (the daemon's /api/finds); the
-// walker goes and picks each up, and the screen says what was found. The
-// same pictures hang on the walls in frames: small ones along the ways,
-// larger in the rooms, and now and then a great one in gold, a room's
-// centrepiece.
+// dark but for the torch one carries, which flickers. Its walls are hung
+// full of pictures in frames: the covers kept on the box (games', films',
+// series' and albums', the daemon's /api/finds) and Bilder's own (Immich);
+// small ones along the ways, larger in the rooms, great ones in gold. Now
+// and then the walker stops at a wall, turns to it and looks a while:
+// hud.look(items) is told what hangs there (saver.js shows it, sharp, and
+// what it is), hud.leave() when it walks on.
 //
 // A raycaster on a small canvas (320 by 180, scaled up with its pixels
 // kept square), twenty frames a second: the walls one column at a time,
@@ -172,26 +173,6 @@ window.PioneerTV = window.PioneerTV || {};
     return r && ci >= r.x0 && ci <= r.x1 && cj >= r.y0 && cj <= r.y1 ? r : null;
   };
 
-  // ------------------------------------------------------------ the finds
-  // About one cell in thirty has something lying in it, and many in a
-  // treasury; what, comes from the list in turn as the cell is first seen
-  // (what was played or watched lately comes first in it).
-  const hasFind = (ci, cj) => {
-    if (ci === 0 && cj === 0) return false;
-    const r = roomAt(ci, cj);
-    return hash(ci, cj, 5) < (r && r.kind === 'treasury' ? 0.5 : 0.033);
-  };
-  const placed = new Map();              // "ci,cj" -> find (or null: taken)
-  let finds = [], nextFind = 0;
-  function findAt(ci, cj) {
-    const k = `${ci},${cj}`;
-    if (placed.has(k)) return placed.get(k);
-    if (!finds.length) return null;
-    const f = finds[nextFind++ % finds.length];
-    placed.set(k, f);
-    return f;
-  }
-
   // ------------------------------------------------------------ the pictures on the walls
   // The walls are hung full: a wall's face (its tile, and which way it
   // looks: 0 east, 1 west, 2 south, 3 north) carries its pictures, the same
@@ -217,6 +198,7 @@ window.PioneerTV = window.PioneerTV || {};
     gallery: { w: 0.42, slots: [['medium', 0.27, 0.44], ['medium', 0.73, 0.44]] },
   };
   const pick = (k, table) => { for (const [name, upTo] of table) if (k < upTo) return HANGINGS[name]; return null; };
+  const LOOK_S = 7;                      // seconds a wall is looked at
   const WAYS = [['small', 0.2], ['medium', 0.32], ['pair', 0.55], ['row', 0.7], ['square', 0.85], ['large', 0.9]];
   const ROOMS_HUNG = [['epic', 0.25], ['large', 0.45], ['gallery', 0.62], ['square', 0.8], ['row', 1]];
   function hangs(tx, ty, face, room) {
@@ -303,14 +285,23 @@ window.PioneerTV = window.PioneerTV || {};
     // The pictures on the face a column hits, each where it sits on the
     // face (u across and v down, 0 to 1); those not yet loaded left out.
     let pool = [];                       // what hangs: the finds, and Immich's
-    function painting(mx, my, face, front) {
+    let finds = [];
+    // What hangs on a face: its way of hanging and, for each place in it,
+    // the one from the pool, or null.
+    function hungAt(mx, my, face, front) {
       if (!pool.length) return null;
       const room = roomAt(Math.floor(front[0] / 2), Math.floor(front[1] / 2));
       const hanging = hangs(mx, my, face, room);
       if (!hanging) return null;
+      return { hanging, items: hanging.slots.map((_, i) => pool[Math.floor(hash(mx * 4 + face, my, 23 + i) * pool.length)]) };
+    }
+    function painting(mx, my, face, front) {
+      const hung = hungAt(mx, my, face, front);
+      if (!hung) return null;
+      const { hanging, items } = hung;
       const out = [];
       hanging.slots.forEach(([name, uc, vc], i) => {
-        const pic = wallPicture(pool[Math.floor(hash(mx * 4 + face, my, 23 + i) * pool.length)]);
+        const pic = wallPicture(items[i]);
         if (!pic) return;
         const size = SIZES[name], h = size.h, w = Math.min(hanging.w, h * pic.ratio);
         out.push({ pic, size, u0: uc - w / 2, u1: uc + w / 2, v0: vc - h / 2, v1: vc + h / 2 });
@@ -320,13 +311,12 @@ window.PioneerTV = window.PioneerTV || {};
     let path = [];                       // cells still to walk to
     let pause = 0;                       // seconds standing still
     const visited = new Set(['0,0']);
-    let found = [];                      // what was picked up, newest last
+    let look = null;                     // { a, items, told } while looking at a wall
+    let since = 0;                       // cells walked since the last look
 
     // ---------------------------------------------------------- walking
-    // A way to the nearest cell wanted (a find, else a cell not yet
-    // walked), breadth first, no further than `far` steps.
-    // (A find is gone for further away than a few cells: it is come upon,
-    // not hunted.)
+    // A way to the nearest cell not yet walked, breadth first, no further
+    // than `far` steps.
     function route(wanted, far) {
       const from = `${me.ci},${me.cj}`;
       const back = new Map([[from, null]]);
@@ -350,9 +340,7 @@ window.PioneerTV = window.PioneerTV || {};
       return null;
     }
     function plan() {
-      const wantFind = (i, j) => hasFind(i, j) && findAt(i, j);
-      path = route(wantFind, 4)
-        || route((i, j) => !visited.has(`${i},${j}`), 40)
+      path = route((i, j) => !visited.has(`${i},${j}`), 40)
         || [DIRS.map(([dx, dy]) => [me.ci + dx, me.cj + dy, dx, dy]).filter(([, , dx, dy]) => open(me.ci, me.cj, dx, dy))[0]].filter(Boolean);
     }
     function arrive() {
@@ -361,15 +349,19 @@ window.PioneerTV = window.PioneerTV || {};
         for (const k of visited) { const [i, j] = k.split(',').map(Number); if (Math.abs(i - me.ci) + Math.abs(j - me.cj) > 60) visited.delete(k); }
       }
       here = [Math.floor((me.ci * 2 + 1) / SIDE), Math.floor((me.cj * 2 + 1) / SIDE)];
-      const k = `${me.ci},${me.cj}`;
-      const f = hasFind(me.ci, me.cj) ? findAt(me.ci, me.cj) : null;
-      if (f) {
-        placed.set(k, null);
-        found.push(f);
-        if (found.length > 6) found = found.slice(-6);
-        hud.found(f, found);
-        pause = 3;
-      }
+      // Now and then (every few cells, never twice running) a wall of this
+      // cell with pictures on it: turned to, and looked at a while.
+      since++;
+      if (since < 3 || Math.random() > 0.45) return;
+      const walls = DIRS.filter(([dx, dy]) => !open(me.ci, me.cj, dx, dy)).map(([dx, dy]) => {
+        const face = dx === 1 ? 1 : dx === -1 ? 0 : dy === 1 ? 3 : 2;
+        const hung = hungAt(me.ci * 2 + 1 + dx, me.cj * 2 + 1 + dy, face, [me.ci * 2 + 1, me.cj * 2 + 1]);
+        return hung && hung.items.some(Boolean) ? { a: Math.atan2(dy, dx), items: hung.items.filter(Boolean) } : null;
+      }).filter(Boolean);
+      if (!walls.length) return;
+      look = { ...walls[Math.floor(Math.random() * walls.length)], told: false };
+      pause = LOOK_S;
+      since = 0;
     }
     const turnTo = (a, want, dt) => {
       let d = Math.atan2(Math.sin(want - a), Math.cos(want - a));
@@ -391,6 +383,17 @@ window.PioneerTV = window.PioneerTV || {};
       return [px, py];
     }
     function walk(dt) {
+      if (look) {
+        // Turned to the wall, then looked at; then on.
+        me.a = turnTo(me.a, look.a, dt);
+        if (!look.told && Math.abs(Math.atan2(Math.sin(look.a - me.a), Math.cos(look.a - me.a))) < 0.02) {
+          look.told = true;
+          hud.look(look.items);
+        }
+        if (look.told) pause -= dt;
+        if (pause <= 0) { look = null; hud.leave(); }
+        return;
+      }
       if (pause > 0) { pause -= dt; return; }
       if (!path.length) plan();
       if (!path.length) return;
@@ -517,58 +520,6 @@ window.PioneerTV = window.PioneerTV || {};
         }
       }
       ctx.putImageData(frame, 0, 0);
-      sprites(dirX, dirY, planeX, planeY, horizon, light, t);
-    }
-
-    // The finds near enough to see, as columns where no wall is nearer:
-    // the cover standing on the floor, a little way up, bobbing gently.
-    const images = new Map();
-    function picture(f) {
-      let im = images.get(f.url);
-      if (!im) {
-        im = new Image();
-        im.src = f.url;
-        images.set(f.url, im);
-        if (images.size > 120) images.delete(images.keys().next().value);
-      }
-      return im.complete && im.naturalWidth ? im : null;
-    }
-    function sprites(dirX, dirY, planeX, planeY, horizon, light, t) {
-      const near = [];
-      for (let dj = -6; dj <= 6; dj++) {
-        for (let di = -6; di <= 6; di++) {
-          const i = me.ci + di, j = me.cj + dj;
-          if (!hasFind(i, j)) continue;
-          const f = findAt(i, j);
-          if (!f) continue;
-          const sx = i * 2 + 1.5 - me.x, sy = j * 2 + 1.5 - me.y;
-          near.push({ f, sx, sy, d: sx * sx + sy * sy, i, j });
-        }
-      }
-      near.sort((a, b) => b.d - a.d);
-      const inv = 1 / (planeX * dirY - dirX * planeY);
-      for (const s of near) {
-        const im = picture(s.f);
-        if (!im) continue;
-        const tx = inv * (dirY * s.sx - dirX * s.sy);
-        const ty = inv * (-planeY * s.sx + planeX * s.sy);
-        if (ty <= 0.2) continue;
-        const screenX = Math.floor((W / 2) * (1 + tx / ty));
-        const ratio = im.naturalWidth / im.naturalHeight;
-        const h = Math.floor((H / ty) * 0.7);
-        const w = Math.floor(h * ratio);
-        const lift = (H / ty) * (0.04 + 0.01 * Math.sin(t * 0.9 + s.i * 1.3 + s.j));
-        const y0 = Math.floor(horizon + (H / ty) / 2 - h - lift);
-        const x0 = screenX - Math.floor(w / 2);
-        const dark = 1 - Math.min(1, (1 - shadeOf(ty, light) / SHADES) ** 1.4);
-        ctx.fillStyle = `rgba(0,0,0,${dark.toFixed(2)})`;
-        for (let x = Math.max(0, x0); x < Math.min(W, x0 + w); x++) {
-          if (ty >= zbuf[x]) continue;
-          const srcX = Math.floor(((x - x0) / w) * im.naturalWidth);
-          ctx.drawImage(im, srcX, 0, 1, im.naturalHeight, x, y0, 1, h);
-          if (dark > 0.02) ctx.fillRect(x, y0, 1, h);
-        }
-      }
     }
 
     // ---------------------------------------------------------- running
@@ -578,7 +529,7 @@ window.PioneerTV = window.PioneerTV || {};
       try {
         const r = await fetch('/api/finds?n=60');
         const d = await r.json();
-        if (Array.isArray(d.finds) && d.finds.length) { finds = d.finds; nextFind = 0; }
+        if (Array.isArray(d.finds) && d.finds.length) finds = d.finds;
       } catch { /* no finds: the maze alone */ }
       pool = [...finds];
       // Bilder's pictures for the walls too: a fresh handful from Immich
@@ -587,7 +538,11 @@ window.PioneerTV = window.PioneerTV || {};
         const r = await fetch('/immich/api/search/random', { method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ size: 160, type: 'IMAGE' }) });
         const list = r.ok ? await r.json() : [];
-        const photos = (Array.isArray(list) ? list : []).map((a) => ({ url: `/immich/api/assets/${encodeURIComponent(a.id)}/thumbnail?size=thumbnail` }));
+        const photos = (Array.isArray(list) ? list : []).map((a) => ({
+          url: `/immich/api/assets/${encodeURIComponent(a.id)}/thumbnail?size=thumbnail`,
+          big: `/immich/api/assets/${encodeURIComponent(a.id)}/thumbnail?size=preview`,
+          photo: true, taken: a.localDateTime || a.fileCreatedAt || null, city: (a.exifInfo && a.exifInfo.city) || '',
+        }));
         pool = [...finds, ...photos];
       } catch { /* no Immich: the covers alone */ }
     }
@@ -606,7 +561,7 @@ window.PioneerTV = window.PioneerTV || {};
       load();                            // a fresh handful of Immich's each time
       timer = setInterval(tick, 1000 / FPS);
     }
-    function stop() { clearInterval(timer); timer = null; }
+    function stop() { clearInterval(timer); timer = null; if (look) { look = null; pause = 0; hud.leave(); } }
     // Facing the first open way.
     const first = DIRS.find(([dx, dy]) => open(0, 0, dx, dy));
     if (first) me.a = Math.atan2(first[1], first[0]);
@@ -621,7 +576,7 @@ window.PioneerTV = window.PioneerTV || {};
             if (!room || room.kind !== kind) continue;
             me.ci = Math.floor((room.x0 + room.x1) / 2); me.cj = Math.floor((room.y0 + room.y1) / 2);
             me.x = me.ci * 2 + 1.5; me.y = me.cj * 2 + 1.5; me.a = 0.4;
-            path = []; pause = 0;
+            path = []; pause = 0; look = null;
             arrive();
             return true;
           }
