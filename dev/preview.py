@@ -16,7 +16,8 @@ uncached, so a reload always shows the file on disk.
 against a real server. It reads ROMM_URL and ROMM_API_KEY from the
 environment, or from ~/.config/pioneer-tv/romm.env (KEY=value lines).
 /jellyfin/ and /api/jellyfin do the same for the Musik and Film & serier pages, with
-JELLYFIN_URL, JELLYFIN_API_KEY and JELLYFIN_USER (or jellyfin.env).
+JELLYFIN_URL, JELLYFIN_API_KEY and JELLYFIN_USER (or jellyfin.env); /immich/ for
+the Bilder pages, with IMMICH_URL and IMMICH_API_KEY (or immich.env).
 
 Without those settings, stand-ins answer instead (dev/mock.py): a small
 library of films, series, music and games with drawn covers, and the
@@ -36,7 +37,7 @@ import urllib.request
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "daemon"))
-from pioneertv import jellyfin, romm  # noqa: E402  (stdlib only)
+from pioneertv import immich, jellyfin, romm  # noqa: E402  (stdlib only)
 sys.path.insert(0, str(ROOT / "dev"))
 import mock  # noqa: E402
 import sim  # noqa: E402
@@ -93,6 +94,11 @@ def env_settings(name: str, keys: tuple[str, ...]) -> list[str]:
 
 def romm_settings() -> tuple[str, str]:
     url, key = env_settings("romm", ("ROMM_URL", "ROMM_API_KEY"))
+    return url, key
+
+
+def immich_settings() -> tuple[str, str]:
+    url, key = env_settings("immich", ("IMMICH_URL", "IMMICH_API_KEY"))
     return url, key
 
 
@@ -169,9 +175,19 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         path, _, query = self.path.partition("?")
         jf = path.startswith("/jellyfin/") and not jellyfin_settings()[0]
         rm = path.startswith("/romm/") and not romm_settings()[0]
+        im = path.startswith("/immich/") and not immich_settings()[0]
         api = path.startswith("/api/") and not (path == "/api/jellyfin" and jellyfin_settings()[0])
-        if not (jf or rm or api):
+        if not (jf or rm or im or api):
             return False
+        if im:
+            length = int(self.headers.get("Content-Length") or 0)
+            try:
+                body = json.loads(self.rfile.read(length) or b"{}") if length else {}
+            except ValueError:
+                body = {}
+            err = mock.error_for(self.headers.get("Referer"))
+            self.send_mock(err or mock.immich(path[len("/immich/"):], query, self.command, body if isinstance(body, dict) else {}))
+            return True
         if api:
             length = int(self.headers.get("Content-Length") or 0)
             try:
@@ -204,6 +220,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             url, key, _ = jellyfin_settings()
             path, _, query = self.path[len("/jellyfin/"):].partition("?")
             target, rules = jellyfin.target_url(url, path, query, self.command), jellyfin
+        elif self.path.startswith("/immich/"):
+            url, key = immich_settings()
+            path, _, query = self.path[len("/immich/"):].partition("?")
+            target, rules = immich.target_url(url, path, query, self.command), immich
         else:
             url, key = romm_settings()
             path, _, query = self.path[len("/romm/"):].partition("?")
@@ -253,7 +273,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.send_json(200, {"ok": True, "user_id": user["Id"], "user": user["Name"]})
 
     def proxied(self) -> bool:
-        return self.path.startswith(("/romm/", "/jellyfin/"))
+        return self.path.startswith(("/romm/", "/jellyfin/", "/immich/"))
 
     def do_POST(self):
         if self.path.startswith("/api/") and self.mocked():

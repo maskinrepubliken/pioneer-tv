@@ -44,7 +44,7 @@ SERVICES = [
      "search_url": "{origin}ext/launcher/browse.html?library=musik&tv=1#/search/{query}", "color": "#a8533a", "glyph": "M"},
     {"id": "romm", "name": "Spel", "tagline": "RomM", "url": "{origin}ext/launcher/browse.html?library=spel&tv=1",
      "search_url": "{origin}ext/launcher/browse.html?library=spel&tv=1#/search/{query}", "color": "#3b6ea5", "glyph": "R"},
-    {"id": "immich", "name": "Bilder", "tagline": "Immich", "url": "https://bilder.example.se/", "color": "#3f7fa6", "row": "second"},
+    {"id": "immich", "name": "Bilder", "tagline": "Immich", "url": "browse.html?library=bilder&tv=1", "search_url": "browse.html?library=bilder&tv=1#/search/{query}", "color": "#3f7fa6", "row": "second"},
     {"id": "svt1", "name": "SVT1", "url": "https://www.svtplay.se/kanaler/svt1?start=auto", "fullscreen": "1", "row": "live", "kind": "tv"},
     {"id": "svt2", "name": "SVT2", "url": "https://www.svtplay.se/kanaler/svt2?start=auto", "fullscreen": "1", "row": "live", "kind": "tv"},
     {"id": "svtbarn", "name": "SVT Barn", "url": "https://www.svtplay.se/kanaler/svtbarn?start=auto", "fullscreen": "1", "row": "live", "kind": "tv"},

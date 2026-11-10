@@ -6,7 +6,7 @@
 // end (or an error) goes back to browsing, which is drawn again (the
 // position has moved).
 //
-//   M.players.video.play({ id, name, series }, at, { audio, subtitle })
+//   M.players.video.play({ id, name, series, source }, at, { audio, subtitle })
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const player = {
@@ -20,7 +20,11 @@ window.PioneerTV = window.PioneerTV || {};
       M.screen.hide();
       this.state = 'idle';
       if (M.nav.captured === this) M.nav.captured = null;
-      if (M.browse) M.browse.route();
+      // after: what was under it takes the pad again (the picture viewer).
+      const after = this.after;
+      this.after = null;
+      if (after) after();
+      else if (M.browse) M.browse.route();
     },
     // Only B does anything here (once the video has ended or failed); while
     // mpv plays, its window has the keys.
@@ -36,13 +40,15 @@ window.PioneerTV = window.PioneerTV || {};
         const resp = await fetch('/api/video/play', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: v.id, start: at, audio: tracks.audio, subtitle: tracks.subtitle }),
+          // source 'immich': a clip of Bilder's (players/photo.js), else Jellyfin's.
+          body: JSON.stringify({ id: v.id, start: at, audio: tracks.audio, subtitle: tracks.subtitle, source: v.source, name: v.name }),
         });
         r = await resp.json().catch(() => ({}));
       } catch {
         r = { ok: false, message: 'Boxen svarar inte' };
       }
-      if (r.ok === false) this.failed(r.message === 'no_key' ? 'Lägg in en API-nyckel för Jellyfin under Inställningar → Jellyfin' : r.message);
+      const source = v.source === 'immich' ? 'Immich' : 'Jellyfin';
+      if (r.ok === false) this.failed(r.message === 'no_key' ? `Lägg in en API-nyckel för ${source} under Inställningar → Tjänster` : r.message);
     },
 
     failed(text) {

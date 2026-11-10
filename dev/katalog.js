@@ -49,6 +49,7 @@
   const SPEL = `${L}browse.html?library=spel&tv=1`;
   const MUSIK = `${L}browse.html?library=musik&tv=1`;
   const FILM = `${L}browse.html?library=film&section=movies&tv=1`;
+  const BILDER = `${L}browse.html?library=bilder&tv=1`;
   const SERIER = `${L}browse.html?library=film&section=tvshows&tv=1`;
   const VIDEOR = `${L}browse.html?library=film&section=homevideos&tv=1`;
   const GAME = `${L}game.html?rom=101`;
@@ -254,6 +255,20 @@
       used: 'Håll Hem, eller Hem i snabbmenyn. Tjänsterna som rutor; Live och Sök öppnas som paneler i overlayn, Inställningar är en egen sida.',
       items: [
         { name: 'Hem', url: HOME, ready: '.tiles-tile', setup: ({ P }) => daemonUp(P) },
+      ] },
+    { part: 'Sidor', group: 'Bilder', files: 'launcher/libraries/bilder.js · sources/immich.js · browse/grid.js (look photos) · browse/cards.js (photo) · players/photo.js · players/photo.css',
+      used: 'Bilder-rutan på hemsidan: Immichs minnen, album, personer, tidslinjen och favoriterna. En bild visas över hela skärmen; X startar bildspelet, ett klipp spelas i mpv.',
+      items: [
+        { name: 'Minnen, album och personer', url: BILDER, ready: '.card' },
+        { name: 'Tidslinjen', url: `${BILDER}#/timeline`, ready: '.card' },
+        { name: 'Ett album', url: `${BILDER}#/album/000001f4-0000-4000-8000-0000000001f4`, ready: '.card--photo' },
+        { name: 'Personer', url: `${BILDER}#/people`, ready: '.card' },
+        { name: 'En bild', url: `${BILDER}#/album/000001f4-0000-4000-8000-0000000001f4`, ready: '.card--photo',
+          setup: ({ doc }) => doc.querySelector('.card--photo').click(), note: 'När och var, och vem som är med, en stund; A visar det igen.' },
+        { name: 'Ett klipp', url: `${BILDER}#/album/000001f4-0000-4000-8000-0000000001f4`, ready: '.card--photo',
+          setup: ({ doc }) => doc.querySelectorAll('.card--photo')[5].click(), note: 'A spelar klippet på boxen, i mpv.' },
+        { name: 'Bildspel', url: `${BILDER}#/album/000001f4-0000-4000-8000-0000000001f4`, ready: '.card--photo',
+          setup: ({ P }) => P.players.photo.open([{ id: '00000000-0000-4000-8000-000000000000' }, { id: '00000001-0000-4000-8000-000000000001' }], 0, { slideshow: true }) },
       ] },
     { part: 'Sidor', group: 'Hyllor', files: 'launcher/browse.html · browse/planks.js · browse/planks.css · browse/shelf.js · browse/grid.js · browse/cards.js (card) · libraries/*.js',
       used: 'Bläddringssidan, för alla bibliotek: omslag som står på hyllplan i sin egen form, namnet under planet, hyllorna från kant till kant och inget som skrollar i sidled. Långa samlingar är rutnät: bara raderna runt fokus i sidan, L1/R1 hoppar en bokstav, sök filtrerar, infon under hyllorna.',

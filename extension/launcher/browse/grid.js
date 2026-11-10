@@ -5,7 +5,8 @@
 //
 // look: 'stacks' for cards of wholes (cards.js stack), 'names' for names
 // alone in a few columns (cards.js name: the artists, who have no
-// pictures), else covers on shelves. info(item): { title, meta, text, foot } for the
+// pictures), 'photos' for pictures alone, close together (cards.js photo:
+// Bilder's), else covers on shelves. info(item): { title, meta, text, foot } for the
 // column at the right that follows the focus; count(shown, all): the heading's count;
 // empty: what the bare plank says when there is nothing at all. The page's
 // search field filters it while it is on screen.
@@ -45,8 +46,10 @@ window.PioneerTV = window.PioneerTV || {};
     const scroller = el('div', 'scroll grid-scroll');
     const stacks = spec.look === 'stacks';
     const names = spec.look === 'names';
+    const photos = spec.look === 'photos';
     const around = names ? NAME_ROWS : WINDOW_ROWS;
-    const gridEl = stacks ? el('div', 'shelf-stacks') : names ? el('div', 'name-list') : M.planks.el(spec.shape || 'square', cols);
+    const gridEl = stacks ? el('div', 'shelf-stacks') : names ? el('div', 'name-list') : photos ? el('div', 'photo-grid')
+      : M.planks.el(spec.shape || 'square', cols);
     gridEl.classList.add('grid');
     gridEl.style.setProperty('--columns', String(cols));
     scroller.appendChild(gridEl);
@@ -95,7 +98,7 @@ window.PioneerTV = window.PioneerTV || {};
     }
 
     function place(i) {
-      const c = stacks ? C.stack(shown[i], spec.shape) : names ? C.name(shown[i]) : C.card(shown[i], spec.shape);
+      const c = stacks ? C.stack(shown[i], spec.shape) : names ? C.name(shown[i]) : photos ? C.photo(shown[i]) : C.card(shown[i], spec.shape);
       c.dataset.index = String(i);
       c.style.gridRow = String(Math.floor(i / cols) + 1);
       c.style.gridColumn = String((i % cols) + 1);

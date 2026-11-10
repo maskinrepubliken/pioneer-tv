@@ -354,6 +354,94 @@ def daemon(path: str, query: str, method: str) -> tuple[int, str, bytes] | None:
     return None
 
 
+# ------------------------------------------------------------ Immich
+# A small library of pictures: two years of months, a few albums, people,
+# a memory, favourites; every picture a coloured card with its number.
+
+
+def _uuid(n: int) -> str:
+    return f"{n:08x}-0000-4000-8000-{n:012x}"
+
+
+def _asset(n: int) -> dict:
+    year, month = 2025 - (n // 40), 12 - (n // 4) % 12
+    day = 1 + n % 27
+    video = n % 11 == 5
+    return {"id": _uuid(n), "type": "VIDEO" if video else "IMAGE", "duration": 42000 if video else None,
+            "localDateTime": f"{year}-{month:02d}-{day:02d}T{9 + n % 10:02d}:{n % 60:02d}:00.000Z",
+            "fileCreatedAt": f"{year}-{month:02d}-{day:02d}T{9 + n % 10:02d}:{n % 60:02d}:00.000Z",
+            "isFavorite": n % 7 == 0, "width": 4032, "height": 3024 if n % 3 else 4032,
+            "exifInfo": {"city": ["Göteborg", "Lund", "Visby", "Kiruna"][n % 4], "country": "Sverige",
+                         "description": "Fika på trappan" if n % 9 == 0 else ""},
+            "people": [{"id": _uuid(900 + n % 3), "name": ["Viktor", "Mormor", "Sixten"][n % 3]}] if n % 2 == 0 else []}
+
+
+IMMICH_ASSETS = [_asset(n) for n in range(80)]
+IMMICH_ALBUMS = [{"id": _uuid(500 + i), "albumName": name, "assetCount": len(ids), "albumThumbnailAssetId": _uuid(ids[0]) if ids else None,
+                  "endDate": f"2025-0{9 - i}-01T00:00:00.000Z", "ids": ids}
+                 for i, (name, ids) in enumerate([("Midsommar på Gotland", list(range(0, 18))), ("Fjällen", list(range(20, 32))),
+                                                  ("Sixten fyller två", list(range(40, 49))), ("Köket", [])])]
+IMMICH_PEOPLE = [{"id": _uuid(900 + i), "name": name, "isHidden": False} for i, name in enumerate(["Viktor", "Mormor", "Sixten"])]
+
+
+def _page(items: list) -> bytes:
+    return json.dumps({"albums": {"items": [], "total": 0}, "assets": {"items": items, "total": len(items), "count": len(items),
+                                                                      "nextCursor": None, "nextPage": None, "facets": []}}).encode()
+
+
+def immich(path: str, query: str, method: str, body: dict | None = None) -> tuple[int, str, bytes]:
+    q = {k: v[0] for k, v in parse_qs(query).items()}
+    body = body or {}
+    js = lambda d: (200, "application/json", json.dumps(d).encode())   # noqa: E731
+    if m := re.match(r"api/assets/([0-9a-f-]{36})/thumbnail$", path):
+        n = int(m.group(1)[-12:], 16)
+        big = q.get("size") in ("preview", "fullsize")
+        return 200, "image/svg+xml", picture(f"Bild {n + 1}", 1440 if big else 320, 1080 if big else 320)
+    if m := re.match(r"api/people/([0-9a-f-]{36})/thumbnail$", path):
+        p = next((p for p in IMMICH_PEOPLE if p["id"] == m.group(1)), {"name": "?"})
+        return 200, "image/svg+xml", picture(p["name"], 240, 240)
+    if m := re.match(r"api/assets/([0-9a-f-]{36})$", path):
+        return js(next((a for a in IMMICH_ASSETS if a["id"] == m.group(1)), IMMICH_ASSETS[0]))
+    if path == "api/albums":
+        return js([{k: v for k, v in a.items() if k != "ids"} for a in IMMICH_ALBUMS])
+    if m := re.match(r"api/albums/([0-9a-f-]{36})$", path):
+        a = next((a for a in IMMICH_ALBUMS if a["id"] == m.group(1)), IMMICH_ALBUMS[0])
+        return js({k: v for k, v in a.items() if k != "ids"})
+    if path == "api/people":
+        return js({"total": len(IMMICH_PEOPLE), "hidden": 0, "people": IMMICH_PEOPLE})
+    if m := re.match(r"api/people/([0-9a-f-]{36})$", path):
+        return js(next((p for p in IMMICH_PEOPLE if p["id"] == m.group(1)), IMMICH_PEOPLE[0]))
+    if path == "api/memories":
+        return js([{"id": _uuid(700), "type": "on_this_day", "data": {"year": 2023}, "assets": IMMICH_ASSETS[60:68]},
+                   {"id": _uuid(701), "type": "on_this_day", "data": {"year": 2024}, "assets": IMMICH_ASSETS[44:50]}])
+    if path == "api/timeline/buckets":
+        months: dict = {}
+        for a in IMMICH_ASSETS:
+            months[a["localDateTime"][:7] + "-01"] = months.get(a["localDateTime"][:7] + "-01", 0) + 1
+        return js([{"timeBucket": m, "count": n} for m, n in sorted(months.items(), reverse=True)])
+    if path == "api/timeline/bucket":
+        month = (q.get("timeBucket") or "")[:7]
+        found = [a for a in IMMICH_ASSETS if a["localDateTime"].startswith(month)]
+        return js({"id": [a["id"] for a in found], "isImage": [a["type"] == "IMAGE" for a in found],
+                   "fileCreatedAt": [a["fileCreatedAt"] for a in found], "localOffsetHours": [0 for _ in found],
+                   "duration": [a["duration"] for a in found], "isFavorite": [a["isFavorite"] for a in found],
+                   "ratio": [a["width"] / a["height"] for a in found]})
+    if path == "api/search/metadata":
+        found = IMMICH_ASSETS
+        if body.get("albumIds"):
+            album = next((a for a in IMMICH_ALBUMS if a["id"] == body["albumIds"][0]), {"ids": []})
+            found = [IMMICH_ASSETS[i] for i in album["ids"]]
+        if body.get("personIds"):
+            found = [a for a in found if any(p["id"] == body["personIds"][0] for p in a["people"])]
+        if body.get("isFavorite"):
+            found = [a for a in found if a["isFavorite"]]
+        return 200, "application/json", _page(found)
+    if path == "api/search/smart":
+        words = str(body.get("query") or "").lower()
+        return 200, "application/json", _page([a for a in IMMICH_ASSETS if words in a["exifInfo"]["city"].lower()] or IMMICH_ASSETS[:9])
+    return 404, "application/json", b'{"error": "not_found"}'
+
+
 def error_for(referer: str | None) -> tuple[int, str, bytes] | None:
     """The error a page opened with ?mockerror=... asked for."""
     if not referer:

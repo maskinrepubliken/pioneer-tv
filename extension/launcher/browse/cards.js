@@ -14,7 +14,8 @@
 // A card's shape: box (a game's box art at its own shape), poster (2:3),
 // still (16:9), square (an album, a playlist), round (an artist), or group
 // (type only: a console, a collection, a folder; style 'prose' for a
-// name in Fraunces instead of Rubik capitals). A row: a picture (still or
+// name in Fraunces instead of Rubik capitals); photo (a picture of Bilder's
+// alone, close to the next). A row: a picture (still or
 // thumb), or its number, the title and a line under it, a detail at the
 // right. Styled by cards.css (and planks.css on a shelf).
 window.PioneerTV = window.PioneerTV || {};
@@ -149,5 +150,21 @@ window.PioneerTV = window.PioneerTV || {};
     return a;
   }
 
-  M.cards = { card, group, stack, pile, row, name, picture, tabs };
+  // A picture of Bilder's, close to the next: the picture alone, a clip with
+  // its length on it (item.video: seconds, or true).
+  function photo(item) {
+    const a = el('a', 'card card--photo pioneertv-card');
+    link(a, item);
+    a.appendChild(V.cover(item.picture, item.title || ''));
+    if (item.video) {
+      const s = Math.round(typeof item.video === 'number' ? item.video : 0);
+      const badge = el('span', 'photo-clip');
+      badge.appendChild(M.icons.svg('play'));
+      if (s) badge.append(`${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`);
+      a.appendChild(badge);
+    }
+    return a;
+  }
+
+  M.cards = { card, group, stack, pile, row, name, picture, tabs, photo };
 })(window.PioneerTV);

@@ -55,7 +55,8 @@ window.PioneerTV.defaultServices = [
     "id": "immich",
     "name": "Bilder",
     "tagline": "Immich",
-    "url": "https://bilder.lyresten.se/",
+    "url": "browse.html?library=bilder&tv=1",
+    "search_url": "browse.html?library=bilder&tv=1#/search/{query}",
     "color": "#3f7fa6",
     "row": "second"
   },
