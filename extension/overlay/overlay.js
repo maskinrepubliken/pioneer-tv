@@ -122,8 +122,9 @@ window.PioneerTV = window.PioneerTV || {};
   // ------------------------------------------------------------ pause panels
   // A game or a video, held where it is by the daemon ("held"), with its
   // panel over it. B closes the panel and carries on (a choice that closes
-  // it runs in the same turn, so that is checked a moment later); so do X
-  // (its filled row, Fortsätt) and Home, which the daemon takes itself.
+  // it runs in the same turn, so that is checked a moment later); so does
+  // Home, which the daemon takes itself. A game's Fortsätt spela closes it
+  // too; a film's or a video's Fortsätt plays under the open panel.
   const hhmm = (t) => new Date(t * 1000).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
   async function post(path, body) {
     try {
@@ -191,8 +192,9 @@ window.PioneerTV = window.PioneerTV || {};
   //   the timeline: how far in, the time and what is left, read only;
   //   L2 and R2 glide a mark along it, as fast as they are pressed, and
   //   what plays goes where they are let go (below);
-  //   the transport: −2 min, −15 s, play or pause (on a film or a video the
-  //   panel paused: Fortsätt), +15 s, +2 min, round buttons side by side;
+  //   the transport: −2 min, −15 s, play or pause under the open panel (on
+  //   a film or a video the panel paused: Fortsätt), +15 s, +2 min, round
+  //   buttons side by side;
   //   the queue (the music's): the song before and the next;
   //   Från början, TV-volym (left and right, and L1/R1; A mutes), Ljud,
   //   Undertexter (A steps to the next), Meny (over a site's video), Sluta.
@@ -306,11 +308,12 @@ window.PioneerTV = window.PioneerTV || {};
     };
     const play = round('pioneertv-media-play', '', first.label, first.label);
     m.parts.push(() => {
-      // A film or a video the panel paused carries on (Fortsätt); the music turns.
-      const icon = src.kind === 'audio' && !src.paused ? 'pause' : 'play';
+      // Plays or pauses under the panel, which stays open: a film or a video
+      // the panel paused says Fortsätt, the music Spela.
+      const icon = src.paused ? 'play' : 'pause';
       const ring = play.querySelector('.pioneertv-media-ring');
       if (ring.dataset.icon !== icon) { ring.dataset.icon = icon; ring.innerHTML = GLYPH[icon]; }
-      const says = src.kind === 'audio' ? (src.paused ? 'Spela' : 'Pausa') : first.label;
+      const says = !src.paused ? 'Pausa' : src.kind === 'audio' ? 'Spela' : first.label;
       play.querySelector('.pioneertv-media-says').textContent = says;
     });
     const jumps = seekable ? [[-120, 'back', '2 min', '2 minuter bakåt'], [-15, 'turnBack', '15 s', '15 sekunder bakåt']] : [];
@@ -484,7 +487,8 @@ window.PioneerTV = window.PioneerTV || {};
   const mark = (list, chosen) => list.map((t) => ({ ...t, selected: t.id === chosen.id }));
 
   // A film in mpv (video.py): held paused by the daemon while the panel is
-  // open; B, Fortsätt or Home carry on, holding B stops it.
+  // open (Fortsätt plays it under the panel); B or Home close the panel and
+  // carry on, holding B stops it.
   const video = (path, body) => post(`/api/video${path}`, body);
   function videoPanel(e) {
     const src = {
@@ -501,7 +505,11 @@ window.PioneerTV = window.PioneerTV || {};
         if (kind === 'audio') src.audio = mark(src.audio, next); else src.subs = mark(src.subs, next);
         refresh();
       },
-      first: () => ({ label: 'Fortsätt', run: pick(() => video('/resume')) }),
+      // Under the panel, which stays open (B or Home close it and carry on).
+      first: () => ({ label: 'Fortsätt', keep: true, run: async () => {
+        const r = await video('/toggle');
+        if (r.ok !== false) { src.paused = !!r.paused; refresh(); }
+      } }),
       last: { label: 'Sluta titta', icon: 'power', detail: 'håll B', run: pick(() => video('/stop')) },
     };
     panel('video', e, null, null, null, 0, () => video('/resume'), mediaSpec(src));
@@ -563,7 +571,7 @@ window.PioneerTV = window.PioneerTV || {};
       paused: true, subs: v.subs, menu: true,
       to: (t) => tell(v.frame, 'to', t),
       track: () => tell(v.frame, 'subs', nextTrack(src.subs, { id: -1, label: 'Av' }).id),
-      first: () => ({ label: 'Fortsätt', run: pick(() => {}) }),
+      first: () => ({ label: 'Fortsätt', keep: true, run: () => { tell(v.frame, 'toggle'); src.paused = !src.paused; refresh(); } }),
       last: { label: 'Sluta titta', icon: 'back', detail: 'håll B', run: pick(() => b.back()) },
     };
     panel('web', v, null, null, null, 0, () => {}, mediaSpec(src));

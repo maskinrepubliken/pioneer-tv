@@ -448,7 +448,8 @@ While a video plays: A, B or X pauses it and the overlay shows the pause
 panel over the picture, with the time at the top left ([the media
 panel](#the-media-panel): Fortsätt, the seeks, Gå till, Från början, Ljud
 and Undertexter, where A steps to the next track, at once, TV-volym, Hitta
-undertexter and Sluta titta). B, X or Home carries on. The tracks are named
+undertexter and Sluta titta). Fortsätt plays (and pauses) under the panel,
+which stays open; B or Home close it and carry on. The tracks are named
 by what Jellyfin knows of them, by their language (mpv calls a subtitle file
 by its name, "Stream.srt"): those inside the file in the order mpv counts
 them, every subtitle file by its address; each subtitle file of the film is
@@ -517,7 +518,8 @@ Its parts, those that apply:
   seek, so a site's video does not load and load); a short light touch is
   ten seconds.
 - **The transport**: round buttons side by side, −2 min, −15 s, play or
-  pause (the large one; on a film or a video the panel paused, Fortsätt),
+  pause (the large one; on a film or a video the panel paused, Fortsätt;
+  it plays under the panel, which stays open until B or Home),
   +15 s, +2 min. Left and right go between them.
 - **The queue** (the music's): Förra and Nästa, side by side.
 - **Rows**: Från början; TV-volym (◀ ▶ or L1/R1, A mutes), after what drives

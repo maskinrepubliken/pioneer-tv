@@ -270,6 +270,10 @@ class Playing(Base):
         self.assertEqual([a["label"] for a in held["audio"]], ["Engelska", "Svenska"])
         self.assertEqual(await self.video.track("subtitles", "no"), (True, ""))
         self.assertEqual((await self.video.track("audio", "x"))[0], False)
+        # Fortsätt plays under the panel, which stays; again, it pauses.
+        self.assertFalse(await self.video.toggle())
+        self.assertTrue(self.video.held)
+        self.assertTrue(await self.video.toggle())
         self.assertTrue(await self.video.on_system("menu"))          # Home on the panel: carry on
         await asyncio.sleep(0.1)
         self.assertFalse(self.video.held)

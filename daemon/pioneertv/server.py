@@ -636,6 +636,8 @@ class Server:
         elif action == "resume":
             await video.resume()
             ok, msg = True, ""
+        elif action == "toggle":
+            return web.json_response({"ok": True, "paused": await video.toggle()})
         elif action == "track":
             ok, msg = await video.track(str(data.get("kind") or ""), data.get("id"))
         elif action == "find_subtitles":

@@ -489,6 +489,7 @@ class Video:
         if self.state != "running" or self.held:
             return
         self.held = True
+        self.paused = True                 # mpv says so too, a moment later
         await self._command(["set_property", "pause", True])
         await self._event("held", title=self.item["name"] if self.item else "", time=self.position,
                           duration=self.length(), **panel_tracks(self.track_list, self.item["source"] if self.item else None))
@@ -515,6 +516,14 @@ class Video:
         self.held = False
         await self._command(["set_property", "pause", False])
         await self._event("running")
+
+    async def toggle(self) -> bool:
+        """Fortsätt (or Pausa) on the panel: it plays or pauses under the
+        panel, which stays open; closing it carries on."""
+        if self.state == "running" and self.held:
+            self.paused = not self.paused
+            await self._command(["set_property", "pause", self.paused])
+        return self.paused
 
     async def seek(self, by: float) -> None:
         """Spola on the panel: by seconds, from where it is."""
