@@ -14,6 +14,7 @@ what was learned on the way.
 - [Games](#games)
 - [Music](#music)
 - [Film and series](#film-and-series)
+- [Pictures](#pictures)
 - [Video on other sites](#video-on-other-sites)
 - [The media panel](#the-media-panel)
 - [Covers on the box](#covers-on-the-box)
@@ -494,6 +495,35 @@ Jellyfin itself.
 Measured on the box in October: a 1080p HEVC episode decoded in hardware
 (`hevc-drm`), no dropped frames, mpv at about 18 % CPU, a cache about 40
 seconds ahead.
+
+## Pictures
+
+The Bilder tile opens the browse page on top of [Immich](https://immich.app)
+(`browse.html?library=bilder`, `libraries/bilder.js` on
+`sources/immich.js`): today's memories ("för X år sedan"), the albums
+and the people; the timeline, a year at a time, its months as cards; a
+month, an album, a person, a memory, the favourites and a search
+(Immich's smart search, by what is in the picture) are grids of pictures
+close together (`grid.js` look `photos`, `cards.js` photo; a clip has its
+length on it). The pages reach Immich through `/immich/` on the daemon
+(`daemon/pioneertv/immich.py`), which adds the API key and lets through
+reading only: the albums, the timeline, the people, the memories, an
+asset and its pictures, and the searches (POSTs that only read); never
+uploads, edits, deletions or sharing. Its address and key are under
+Inställningar → Tjänster (an API key made in Immich: Kontoinställningar →
+API-nycklar; reading is all it needs).
+
+A picture opens the viewer (`players/photo.js`): one over the whole
+screen on ink, Immich's preview (about the screen's size), the next one
+fetched beforehand. Left and right go on, A shows when and where it was
+taken and who is in it (it shows by itself for a moment after a move), X
+starts or stops the slideshow (a new picture every six seconds, fading
+into the next; clips passed over; the box told something plays, so the
+screensaver keeps away), B goes back to the grid, on the picture last
+seen. X on a grid is its Bildspel button. A clip shows its picture with a
+play ring; A plays it in mpv as a film is (`video.py` `play_immich`, the
+key as mpv's header, without Jellyfin's reports or subtitles), and the
+viewer is there again after.
 
 ## Video on other sites
 
