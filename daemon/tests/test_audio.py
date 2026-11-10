@@ -1,6 +1,6 @@
 """audio.py against a stand-in mpv and a stand-in Jellyfin: a queue played
 on to the next song and to its end, a song marked played, paused and
-stopped, and a radio channel. `python -m unittest tests.test_audio` from daemon/."""
+stopped. `python -m unittest tests.test_audio` from daemon/."""
 import asyncio
 import os
 import sys
@@ -14,7 +14,7 @@ from pioneertv import config
 from pioneertv.audio import Audio
 
 # Stands in for mpv: opens its IPC socket and plays what it is given, each
-# file a moment long (or for ever, a radio stream), saying so as mpv does.
+# file a moment long (or for ever, one whose id says "long"), saying so as mpv does.
 FAKE_MPV = r'''
 import json, os, socket, sys, threading, time
 args = dict(a[2:].split("=", 1) for a in sys.argv[1:] if a.startswith("--") and "=" in a)
@@ -26,7 +26,7 @@ def send(m):
 playing = [0]
 def play(url, n):
     send({"event": "playback-restart"})
-    if "radio" in url: return
+    if "long" in url: return
     for t in (0.0, 0.5):
         time.sleep(0.05)
         if playing[0] != n: return
@@ -115,18 +115,15 @@ class Playing(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.events[-1]["state"], "idle")
 
     async def test_paused_and_stopped(self):
-        await self.audio.radio({"channel": "132", "name": "P1", "url": "https://example.org/radio/132.mp3"})
-        await self.until(lambda: self.audio.state == "playing", "the radio playing")
-        self.assertTrue(self.audio.status()["live"])
+        await self.audio.play([{"id": "long1", "name": "Lång"}], 0)
+        await self.until(lambda: self.audio.state == "playing", "the song playing")
         await self.audio.toggle()
         self.assertEqual(self.audio.state, "paused")
-        await self.audio.toggle()                             # live: loaded again, at the broadcast
-        await self.until(lambda: self.audio.state == "playing", "playing again")
-        self.assertEqual(len(self.loaded()), 2)
-        self.assertNotIn("k3y", "".join(self.loaded()))       # never the key to someone else's stream
+        await self.audio.toggle()
+        self.assertEqual(self.audio.state, "playing")
         await self.audio.stop("en film")
         self.assertEqual(self.audio.state, "idle")
-        self.assertFalse(self.reports)                        # radio is not Jellyfin's
+        self.assertIn(("/Sessions/Playing/Stopped", "long1"), self.reports)
 
 
 if __name__ == "__main__":

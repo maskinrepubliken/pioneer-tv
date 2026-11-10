@@ -88,3 +88,35 @@
 .tiles-legend span { display: inline-flex; align-items: center; gap: 0.45em; }
 .tiles-legend i { display: inline-flex; font-size: 0.8em; font-style: normal; color: var(--pioneertv-ink-muted); }
 .tiles-legend .pioneertv-kbd { font-size: 0.75em; }
+
+/* ---- the live channels: small tiles in a column of their own between the
+   buttons and the big tiles, each with a stripe of its colour, a mark that
+   says it is live, and its name ---- */
+.tiles-middle { flex: 1; min-height: 0; display: flex; gap: 1.6em; }
+.tiles-channels { flex: none; width: 10.5em; display: flex; flex-direction: column; justify-content: center; gap: 0.8em; }
+.tiles-channels-title {
+  margin: 0 0 0.2em; font: 400 0.75em/1 var(--pioneertv-font-mono); letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--pioneertv-ink-faint);
+}
+.tiles-channel {
+  position: relative; display: flex; align-items: center; min-height: 4.4em; padding: 0.8em 0.9em 0.8em 1.25em; cursor: pointer;
+  text-align: left; color: var(--pioneertv-ink); overflow: hidden;
+}
+.tiles-channel::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 0.35em; background: var(--tile-color); }
+.tiles-channel-text { display: flex; flex-direction: column; gap: 0.3em; min-width: 0; }
+.tiles-channel-live {
+  display: inline-flex; align-items: center; gap: 0.4em;
+  font: 400 0.65em/1 var(--pioneertv-font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--pioneertv-ink-muted);
+}
+.tiles-channel-live::before { content: ""; width: 0.6em; height: 0.6em; border-radius: 50%; background: var(--pioneertv-alarm); }
+.tiles-channel-name {
+  font-family: var(--pioneertv-font-display); font-weight: 900; font-size: 1.15em; line-height: 1.02;
+  letter-spacing: -0.01em; text-transform: uppercase; overflow-wrap: anywhere;
+}
+.tiles-channel.pioneertv-menu-active, .tiles-channel.pioneertv-focus {
+  background: var(--pioneertv-paper-hover); border-color: var(--pioneertv-ink);
+  outline: 0.25em solid var(--pioneertv-focus) !important; outline-offset: 0.3em !important; z-index: 2;
+  box-shadow: none !important; border-radius: var(--pioneertv-radius-card) !important;
+}
+.tiles-channel.pioneertv-focus .tiles-band, .tiles-channel[aria-busy] .tiles-band { background: var(--pioneertv-ochre); }
+.tiles-channel-text .pioneertv-menu-opening { display: block; width: 80%; margin: 0 0 0.35em; }

@@ -10,7 +10,7 @@
   else; a pad connecting does too.
 - When the screensaver has been up for ui.tv_off_minutes, the TV is turned
   off over CEC and the screensaver rests ("Vilar", nothing moving) until
-  the TV is on again; not while music or radio plays (audio.py), which
+  the TV is on again; not while music plays (audio.py), which
   comes out of the TV and plays on under the screensaver.
 
 0 is never, for each. Alone means: no button on a pad or on the TV's
@@ -47,7 +47,7 @@ class Idle:
         self.emit = emit
         self.tv_off = tv_off
         self.busy = busy                    # a game or a film is playing
-        self.audible = audible              # music or radio plays (audio.py): the TV stays on for it
+        self.audible = audible              # music plays (audio.py): the TV stays on for it
         self.at_home = at_home              # the page on screen is the home page
         self.pads = pads                    # how many pads are connected
         self.put_away = put_away            # quits a held game, stops a held film

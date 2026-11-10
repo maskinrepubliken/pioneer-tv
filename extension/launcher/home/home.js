@@ -1,7 +1,8 @@
-// Pioneer TV home page: the box's services as big tiles, its status and a
-// few buttons at the top (launcher/shared/tiles.js). A tile opens its
-// service, Inställningar the settings page; Live and Sök are panels the
-// overlay draws over this page (the daemon passes the ask on). The screensaver is not this page: the
+// Pioneer TV home page: the box's services as big tiles, the live TV
+// channels as small ones in a column beside them, its status and a few
+// buttons at the left (launcher/shared/tiles.js). A tile opens its service
+// or channel, Inställningar the settings page; Sök is a panel the overlay
+// draws over this page (the daemon passes the ask on). The screensaver is not this page: the
 // overlay draws it over everything when no pad is connected (idle.py).
 (function (M) {
   const b = M.bridge;
@@ -22,14 +23,15 @@
   let drawnFor = '';
   function draw() {
     const { first, second, channels } = S.rows();
-    const key = JSON.stringify([first, second, channels.length]);
+    const key = JSON.stringify([first, second, channels]);
     if (sheet && key === drawnFor) return;
     drawnFor = key;
     const focused = document.activeElement && document.activeElement.dataset.key;
     const service = (s) => ({ key: `tile:${s.id}`, label: s.name, art: S.art(s), color: s.color, url: s.url });
-    // Live first, then the services; all the same size, in two rows.
+    // The services, all the same size, in two rows; the channels small, in
+    // their column.
     const all = [...first, ...second].map(service);
-    if (channels.length) all.unshift({ key: 'tile:live', label: S.LIVE.name, art: S.art(S.LIVE), color: S.LIVE.color, panel: 'live' });
+    const live = channels.map((s) => ({ key: `channel:${s.id}`, label: s.name, color: s.color, url: s.url }));
     const half = Math.ceil(all.length / 2);
     const rows = [all.slice(0, half), all.slice(half)];
     // The column at the left, top to bottom.
@@ -40,8 +42,8 @@
       { key: 'settings', label: 'Inställningar', icon: 'gear', round: true, run: () => b.settings() },
       { key: 'tv-off', label: 'Stäng av TV:n', icon: 'power', round: true, run: () => b.cec('tv_off') },
     ];
-    const next = M.tiles.sheet({ side, rows, legend: [[['arrows'], 'navigera'], [['A'], 'välj'], [['Y'], 'tangentbord']] });
-    for (const it of rows.flat()) it.el.addEventListener('click', () => (it.panel ? panel(it.panel)() : open(it)));
+    const next = M.tiles.sheet({ side, channels: live, rows, legend: [[['arrows'], 'navigera'], [['A'], 'välj'], [['Y'], 'tangentbord']] });
+    for (const it of [...rows.flat(), ...live]) it.el.addEventListener('click', () => open(it));
     for (const it of side) it.el.addEventListener('click', it.run);
     if (sheet) sheet.replaceWith(next); else document.body.appendChild(next);
     sheet = next;

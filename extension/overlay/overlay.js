@@ -155,7 +155,7 @@ window.PioneerTV = window.PioneerTV || {};
   // ------------------------------------------------------------ the media panel
   // One panel for whatever plays: a film in mpv (video.py), a site's video
   // (content/webvideo.js in each of the page's frames), the box's music and
-  // radio (audio.py). Its parts, those that apply (overlay.css, "the media
+  // music (audio.py). Its parts, those that apply (overlay.css, "the media
   // panel"):
   //
   //   the head: the cover (the music's), playing or paused, the whole name,
@@ -474,14 +474,14 @@ window.PioneerTV = window.PioneerTV || {};
     panel('web', v, null, null, null, 0, () => {}, mediaSpec(src));
   }
 
-  // The box's music and radio (audio.py): it plays on under the menu; the
+  // The box's music (audio.py): it plays on under the menu; the
   // quick menu's first row (Spelas nu) opens its panel, one step in.
   const sound = (action, body) => post(`/api/audio/${action}`, body);
   let audioState = { state: 'idle' };
   let audioSrc = null;
   function fromAudio(s) {
     const it = s.item || {};
-    return { title: it.name, sub: s.kind === 'radio' ? 'Sveriges Radio' : [it.artist, it.album].filter(Boolean).join(' · '),
+    return { title: it.name, sub: [it.artist, it.album].filter(Boolean).join(' · '),
       cover: it.cover || it.thumb || '', live: s.live, time: s.time || 0, duration: s.duration || it.seconds || 0,
       paused: s.state !== 'playing', index: s.index, count: s.kind === 'music' ? s.count : 0, state: s.state };
   }
@@ -512,7 +512,7 @@ window.PioneerTV = window.PioneerTV || {};
   function nowRow() {
     const s = audioState;
     if (!s || s.state === 'idle' || !s.item) return null;
-    return { label: s.item.name, icon: s.kind === 'radio' ? 'radio' : 'vinyl', detail: s.state === 'paused' ? 'pausad' : 'spelas nu', sub: audioSpec };
+    return { label: s.item.name, icon: 'vinyl', detail: s.state === 'paused' ? 'pausad' : 'spelas nu', sub: audioSpec };
   }
 
   M.overlay = { host };

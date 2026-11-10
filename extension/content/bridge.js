@@ -127,7 +127,7 @@ window.PioneerTV = window.PioneerTV || {};
       else if (this.overlay) this.relay('navigate', { url });
       else location.href = url;
     },
-    // The home page, where a relative service url (the radio player) is read from.
+    // The home page, where a relative service url is read from.
     launcherUrl: LAUNCHER_EXT_URL,
     // What the overlay cannot do itself it asks the page to do, through the
     // daemon and the extension (overlay.py in the daemon: relay).

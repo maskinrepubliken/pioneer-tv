@@ -5,7 +5,7 @@ the box, and the overlay's routing is the daemon's own (pioneertv/overlay.py,
 Router): what goes to the overlay, what to the page, the menu pausing what
 plays. Around it, stand-ins for what the box does with the pad's system
 buttons (Home, holding Home, Y, holding B, L1/R1, L2/R2) and for its players: the
-music and radio (audio.py), a film in mpv (video.py), a game in RetroArch
+music (audio.py), a film in mpv (video.py), a game in RetroArch
 (games.py), the screensaver (idle.py). Their state moves with the clock as
 the real ones do, and they say so with the same events. Stdlib only.
 
@@ -32,12 +32,12 @@ import mock  # noqa: E402
 GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 BOX = "http://127.0.0.1:8765/"
 
-# The box's tiles (its settings.json, October), the daemon's address as {origin}.
+# The box's tiles (its settings.json, November), the daemon's address as {origin}.
 SERVICES = [
+    {"id": "svtplay", "name": "Play", "tagline": "Public service", "url": "https://www.svtplay.se/",
+     "search_url": "https://www.svtplay.se/sok?q={query}", "color": "#1f7a4d", "glyph": "S"},
     {"id": "cineasterna", "name": "Cineasterna", "tagline": "Film från biblioteket", "url": "https://www.cineasterna.com/sv/library/5/discover",
      "search_url": "https://www.cineasterna.com/sv/library/5/search?q={query}&page=1", "color": "#b8940c", "glyph": "C"},
-    {"id": "svtplay", "name": "SVT Play", "tagline": "Public service", "url": "https://www.svtplay.se/",
-     "search_url": "https://www.svtplay.se/sok?q={query}", "color": "#1f7a4d", "glyph": "S"},
     {"id": "jellyfin", "name": "Film & serier", "tagline": "Jellyfin", "url": "{origin}ext/launcher/browse.html?library=film&tv=1",
      "search_url": "{origin}ext/launcher/browse.html?library=film&tv=1#/search/{query}", "color": "#7b5ea7", "glyph": "J"},
     {"id": "musik", "name": "Musik", "tagline": "Jellyfin", "url": "{origin}ext/launcher/browse.html?library=musik&tv=1",
@@ -48,10 +48,7 @@ SERVICES = [
     {"id": "svt1", "name": "SVT1", "url": "https://www.svtplay.se/kanaler/svt1?start=auto", "fullscreen": "1", "row": "live", "kind": "tv"},
     {"id": "svt2", "name": "SVT2", "url": "https://www.svtplay.se/kanaler/svt2?start=auto", "fullscreen": "1", "row": "live", "kind": "tv"},
     {"id": "svtbarn", "name": "SVT Barn", "url": "https://www.svtplay.se/kanaler/svtbarn?start=auto", "fullscreen": "1", "row": "live", "kind": "tv"},
-    {"id": "p1", "name": "P1", "url": "radio.html?channel=132&name=P1", "row": "live", "kind": "radio"},
-    {"id": "p2", "name": "P2", "url": "radio.html?channel=163&name=P2", "row": "live", "kind": "radio"},
-    {"id": "p3", "name": "P3", "url": "radio.html?channel=164&name=P3", "row": "live", "kind": "radio"},
-    {"id": "p4", "name": "P4", "url": "radio.html?channel=206&name=P4", "row": "live", "kind": "radio"},
+    {"id": "kunskapskanalen", "name": "Kunskaps\u00adkanalen", "url": "https://www.svtplay.se/kanaler/kunskapskanalen?start=auto", "fullscreen": "1", "row": "live", "kind": "tv"},
 ]
 # The box's two pads (its settings.json).
 PADS = {
@@ -148,7 +145,7 @@ class Daemon:
         self.tv = "on"
         self.saver = False
         self.page = ""
-        # music and radio (audio.py)
+        # music (audio.py)
         self.audio = Player()
         self.queue: list[dict] = []
         self.index = -1
@@ -309,11 +306,11 @@ class Daemon:
             self.event("rest", on=False)
             self.event("saver", show=False)
 
-    # ------------------------------------------------------------ music and radio (audio.py)
+    # ------------------------------------------------------------ music (audio.py)
     def audio_status(self) -> dict:
         item = self.queue[self.index] if 0 <= self.index < len(self.queue) else None
         return {"state": self.audio.state, "kind": self.kind, "item": item, "index": self.index, "count": len(self.queue),
-                "time": round(self.audio.time, 1), "duration": self.audio.duration, "live": self.kind == "radio",
+                "time": round(self.audio.time, 1), "duration": self.audio.duration,
                 "next": [{"name": s.get("name"), "artist": s.get("artist")} for s in self.queue[self.index + 1:self.index + 7]]}
 
     def audio_say(self) -> None:
@@ -322,7 +319,7 @@ class Daemon:
     def audio_load(self, index: int) -> None:
         self.index = index
         item = self.queue[index]
-        self.audio.duration = None if self.kind == "radio" else (item.get("seconds") or 180)
+        self.audio.duration = item.get("seconds") or 180
         self.audio.set("loading", 0)
         self.audio_say()
 
@@ -349,14 +346,11 @@ class Daemon:
                 return {"ok": False, "message": "inget att spela"}
             self.kind = "music"
             self.audio_load(max(0, min(len(self.queue) - 1, int(body.get("index") or 0))))
-        elif action == "radio":
-            self.queue, self.kind = [{k: body.get(k) for k in ("channel", "name", "url", "cover")}], "radio"
-            self.audio_load(0)
         elif action == "toggle":
             if self.audio.state == "playing":
                 self.audio.set("paused")
             elif self.audio.state == "paused":
-                self.audio.set("playing", 0 if self.kind == "radio" else None)
+                self.audio.set("playing")
             self.audio_say()
         elif action in ("seek", "to") and self.kind == "music":
             at = (self.audio.time + float(body.get("by") or 0)) if action == "seek" else float(body.get("at") or 0)

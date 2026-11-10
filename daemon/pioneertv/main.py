@@ -216,7 +216,7 @@ async def amain(cfg: dict) -> None:
     server.hooks["video"] = video
     await video.reap_strays()
 
-    # Music and radio, played here so they play on from page to page (audio.py).
+    # Music, played here so it plays on from page to page (audio.py).
     audio = Audio(cfg, emit)
     server.hooks["audio"] = audio
     await audio.reap_strays()

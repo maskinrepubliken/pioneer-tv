@@ -641,9 +641,9 @@ class Server:
             return web.json_response({"ok": False, "message": "okänd åtgärd"}, status=404)
         return web.json_response({"ok": ok, "message": msg}, status=200 if ok else 409)
 
-    # ------------------------------------------------------------ music and radio
+    # ------------------------------------------------------------ music
     async def quiet(self, why: str) -> None:
-        """Something else plays now: the music and radio (audio.py) stop."""
+        """Something else plays now: the music (audio.py) stops."""
         audio = self.hooks.get("audio")
         if audio and audio.active():
             await audio.stop(why)
@@ -653,8 +653,7 @@ class Server:
         return web.json_response(audio.status() if audio else {"state": "idle"})
 
     async def api_audio_action(self, request: web.Request) -> web.Response:
-        """play {queue, index} (songs from Jellyfin), radio {channel, name, url},
-        toggle, pause, resume, seek {by}, to {at}, next, prev, stop."""
+        """play {queue, index} (songs from Jellyfin), toggle, pause, resume, seek {by}, to {at}, next, prev, stop."""
         audio = self.hooks.get("audio")
         if not audio:
             return web.json_response({"ok": False, "message": "inte tillgängligt"}, status=503)
@@ -667,8 +666,6 @@ class Server:
                 if hook and hook.state not in ("idle", "held"):
                     return web.json_response({"ok": False, "message": "något annat spelas"}, status=409)
             ok, msg = await audio.play(data.get("queue") or [], data.get("index") or 0)
-        elif action == "radio":
-            ok, msg = await audio.radio(data)
         elif action in ("seek", "to"):
             try:
                 value = float(data.get("by" if action == "seek" else "at") or 0)

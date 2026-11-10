@@ -3,7 +3,7 @@
    and the TV look the same), the page's frame, the capsule buttons, the
    legend at the foot, a picture or the paper standing in for it, a
    section's label, and a view's messages (views.js). Tokens in tokens.css,
-   primitives in paper.css. Each page adds its own: browse/, radio/, home/,
+   primitives in paper.css. Each page adds its own: browse/, home/,
    game/. */
 
 html { font-size: 1.45vw; }

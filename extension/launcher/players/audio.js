@@ -4,8 +4,7 @@
 // else plays. Here a queue of songs is handed to it, and what plays is
 // shown: "Spelas nu" over the page (B goes back to browsing, X brings it
 // back), small in the heading meanwhile, and its row in a list marked.
-// The radio page shows a channel the same way (radio/radio.js). Styled by
-// audio.css.
+// Styled by audio.css.
 //
 // A song: { id, name, artist, album, seconds, cover, thumb }.
 //
@@ -156,7 +155,7 @@ window.PioneerTV = window.PioneerTV || {};
       part.title.textContent = it.name || '';
       part.artist.textContent = it.artist || '';
       part.album.textContent = it.album || '';
-      part.label.textContent = state.kind === 'radio' ? 'Radio · direkt' : `Spelas nu · ${state.index + 1} av ${state.count}`;
+      part.label.textContent = `Spelas nu · ${state.index + 1} av ${state.count}`;
       part.state.textContent = state.state === 'paused' ? 'Pausad' : state.state === 'loading' ? 'Laddar…' : '';
       part.queue.innerHTML = '';
       for (const next of state.next || []) {
@@ -165,18 +164,16 @@ window.PioneerTV = window.PioneerTV || {};
         li.appendChild(el('span', '', next.artist || ''));
         part.queue.appendChild(li);
       }
-      if (!part.queue.children.length) part.queue.appendChild(el('li', 'empty', state.kind === 'radio' ? 'Direktsänt' : 'Inget mer i kön'));
-      V.legend(part.legend, state.kind === 'radio'
-        ? [['A', 'paus · spela'], ['B', 'bläddra']]
-        : [['A', 'paus · spela'], ['◀ ▶', `spola ${SEEK} s`], ['B', 'bläddra']]);
+      if (!part.queue.children.length) part.queue.appendChild(el('li', 'empty', 'Inget mer i kön'));
+      V.legend(part.legend, [['A', 'paus · spela'], ['◀ ▶', `spola ${SEEK} s`], ['B', 'bläddra']]);
       this.progress();
     },
     progress() {
       const len = state.duration || (state.item && state.item.seconds) || 0;
       const at = now();
-      part.pos.textContent = state.live ? 'Direkt' : clock(at);
-      part.len.textContent = state.live ? '' : clock(len);
-      part.bar.style.width = len ? `${Math.min(100, (at / len) * 100)}%` : state.live ? '100%' : '0';
+      part.pos.textContent = clock(at);
+      part.len.textContent = clock(len);
+      part.bar.style.width = len ? `${Math.min(100, (at / len) * 100)}%` : '0';
     },
     onKeyDown(e) {
       if (e.key === 'Enter' || e.key === ' ') { if (!e.repeat) player.toggle(); }

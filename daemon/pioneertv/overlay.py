@@ -22,11 +22,11 @@ ROUTED = ("keyboard", "escape")
 # Always the overlay's (seek: L2/R2 on the media panel, how hard they are pressed).
 OVERLAY = ("menu", "toast", "saver", "rest", "seek")
 # What the overlay may ask the page (through the extension) to do, and what
-# a page may ask of the overlay (the home page: a panel, Live or Sök).
+# a page may ask of the overlay (the home page: its Sök panel).
 RELAYS = ("home", "back", "reload", "settings", "keyboard", "navigate", "webvideo")
 TO_OVERLAY = ("menu",)
 # The panels the home page may open alone in the overlay.
-PANELS = ("live", "search")
+PANELS = ("search",)
 # What the overlay's panel for a site's video may ask of it (content/webvideo.js).
 WEBVIDEO_ACTIONS = ("toggle", "seek", "to", "subs")
 

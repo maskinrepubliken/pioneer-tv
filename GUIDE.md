@@ -86,7 +86,6 @@ page, each with a folder of its own code; what several of them use is in
 | `index.html` | `home/` | Home: the services as tiles, Sök, Inställningar, the TV's off button |
 | `browse.html` | `browse/`, `libraries/`, `players/` | One page for every library: `?library=spel`, `musik` or `film` |
 | `game.html` | `game/` | A game on its way, before RetroArch covers the screen |
-| `radio.html` | `radio/` | A Sveriges Radio channel |
 
 The browse page draws every library the same way. A library
 (`libraries/spel.js`, `musik.js`, `film.js`) only says what there is, from
@@ -276,8 +275,8 @@ vanish over the ink), and changes every three minutes. No clock, no date.
   running in mpv, or a page whose video or audio plays, in any of its
   frames, or that is in game mode; the count starts again when it ends. A
   game or a film held on its pause panel is not playing. The box's own
-  music and radio (audio.py) play on under the screensaver instead, and
-  keep the TV on.
+  music (audio.py) plays on under the screensaver instead, and keeps the
+  TV on.
 
 The daemon decides (`daemon/pioneertv/idle.py`): it sees every button, the
 pointer and the pads coming and going, the pages tell it what plays and
@@ -391,9 +390,6 @@ dashboard), and a song played to its end is marked played for the user
 (`UserPlayedItems`), so play counts follow the box: the reports come from
 the box's API key, which is no user, and count for nobody.
 
-A radio channel (`radio.html`) is played the same way, live: paused, the
-stream is let go, and played again it starts where the broadcast is.
-
 As with RomM the pages never talk to Jellyfin directly: `/jellyfin/...` on
 their own origin is forwarded by the daemon with the API key added, and only
 the library and the images are reachable; the daemon's mpv streams the songs
@@ -497,8 +493,8 @@ for what the site protects too.
 ## The media panel
 
 One panel in the overlay for whatever plays (`overlay.js` mediaSpec,
-styled in `overlay.css`): a film in mpv, a site's video, the box's music and
-radio. Its parts, those that apply:
+styled in `overlay.css`): a film in mpv, a site's video, the box's music.
+Its parts, those that apply:
 
 - **The head**: the cover (the music's), playing, paused or live, the whole
   name, and what it is from (the artist and the album).
@@ -608,7 +604,7 @@ one screen, to try whole flows rather than single views. The page (Chromium
 on the box) and the overlay (its own window on the box) are two frames, one
 over the other, at 1920×1080 scaled to fit; behind them a stand-in daemon on
 the preview server's `/ws` (`dev/sim.py`), which routes as the daemon does
-(it uses `pioneertv/overlay.py` itself) and plays the music, the radio, a
+(it uses `pioneertv/overlay.py` itself) and plays the music, a
 film and a game on a clock of its own, with the same events. The simulator
 window does what the extension's background worker does (home, back,
 navigate, settings for the page) and hands the keys to the overlay while
@@ -805,13 +801,15 @@ tried again every three seconds.
   card at the right; the pause panels of a game and a film are the same
   card. The d-pad moves to the nearest choice that way on screen.
 - **The home page** (`launcher/index.html`, `home/home.js`) is a page of
-  its own: Live (the channels) first, then the services (config
-  `services`), as tiles of one size in two rows, the pad's legend under
-  them; at the left a column on the sunken paper with round buttons in
-  the middle (Sök, the quick menu with the pad's Home mark, Inställningar,
-  the TV's off button) and the box's status at its foot. Its Live tile and Sök ask the
-  overlay for that panel alone (`relay` with a `panel`): Live's channels,
-  or the on-screen keyboard and then where to search. Inställningar, and
+  its own: the services (config `services`, in order; the first, Play, has
+  the focus when it opens) as tiles of one size in two rows, the pad's
+  legend under them; beside them, at their left, the live TV channels
+  (`row = "live"`) as small tiles in a column under "Live", each opening
+  its channel; at the far left a column on the sunken paper with round
+  buttons in the middle (Sök, the quick menu with the pad's Home mark,
+  Inställningar, the TV's off button) and the box's status at its foot. Sök
+  asks the overlay for that panel alone (`relay` with a `panel`): the
+  on-screen keyboard and then where to search. Inställningar, and
   its Loggar tab, is the settings page.
 - **The screensaver** (`overlay/saver.js`), over everything when no pad is
   connected and nobody has pressed anything ([The TV

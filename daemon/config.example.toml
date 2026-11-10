@@ -75,7 +75,17 @@ max_speed = 1100.0   # pixels per second at full deflection
 curve = 2.0
 hz = 60              # pointer steps per second; the extension applies them per frame
 
-# Services shown by the launcher. {query} is replaced by the search text.
+# Services shown by the launcher, in order (the first has the focus when the
+# home page opens). {query} is replaced by the search text.
+[[services]]
+id = "svtplay"
+name = "Play"
+tagline = "Public service"
+url = "https://www.svtplay.se/"
+search_url = "https://www.svtplay.se/sok?q={query}"
+color = "#1f7a4d"
+glyph = "S"
+
 [[services]]
 id = "cineasterna"
 name = "Cineasterna"
@@ -84,15 +94,6 @@ url = "https://www.cineasterna.com/sv/library/5/discover"
 search_url = "https://www.cineasterna.com/sv/library/5/search?q={query}&page=1"
 color = "#b8940c"
 glyph = "C"
-
-[[services]]
-id = "svtplay"
-name = "SVT Play"
-tagline = "Public service"
-url = "https://www.svtplay.se/"
-search_url = "https://www.svtplay.se/sok?q={query}"
-color = "#1f7a4d"
-glyph = "S"
 
 [[services]]
 id = "jellyfin"
@@ -157,14 +158,10 @@ url = "https://bilder.lyresten.se/"
 color = "#3f7fa6"
 row = "second"
 
-# The second row of big tiles: row = "second" (Bilder, below), then a Live
-# tile when there are live channels, which lists them in a panel like the
-# quick menu's. row = "live" makes a service such a channel and kind (tv or
-# radio) gives it its icon there. The SVT channels open
-# straight into the stream and take the whole TV (fullscreen = "1"). The
-# radio tiles open the launcher's own player (radio.html), which streams
-# from Sveriges Radio; channel is SR's id. P4 is regional: 206 is P4
-# Sjuhärad, and https://api.sr.se/api/v2/channels lists the others.
+# The second row of big tiles: row = "second" (Bilder, above). row = "live"
+# makes a service a live channel: a small tile in a column of its own at the
+# left of the big ones. The SVT channels open straight into the stream and
+# take the whole TV (fullscreen = "1").
 
 [[services]]
 id = "svt1"
@@ -197,34 +194,6 @@ url = "https://www.svtplay.se/kanaler/kunskapskanalen?start=auto"
 row = "live"
 kind = "tv"
 fullscreen = "1"
-
-[[services]]
-id = "p1"
-name = "P1"
-url = "radio.html?channel=132&name=P1"
-row = "live"
-kind = "radio"
-
-[[services]]
-id = "p2"
-name = "P2"
-url = "radio.html?channel=163&name=P2"
-row = "live"
-kind = "radio"
-
-[[services]]
-id = "p3"
-name = "P3"
-url = "radio.html?channel=164&name=P3"
-row = "live"
-kind = "radio"
-
-[[services]]
-id = "p4"
-name = "P4"
-url = "radio.html?channel=206&name=P4"
-row = "live"
-kind = "radio"
 
 # Pads by the serial number of their USB device: each 2.4 GHz dongle has its
 # own, so two identical pads can be told apart (lsusb -v, or

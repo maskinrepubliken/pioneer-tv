@@ -1,6 +1,6 @@
-"""Music and radio, played by the daemon in an mpv of their own, without a picture.
+"""Music, played by the daemon in an mpv of its own, without a picture.
 
-A page only asks for it (the Musik pages' songs, a radio channel) and shows
+A page only asks for it (the Musik pages' songs) and shows
 what plays: the sound lives here, so it plays on whatever page is on screen,
 under the screensaver too, until something else starts to play (a film in
 mpv, a game, a site's video, a page's own sound: main.py and server.py stop
@@ -8,14 +8,13 @@ it then) or it is stopped. The overlay's quick menu has a row for it, which
 opens its panel (overlay.js), as a film's and a site's video's.
 
 A queue of songs from Jellyfin (each streamed as it is, the API key in its
-address, which goes to mpv over its socket and never on a command line), or
-one radio channel, live: paused, a live channel is let go, and played again
-it starts where the broadcast is. Jellyfin hears what plays, as for films
+address, which goes to mpv over its socket and never on a command line).
+Jellyfin hears what plays, as for films
 (Sessions/Playing), and a song played to its end counts as played.
 
 The state goes to every page and the overlay as an "audio" event:
 {state: idle | playing | paused | loading, kind, item, index, count, time,
-duration, live, next (the next few songs' names)}, at each change and every few seconds while it plays.
+duration, next (the next few songs' names)}, at each change and every few seconds while it plays.
 """
 from __future__ import annotations
 
@@ -39,7 +38,6 @@ TICKS = 10_000_000              # Jellyfin counts time in 100 ns ticks
 REPORT_EVERY = 30               # seconds between progress reports to Jellyfin
 SAY_EVERY = 5                   # seconds between "audio" events while it plays
 SONG_FIELDS = ("id", "name", "artist", "album", "seconds", "cover", "thumb")
-RADIO_FIELDS = ("channel", "name", "url", "cover")
 
 
 class Audio:
@@ -50,7 +48,7 @@ class Audio:
         self.writer: asyncio.StreamWriter | None = None
         self.queue: list[dict] = []
         self.index = -1
-        self.kind = ""                  # "music" or "radio"
+        self.kind = ""                  # "music" while there is a queue
         self.state = "idle"
         self.time = 0.0
         self.duration: float | None = None
@@ -78,7 +76,7 @@ class Audio:
     def status(self) -> dict:
         item = self.item()
         return {"state": self.state, "kind": self.kind, "item": item, "index": self.index, "count": len(self.queue),
-                "time": round(self.time, 1), "duration": self.duration, "live": self.kind == "radio",
+                "time": round(self.time, 1), "duration": self.duration,
                 "next": [{"name": s.get("name"), "artist": s.get("artist")} for s in self.queue[self.index + 1:self.index + 7]]}
 
     def active(self) -> bool:
@@ -100,15 +98,6 @@ class Audio:
         self.queue, self.kind = songs, "music"
         return await self._load(max(0, min(len(songs) - 1, int(index or 0))))
 
-    async def radio(self, channel: dict) -> tuple[bool, str]:
-        """A live channel: {channel, name, url, cover}."""
-        url = str(channel.get("url") or "")
-        if not url.startswith(("https://", "http://")):
-            return False, "okänd kanal"
-        await self._report_stop()
-        self.queue, self.kind = [{k: channel.get(k) for k in RADIO_FIELDS}], "radio"
-        return await self._load(0)
-
     async def toggle(self) -> None:
         if self.state == "playing":
             await self.pause()
@@ -118,20 +107,13 @@ class Audio:
     async def pause(self) -> None:
         if self.state != "playing":
             return
-        if self.kind == "radio":
-            # Let a live stream go; played again it starts at the broadcast.
-            await self._command(["stop"])
-        else:
-            await self._command(["set_property", "pause", True])
+        await self._command(["set_property", "pause", True])
         self.state = "paused"
         await self._report("Progress")
         await self.say()
 
     async def resume(self) -> None:
         if self.state != "paused":
-            return
-        if self.kind == "radio":
-            await self._load(0)
             return
         await self._command(["set_property", "pause", False])
         self.state = "playing"
@@ -179,8 +161,6 @@ class Audio:
 
     # ------------------------------------------------------------ mpv
     def stream_url(self, item: dict) -> str:
-        if self.kind == "radio":
-            return item["url"]
         base = self.jcfg["url"].rstrip("/")
         return (f"{base}/Audio/{quote(str(item['id']))}/stream?static=true&DeviceId={jellyfin.DEVICE_ID}"
                 f"&api_key={quote(self.jcfg['api_key'])}")
@@ -194,7 +174,7 @@ class Audio:
                 self.state = "idle"
                 return False, "mpv kunde inte startas"
             self.index, self.time, self.started = index, 0.0, False
-            self.duration = None if self.kind == "radio" else (self.item().get("seconds") or None)
+            self.duration = self.item().get("seconds") or None
             self.state = "loading"
             await self._command(["set_property", "pause", False])
             await self._command(["loadfile", self.stream_url(self.item()), "replace"])
@@ -278,8 +258,6 @@ class Audio:
                     await self._load(self.index + 1)
                 else:
                     await self.stop()
-            elif reason == "eof" and self.kind == "radio":
-                await self._load(0)                   # a live stream that ended: on again
 
     async def _command(self, command: list) -> None:
         if not self.writer:

@@ -116,11 +116,10 @@
         toast('Misslyckades: nätverket svarar inte', '', 'settings.js · ett fel'),
       ] },
     { part: 'Komponenter', group: 'Menyer i overlayn', files: 'overlay/hud.js (hud.menu) · overlay/overlay.css (.pioneertv-menu) · overlay/main-menu.js (snabbmenyn) · overlay/overlay.js (pausmenyerna) · content/webvideo.js (en sajts video)',
-      used: 'Ett och samma kort över allt. Hem öppnar snabbmenyn (håll Hem går till hemsidan); i ett spel (RetroArch), en film (mpv) eller över en video på en sajt (SVT Play, Cineasterna) är det en pausmeny. Hemsidans Live och Sök är paneler på samma kort. B tar ett steg tillbaka.',
+      used: 'Ett och samma kort över allt. Hem öppnar snabbmenyn (håll Hem går till hemsidan); i ett spel (RetroArch), en film (mpv) eller över en video på en sajt (SVT Play, Cineasterna) är det en pausmeny. Hemsidans Sök är en panel på samma kort. B tar ett steg tillbaka.',
       items: [
         { name: 'Snabbmenyn över hemsidan', under: HOME, url: OVERLAY, setup: ({ P }) => quickMenu(P) },
         { name: 'Snabbmenyn över en sida', under: FILM, url: OVERLAY, setup: ({ P }) => quickMenu(P) },
-        { name: 'Live', under: HOME, url: OVERLAY, setup: panel('live') },
         { name: 'Sök: tangentbordet', under: HOME, url: OVERLAY, setup: panel('search') },
         { name: 'Sök: var', under: HOME, url: OVERLAY,
           setup: ({ P, doc }) => { panel('search')({ P }); const f = doc.querySelector('.pioneertv-search-field input'); f.value = 'mario'; P.keyboard.done(); } },
@@ -277,10 +276,6 @@
         { name: 'Serier · En serie, säsonger och avsnitt', url: `${SERIER}#/series/serie1`, ready: '.row' },
         { name: 'Musik · Ett album', url: `${MUSIK}#/album/album1`, ready: '.row' },
         { name: 'Musik · En spellista', url: `${MUSIK}#/playlist/lista1`, ready: '.row' },
-      ] },
-    { part: 'Sidor', group: 'Radio', files: 'launcher/radio.html · radio/radio.js · radio/radio.css', used: 'Hemsidan → Live → P1–P4.',
-      items: [
-        { name: 'Radio', url: `${L}radio.html?channel=132&name=P1`, ready: (doc) => doc.getElementById('now-title').textContent !== '…', note: 'Hämtar tablån från Sveriges Radio på riktigt.' },
       ] },
     { part: 'Sidor', group: 'Inställningar', files: 'daemon/pioneertv/web/settings.html · settings.js · settings.css', used: 'Snabbmenyn eller hemsidan → Inställningar.',
       items: [

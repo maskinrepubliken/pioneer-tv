@@ -1,24 +1,13 @@
 // Pioneer TV's menus in the overlay (overlay/hud.js draws them, the paper
 // card at the right): the quick menu Home opens over any window, and the
-// panels the home page (launcher/index.html) asks for: Live (the channels)
-// and Sök (the on-screen keyboard here, then where to search). The home
+// panel the home page (launcher/index.html) asks for: Sök (the on-screen
+// keyboard here, then where to search). The home
 // page itself, the tiles, is a page of its own; so are Inställningar and
 // its Loggar (the settings page).
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const b = M.bridge;
   const S = M.services;
-
-  // The live channels, TV first then radio.
-  function live() {
-    return {
-      title: 'Live',
-      items: S.rows().channels.map((s, i) => ({
-        label: s.name, icon: s.kind === 'radio' ? 'radio' : 'tv', primary: i === 0, opens: true,
-        run: () => b.navigate(S.resolve(s.url)),
-      })),
-    };
-  }
 
   // Sök: the on-screen keyboard here in the overlay, on a field of its own;
   // OK lists the services that can search for it.
@@ -70,7 +59,7 @@ window.PioneerTV = window.PioneerTV || {};
       title: 'Meny',
       status: true,
       items: [
-        // What the box plays (music, radio: overlay.js), its panel one step in.
+        // What the box plays (music: overlay.js), its panel one step in.
         ...[M.media && M.media.nowRow()].filter(Boolean),
         { label: 'Tillbaka', icon: 'back', detail: 'håll B', run: () => b.back() },
         { label: 'Hem', icon: 'home', detail: 'håll Hem', primary: true, run: () => b.home() },
@@ -84,10 +73,9 @@ window.PioneerTV = window.PioneerTV || {};
     };
   }
 
-  // A panel alone, as the home page asks for it (its Live tile, its Sök).
+  // A panel alone, as the home page asks for it (its Sök).
   function panel(name) {
-    if (name === 'live') M.hud.menu.open(live());
-    else if (name === 'search') search();
+    if (name === 'search') search();
   }
 
   M.mainMenu = { spec, search, panel };

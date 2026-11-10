@@ -1,12 +1,21 @@
 // Default services shown by the launcher when no daemon config is available
 // (design work on a laptop). On the Pi the daemon's config.toml wins.
 // `{query}` in search_url is replaced with the URL-encoded search string.
+// The first has the focus when the home page opens.
 // row: 'second' puts a service in the second row of big tiles (Bilder).
-// row: 'live' makes it a live channel ('tv' or 'radio' by kind): those are
-// listed behind the second row's Live tile. A relative url opens a page of
-// the launcher, like the radio player.
+// row: 'live' makes it a live channel: a small tile in the column at the
+// left of the big ones. A relative url opens a page of the launcher.
 window.PioneerTV = window.PioneerTV || {};
 window.PioneerTV.defaultServices = [
+  {
+    "id": "svtplay",
+    "name": "Play",
+    "tagline": "Public service",
+    "url": "https://www.svtplay.se/",
+    "search_url": "https://www.svtplay.se/sok?q={query}",
+    "color": "#1f7a4d",
+    "glyph": "S"
+  },
   {
     "id": "cineasterna",
     "name": "Cineasterna",
@@ -15,15 +24,6 @@ window.PioneerTV.defaultServices = [
     "search_url": "https://www.cineasterna.com/sv/library/5/search?q={query}&page=1",
     "color": "#b8940c",
     "glyph": "C"
-  },
-  {
-    "id": "svtplay",
-    "name": "SVT Play",
-    "tagline": "Public service",
-    "url": "https://www.svtplay.se/",
-    "search_url": "https://www.svtplay.se/sok?q={query}",
-    "color": "#1f7a4d",
-    "glyph": "S"
   },
   {
     "id": "jellyfin",
@@ -90,33 +90,5 @@ window.PioneerTV.defaultServices = [
     "row": "live",
     "kind": "tv",
     "fullscreen": "1"
-  },
-  {
-    "id": "p1",
-    "name": "P1",
-    "url": "radio.html?channel=132&name=P1",
-    "row": "live",
-    "kind": "radio"
-  },
-  {
-    "id": "p2",
-    "name": "P2",
-    "url": "radio.html?channel=163&name=P2",
-    "row": "live",
-    "kind": "radio"
-  },
-  {
-    "id": "p3",
-    "name": "P3",
-    "url": "radio.html?channel=164&name=P3",
-    "row": "live",
-    "kind": "radio"
-  },
-  {
-    "id": "p4",
-    "name": "P4",
-    "url": "radio.html?channel=206&name=P4",
-    "row": "live",
-    "kind": "radio"
   }
 ];

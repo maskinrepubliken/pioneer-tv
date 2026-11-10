@@ -6,10 +6,11 @@
 // the page's spatial navigation focuses them (pioneertv-focus), the
 // overlay's menu marks them (pioneertv-menu-active). Styled by tiles.css.
 //
-//   M.tiles.sheet({ side, rows, legend }) -> the sheet
+//   M.tiles.sheet({ side, channels, rows, legend }) -> the sheet
 //
 // side: [{ label, icon, round, disabled, run }] (the column of buttons at
-// the left, top to bottom); rows:
+// the left, top to bottom); channels: [{ label, color }] (the live
+// channels, small tiles in a column beside the big ones, under "Live"); rows:
 // [[{ label, art, color, disabled, run }], ...] (the tiles); legend: [[keys,
 // text], ...], a key 'arrows' for the four arrows. Each item gets its el.
 window.PioneerTV = window.PioneerTV || {};
@@ -34,6 +35,22 @@ window.PioneerTV = window.PioneerTV || {};
     const text = el('span', 'tiles-text');
     text.dataset.punch = '';
     text.appendChild(el('span', 'tiles-name', it.label));
+    t.appendChild(text);
+    it.el = t;
+    return t;
+  }
+
+  // A live channel: a small tile, its colour as a stripe, a mark that says
+  // live, its name.
+  function channel(it) {
+    const t = el('button', 'pioneertv-card tiles-channel');
+    t.type = 'button';
+    t.style.setProperty('--tile-color', it.color || '#a8352a');
+    t.dataset.key = it.key || `channel:${it.label}`;
+    t.appendChild(el('span', 'tiles-band'));
+    const text = el('span', 'tiles-channel-text');
+    text.dataset.punch = '';
+    text.append(el('span', 'tiles-channel-live', 'Direkt'), el('span', 'tiles-channel-name', it.label));
     t.appendChild(text);
     it.el = t;
     return t;
@@ -99,7 +116,7 @@ window.PioneerTV = window.PioneerTV || {};
     if (scale < 1) names.forEach((n) => { n.style.fontSize = `${parseFloat(getComputedStyle(n).fontSize) * scale}px`; });
   }
 
-  function sheet({ side = [], rows = [], legend: keys = [] }) {
+  function sheet({ side = [], channels = [], rows = [], legend: keys = [] }) {
     const root = el('div', 'tiles-sheet');
     const rail = el('aside', 'tiles-rail');
     const column = el('nav', 'tiles-buttons');
@@ -117,7 +134,15 @@ window.PioneerTV = window.PioneerTV || {};
       row.forEach((it) => r.appendChild(tile(it, ++n)));
       main.appendChild(r);
     }
-    body.append(main, legend(keys));
+    const middle = el('div', 'tiles-middle');
+    if (channels.length) {
+      const live = el('nav', 'tiles-channels');
+      live.appendChild(el('h2', 'tiles-channels-title', 'Live'));
+      channels.forEach((it) => live.appendChild(channel(it)));
+      middle.appendChild(live);
+    }
+    middle.appendChild(main);
+    body.append(middle, legend(keys));
     root.append(rail, body);
     return root;
   }
