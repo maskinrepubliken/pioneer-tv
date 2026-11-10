@@ -219,6 +219,9 @@ class Games:
         self.game: dict | None = None   # the game being played
         self.state = "idle"             # idle | loading | running | held | quitting
         self.task: asyncio.Task | None = None
+        # Who is player 1 and 2 in the game that runs, as RetroArch was told
+        # at its start: the pause panel says that, not who pressed last since.
+        self.seated: list[str] = []
 
     # ------------------------------------------------------------ config
     @property
@@ -246,7 +249,7 @@ class Games:
             "state": self.state,
             "game": {k: self.game[k] for k in ("id", "name", "platform")} if self.game else None,
             "point": point.stat().st_mtime if point and point.is_file() else None,
-            "players": self._players()[1],
+            "players": self.seated if self.state != "idle" and self.seated else self._players()[1],
         }
 
     # ------------------------------------------------------------ paths
@@ -423,7 +426,7 @@ class Games:
         for sub in ("states", "saves", "screens", "points", "system", "autoconfig/udev", "cfg"):
             (r / sub).mkdir(parents=True, exist_ok=True)
         port = int(self.gcfg.get("port", 55355))
-        joy, _ = self._players()
+        joy, self.seated = self._players()
         hotkeys = "".join(f'input_{h} = "nul"\ninput_{h}_btn = "nul"\ninput_{h}_axis = "nul"\n' for h in HOTKEYS)
         cfg = f"""\
 video_driver = "gl"
@@ -648,7 +651,7 @@ history_list_enable = "false"
         point = self._point_path()
         await self._event("held", title=self.game["name"] if self.game else "",
                           point=point.stat().st_mtime if point and point.is_file() else None,
-                          players=self._players()[1])
+                          players=self.seated or self._players()[1])
 
     async def _unhold(self, load: str) -> tuple[bool, str]:
         if load == "point":

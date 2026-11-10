@@ -110,6 +110,14 @@ class GamesTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(joy, [1, 0])                 # event5 is RetroArch's pad 0, event7 its pad 1
         self.assertEqual(names, ["Grön handkontroll", "Rosa handkontroll"])
 
+    def test_the_seats_hold_for_the_game(self):
+        self.games.write_config("snes9x")
+        self.games.state = "running"
+        # The other pad presses since: the game's player 1 is still the one that started it.
+        self.games.pads.shared["active"] = next(p.serial or p.dev.path for p in self.games.pads.pads()
+                                                if p.label == "Rosa handkontroll")
+        self.assertEqual(self.games.status()["players"], ["Grön handkontroll", "Rosa handkontroll"])
+
     def test_config_is_quiet(self):
         self.games.write_config("snes9x")
         root = Path(self.cfg["games"]["dir"])
