@@ -193,27 +193,36 @@ window.PioneerTV = window.PioneerTV || {};
   }
 
   // ------------------------------------------------------------ the pictures on the walls
-  // A wall's face (its tile, and which way it looks: 0 east, 1 west, 2
-  // south, 3 north) carries a picture or not, the same every time: about
-  // one in eight along the ways, mostly small; in a room more of them, and
-  // larger, and a great one in a gilded frame. Its size is a share of the
-  // wall's height; its frame's width the same.
+  // The walls are hung full: a wall's face (its tile, and which way it
+  // looks: 0 east, 1 west, 2 south, 3 north) carries its pictures, the same
+  // every time: along the ways three faces in four, one picture or two side
+  // by side, three in a row or four in a square; in a room every face,
+  // larger, and great ones in gilded frames, a room's centrepieces. A
+  // size is a share of the wall's height; its frame's width the same.
   const SIZES = {
+    tiny: { h: 0.2, frame: 0.02, gold: false },
     small: { h: 0.26, frame: 0.025, gold: false },
     medium: { h: 0.4, frame: 0.03, gold: false },
     large: { h: 0.56, frame: 0.045, gold: true },
     epic: { h: 0.8, frame: 0.065, gold: true },
   };
+  // A way of hanging: its pictures' sizes, where their middles are on the
+  // face (u across, v down) and how wide one may be.
+  const one = (size) => ({ w: 0.9, slots: [[size, 0.5, SIZES[size].h > 0.7 ? 0.5 : 0.44]] });
+  const HANGINGS = {
+    small: one('small'), medium: one('medium'), large: one('large'), epic: one('epic'),
+    pair: { w: 0.42, slots: [['small', 0.27, 0.44], ['small', 0.73, 0.44]] },
+    row: { w: 0.28, slots: [['small', 0.18, 0.44], ['small', 0.5, 0.44], ['small', 0.82, 0.44]] },
+    square: { w: 0.38, slots: [['tiny', 0.29, 0.31], ['tiny', 0.71, 0.31], ['tiny', 0.29, 0.6], ['tiny', 0.71, 0.6]] },
+    gallery: { w: 0.42, slots: [['medium', 0.27, 0.44], ['medium', 0.73, 0.44]] },
+  };
+  const pick = (k, table) => { for (const [name, upTo] of table) if (k < upTo) return HANGINGS[name]; return null; };
+  const WAYS = [['small', 0.2], ['medium', 0.32], ['pair', 0.55], ['row', 0.7], ['square', 0.85], ['large', 0.9]];
+  const ROOMS_HUNG = [['epic', 0.25], ['large', 0.45], ['gallery', 0.62], ['square', 0.8], ['row', 1]];
   function hangs(tx, ty, face, room) {
-    const r = hash(tx * 4 + face, ty, 21);
-    if (room) {
-      if (room.kind === 'garden' || r > 0.55) return null;
-      const k = hash(tx * 4 + face, ty, 22);
-      return SIZES[k < 0.22 ? 'epic' : k < 0.6 ? 'large' : 'medium'];
-    }
-    if (r > 0.12) return null;
     const k = hash(tx * 4 + face, ty, 22);
-    return SIZES[k < 0.68 ? 'small' : k < 0.95 ? 'medium' : 'large'];
+    if (room) return room.kind === 'garden' ? null : pick(k, ROOMS_HUNG);
+    return pick(k, WAYS);
   }
 
   // ------------------------------------------------------------ textures
@@ -258,8 +267,10 @@ window.PioneerTV = window.PioneerTV || {};
     // Where one is: in tiles, facing a, walking from cell to cell.
     const me = { x: 1.5, y: 1.5, a: 0, ci: 0, cj: 0 };
 
-    // The pictures for the walls: each find's cover drawn small (PIC by PIC,
-    // stretched; its own shape kept as the frame's), once it has loaded.
+    // The pictures for the walls: the finds' covers and the pictures of
+    // Immich (Bilder's library, a fresh handful each time it starts), each
+    // drawn small (PIC by PIC, stretched; its own shape kept as the
+    // frame's), once it has loaded.
     const PIC = 64;
     const wallPics = new Map();          // url -> { data, ratio } | null while loading
     function wallPicture(f) {
@@ -277,7 +288,7 @@ window.PioneerTV = window.PioneerTV || {};
         } catch { /* a picture that may not be read: the wall stays bare */ }
       };
       im.src = f.url;
-      if (wallPics.size > 160) wallPics.delete(wallPics.keys().next().value);
+      if (wallPics.size > 260) wallPics.delete(wallPics.keys().next().value);
       return null;
     }
     // A pixel in the torchlight, as the textures are (shadeTables).
@@ -289,20 +300,22 @@ window.PioneerTV = window.PioneerTV || {};
     };
     const WOOD = 0xff22344f, WOOD_EDGE = 0xff142233;            // dark wood (as ABGR)
     const GOLD = 0xff3aa4d8, GOLD_EDGE = 0xff1d6a9a;            // gilt and its shadow
-    // The picture on the face a column hits, where it sits on the face (u
-    // across, 0 to 1), or null.
+    // The pictures on the face a column hits, each where it sits on the
+    // face (u across and v down, 0 to 1); those not yet loaded left out.
+    let pool = [];                       // what hangs: the finds, and Immich's
     function painting(mx, my, face, front) {
-      if (!finds.length) return null;
+      if (!pool.length) return null;
       const room = roomAt(Math.floor(front[0] / 2), Math.floor(front[1] / 2));
-      const size = hangs(mx, my, face, room);
-      if (!size) return null;
-      const f = finds[Math.floor(hash(mx * 4 + face, my, 23) * finds.length)];
-      const pic = wallPicture(f);
-      if (!pic) return null;
-      const h = size.h, w = Math.min(0.9, h * pic.ratio);
-      // A little above the middle, where eyes are; a great one, the middle.
-      const v0 = (size.h > 0.7 ? 0.5 : 0.44) - h / 2;
-      return { pic, size, u0: 0.5 - w / 2, u1: 0.5 + w / 2, v0, v1: v0 + h };
+      const hanging = hangs(mx, my, face, room);
+      if (!hanging) return null;
+      const out = [];
+      hanging.slots.forEach(([name, uc, vc], i) => {
+        const pic = wallPicture(pool[Math.floor(hash(mx * 4 + face, my, 23 + i) * pool.length)]);
+        if (!pic) return;
+        const size = SIZES[name], h = size.h, w = Math.min(hanging.w, h * pic.ratio);
+        out.push({ pic, size, u0: uc - w / 2, u1: uc + w / 2, v0: vc - h / 2, v1: vc + h / 2 });
+      });
+      return out.length ? out : null;
     }
     let path = [];                       // cells still to walk to
     let pause = 0;                       // seconds standing still
@@ -468,25 +481,32 @@ window.PioneerTV = window.PioneerTV || {};
         // whether this column crosses it.
         const face = side === 0 ? (stepX > 0 ? 1 : 0) : (stepY > 0 ? 3 : 2);
         const front = side === 0 ? [mx - stepX, my] : [mx, my - stepY];
-        const art = which !== T.door && which !== T.hedge && dist < 9 ? painting(mx, my, face, front) : null;
+        const all = which !== T.door && which !== T.hedge && dist < 9 ? painting(mx, my, face, front) : null;
         const uf = (u + 0.5) / TEX;
-        if (art && uf >= art.u0 && uf <= art.u1) {
-          const { pic, size } = art;
-          const fw = size.frame, fh = size.frame;
-          const inX = uf > art.u0 + fw && uf < art.u1 - fw;
-          const pu = Math.min(PIC - 1, Math.floor(((uf - art.u0 - fw) / (art.u1 - art.u0 - 2 * fw)) * PIC));
-          const edgeX = uf < art.u0 + fw * 0.35 || uf > art.u1 - fw * 0.35;
+        const here = all && all.filter((a) => uf >= a.u0 && uf <= a.u1);
+        if (here && here.length) {
+          // Each picture this column crosses: where across it, and its frame's sides.
+          for (const a of here) {
+            const fw = a.size.frame;
+            a.inX = uf > a.u0 + fw && uf < a.u1 - fw;
+            a.pu = Math.min(PIC - 1, Math.floor(((uf - a.u0 - fw) / (a.u1 - a.u0 - 2 * fw)) * PIC));
+            a.edgeX = uf < a.u0 + fw * 0.35 || uf > a.u1 - fw * 0.35;
+          }
           for (let y = top; y < bottom; y++) {
             const vf = v / TEX;
-            let p;
-            if (vf < art.v0 || vf > art.v1) p = levels[(Math.floor(v) & (TEX - 1)) * TEX + u];
-            else if (inX && vf > art.v0 + fh && vf < art.v1 - fh) {
-              p = lit(pic.data[Math.min(PIC - 1, Math.floor(((vf - art.v0 - fh) / (art.v1 - art.v0 - 2 * fh)) * PIC)) * PIC + pu], shade);
-            } else {
-              const edge = edgeX || vf < art.v0 + fh * 0.35 || vf > art.v1 - fh * 0.35;
-              p = lit(size.gold ? (edge ? GOLD_EDGE : GOLD) : (edge ? WOOD_EDGE : WOOD), shade);
+            let p = 0;
+            for (const a of here) {
+              if (vf < a.v0 || vf > a.v1) continue;
+              const fh = a.size.frame;
+              if (a.inX && vf > a.v0 + fh && vf < a.v1 - fh) {
+                p = lit(a.pic.data[Math.min(PIC - 1, Math.floor(((vf - a.v0 - fh) / (a.v1 - a.v0 - 2 * fh)) * PIC)) * PIC + a.pu], shade);
+              } else {
+                const edge = a.edgeX || vf < a.v0 + fh * 0.35 || vf > a.v1 - fh * 0.35;
+                p = lit(a.size.gold ? (edge ? GOLD_EDGE : GOLD) : (edge ? WOOD_EDGE : WOOD), shade);
+              }
+              break;
             }
-            px[y * W + x] = p;
+            px[y * W + x] = p || levels[(Math.floor(v) & (TEX - 1)) * TEX + u];
             v += step;
           }
         } else {
@@ -560,6 +580,16 @@ window.PioneerTV = window.PioneerTV || {};
         const d = await r.json();
         if (Array.isArray(d.finds) && d.finds.length) { finds = d.finds; nextFind = 0; }
       } catch { /* no finds: the maze alone */ }
+      pool = [...finds];
+      // Bilder's pictures for the walls too: a fresh handful from Immich
+      // (through the daemon's /immich/, as the Bilder pages read it).
+      try {
+        const r = await fetch('/immich/api/search/random', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ size: 160, type: 'IMAGE' }) });
+        const list = r.ok ? await r.json() : [];
+        const photos = (Array.isArray(list) ? list : []).map((a) => ({ url: `/immich/api/assets/${encodeURIComponent(a.id)}/thumbnail?size=thumbnail` }));
+        pool = [...finds, ...photos];
+      } catch { /* no Immich: the covers alone */ }
     }
     function tick() {
       const now = performance.now();
@@ -573,14 +603,13 @@ window.PioneerTV = window.PioneerTV || {};
     function start() {
       if (timer) return;
       last = performance.now();
-      if (!finds.length) load();
+      load();                            // a fresh handful of Immich's each time
       timer = setInterval(tick, 1000 / FPS);
     }
     function stop() { clearInterval(timer); timer = null; }
     // Facing the first open way.
     const first = DIRS.find(([dx, dy]) => open(0, 0, dx, dy));
     if (first) me.a = Math.atan2(first[1], first[0]);
-    load();
     start();
     // Straight into a room of a kind (the catalogue of views, tests): the
     // nearest chunk that has one, in its middle.

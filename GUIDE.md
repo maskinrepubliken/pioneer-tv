@@ -962,13 +962,15 @@ tried again every three seconds.
     first), standing on the floor; it is come upon, not hunted (only one a
     few cells off is gone for). Picked up, a notice says so ("Hittade
     GoldenEye 007 · spelat nyss", its kind's icon), and the last four are
-    carried in a row at the top left. The same covers hang on the walls in
-    frames, drawn into the wall's columns as the torch lights them: about
-    one face in eight along the ways (mostly small, a few medium, now and
-    then a large one in gold), more in the rooms (medium, large, and great
-    gilded centrepieces filling most of a wall); none in the garden or on a
-    door. Each is the cover drawn 64 px square, kept in its own shape by
-    its frame. The
+    carried in a row at the top left. The walls are hung full of pictures,
+    the covers and a fresh handful of Bilder's own (Immich's
+    `search/random`, through `/immich/`, each time the screensaver starts),
+    drawn into the wall's columns as the torch lights them: along the ways
+    three faces in four, one picture or two side by side, three in a row or
+    four in a square, in dark wood; in the rooms every face (but the
+    garden's hedges), larger, and great ones in gold, the rooms'
+    centrepieces. None on a door. Each is drawn 64 px square, kept in its
+    own shape by its frame. The
     textures are Screaming Brain Studios' [Tiny Texture Pack
     1](https://opengameart.org/content/tiny-texture-pack-1) (CC0), made
     64 px and fewer colours (`overlay/maze/textures.png`).

@@ -444,6 +444,8 @@ def immich(path: str, query: str, method: str, body: dict | None = None) -> tupl
         if body.get("isFavorite"):
             found = [a for a in found if a["isFavorite"]]
         return 200, "application/json", _page(found)
+    if path == "api/search/random":
+        return js(IMMICH_ASSETS[:40])
     if path == "api/search/smart":
         words = str(body.get("query") or "").lower()
         return 200, "application/json", _page([a for a in IMMICH_ASSETS if words in a["exifInfo"]["city"].lower()] or IMMICH_ASSETS[:9])
