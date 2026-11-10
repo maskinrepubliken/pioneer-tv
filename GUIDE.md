@@ -804,8 +804,14 @@ tried again every three seconds.
   its own: the services (config `services`, in order; the first, Play, has
   the focus when it opens) as tiles of one size in two rows, the pad's
   legend under them; beside them, at their left, the live TV channels
-  (`row = "live"`) as small tiles in a column under "Live", each opening
-  its channel; at the far left a column on the sunken paper with round
+  (`row = "live"`) as small tiles in a column together as tall as the two
+  rows, each with what is on now (its title, how far in) and next: the
+  daemon reads the day's schedule out of SVT Play's channel page
+  (`schedule.py`, `GET /api/channels`, kept two minutes; the page asks each
+  minute). A channel tile asks the overlay to cover the screen ("Startar…"
+  and the channel, `relay` `cover`) until `webvideo.js` says its video
+  plays filling the screen (`full`), so its page is never seen loading;
+  Home, a page of the box's own or 25 s take the cover away. At the far left a column on the sunken paper with round
   buttons in the middle (Sök, the quick menu with the pad's Home mark,
   Inställningar, the TV's off button) and the box's status at its foot. Sök
   asks the overlay for that panel alone (`relay` with a `panel`): the

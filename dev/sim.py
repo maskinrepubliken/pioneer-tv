@@ -482,6 +482,14 @@ class Daemon:
                 return self.status()
             if path == "/api/audio" and method == "GET":
                 return self.audio_status()
+            if path == "/api/channels":           # what is on (schedule.py reads SVT's page): a made-up evening
+                return {"svt1": {"now": {"name": "Rapport", "start": "19:30", "end": "20:00", "progress": 0.4},
+                                 "next": {"name": "Lokala nyheter", "start": "20:00"}},
+                        "svt2": {"now": {"name": "Vetenskapens värld", "start": "19:00", "end": "20:00", "progress": 0.7},
+                                 "next": {"name": "Aktuellt", "start": "20:00"}},
+                        "svtbarn": {"next": {"name": "Bolibompa", "start": "06:00"}},
+                        "kunskapskanalen": {"now": {"name": "Världens natur: Ett år i Afrikas vildmark", "start": "19:10", "end": "20:00", "progress": 0.2},
+                                            "next": {"name": "Historiska hemligheter", "start": "20:00"}}}
             if path.startswith("/api/audio/"):
                 return self.audio_api(path.rsplit("/", 1)[1], body)
             if path.startswith("/api/video/") and method == "POST":

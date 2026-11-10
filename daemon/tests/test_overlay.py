@@ -48,14 +48,18 @@ class Routing(unittest.TestCase):
         # A press on a page opens the overlay's quick menu.
         self.assertEqual(r.handle({"type": "relay", "name": "menu"}),
                          [{"type": "event", "name": "menu", "open": True, "target": "overlay"}])
+        # A channel on its way: the overlay covers the screen, its name on it.
+        self.assertEqual(r.handle({"type": "relay", "name": "cover", "text": "SVT1", "panel": "search"}),
+                         [{"type": "event", "name": "cover", "open": True, "target": "overlay", "text": "SVT1"}])
 
     def test_a_sites_video(self):
         r = Router()
         [said] = r.handle({"type": "webvideo", "frame": "f1", "top": False, "present": True, "title": "Rapport",
-                           "time": 61.5, "duration": 1800, "paused": False, "area": 0.9, "evil": "<script>",
+                           "time": 61.5, "duration": 1800, "paused": False, "full": True, "area": 0.9, "evil": "<script>",
                            "subs": [{"id": 0, "label": "Svenska", "selected": True}, "nonsense"]})
         self.assertEqual((said["name"], said["target"], said["frame"], said["time"], said["duration"]),
                          ("webvideo", "overlay", "f1", 61.5, 1800.0))
+        self.assertTrue(said["full"])
         self.assertEqual(said["subs"], [{"id": 0, "label": "Svenska", "selected": True}])
         self.assertNotIn("evil", said)
         # and what its panel asks goes to the page, to that frame

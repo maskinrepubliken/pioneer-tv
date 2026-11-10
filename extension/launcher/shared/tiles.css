@@ -90,20 +90,30 @@
 .tiles-legend .pioneertv-kbd { font-size: 0.75em; }
 
 /* ---- the live channels: small tiles in a column of their own between the
-   buttons and the big tiles, each with a stripe of its colour, a mark that
-   says it is live, and its name ---- */
-.tiles-middle { flex: 1; min-height: 0; display: flex; gap: 1.6em; }
-.tiles-channels { flex: none; width: 10.5em; display: flex; flex-direction: column; justify-content: center; gap: 0.8em; }
-.tiles-channels-title {
-  margin: 0 0 0.2em; font: 400 0.75em/1 var(--pioneertv-font-mono); letter-spacing: 0.12em; text-transform: uppercase;
-  color: var(--pioneertv-ink-faint);
+   buttons and the big tiles, together as tall as the rows of those; each a
+   mark that says it is live, its name and what is on ---- */
+.tiles-middle { flex: 1; min-height: 0; display: flex; align-items: center; gap: 1.6em; }
+.tiles-channels {
+  flex: none; width: 13em; display: flex; flex-direction: column; gap: 0.8em;
+  height: calc(var(--rows, 2) * 31vh + (var(--rows, 2) - 1) * 3vh);
 }
 .tiles-channel {
-  position: relative; display: flex; align-items: center; min-height: 4.4em; padding: 0.8em 0.9em 0.8em 1.25em; cursor: pointer;
+  position: relative; flex: 1; min-height: 0; display: flex; align-items: center; padding: 0.7em 0.9em; cursor: pointer;
   text-align: left; color: var(--pioneertv-ink); overflow: hidden;
 }
-.tiles-channel::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 0.35em; background: var(--tile-color); }
-.tiles-channel-text { display: flex; flex-direction: column; gap: 0.3em; min-width: 0; }
+.tiles-channel-text { display: flex; flex-direction: column; gap: 0.3em; min-width: 0; width: 100%; }
+.tiles-channel-air { display: flex; flex-direction: column; gap: 0.3em; min-width: 0; margin-top: 0.15em; }
+.tiles-channel-air[hidden] { display: none; }
+.tiles-channel-now {
+  font: 600 0.8em/1.15 var(--pioneertv-font-prose); color: var(--pioneertv-ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tiles-channel-bar { display: block; height: 0.25em; background: var(--pioneertv-line); }
+.tiles-channel-bar > span { display: block; height: 100%; background: var(--pioneertv-ink); }
+.tiles-channel-next {
+  font: 400 0.65em/1.2 var(--pioneertv-font-mono); color: var(--pioneertv-ink-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .tiles-channel-live {
   display: inline-flex; align-items: center; gap: 0.4em;
   font: 400 0.65em/1 var(--pioneertv-font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--pioneertv-ink-muted);

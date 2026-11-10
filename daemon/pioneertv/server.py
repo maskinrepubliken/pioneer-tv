@@ -18,7 +18,7 @@ from urllib.parse import urlparse
 import aiohttp
 from aiohttp import WSMsgType, web
 
-from . import imagecache, jellyfin, romm, settings, sysinfo, updater, wifitest
+from . import imagecache, jellyfin, romm, schedule, settings, sysinfo, updater, wifitest
 from .covers import Covers, Passed
 from .overlay import Router
 
@@ -78,6 +78,7 @@ class Server:
             ("POST", "/api/games/{action}", self.api_games_action),
             ("GET", "/api/video", self.api_video_status),
             ("GET", "/api/audio", self.api_audio_status),
+            ("GET", "/api/channels", self.api_channels),
             ("POST", "/api/audio/{action}", self.api_audio_action),
             ("POST", "/api/video/{action}", self.api_video_action),
             ("GET", "/api/jellyfin", self.api_jellyfin),
@@ -640,6 +641,15 @@ class Server:
         else:
             return web.json_response({"ok": False, "message": "okänd åtgärd"}, status=404)
         return web.json_response({"ok": ok, "message": msg}, status=200 if ok else 409)
+
+    # ------------------------------------------------------------ the channels' schedule
+    async def api_channels(self, _request: web.Request) -> web.Response:
+        """What is on now and next on the home page's live channels (schedule.py),
+        by the channel its tile opens: {"svt1": {now, next}, ...}."""
+        slugs = [s for svc in self.cfg.get("services", []) if svc.get("row") == "live" and (s := schedule.slug(svc.get("url", "")))]
+        if not hasattr(self, "_schedule"):
+            self._schedule = schedule.Schedule()
+        return web.json_response(await self._schedule.get(slugs))
 
     # ------------------------------------------------------------ music
     async def quiet(self, why: str) -> None:

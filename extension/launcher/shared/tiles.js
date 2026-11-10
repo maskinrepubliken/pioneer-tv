@@ -10,7 +10,8 @@
 //
 // side: [{ label, icon, round, disabled, run }] (the column of buttons at
 // the left, top to bottom); channels: [{ label, color }] (the live
-// channels, small tiles in a column beside the big ones, under "Live"); rows:
+// channels, small tiles in a column beside the big ones, together as tall as
+// the rows; M.tiles.onAir(it, { now, next }) writes what is on in one); rows:
 // [[{ label, art, color, disabled, run }], ...] (the tiles); legend: [[keys,
 // text], ...], a key 'arrows' for the four arrows. Each item gets its el.
 window.PioneerTV = window.PioneerTV || {};
@@ -40,20 +41,42 @@ window.PioneerTV = window.PioneerTV || {};
     return t;
   }
 
-  // A live channel: a small tile, its colour as a stripe, a mark that says
-  // live, its name.
+  // A live channel: a small tile, a mark that says live, its name, and
+  // (onAir) what is on: its title, how far in, what comes after.
   function channel(it) {
     const t = el('button', 'pioneertv-card tiles-channel');
     t.type = 'button';
-    t.style.setProperty('--tile-color', it.color || '#a8352a');
     t.dataset.key = it.key || `channel:${it.label}`;
     t.appendChild(el('span', 'tiles-band'));
     const text = el('span', 'tiles-channel-text');
     text.dataset.punch = '';
     text.append(el('span', 'tiles-channel-live', 'Direkt'), el('span', 'tiles-channel-name', it.label));
+    const air = el('span', 'tiles-channel-air');
+    air.hidden = true;
+    text.appendChild(air);
     t.appendChild(text);
     it.el = t;
     return t;
+  }
+
+  // What is on a channel's tile: { now: { name, start, end, progress },
+  // next: { name, start } } (the daemon's /api/channels), either missing.
+  function onAir(it, { now, next } = {}) {
+    const air = it.el && it.el.querySelector('.tiles-channel-air');
+    if (!air) return;
+    air.innerHTML = '';
+    if (now && now.name) {
+      air.appendChild(el('span', 'tiles-channel-now', now.name));
+      if (now.progress != null) {
+        const bar = el('span', 'tiles-channel-bar');
+        const fill = el('span');
+        fill.style.width = `${Math.round(now.progress * 100)}%`;
+        bar.appendChild(fill);
+        air.appendChild(bar);
+      }
+    }
+    if (next && next.name) air.appendChild(el('span', 'tiles-channel-next', `${next.start ? next.start + ' ' : ''}${next.name}`));
+    air.hidden = !air.childNodes.length;
   }
 
   // A button in the column: its symbol and its name, or (round) its symbol
@@ -137,7 +160,7 @@ window.PioneerTV = window.PioneerTV || {};
     const middle = el('div', 'tiles-middle');
     if (channels.length) {
       const live = el('nav', 'tiles-channels');
-      live.appendChild(el('h2', 'tiles-channels-title', 'Live'));
+      live.style.setProperty('--rows', String(main.children.length || 1));
       channels.forEach((it) => live.appendChild(channel(it)));
       middle.appendChild(live);
     }
@@ -188,5 +211,5 @@ window.PioneerTV = window.PioneerTV || {};
     return stop;
   }
 
-  M.tiles = { sheet, pills, fitNames, punch };
+  M.tiles = { sheet, pills, fitNames, punch, onAir };
 })(window.PioneerTV);

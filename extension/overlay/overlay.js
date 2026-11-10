@@ -65,6 +65,23 @@ window.PioneerTV = window.PioneerTV || {};
   // Nothing of a menu stays under the screensaver.
   b.on('saver', (e) => { if (e.show && !held) away(); });
 
+  // A channel on its way (the home page asks): the screen covered, its name
+  // on it, until its video plays filling the screen (the webvideo events,
+  // below); Home, one of the box's own pages (B on the way), the
+  // screensaver or 25 s take it away. Not the keyboard's:
+  // the page below still gets the pad.
+  let coverTimer = 0;
+  const uncover = () => { clearTimeout(coverTimer); M.screen.hide(); };
+  b.on('cover', (e) => {
+    M.screen.show('Startar…', (e && e.text) || '');
+    clearTimeout(coverTimer);
+    coverTimer = setTimeout(uncover, 25000);
+  });
+  b.on('menu', uncover);
+  b.on('home', uncover);
+  b.on('loaded', (e) => { if (e && /\/launcher\//.test(e.url || '')) uncover(); });
+  b.on('saver', (e) => { if (e.show) uncover(); });
+
   // The window has the keyboard while the menu or the keyboard is open, and
   // the daemon is told (it routes Y and B here then, and pauses what plays).
   // Going from one to the other (Sök) is not a close and an open.
@@ -458,6 +475,7 @@ window.PioneerTV = window.PioneerTV || {};
   let webSrc = null;
   b.on('webvideo', (e) => {
     frames.set(e.frame, { ...e, at: Date.now() });
+    if (M.screen.isOpen() && e.present && e.full && !e.paused) uncover();
     if (webSrc && webSrc.frame === e.frame) heard(webSrc, { time: e.time, duration: e.duration, end: e.end, live: e.live, paused: e.paused, subs: e.subs });
   });
   function webPanel() {

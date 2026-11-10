@@ -22,9 +22,10 @@ ROUTED = ("keyboard", "escape")
 # Always the overlay's (seek: L2/R2 on the media panel, how hard they are pressed).
 OVERLAY = ("menu", "toast", "saver", "rest", "seek")
 # What the overlay may ask the page (through the extension) to do, and what
-# a page may ask of the overlay (the home page: its Sök panel).
+# a page may ask of the overlay (the home page: its Sök panel, and the cover
+# over a channel on its way until it plays in full).
 RELAYS = ("home", "back", "reload", "settings", "keyboard", "navigate", "webvideo")
-TO_OVERLAY = ("menu",)
+TO_OVERLAY = ("menu", "cover")
 # The panels the home page may open alone in the overlay.
 PANELS = ("search",)
 # What the overlay's panel for a site's video may ask of it (content/webvideo.js).
@@ -44,7 +45,7 @@ def webvideo_state(data: dict) -> dict:
         "frame": str(data.get("frame") or "")[:16], "top": bool(data.get("top")), "present": bool(data.get("present")),
         "title": str(data.get("title") or "")[:120], "area": num(data.get("area")) or 0.0,
         "time": num(data.get("time")), "duration": num(data.get("duration")), "end": num(data.get("end")),
-        "live": bool(data.get("live")), "paused": bool(data.get("paused")), "subs": subs,
+        "live": bool(data.get("live")), "paused": bool(data.get("paused")), "full": bool(data.get("full")), "subs": subs,
     }
 
 
@@ -97,8 +98,10 @@ class Router:
             return [webvideo_state(data)]
         elif t == "relay" and data.get("name") in TO_OVERLAY:
             event = {"type": "event", "name": data["name"], "open": True, "target": "overlay"}
-            if data.get("panel") in PANELS:
+            if data["name"] == "menu" and data.get("panel") in PANELS:
                 event["panel"] = data["panel"]
+            if data["name"] == "cover":
+                event["text"] = str(data.get("text") or "")[:60]
             return [event]
         elif t == "relay" and data.get("name") in RELAYS:
             event = {"type": "event", "name": data["name"], "target": "page"}

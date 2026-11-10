@@ -63,7 +63,7 @@ window.PioneerTV = window.PioneerTV || {};
     const [, end] = bounds(v);
     return {
       type: 'webvideo', frame: FRAME, top: TOP, present: true, title: title(), area: areaOf(v),
-      time: v.currentTime, duration: live(v) ? null : v.duration, live: live(v), end, paused: v.paused,
+      time: v.currentTime, duration: live(v) ? null : v.duration, live: live(v), end, paused: v.paused, full: !!filling(v),
       subs: tracks(v).slice(0, 12).map((t, i) => ({ id: i, label: (t.label || t.language || `Spår ${i + 1}`).slice(0, 40), selected: t.mode === 'showing' })),
     };
   }
@@ -155,7 +155,7 @@ window.PioneerTV = window.PioneerTV || {};
     document.documentElement.classList.toggle('pioneertv-ownplayer', on);
     return on ? v : null;
   }
-  document.addEventListener('fullscreenchange', () => setTimeout(ownPlayer, 50));
+  document.addEventListener('fullscreenchange', () => setTimeout(() => { ownPlayer(); report(true); }, 50));
   setInterval(ownPlayer, 1000);
 
   // Left and right seek, A or X pauses or plays, while the video fills the

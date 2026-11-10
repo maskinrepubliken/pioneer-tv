@@ -14,12 +14,29 @@
   function open(it) {
     if (opening) return;
     opening = M.tiles.punch(it.el, () => { opening = null; });
+    // A channel: the overlay covers the screen until it plays, in full.
+    if (it.channel) b.relay('cover', { text: it.label });
     b.navigate(S.resolve(it.url));
   }
+
+  // What is on the channels (the daemon reads SVT's schedule), by the
+  // channel its tile opens: /kanaler/svt1 -> svt1. Asked again each minute.
+  const slug = (url) => ((url || '').match(/\/kanaler\/([a-z0-9-]+)/) || [])[1];
+  let onAir = {};
+  function showOnAir() {
+    for (const it of live) { const s = slug(it.url); if (s) M.tiles.onAir(it, onAir[s]); }
+  }
+  async function askOnAir() {
+    if (!live.some((it) => slug(it.url))) return;
+    try { onAir = (await (await fetch('/api/channels')).json()) || {}; } catch { return; }
+    showOnAir();
+  }
+  setInterval(askOnAir, 60000);
   // Back on a page kept in the back/forward cache: no tile is opening.
   window.addEventListener('pageshow', (e) => { if (e.persisted && opening) { opening(); opening = null; } });
 
   let sheet = null;
+  let live = [];
   let drawnFor = '';
   function draw() {
     const { first, second, channels } = S.rows();
@@ -31,7 +48,7 @@
     // The services, all the same size, in two rows; the channels small, in
     // their column.
     const all = [...first, ...second].map(service);
-    const live = channels.map((s) => ({ key: `channel:${s.id}`, label: s.name, color: s.color, url: s.url }));
+    live = channels.map((s) => ({ key: `channel:${s.id}`, label: s.name, url: s.url, channel: true }));
     const half = Math.ceil(all.length / 2);
     const rows = [all.slice(0, half), all.slice(half)];
     // The column at the left, top to bottom.
@@ -49,6 +66,7 @@
     sheet = next;
     M.tiles.fitNames(sheet);
     M.art.fit(sheet);
+    showOnAir();
     if (document.fonts) document.fonts.ready.then(() => M.tiles.fitNames(sheet));
     const again = (focused && sheet.querySelector(`[data-key="${CSS.escape(focused)}"]`)) || sheet.querySelector('.tiles-tile');
     requestAnimationFrame(() => M.nav.focus(again, { scroll: false }));
@@ -63,4 +81,5 @@
   window.addEventListener('resize', () => sheet && M.tiles.fitNames(sheet));
 
   draw();
+  askOnAir();
 })(window.PioneerTV);
