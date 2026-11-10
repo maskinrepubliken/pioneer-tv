@@ -54,7 +54,7 @@ html.pioneertv-game .pioneertv-cursor { display: none; }
 .pioneertv-cursor-press svg { transform: translate(1px, 1px) scale(0.94); }
 .pioneertv-key.pioneertv-hover:not(.pioneertv-key-accent), .pioneertv-menu-item.pioneertv-hover { background: var(--pioneertv-paper-hover); }
 
-/* ---- big screen: a promoted player when real fullscreen is refused ---- */
+/* ---- big screen: a player pinned over its page (bigscreen.js) ---- */
 html.pioneertv-bigscreen, html.pioneertv-bigscreen body { overflow: hidden !important; background: #000 !important; }
 .pioneertv-bigscreen-target {
   position: fixed !important; inset: 0 !important;

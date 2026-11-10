@@ -68,14 +68,31 @@ window.PioneerTV = window.PioneerTV || {};
   // A channel on its way (the home page asks): the screen covered, its name
   // on it, until its video plays filling the screen (the webvideo events,
   // below); Home, one of the box's own pages (B on the way), the
-  // screensaver or 25 s take it away. Not the keyboard's:
-  // the page below still gets the pad.
-  let coverTimer = 0;
-  const uncover = () => { clearTimeout(coverTimer); M.screen.hide(); };
-  b.on('cover', (e) => {
-    M.screen.show('Startar…', (e && e.text) || '');
+  // screensaver or 25 s take it away. Not the keyboard's: the page below
+  // still gets the pad. It fades in once the tile's holes have been seen,
+  // and out over the picture (the one fade there is: overlay.css).
+  const coverBox = document.createElement('div');
+  coverBox.className = 'pioneertv-cover';
+  document.body.appendChild(coverBox);
+  const cover = M.screen.in(coverBox);
+  const COVER_AFTER_MS = 700, COVER_FADE_MS = 500, COVER_GIVE_UP_MS = 25000;
+  let coverTimer = 0, coverFade = 0;
+  const covering = () => coverBox.classList.contains('shown') || !!coverTimer;
+  function uncover() {
     clearTimeout(coverTimer);
-    coverTimer = setTimeout(uncover, 25000);
+    coverTimer = 0;
+    coverBox.classList.remove('shown');
+    clearTimeout(coverFade);
+    coverFade = setTimeout(() => cover.hide(), COVER_FADE_MS);
+  }
+  b.on('cover', (e) => {
+    clearTimeout(coverTimer);
+    clearTimeout(coverFade);
+    coverTimer = setTimeout(() => {
+      cover.show('Laddar…', (e && e.text) || '');
+      requestAnimationFrame(() => requestAnimationFrame(() => coverBox.classList.add('shown')));
+      coverTimer = setTimeout(uncover, COVER_GIVE_UP_MS - COVER_AFTER_MS);
+    }, COVER_AFTER_MS);
   });
   b.on('menu', uncover);
   b.on('home', uncover);
@@ -475,7 +492,7 @@ window.PioneerTV = window.PioneerTV || {};
   let webSrc = null;
   b.on('webvideo', (e) => {
     frames.set(e.frame, { ...e, at: Date.now() });
-    if (M.screen.isOpen() && e.present && e.full && !e.paused) uncover();
+    if (covering() && e.present && e.full && !e.paused) uncover();
     if (webSrc && webSrc.frame === e.frame) heard(webSrc, { time: e.time, duration: e.duration, end: e.end, live: e.live, paused: e.paused, subs: e.subs });
   });
   function webPanel() {

@@ -808,10 +808,12 @@ tried again every three seconds.
   rows, each with what is on now (its title, how far in) and next: the
   daemon reads the day's schedule out of SVT Play's channel page
   (`schedule.py`, `GET /api/channels`, kept two minutes; the page asks each
-  minute). A channel tile asks the overlay to cover the screen ("Startar…"
+  minute). A channel tile asks the overlay to cover the screen ("Laddar…"
   and the channel, `relay` `cover`) until `webvideo.js` says its video
   plays filling the screen (`full`), so its page is never seen loading;
-  Home, a page of the box's own or 25 s take the cover away. At the far left a column on the sunken paper with round
+  Home, a page of the box's own or 25 s take the cover away. It fades in
+  once the tile's holes have been seen and out over the picture, the one
+  fade the system has. At the far left a column on the sunken paper with round
   buttons in the middle (Sök, the quick menu with the pad's Home mark,
   Inställningar, the TV's off button) and the box's status at its foot. Sök
   asks the overlay for that panel alone (`relay` with a `panel`): the
@@ -938,10 +940,11 @@ keyboard leaves fullscreen first when its text field is outside the player, so
 what is typed can be seen. In fullscreen the browser's hit test does not see
 the overlays, so the pointer searches them itself.
 
-SVT1's live player throws its fullscreen element away every so often and
-builds a new one. `bigscreen.js` tells that apart from leaving fullscreen on
-purpose (the old element is gone from the page) and takes the new player
-fullscreen again.
+A channel marked `fullscreen` does not use the browser's fullscreen:
+`bigscreen.js` pins its player over the page with CSS (the kiosk window
+already fills the screen), so Chromium's "Tryck på Esc" bubble never shows.
+SVT1's live player throws itself away every so often and builds a new one;
+the new one is pinned again. B goes straight back.
 
 ## Sound
 
