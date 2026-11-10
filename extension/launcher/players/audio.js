@@ -182,7 +182,8 @@ window.PioneerTV = window.PioneerTV || {};
       part.play.querySelector('.np-says').textContent = playing ? 'Pausa' : 'Spela';
       part.shuffle.querySelector('.np-mode-value').textContent = state.shuffle ? 'På' : 'Av';
       part.repeat.querySelector('.np-mode-value').textContent = REPEAT[state.repeat] || 'Av';
-      // Every song after it (the daemon names up to a hundred).
+      // Every song after it (the daemon names up to a hundred; with Upprepa
+      // on the whole queue, round again from the first).
       const next = state.next || [];
       const left = next.reduce((n, s) => n + (s.seconds || 0), 0);
       part.queuehead.textContent = next.length ? `Näst på tur · ${next.length === 1 ? '1 låt' : `${next.length} låtar`}${left ? ` · ${Math.round(left / 60)} min` : ''}` : 'Näst på tur';
@@ -193,13 +194,14 @@ window.PioneerTV = window.PioneerTV || {};
         const row = el('button', 'np-song');
         row.type = 'button';
         row.dataset.n = String(i);
-        row.append(el('span', 'np-song-n', String(state.index + i + 2)), el('b', '', song.name), el('span', 'np-song-artist', song.artist || ''),
+        const place = song.index != null ? song.index : state.index + 1 + i;
+        row.append(el('span', 'np-song-n', String(place + 1)), el('b', '', song.name), el('span', 'np-song-artist', song.artist || ''),
           el('span', 'np-song-len', clock(song.seconds)));
-        row.addEventListener('click', () => ask('jump', { index: state.index + 1 + i }));
+        row.addEventListener('click', () => ask('jump', { index: place }));
         li.appendChild(row);
         part.queue.appendChild(li);
       });
-      if (!next.length) part.queue.appendChild(el('li', 'empty', state.repeat === 'all' ? 'Kön börjar om' : 'Inget mer i kön'));
+      if (!next.length) part.queue.appendChild(el('li', 'empty', state.repeat === 'one' ? 'Den här låten igen' : 'Inget mer i kön'));
       if (was != null) mark(part.queue.querySelector(`[data-n="${was}"]`) || part.queue.querySelector('.np-song') || part.play);
       V.legend(part.legend, [['arrows', 'välj'], ['A', 'tryck'], ['X', 'paus · spela'], ['L2', ''], ['R2', 'spola'], ['B', 'bläddra']]);
       this.progress();

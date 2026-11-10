@@ -311,7 +311,10 @@ class Daemon:
         item = self.queue[self.index] if 0 <= self.index < len(self.queue) else None
         return {"state": self.audio.state, "kind": self.kind, "item": item, "index": self.index, "count": len(self.queue),
                 "time": round(self.audio.time, 1), "duration": self.audio.duration,
-                "next": [{"name": s.get("name"), "artist": s.get("artist"), "seconds": s.get("seconds")} for s in self.queue[self.index + 1:self.index + 101]],
+                "next": [{"index": i % len(self.queue), "name": self.queue[i % len(self.queue)].get("name"), "artist": self.queue[i % len(self.queue)].get("artist"),
+                          "seconds": self.queue[i % len(self.queue)].get("seconds")}
+                         for i in (range(self.index + 1, self.index + len(self.queue)) if getattr(self, "repeat", "off") == "all"
+                                   else range(self.index + 1, len(self.queue)))][:100] if self.queue and self.index >= 0 else [],
                 "shuffle": getattr(self, "shuffle", False), "repeat": getattr(self, "repeat", "off")}
 
     def audio_say(self) -> None:

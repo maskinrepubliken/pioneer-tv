@@ -545,13 +545,13 @@ Its parts, those that apply:
 - **Rows**: Från början; TV-volym (L1 R1; marked, ◀ ▶ and A mutes), after
   what drives what plays; Ljud and Undertexter, their value in a capsule (A
   steps to the next); Hitta undertexter (a film); Sluta titta or Sluta
-  spela, the arrow back, last of what plays; Mer… (a film's and a video's:
+  spela, the stop symbol, last of what plays; Mer… (a film's and a video's:
   the quick menu, one step in, without its Tillbaka).
 
 Every menu in the overlay alike: the filled row (or button), where there
 is one (the quick menu has none), is X's and says so (the round play
 button does not need to); Mer… says nothing; the way out of what plays is Sluta titta or Sluta spela with the
-arrow back (the power symbol is the TV's alone), and TV-volym says L1 R1,
+stop symbol (the power symbol is the TV's alone), and TV-volym says L1 R1,
 and while marked what its keys do.
 
 L2 and R2 work wherever the focus is on the panel, which stays where it

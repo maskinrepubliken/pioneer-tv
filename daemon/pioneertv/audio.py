@@ -87,9 +87,19 @@ class Audio:
         item = self.item()
         return {"state": self.state, "kind": self.kind, "item": item, "index": self.index, "count": len(self.queue),
                 "time": round(self.time, 1), "duration": self.duration,
-                "next": [{"name": s.get("name"), "artist": s.get("artist"), "seconds": s.get("seconds")}
-                         for s in self.queue[self.index + 1:self.index + 1 + NEXT_SAID]],
+                "next": self.coming(),
                 "shuffle": self.shuffle, "repeat": self.repeat}
+
+    def coming(self) -> list[dict]:
+        """The songs after the one playing, up to NEXT_SAID, each with its
+        place in the queue; with Upprepa on the whole queue, round again
+        from the first."""
+        n = len(self.queue)
+        if self.index < 0 or not n:
+            return []
+        places = range(self.index + 1, self.index + n) if self.repeat == "all" else range(self.index + 1, n)
+        return [{"index": i % n, "name": self.queue[i % n].get("name"), "artist": self.queue[i % n].get("artist"),
+                 "seconds": self.queue[i % n].get("seconds")} for i in list(places)[:NEXT_SAID]]
 
     def active(self) -> bool:
         """Something to show: playing, paused or on its way."""

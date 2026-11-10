@@ -148,6 +148,8 @@ class Playing(unittest.IsolatedAsyncioTestCase):
         await self.audio.cycle_repeat()                                              # the whole queue
         await self.audio.play([{"id": "long1", "name": "Ett"}, {"id": "long2", "name": "Två"}], 1)
         await self.until(lambda: self.audio.state == "playing", "the song playing")
+        # The list after it goes round: the first song comes after the last.
+        self.assertEqual([s["index"] for s in self.audio.status()["next"]], [0])
         await self.audio.next()                                                      # the last: round to the first
         self.assertEqual(self.audio.index, 0)
         await self.audio.stop()

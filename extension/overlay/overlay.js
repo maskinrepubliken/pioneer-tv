@@ -189,7 +189,7 @@ window.PioneerTV = window.PioneerTV || {};
         sub: () => pointsSpec(points) },
       { label: 'Starta om', icon: 'reload', run: pick(() => games('/resume', { load: 'none' })) },
       M.hud.volumeItem(),
-      { label: 'Sluta spela', icon: 'back', detail: 'håll B', run: pick(() => games('/quit')) },
+      { label: 'Sluta spela', icon: 'stop', detail: 'håll B', run: pick(() => games('/quit')) },
       more(() => games('/quit')),
     ], note, at, () => games('/resume', { load: 'auto' }));
   }
@@ -234,7 +234,7 @@ window.PioneerTV = window.PioneerTV || {};
   //   the queue (the music's): the song before and the next;
   //   Från början, TV-volym (L1/R1; marked, left and right, A mutes), Ljud,
   //   Undertexter (A steps to the next), Hitta undertexter, Sluta titta or
-  //   spela (the arrow back), Mer… (the quick menu; a film's, a video's).
+  //   spela (the stop symbol), Mer… (the quick menu; a film's, a video's).
   //
   // A source says what plays and does it:
   //   { kind, title, sub, cover, live, time, duration, end, paused, index,
@@ -547,7 +547,7 @@ window.PioneerTV = window.PioneerTV || {};
         const r = await video('/toggle');
         if (r.ok !== false) { src.paused = !!r.paused; refresh(); }
       } }),
-      last: { label: 'Sluta titta', icon: 'back', detail: 'håll B', run: pick(() => video('/stop')) },
+      last: { label: 'Sluta titta', icon: 'stop', detail: 'håll B', run: pick(() => video('/stop')) },
       more: more(() => video('/stop')),
     };
     panel('video', e, null, null, null, 0, () => video('/resume'), mediaSpec(src));
@@ -610,7 +610,7 @@ window.PioneerTV = window.PioneerTV || {};
       to: (t) => tell(v.frame, 'to', t),
       track: () => tell(v.frame, 'subs', nextTrack(src.subs, { id: -1, label: 'Av' }).id),
       first: () => ({ label: 'Fortsätt', keep: true, run: () => { tell(v.frame, 'toggle'); src.paused = !src.paused; refresh(); } }),
-      last: { label: 'Sluta titta', icon: 'back', detail: 'håll B', run: pick(() => b.back()) },
+      last: { label: 'Sluta titta', icon: 'stop', detail: 'håll B', run: pick(() => b.back()) },
     };
     panel('web', v, null, null, null, 0, () => {}, mediaSpec(src));
   }
