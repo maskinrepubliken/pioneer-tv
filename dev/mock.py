@@ -344,6 +344,11 @@ def daemon(path: str, query: str, method: str) -> tuple[int, str, bytes] | None:
         return js({"finds": found})
     if path == "/api/video":
         return js({"state": "idle", "item": None, "choice": {}})
+    if path == "/api/video/find_subtitles":        # Jellyfin's Open Subtitles, made up
+        return js({"ok": True, "found": [
+            {"id": "sv1", "name": "Fyren.S01E03.1080p.WEB-DL", "detail": "Svenska · passar filen · 312 nedladdningar", "lang": "swe"},
+            {"id": "sv2", "name": "Fyren S01E03", "detail": "Svenska · 88 nedladdningar", "lang": "swe"},
+            {"id": "en1", "name": "The Lighthouse S01E03 WEBRip", "detail": "Engelska · 2140 nedladdningar", "lang": "eng"}]})
     if path.startswith("/api/video/"):
         return js({"ok": True, "message": ""})
     return None

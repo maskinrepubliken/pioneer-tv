@@ -131,6 +131,24 @@
           setup: ({ P }) => P.bridge.emit('video', { state: 'held', title: 'Avsnitt 3',
             audio: [{ id: 1, label: 'Engelska', selected: true }, { id: 2, label: 'Svenska · Kommentar' }],
             subtitles: [{ id: 1, label: 'Svenska' }, { id: 2, label: 'Engelska' }] }) },
+        { name: 'Filmens pausmeny: Hitta undertexter', under: FILM_PICTURE, url: OVERLAY,
+          setup: ({ P }) => {
+            P.bridge.emit('video', { state: 'held', title: 'Avsnitt 3', time: 1210, duration: 2700,
+              audio: [{ id: 1, label: 'Engelska', selected: true }], subtitles: [{ id: 1, label: 'Svenska' }] });
+            const m = P.hud.menu;
+            m.index = m.items.findIndex((it) => it.label === 'Hitta undertexter');
+            m.activate();
+          } },
+        { name: 'Filmen: spolning med ◀ ▶', under: FILM_PICTURE, url: OVERLAY,
+          setup: ({ P }) => P.bridge.emit('video', { state: 'seeked', time: 1210, duration: 2700, paused: false }),
+          note: 'Vänster och höger medan filmen spelar (video.py seeked): var den är, en stund. mpv ritar inget eget.' },
+        { name: 'Musikens panel', under: HOME, url: OVERLAY,
+          setup: ({ P }) => {
+            P.bridge.emit('audio', { state: 'playing', kind: 'music', time: 61, duration: 214, index: 2, count: 9,
+              item: { name: 'Sommarnatt', artist: 'Snowstorm', album: 'Vinterland', cover: '/jellyfin/Items/album1/Images/Primary?tag=p' } });
+            P.hud.menu.open(P.media.nowRow().sub());
+          },
+          note: 'Snabbmenyns rad för det som spelas (Spelas nu) öppnar den.' },
         { name: 'En sajts video (SVT Play, Cineasterna)', under: FILM_PICTURE, url: OVERLAY,
           setup: ({ P }) => { P.bridge.emit('webvideo', WEBVIDEO); P.bridge.emit('menu', {}); },
           note: 'Hem över en video på en sajt (content/webvideo.js): spola med ◀ ▶, 10 s ett tryck, 30 s hållet. I fullskärm spolar ◀ ▶ och A pausar utan panelen.' },
