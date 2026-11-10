@@ -73,6 +73,9 @@
           { path: 'jellyfin.url', type: 'text', label: 'Adress till Jellyfin (utan /web/)', value: 'http://100.123.142.8:8096' },
           { path: 'jellyfin.api_key', type: 'text', label: 'API-nyckel', secret: true, value: '', is_set: true },
           { path: 'jellyfin.user', type: 'text', label: 'Användare vars spellistor visas', value: '' } ] },
+        { id: 'immich', title: 'Immich', fields: [
+          { path: 'immich.url', type: 'text', label: 'Adress till Immich', value: 'https://bilder.example.se' },
+          { path: 'immich.api_key', type: 'text', label: 'API-nyckel', secret: true, value: '', is_set: false } ] },
         { id: 'remote', title: 'Fjärråtkomst', fields: [
           { path: 'remote.token', type: 'text', label: 'Åtkomstnyckel (tom = bara lokalt / Tailscale serve)', secret: true, value: '', is_set: false } ] },
       ],
@@ -92,7 +95,7 @@
     // B home in the simulator (dev/sim.html), which plays the extension's part.
     if (path === '/api/home') { try { if (window.parent !== window) window.parent.postMessage({ sim: 'home' }, '*'); } catch {} }
     if (path === '/api/services') return wait({ romm: { state: 'ok', version: '5.4.0', user: 'lyret' },
-      jellyfin: { state: 'down' } }, 900);
+      jellyfin: { state: 'down' }, immich: { state: 'unset' } }, 900);
     if (path === '/api/cec/raw') return wait({ ok: true, output: 'Transmit from Playback Device 1 to TV (4 to 0):\n\tGIVE_DEVICE_POWER_STATUS (0x8f)\n    Received from TV (0):\n\tREPORT_POWER_STATUS (0x90):\n\t\tpwr-state: on (0x00)' }, 400);
     if (path === '/api/images') return wait({ enabled: true, files: 2814, bytes: 412e6, max_bytes: 10240 * 1024 * 1024, max_px: 600, prefetch_at: '03:30',
       last_night: { new: 2810, had: 4, failed: 0, seconds: 1460, time: Date.now() / 1000 - 30000 } });
@@ -416,18 +419,20 @@
     // (/etc/pioneer-tv/settings.json), not set here.
     async services(show) {
       const [s, st] = await Promise.all([settings(), status()]);
-      const at = { romm: h('div', {}, serviceCard()), jellyfin: h('div', {}, serviceCard()) };
+      const at = { romm: h('div', {}, serviceCard()), jellyfin: h('div', {}, serviceCard()), immich: h('div', {}, serviceCard()) };
       const t = st.tailscale;
       show(h('h1', {}, 'Tjänster'),
-        h('p', { class: 'muted' }, 'Spelen kommer från RomM, filmerna och musiken från Jellyfin. Nycklarna visas inte; ett tomt fält behåller den som är satt. Rutorna på startsidan står i /etc/pioneer-tv/settings.json.'),
+        h('p', { class: 'muted' }, 'Spelen kommer från RomM, filmerna och musiken från Jellyfin, bilderna från Immich. Nycklarna visas inte; ett tomt fält behåller den som är satt. Rutorna på startsidan står i /etc/pioneer-tv/settings.json.'),
         h('h2', {}, 'Tailscale'),
         tailscaleCard(st),
         t.installed && t.state !== 'running' ? rows(row({ label: 'Starta Tailscale', run: () => sysAction('tailscale_up') })) : '',
         h('h2', {}, 'RomM'), at.romm, rows(...fieldRows(s, 'romm')),
-        h('h2', {}, 'Jellyfin'), at.jellyfin, rows(...fieldRows(s, 'jellyfin')));
+        h('h2', {}, 'Jellyfin'), at.jellyfin, rows(...fieldRows(s, 'jellyfin')),
+        h('h2', {}, 'Immich'), at.immich, rows(...fieldRows(s, 'immich')));
       const svc = await api('GET', '/api/services').catch(() => ({}));
       at.romm.replaceChildren(serviceCard(svc.romm || { state: 'down' }));
       at.jellyfin.replaceChildren(serviceCard(svc.jellyfin || { state: 'down' }));
+      at.immich.replaceChildren(serviceCard(svc.immich || { state: 'down' }));
     },
 
     async system(show) {

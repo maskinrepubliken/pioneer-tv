@@ -5,6 +5,7 @@
   /api/...       JSON API used by the settings page
   /romm/...      RomM's API and assets with the API key added, for the Spel pages
   /jellyfin/...  Jellyfin's library and audio with the API key added, for the Musik pages
+  /immich/...    Immich's albums, timeline, people and pictures with the API key added, for the Bilder pages
 """
 from __future__ import annotations
 
@@ -18,7 +19,7 @@ from urllib.parse import urlparse
 import aiohttp
 from aiohttp import WSMsgType, web
 
-from . import imagecache, jellyfin, romm, schedule, settings, sysinfo, updater, wifitest
+from . import imagecache, immich, jellyfin, romm, schedule, settings, sysinfo, updater, wifitest
 from .covers import Covers, Passed
 from .overlay import Router
 
@@ -93,6 +94,7 @@ class Server:
             self.app.router.add_route(method, path, handler)
         self.app.router.add_route("*", "/romm/{path:.*}", self.romm_proxy)
         self.app.router.add_route("*", "/jellyfin/{path:.*}", self.jellyfin_proxy)
+        self.app.router.add_route("*", "/immich/{path:.*}", self.immich_proxy)
         self.app.on_cleanup.append(self._close_proxy_session)
 
     # ------------------------------------------------------------ pages
@@ -266,6 +268,21 @@ class Server:
                 return self._picture(picture)
         return await self._forward(request, target, headers, jellyfin.RESPONSE_HEADERS, "jellyfin")
 
+    async def immich_proxy(self, request: web.Request) -> web.StreamResponse:
+        # As RomM's: only the box's own pages (the Bilder pages) get the key.
+        if request.method not in immich.METHODS:
+            return web.json_response({"error": "method_not_allowed"}, status=405)
+        if request.headers.get("Sec-Fetch-Site", "") not in romm.OWN_FETCH_SITES:
+            return web.json_response({"error": "cross-site request refused"}, status=403)
+        cfg = self.cfg.get("immich") or {}
+        target = immich.target_url(cfg.get("url", ""), request.match_info["path"], request.query_string, request.method)
+        if target is None:
+            return web.json_response({"error": "not_found"}, status=404)
+        if not cfg.get("api_key"):
+            return web.json_response({"error": "no_key"}, status=503)
+        return await self._forward(request, target, immich.request_headers(request.headers, cfg["api_key"]),
+                                   immich.RESPONSE_HEADERS, "immich")
+
     def _session(self) -> aiohttp.ClientSession:
         if self.proxy_session is None:
             # Bodies pass through as the server sent them (compressed or not),
@@ -380,7 +397,7 @@ class Server:
         return web.json_response({"ok": True, "user_id": user.get("Id"), "user": user.get("Name")})
 
     async def api_services(self, _request: web.Request) -> web.Response:
-        """Whether RomM and Jellyfin answer, and take the key: for the Tjänster
+        """Whether RomM, Jellyfin and Immich answer, and take the key: for the Tjänster
         tab. Each {state: ok | auth | down | unset, version, ...}."""
         async def ask(url: str, headers: dict) -> tuple[int, dict]:
             try:
@@ -415,8 +432,20 @@ class Server:
                 return {"state": "auth" if code in (401, 403) else "down"}
             return {"state": "ok", "version": info.get("Version"), "server": info.get("ServerName")}
 
-        rm, jf = await asyncio.gather(check_romm(), check_jellyfin())
-        return web.json_response({"romm": rm, "jellyfin": jf})
+        async def check_immich() -> dict:
+            cfg = self.cfg.get("immich") or {}
+            url, key = (cfg.get("url") or "").rstrip("/"), cfg.get("api_key", "")
+            if not url or not key:
+                return {"state": "unset"}
+            (vc, version), (me, user) = await asyncio.gather(
+                ask(f"{url}/api/server/version", {}), ask(f"{url}/api/users/me", {"x-api-key": key}))
+            v = ".".join(str(version.get(k)) for k in ("major", "minor", "patch")) if vc == 200 else None
+            if me == 200:
+                return {"state": "ok", "version": v, "user": user.get("name") or user.get("email")}
+            return {"state": "auth" if me in (401, 403) else "down", "version": v}
+
+        rm, jf, im = await asyncio.gather(check_romm(), check_jellyfin(), check_immich())
+        return web.json_response({"romm": rm, "jellyfin": jf, "immich": im})
 
     # ------------------------------------------------------------ API
     async def _json(self, request: web.Request) -> dict:
@@ -633,7 +662,10 @@ class Server:
                 start = float(data.get("start") or 0)
             except (TypeError, ValueError):
                 start = 0.0
-            ok, msg = await video.play(str(data.get("id") or ""), start, index("audio"), index("subtitle"))
+            if data.get("source") == "immich":
+                ok, msg = await video.play_immich(str(data.get("id") or ""), str(data.get("name") or ""))
+            else:
+                ok, msg = await video.play(str(data.get("id") or ""), start, index("audio"), index("subtitle"))
             if ok:
                 await self.quiet("en film")
         elif action in ("seek", "to"):

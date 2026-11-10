@@ -99,6 +99,9 @@ DEFAULTS: dict[str, Any] = {
     # dashboard, and the user whose playlists they show (empty: the first
     # administrator). See /jellyfin/ in server.py.
     "jellyfin": {"url": "", "api_key": "", "user": ""},
+    # Immich for the Bilder pages: base URL and an API key (Immich: Kontoinställningar
+    # → API-nycklar). See /immich/ in server.py.
+    "immich": {"url": "", "api_key": ""},
     # Games: played in RetroArch on the TV's display (games.py). A console is
     # offered when its core is in place; pioneer-tv-cores.service installs
     # Debian's and builds the rest (system/build-cores.sh).

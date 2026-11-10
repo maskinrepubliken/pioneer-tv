@@ -79,6 +79,13 @@ SCHEMA: list[dict] = [
             {"path": "jellyfin.user", "type": "text", "label": "Användare vars spellistor visas (tom = första administratören)"},
         ],
     },
+    {
+        "id": "immich", "title": "Immich",
+        "fields": [
+            {"path": "immich.url", "type": "text", "label": "Adress till Immich"},
+            {"path": "immich.api_key", "type": "text", "label": "API-nyckel", "secret": True},
+        ],
+    },
 ]
 
 

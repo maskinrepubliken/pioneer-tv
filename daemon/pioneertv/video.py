@@ -46,6 +46,7 @@ log = logging.getLogger("pioneertv.video")
 TICKS = 10_000_000              # Jellyfin counts time in 100 ns ticks
 REPORT_EVERY = 10               # seconds between progress reports
 ITEM_ID = re.compile(r"^[A-Za-z0-9-]{1,64}$")
+IMMICH_ID = re.compile(r"^[0-9a-fA-F-]{36}$")
 
 # mpv's options. --hwdec=drm with --vo=gpu decodes HEVC in hardware and
 # keeps up at 1080p; --profile=fast drops the costly scaling. The cache
@@ -256,6 +257,10 @@ class Video:
         return self.cfg.get("jellyfin") or {}
 
     @property
+    def icfg(self) -> dict:
+        return self.cfg.get("immich") or {}
+
+    @property
     def vcfg(self) -> dict:
         return self.cfg.get("video") or {}
 
@@ -309,6 +314,26 @@ class Video:
             return False, "mpv kunde inte startas"
         return True, ""
 
+    async def play_immich(self, asset_id: str, name: str = "") -> tuple[bool, str]:
+        """A video clip from Immich (the Bilder pages): played as a film is,
+        from its start, without Jellyfin's reports, tracks or subtitles."""
+        if not IMMICH_ID.match(asset_id or ""):
+            return False, "okänd video"
+        if self._busy():
+            return False, "en video spelas redan"
+        if not self.icfg.get("url") or not self.icfg.get("api_key"):
+            return False, "no_key"
+        self.state = "starting"
+        self.item = {"id": asset_id, "name": str(name or "Video")[:120], "source": {}, "key": "", "immich": True}
+        self.position, self.paused, self.ended, self.duration, self.menu_paused = 0.0, False, False, None, False
+        try:
+            await self._launch(None, None)
+        except OSError as exc:
+            log.warning("mpv: %s", exc)
+            self.state, self.item = "idle", None
+            return False, "mpv kunde inte startas"
+        return True, ""
+
     async def stop(self) -> None:
         """Stop playing; the page goes back to where it was."""
         if not (self.proc and self.proc.returncode is None):
@@ -328,8 +353,9 @@ class Video:
         conf.mkdir(parents=True, exist_ok=True)
         os.chmod(conf, 0o700)
         overlay = self.overlay()
-        (conf / "mpv.conf").write_text(MPV_CONF + (OVERLAY_CONF if overlay else "")
-                                       + f"http-header-fields=X-Emby-Token: {self.jcfg['api_key']}\n")
+        key = (f"x-api-key: {self.icfg['api_key']}" if self.item and self.item.get("immich")
+               else f"X-Emby-Token: {self.jcfg['api_key']}")
+        (conf / "mpv.conf").write_text(MPV_CONF + (OVERLAY_CONF if overlay else "") + f"http-header-fields={key}\n")
         (conf / "input.conf").write_text(PANEL_KEYS + PANEL_SEEK if overlay else PAUSE_KEYS + INPUT_CONF)
         for f in (conf / "mpv.conf", conf / "input.conf"):
             os.chmod(f, 0o600)
@@ -381,7 +407,10 @@ class Video:
             cmd.append(f"--sid={chosen['sid']}")
         if "sub_file" in chosen:
             cmd.append(f"--sub-file={self.subtitle_url(chosen['sub_file'][0])}")
-        cmd.append(self.stream_url(self.item["id"], source.get("Id", self.item["id"])))
+        if self.item.get("immich"):
+            cmd.append(f"{self.icfg['url'].rstrip('/')}/api/assets/{quote(self.item['id'])}/video/playback")
+        else:
+            cmd.append(self.stream_url(self.item["id"], source.get("Id", self.item["id"])))
         return (["runuser", "-u", user, "--"] if os.geteuid() == 0 else []) + ["env", *env, *cmd]
 
     async def _launch(self, audio: int | None, subtitle: int | None) -> None:
@@ -492,7 +521,8 @@ class Video:
         self.paused = True                 # mpv says so too, a moment later
         await self._command(["set_property", "pause", True])
         await self._event("held", title=self.item["name"] if self.item else "", time=self.position,
-                          duration=self.length(), **panel_tracks(self.track_list, self.item["source"] if self.item else None))
+                          duration=self.length(), immich=bool(self.item and self.item.get("immich")),
+                          **panel_tracks(self.track_list, self.item["source"] if self.item else None))
 
     def length(self) -> float | None:
         return self.duration or (self.item["source"].get("RunTimeTicks") or 0) / TICKS or None if self.item else self.duration
@@ -736,7 +766,7 @@ class Video:
         """Sessions/Playing (Start), /Progress or /Stopped. Only logged when it
         fails: the video does not depend on it."""
         item = item or self.item
-        if not item:
+        if not item or item.get("immich"):             # Immich hears nothing of what plays
             return
         path = {"Start": "Sessions/Playing", "Progress": "Sessions/Playing/Progress", "Stopped": "Sessions/Playing/Stopped"}[what]
         position = self.position if position is None else position
@@ -755,6 +785,8 @@ class Video:
         the API key, which is no user, so they move nobody's "Fortsätt
         titta" (seen on the box). Jellyfin's own rules: past 90 % it counts
         as seen, before 5 % nothing is kept."""
+        if item.get("immich"):
+            return
         runtime = (item["source"].get("RunTimeTicks") or 0) / TICKS
         share = position / runtime if runtime else 0
         played = ended or share >= 0.9

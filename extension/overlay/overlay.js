@@ -532,7 +532,8 @@ window.PioneerTV = window.PioneerTV || {};
       kind: 'video', title: e.title, live: false, time: e.time || 0, duration: e.duration || 0, paused: true,
       audio: e.audio || [], subs: e.subtitles || [],
       to: (t) => video('/to', { at: t }),
-      find: () => video('/find_subtitles'),
+      // Subtitles from the internet are Jellyfin's (a clip from Immich has none).
+      find: e.immich ? null : () => video('/find_subtitles'),
       fetch: (id) => video('/fetch_subtitle', { id }),
       track: async (kind) => {
         const list = kind === 'audio' ? src.audio : src.subs;

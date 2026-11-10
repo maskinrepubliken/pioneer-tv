@@ -224,6 +224,21 @@ class Playing(Base):
         self.assertIsNone(self.video.dispatcher.system_hook)
         self.assertEqual(self.video.state, "idle")
 
+    async def test_a_clip_from_immich(self):
+        self.video.cfg["immich"] = {"url": "https://bilder.example.se", "api_key": "imm1ch"}
+        clip = "4f1c2a9e-1b2c-4d3e-8f90-123456789abc"
+        self.assertEqual((await self.video.play_immich("../x"))[0], False)
+        self.assertEqual(await self.video.play_immich(clip, "Midsommar"), (True, ""))
+        await self.wait_for("running")
+        self.assertIn(f"https://bilder.example.se/api/assets/{clip}/video/playback", (self.dir / "args.json").read_text())
+        conf = (self.video.root / "mpv" / "mpv.conf").read_text()
+        self.assertIn("x-api-key: imm1ch", conf)
+        self.assertNotIn("k3y", conf)
+        await self.video.stop()
+        await self.wait_for("stopped")
+        self.assertEqual(self.reports, [])                 # Jellyfin hears nothing of it
+        self.assertEqual(self.user_data, [])
+
     async def test_hold_b_stops(self):
         await self.video.play("abc")
         await self.wait_for("running")
