@@ -226,16 +226,18 @@ window.PioneerTV = window.PioneerTV || {};
 
   // ------------------------------------------------------------ the pad
   // B: one view back, and from the library's first view home. X is the
-  // library's.
+  // library's, then the filled button's.
   window.addEventListener('keydown', (e) => {
     if (M.nav.captured) return;                     // a player, the menu or the keyboard has the pad
     const active = document.activeElement;
     // A text field keeps its keys, except B in an empty search field: back.
     if (M.nav.isTextField(active) && !(e.key === 'Escape' && active === search && !search.value)) return;
     if (V.key(e)) { e.preventDefault(); return; }
+    // X: the library's first (on what has the focus: an album plays), else
+    // the filled button.
     const button = e.key === ' ' && filled();
+    if (library.onKey && library.onKey(e, button)) { e.preventDefault(); return; }
     if (button) { e.preventDefault(); if (!e.repeat) button.click(); return; }
-    if (library.onKey && library.onKey(e)) { e.preventDefault(); return; }
     if (e.key !== 'Escape') return;
     e.preventDefault();
     // A grid filtered: B takes the filter away first.

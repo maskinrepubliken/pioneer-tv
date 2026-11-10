@@ -4,7 +4,9 @@
 // #/playlist/<id> a list of songs; #/artist/<id> an artist's albums;
 // #/search/<words> what was found. A song plays from where it is in its
 // list, on the box itself (players/audio.js, the daemon's audio.py), so it
-// plays on from page to page: X opens Spelas nu.
+// plays on from page to page. X on an album, a playlist or an artist plays
+// it at once; elsewhere it is the filled button (Blanda allt, Spela), or it
+// opens Spelas nu.
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const J = M.jellyfin;
@@ -51,7 +53,7 @@ window.PioneerTV = window.PioneerTV || {};
   async function start() {
     const playlists = await J.playlists();
     return {
-      kind: 'shelf', title: 'Musik', legend: [['A', 'öppna']],
+      kind: 'shelf', title: 'Musik', legend: [['A', 'öppna'], ['X', 'spela']],
       actions: [{ label: 'Blanda allt', icon: 'shuffle', primary: true, key: 'shuffle', run: tryPlay(() => J.shuffleAll(), false) }],
       sections: [
         { label: 'Spellistor', layout: 'stacks', columns: 4, shape: 'square', items: playlists.map(group),
@@ -65,7 +67,7 @@ window.PioneerTV = window.PioneerTV || {};
     const word = kind === 'albums' ? 'album' : 'artister';
     return {
       kind: 'grid', title: kind === 'albums' ? 'Album' : 'Artister', filter: true,
-      legend: [['A', 'öppna']],
+      legend: [['A', 'öppna'], ['X', 'spela']],
       items: all.map(group), shape: kind === 'albums' ? 'square' : 'round',
       // Artists have no pictures: their names, long, in three columns.
       look: kind === 'albums' ? 'shelf' : 'names', columns: kind === 'albums' ? 6 : 3,
@@ -95,7 +97,7 @@ window.PioneerTV = window.PioneerTV || {};
     const [who, albums] = await Promise.all([J.item(id), J.albums({ artistId: id })]);
     const all = () => J.songs({ kind: 'artist', id });
     return {
-      kind: 'shelf', title: who.name, legend: [['A', 'öppna']],
+      kind: 'shelf', title: who.name, legend: [['A', 'öppna'], ['X', 'spela']],
       actions: [
         { label: 'Blanda allt', icon: 'shuffle', primary: true, key: 'shuffle', run: tryPlay(all, true) },
         { label: 'Spela allt', icon: 'play', key: 'play', run: tryPlay(all, false) },
@@ -135,10 +137,20 @@ window.PioneerTV = window.PioneerTV || {};
     return start();
   }
 
-  // While browsing: X opens Spelas nu.
-  function onKey(e) {
-    if (e.key === ' ') { if (!e.repeat) audio.open(); return true; }
-    return false;
+  // X on an album, a playlist or an artist: it plays from the start (and
+  // Spelas nu opens, as for a song).
+  function playGroup(card) {
+    const [kind, ...rest] = card.dataset.key.split(':');
+    tryPlay(() => J.songs({ kind, id: rest.join(':') }), false)();
+  }
+  function onKey(e, button) {
+    if (e.key !== ' ') return false;
+    const active = document.activeElement;
+    const key = (active && active.dataset && active.dataset.key) || '';
+    if (/^(album|playlist|artist):/.test(key)) { if (!e.repeat) playGroup(active); return true; }
+    if (button) return false;                       // the page's filled button
+    if (!e.repeat) audio.open();
+    return true;
   }
 
   M.libraries = M.libraries || {};
