@@ -37,6 +37,7 @@ window.PioneerTV = window.PioneerTV || {};
     picture: a.cover ? I.picture(a.cover) : null,
   });
   const personCard = (p) => ({ key: `person:${p.id}`, title: p.name, href: `#/person/${encodeURIComponent(p.id)}`, picture: I.face(p.id), shape: 'round' });
+  const UNNAMED = 'Utan namn';
 
   async function start() {
     const [memories, albums, people] = await Promise.all([I.memories().catch(() => []), I.albums(), I.people().catch(() => [])]);
@@ -87,9 +88,9 @@ window.PioneerTV = window.PioneerTV || {};
     if (what === 'people') {
       const people = await I.people();
       return { kind: 'grid', title: 'Personer', shape: 'round', columns: 6, items: people.map(personCard), filter: true,
-        count: (n, all) => (n === all ? `${all} personer` : `${n} av ${all} personer`), empty: 'Ingen har fått ett namn i Immich än.', legend: [['A', 'öppna']] };
+        count: (n, all) => (n === all ? `${all} personer` : `${n} av ${all} personer`), empty: 'Immich har inte hittat några ansikten än.', legend: [['A', 'öppna']] };
     }
-    if (what === 'person' && arg) { const p = await I.person(arg); return grid(p.name, p.assets); }
+    if (what === 'person' && arg) { const p = await I.person(arg); return grid(p.name || UNNAMED, p.assets); }
     if (what === 'memory' && arg) {
       const m = (await I.memories()).find((x) => x.id === arg);
       return m ? grid(ago(m.year), m.assets) : start();
@@ -102,13 +103,14 @@ window.PioneerTV = window.PioneerTV || {};
     return start();
   }
 
-  // The column at the left: the start, the timeline, the albums, the people, the favourites.
+  // The column at the left: the start (Förslag: the memories, the albums,
+  // the people), the favourites, the timeline, the albums, the people.
   const rail = () => [{ items: [
-    { label: 'Minnen', icon: 'spark', href: '#/', key: 'rail:start' },
+    { label: 'Förslag', icon: 'spark', href: '#/', key: 'rail:start' },
+    { label: 'Favoriter', icon: 'heart', href: '#/favorites', key: 'rail:favorites' },
     { label: 'Tidslinje', icon: 'clock', href: '#/timeline', key: 'rail:timeline' },
     { label: 'Album', icon: 'stack', href: '#/albums', key: 'rail:albums' },
     { label: 'Personer', icon: 'person', href: '#/people', key: 'rail:people' },
-    { label: 'Favoriter', icon: 'heart', href: '#/favorites', key: 'rail:favorites' },
   ] }];
 
   M.libraries = M.libraries || {};

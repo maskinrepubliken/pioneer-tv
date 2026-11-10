@@ -82,22 +82,25 @@ window.PioneerTV = window.PioneerTV || {};
       const [a, assets] = await Promise.all([json(`api/albums/${encodeURIComponent(id)}`), every({ albumIds: [id] })]);
       return { name: a.albumName, assets };
     },
-    // The timeline's months, the newest first: { month: '2024-05-01', count }.
-    months: once(async () => (await json('api/timeline/buckets?visibility=timeline&order=desc'))
+    // The timeline's months, the newest first: { month: '2024-05-01', count };
+    // with a partner's pictures (Immich's partner sharing; the searches have
+    // them already).
+    months: once(async () => (await json('api/timeline/buckets?visibility=timeline&withPartners=true&order=desc'))
       .map((b) => ({ month: String(b.timeBucket).slice(0, 10), count: b.count }))),
     // A month's pictures and clips, the newest first (Immich gives them as
     // columns: a list for each field).
     async month(month) {
-      const c = await json(`api/timeline/bucket?visibility=timeline&order=desc&timeBucket=${encodeURIComponent(month)}`);
+      const c = await json(`api/timeline/bucket?visibility=timeline&withPartners=true&order=desc&timeBucket=${encodeURIComponent(month)}`);
       return (c.id || []).map((id, i) => ({
         id, video: c.isImage ? !c.isImage[i] : false, taken: local(c.fileCreatedAt && c.fileCreatedAt[i], c.localOffsetHours && c.localOffsetHours[i]),
         seconds: c.duration && c.duration[i] ? c.duration[i] / 1000 : 0, favorite: !!(c.isFavorite && c.isFavorite[i]),
         ratio: c.ratio ? c.ratio[i] : null,
       }));
     },
-    // The people with a name, as Immich orders them: { id, name }.
+    // The people, named or not (not those hidden in Immich), as Immich
+    // orders them: { id, name }, name '' for one without.
     people: once(async () => ((await json('api/people?size=500')).people || [])
-      .filter((p) => p.name && !p.isHidden).map((p) => ({ id: p.id, name: p.name }))),
+      .filter((p) => !p.isHidden).map((p) => ({ id: p.id, name: p.name || '' }))),
     async person(id) {
       const [p, assets] = await Promise.all([json(`api/people/${encodeURIComponent(id)}`), every({ personIds: [id] })]);
       return { name: p.name, assets };

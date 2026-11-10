@@ -501,8 +501,13 @@ seconds ahead.
 
 The Bilder tile opens the browse page on top of [Immich](https://immich.app)
 (`browse.html?library=bilder`, `libraries/bilder.js` on
-`sources/immich.js`): today's memories ("för X år sedan"), the albums
-and the people; the timeline, a year at a time, its months as cards; a
+`sources/immich.js`). Its column: Förslag (today's memories, "för X år
+sedan", the albums and the people), Favoriter, Tidslinje, Album and
+Personer (every face Immich has found, named or not; those hidden in
+Immich left out). A partner's pictures (Immich's partner sharing) are
+there too: the timeline asks for them (`withPartners`), the searches and
+the favourites have them already; the memories, the albums (those shared
+aside) and the people are one's own. The timeline, a year at a time, its months as cards; a
 month, an album, a person, a memory, the favourites and a search
 (Immich's smart search, by what is in the picture) are grids of pictures
 close together (`grid.js` look `photos`, `cards.js` photo; a clip has its
