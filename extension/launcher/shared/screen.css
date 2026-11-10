@@ -6,7 +6,10 @@
   position: fixed; inset: 0; z-index: 10; margin: 0; padding: 0 10vw;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.4vw;
   background: var(--pioneertv-surface-ink); color: var(--pioneertv-on-dark); text-align: center;
+  opacity: 0; transition: opacity 0.45s ease;
 }
+/* In and out it fades (screen.js), the one motion the system has. */
+.pioneertv-screen.shown { opacity: 1; }
 .pioneertv-screen[hidden] { display: none; }
 .pioneertv-screen-text { margin: 0; max-width: 60vw; font: italic 400 2.9vw/1.2 var(--pioneertv-font-prose); }
 .pioneertv-screen-hint { margin: 0; max-width: 60vw; font: 1.6vw/1.35 var(--pioneertv-font-ui); color: var(--pioneertv-on-dark); }

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Pioneer TV self-update. Started detached by the daemon (systemd-run) so it
-# survives the daemon restart it causes. Pulls the repo, reinstalls, restarts.
+# survives the daemon restart it causes. Pulls the repo, reinstalls (which restarts).
 set -euo pipefail
 
 REPO=$(cat /etc/pioneer-tv/repo)
@@ -45,8 +45,7 @@ else
 fi
 
 finish ok "updated $FROM -> $TO"
-log "restarting services"
-systemctl restart pioneer-tv-daemon.service
-# Chromium loads the extension at start, so the display must restart too.
-systemctl restart pioneer-tv-display.service
+# install.sh has restarted the daemon and the display (Chromium loads the
+# extension at start) once; a second restart here killed Chromium within a
+# second of its start.
 log "done"

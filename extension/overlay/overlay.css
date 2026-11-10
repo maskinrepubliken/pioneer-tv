@@ -147,7 +147,3 @@ html, body { margin: 0; height: 100%; background: transparent !important; overfl
   border: 1px solid var(--pioneertv-line-strong); font: 600 16px/1 var(--pioneertv-font-ui); color: var(--pioneertv-ink-muted);
 }
 
-/* The cover over a channel on its way (overlay.js): it fades, in and out,
-   the one place the system does. */
-.pioneertv-cover { position: fixed; inset: 0; z-index: 10; pointer-events: none; opacity: 0; transition: opacity 0.5s ease; }
-.pioneertv-cover.shown { opacity: 1; }

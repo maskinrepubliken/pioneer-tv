@@ -811,9 +811,13 @@ tried again every three seconds.
   minute). A channel tile asks the overlay to cover the screen ("Laddar…"
   and the channel, `relay` `cover`) until `webvideo.js` says its video
   plays filling the screen (`full`), so its page is never seen loading;
-  Home, a page of the box's own or 25 s take the cover away. It fades in
-  once the tile's holes have been seen and out over the picture, the one
-  fade the system has. At the far left a column on the sunken paper with round
+  Home, a page of the box's own or 25 s take the cover away. It comes once
+  the tile's holes have been seen. Every full-screen message (`screen.js`:
+  this cover, "Startar…", "Vilar", a view loading) fades in and out, the one
+  motion the system has. The home page must never stay empty:
+  `home/guard.js`, loaded first, logs its errors to the daemon's journal
+  (`extension: home: ...`) and loads the page again if nothing is drawn
+  after 8 s (seen once: the page stopped after twelve of its scripts). At the far left a column on the sunken paper with round
   buttons in the middle (Sök, the quick menu with the pad's Home mark,
   Inställningar, the TV's off button) and the box's status at its foot. Sök
   asks the overlay for that panel alone (`relay` with a `panel`): the

@@ -69,28 +69,20 @@ window.PioneerTV = window.PioneerTV || {};
   // on it, until its video plays filling the screen (the webvideo events,
   // below); Home, one of the box's own pages (B on the way), the
   // screensaver or 25 s take it away. Not the keyboard's: the page below
-  // still gets the pad. It fades in once the tile's holes have been seen,
-  // and out over the picture (the one fade there is: overlay.css).
-  const coverBox = document.createElement('div');
-  coverBox.className = 'pioneertv-cover';
-  document.body.appendChild(coverBox);
-  const cover = M.screen.in(coverBox);
-  const COVER_AFTER_MS = 700, COVER_FADE_MS = 500, COVER_GIVE_UP_MS = 25000;
-  let coverTimer = 0, coverFade = 0;
-  const covering = () => coverBox.classList.contains('shown') || !!coverTimer;
+  // still gets the pad. It comes once the tile's holes have been seen.
+  const cover = M.screen.in(document.body);
+  const COVER_AFTER_MS = 700, COVER_GIVE_UP_MS = 25000;
+  let coverTimer = 0;
+  const covering = () => cover.isOpen() || !!coverTimer;
   function uncover() {
     clearTimeout(coverTimer);
     coverTimer = 0;
-    coverBox.classList.remove('shown');
-    clearTimeout(coverFade);
-    coverFade = setTimeout(() => cover.hide(), COVER_FADE_MS);
+    cover.hide();
   }
   b.on('cover', (e) => {
     clearTimeout(coverTimer);
-    clearTimeout(coverFade);
     coverTimer = setTimeout(() => {
       cover.show('Laddar…', (e && e.text) || '');
-      requestAnimationFrame(() => requestAnimationFrame(() => coverBox.classList.add('shown')));
       coverTimer = setTimeout(uncover, COVER_GIVE_UP_MS - COVER_AFTER_MS);
     }, COVER_AFTER_MS);
   });

@@ -4,15 +4,17 @@
 // (players/video.js: "Startar…", "Slut", what went wrong) and the
 // screensaver resting (overlay/saver.js: "Vilar"), on ink, as what comes
 // next is dark; and on paper, as the pages are, the browse page's view that
-// is loading or cannot reach its source (views.js). Styled by screen.css.
+// is loading or cannot reach its source (views.js). Each fades in and out:
+// the one motion the system has. Styled by screen.css.
 //
 //   M.screen.show('Startar…', 'Fyren')   the sentence and the line under it
 //   M.screen.hide()
 //   M.screen.in(parent, { paper })       another one, drawn in parent (paper: on paper)
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
+  const FADE_MS = 450;           // screen.css's transition
   function make(parent, { paper } = {}) {
-    let root = null, text = null, hint = null;
+    let root = null, text = null, hint = null, gone = 0;
     function build() {
       root = document.createElement('section');
       root.className = `pioneertv-screen${paper ? ' pioneertv-screen--paper' : ''}`;
@@ -31,10 +33,20 @@ window.PioneerTV = window.PioneerTV || {};
         text.textContent = sentence || '';
         hint.textContent = line || '';
         hint.hidden = !line;
-        root.hidden = false;
+        clearTimeout(gone);
+        if (root.hidden) {
+          root.hidden = false;
+          void root.offsetWidth;   // drawn see-through first, so it fades in
+        }
+        root.classList.add('shown');
       },
-      hide() { if (root) root.hidden = true; },
-      isOpen() { return !!root && !root.hidden; },
+      hide() {
+        if (!root || !root.classList.contains('shown')) return;
+        root.classList.remove('shown');
+        clearTimeout(gone);
+        gone = setTimeout(() => { root.hidden = true; }, FADE_MS);
+      },
+      isOpen() { return !!root && root.classList.contains('shown'); },
     };
   }
 
