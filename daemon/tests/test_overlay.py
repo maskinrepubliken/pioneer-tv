@@ -31,6 +31,22 @@ class Routing(unittest.TestCase):
                          [{"type": "event", "name": "media", "action": "resume"}])
         self.assertEqual(r.handle({"type": "overlay_menu", "open": False}), [])   # no second resume
 
+    def test_l2_and_r2_spool_any_video(self):
+        r = Router()
+        r.connected(object())
+        self.assertEqual(r.target("seek"), "page")          # Spelas nu, a picture's clip
+        r.handle({"type": "webvideo", "frame": "f1", "present": True})
+        self.assertEqual(r.target("seek"), "overlay")       # a site's video, filling the screen or not
+        r.handle({"type": "webvideo", "frame": "f1", "present": False})
+        self.assertEqual(r.target("seek"), "page")
+        r.handle({"type": "webvideo", "frame": "f2", "present": True})
+        r.loaded()                                          # another page
+        self.assertEqual(r.target("seek"), "page")
+        r.film = lambda: True                               # a film in mpv
+        self.assertEqual(r.target("seek"), "overlay")
+        r.disconnected(r.overlay)
+        self.assertEqual(r.target("seek"), "page")          # no overlay to draw it
+
     def test_a_pages_toast_goes_on(self):
         r = Router()
         self.assertEqual(r.handle({"type": "toast", "text": "Hej", "icon": "info", "ms": 99999}),

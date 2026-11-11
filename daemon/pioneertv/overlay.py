@@ -9,7 +9,9 @@ Events the daemon broadcasts get a "target" ("overlay" or "page") here;
 the bridge in each client drops what is not for it. While the overlay's
 menu is open it has Y and B too; the rest of the time Y types into the
 page. Opening the menu pauses what plays (video and audio in the page);
-closing it carries on.
+closing it carries on. L2 and R2 (seek) are the overlay's too while a
+film plays in mpv or a site's page has a video: it spools what plays,
+whatever else is open.
 """
 from __future__ import annotations
 
@@ -56,6 +58,8 @@ class Router:
     def __init__(self) -> None:
         self.overlay = None          # the overlay's WebSocket, when connected
         self.overlay_open = False    # its menu is showing
+        self.film = lambda: False    # a film plays in mpv (main.py sets it)
+        self.videos: set[str] = set()   # the page's frames that have a video (webvideo.js)
 
     @property
     def present(self) -> bool:
@@ -78,12 +82,18 @@ class Router:
     def target(self, name: str) -> str:
         if name in OVERLAY or self.overlay_open:
             return "overlay"
+        if name == "seek" and self.overlay is not None and (self.videos or self.film()):
+            return "overlay"
         return "page"
 
     def tag(self, msg: dict) -> dict:
         if msg.get("type") == "event" and msg.get("name") in ROUTED + OVERLAY and "target" not in msg:
             return {**msg, "target": self.target(msg["name"])}
         return msg
+
+    def loaded(self) -> None:
+        """A page loaded: its frames' videos went with the one before."""
+        self.videos.clear()
 
     def handle(self, data: dict) -> list[dict]:
         """A message from a client about menus; returns the events to broadcast."""
@@ -98,7 +108,9 @@ class Router:
                 event["ms"] = max(500, min(int(data["ms"]), 15000))
             return [event]
         elif t == "webvideo":
-            return [webvideo_state(data)]
+            event = webvideo_state(data)
+            (self.videos.add if event["present"] else self.videos.discard)(event["frame"])
+            return [event]
         elif t == "relay" and data.get("name") in TO_OVERLAY:
             event = {"type": "event", "name": data["name"], "open": True, "target": "overlay"}
             if data["name"] == "menu" and data.get("panel") in PANELS:

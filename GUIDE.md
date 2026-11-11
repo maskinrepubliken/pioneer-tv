@@ -42,7 +42,7 @@ what was learned on the way.
 | X / Square | The filled button, wherever there is one: on the box's pages (Spela, Blanda allt, Försök igen, the settings page's Sök efter enheter), the overlay's menus (Spara läge, the media panel's play) and the on-screen keyboard (OK); unmarked (one learns it), the browse page's legend says it. Elsewhere play, pause (Space) or the page's own use. Hold: undo (Ctrl+Z), e.g. what X took off a list |
 | Y / Triangle | On-screen keyboard (on a pad without Home, hold: quick menu) |
 | L1, R1 | TV volume down, up (CEC, repeats while held). Both held together: mute, once (`VolumeChord` in actions.py; either alone waits 90 ms for the other, so a chord moves the volume no step first) |
-| L2, R2 | On the media panel and Spelas nu, wherever the focus is: seek back, on, as fast as they are pressed (the daemon sends how hard, `seek`; the mark on the timeline glides, and what plays goes where they are let go; a short light touch is ten seconds). Nothing elsewhere. The volume left them for L1/R1, as it hung there and crept up or down |
+| L2, R2 | Over any video (a site's, a film, a clip) and on the media panel and Spelas nu, wherever the focus is: seek back, on, as fast as they are pressed (the daemon sends how hard, `seek`; the mark on the timeline, or on the small card at the top right with no menu open, glides, and what plays goes where they are let go; a short light touch is ten seconds). Nothing elsewhere. The volume left them for L1/R1, as it hung there and crept up or down |
 | Right stick | Mouse pointer; click on the stick to left-click. What it (or a mouse) is over is drawn as selected and takes the focus, so the d-pad goes on from there |
 | Start | Nothing on the box; in a game, the console's Start |
 | Select | Nothing on the box; in a game, the console's Select |
@@ -592,9 +592,13 @@ in place (drawn anew at every word from the page, the whole menu went and
 came back, which blinked over SVT Play), and where a seek was put stands
 until the page has got there. While the video fills the screen
 (fullscreen, or bigscreen.js's promotion) the pad drives the `<video>`
-itself, not the site's keys: left and right seek, A or X pauses or plays,
-up and down do nothing, B opens the panel (paused; holding B goes back);
-where it is, the panel says. Where we know the
+itself, not the site's keys: left and right seek, X pauses or plays,
+up and down do nothing, A or B opens the panel (paused; holding B goes
+back); where it is, the panel says. L2 and R2 spool any video, filling the
+screen or not, a site's or a film in mpv: the daemon sends them to the
+overlay while a page's frame has a video or mpv plays (overlay.py), which
+glides a mark on the small card at the top right and seeks where they are
+let go. Where we know the
 site's own controls they are hidden meanwhile (`SITE_UI` in webvideo.js; SVT Play's `desktopUi` and
 top bar, which came and went at every press); its subtitles stay. The
 video itself is never touched beyond play, pause and its time, so it works

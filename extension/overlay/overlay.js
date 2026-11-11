@@ -471,7 +471,8 @@ window.PioneerTV = window.PioneerTV || {};
     return slow + (fast - slow) * amount * amount;
   }
   b.on('seek', (e) => {
-    if (!mediaOpen() || menu.stack[menu.stack.length - 1] !== media.spec || !media.seekTo) return;
+    if (!mediaOpen()) return looseSeek(e);
+    if (menu.stack[menu.stack.length - 1] !== media.spec || !media.seekTo) return;
     const src = media.src;
     const amount = Math.max(0, Math.min(1, Number(e.amount) || 0));
     if (amount > 0) {
@@ -497,6 +498,54 @@ window.PioneerTV = window.PioneerTV || {};
     media.target = Math.max(0, Math.min((lengthOf(src) || 1) - 1, media.target + scrubbing.dir * scrubSpeed(src, scrubbing.amount) * dt));
     refresh();
   }, 50);
+  // L2 and R2 with no menu open, over a film in mpv or a site's video (the
+  // daemon sends them here then): the same glide, on the small card at the
+  // top right, and the seek where they are let go.
+  let loose = null;              // { dir, amount, at, src, go, from, target, released }
+  async function looseSource() {
+    const film = await fetch('/api/video').then((r) => r.json()).catch(() => ({}));
+    if (film.state === 'running') {
+      return { src: { time: film.position || 0, duration: film.duration || 0, paused: !!film.paused }, go: (t) => video('/to', { at: t }) };
+    }
+    const v = webVideo();
+    if (!v) return null;
+    const time = (v.time || 0) + (v.paused ? 0 : (Date.now() - v.at) / 1000);
+    return { src: { time, duration: v.duration, live: v.live, end: v.end, paused: v.paused }, go: (t) => tell(v.frame, 'to', t) };
+  }
+  async function looseSeek(e) {
+    const amount = Math.max(0, Math.min(1, Number(e.amount) || 0));
+    const dir = e.dir < 0 ? -1 : 1;
+    if (amount > 0 && loose) { loose.dir = dir; loose.amount = amount; return; }
+    if (amount > 0) {
+      const mine = loose = { dir, amount, src: null };
+      const found = await looseSource();
+      if (!found) { if (loose === mine) loose = null; return; }
+      Object.assign(mine, found, { from: found.src.time, target: found.src.time, at: performance.now() });
+      if (mine.released) looseGo(mine);
+      return;
+    }
+    if (!loose) return;
+    loose.released = true;
+    if (loose.src) looseGo(loose);
+  }
+  function looseGo(l) {
+    if (loose === l) loose = null;
+    let to = l.target;
+    if (Math.abs(to - l.from) < 3) to = l.from + l.dir * 10;
+    const len = lengthOf(l.src);
+    to = Math.max(0, len ? Math.min(len - 1, to) : to);
+    l.go(to);
+    seekStrip({ time: to, duration: len, paused: l.src.paused });
+  }
+  setInterval(() => {
+    if (!loose || !loose.src || loose.released) return;
+    const now = performance.now(), dt = (now - loose.at) / 1000;
+    loose.at = now;
+    const len = lengthOf(loose.src) || 1;
+    loose.target = Math.max(0, Math.min(len - 1, loose.target + loose.dir * scrubSpeed(loose.src, loose.amount) * dt));
+    seekStrip({ time: loose.target, duration: len, paused: loose.src.paused });
+  }, 50);
+
   // The open panel, from where its source is now.
   function refresh(force) {
     if (!media || (!force && !mediaOpen())) return;
@@ -567,8 +616,8 @@ window.PioneerTV = window.PioneerTV || {};
     if (e.state === 'held') videoPanel(e); else closePanel('video');
   });
 
-  // Left and right over a film (video.py seeks), X on a clip: where it is
-  // now, small, where the notices are (a card at the top right: playing or
+  // Left and right over a film (video.py seeks), X on a clip, L2 and R2 over
+  // any video: where it is now, small, where the notices are (a card at the top right: playing or
   // paused, the time, a thin timeline), for a moment.
   let strip = null, stripTimer = 0;
   function seekStrip(e) {

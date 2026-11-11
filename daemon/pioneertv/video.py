@@ -281,7 +281,7 @@ class Video:
 
     def status(self) -> dict:
         return {"state": self.state, "item": {k: self.item[k] for k in ("id", "name")} if self.item else None,
-                "position": self.position, "paused": self.paused}
+                "position": self.position, "duration": self.length(), "paused": self.paused}
 
     def _busy(self) -> bool:
         # Until _watch has reported where it stopped: a new play() before

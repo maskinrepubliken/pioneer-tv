@@ -7,10 +7,11 @@
 // paused, its subtitles), which the overlay hears: Home then opens its panel
 // for that video (overlay/overlay.js) instead of the quick menu, and what is
 // chosen there comes back here (a webvideo event, to the frame it is for).
-// In fullscreen, left and right seek and A (or X) pauses, without the panel
+// In fullscreen, left and right seek and X pauses, without the panel
 // (the site's own controls hidden where we know them: SVT Play's blinked at
-// every press); where it is, the panel says, which B opens (holding B goes
-// back). The overlay's menu pausing
+// every press); where it is, the panel says, which A or B opens (holding B
+// goes back). L2 and R2 spool it, filling the screen or not: the overlay's
+// (overlay.js), which says where to with a webvideo event. The overlay's menu pausing
 // what plays reaches the frames here too (the top frame's own videos are
 // main.js's).
 window.PioneerTV = window.PioneerTV || {};
@@ -172,8 +173,8 @@ window.PioneerTV = window.PioneerTV || {};
   document.addEventListener('fullscreenchange', () => setTimeout(() => { ownPlayer(); report(true); }, 50));
   setInterval(ownPlayer, 1000);
 
-  // Left and right seek, A or X pauses or plays, while the video fills the
-  // screen; true when the key was taken (up and down too, so they do not
+  // Left and right seek, X pauses or plays, A and B open the overlay's
+  // panel, while the video fills the screen; true when the key was taken (up and down too, so they do not
   // move about the site's hidden controls). The
   // spatial navigation asks here first in the top frame; a frame of its own
   // listens itself.
@@ -184,12 +185,12 @@ window.PioneerTV = window.PioneerTV || {};
     const v = main();
     if (!v || !filling(v)) return false;
     ownPlayer();
-    // B: paused, with the overlay's panel over it (holding B goes back).
-    if (e.key === 'Escape') {
+    // A or B: paused, with the overlay's panel over it (holding B goes back).
+    if (e.key === 'Escape' || e.key === 'Enter') {
       if (!e.repeat && M.bridge) M.bridge.relay('menu', { panel: 'media' });
       return true;
     }
-    if (e.key === 'Enter' || e.key === ' ') {
+    if (e.key === ' ') {
       if (!e.repeat) { if (v.paused) v.play().catch(() => {}); else v.pause(); }
       return true;
     }
