@@ -127,7 +127,10 @@ window.PioneerTV = window.PioneerTV || {};
     if (['albums', 'album', 'people', 'person', 'favorites', 'archive', 'trash', 'hidden'].includes(what)) return theirs(parts, OWN);
     if (what === 'more') return more();
     if (what === 'recent') return grid('Nyligen tillagda', await I.recent(), { empty: 'Inget nytt de senaste 30 dagarna.' });
-    if (what === 'clips') return grid('Videoklipp', await I.clips(), { empty: 'Inga videoklipp.', slideshow: false });
+    if (what === 'clips') {
+      const clips = await I.clips();
+      return { ...grid('Videoklipp', clips, { empty: 'Inga videoklipp.', slideshow: false }), count: () => (clips.length === 1 ? '1 klipp' : `${clips.length} klipp`) };
+    }
     if (what === 'memory' && arg) {
       const m = (await I.memories()).find((x) => x.id === arg);
       return m ? grid(ago(m.year), m.assets) : start();
