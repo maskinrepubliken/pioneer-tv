@@ -505,8 +505,8 @@ window.PioneerTV = window.PioneerTV || {};
     refresh();
   }, 50);
   // L2 and R2 with no menu open, over a film in mpv, a site's video or the
-  // music (the daemon sends them here then): the same glide, on the small card at the
-  // top right, and the seek where they are let go.
+  // music (the daemon sends them here then): the same glide, on the small
+  // mark at the top left, and the seek where they are let go.
   let loose = null;              // { dir, amount, at, src, go, from, target, released }
   async function looseSource() {
     const film = await fetch('/api/video').then((r) => r.json()).catch(() => ({}));
@@ -627,25 +627,22 @@ window.PioneerTV = window.PioneerTV || {};
   });
 
   // Left and right over a film (video.py seeks), X on a clip, L2 and R2 over
-  // any video: where it is now, small, where the notices are (a card at the top right: playing or
-  // paused, the time, a thin timeline), for a moment.
+  // any video: where it is now, for a moment, as the picture viewer's mark
+  // on a clip (players/photo.css .pv-clip, in its pixels): a small dark
+  // pill at the top left, playing or paused, the time and the length.
   let strip = null, stripTimer = 0;
   function seekStrip(e) {
     clearTimeout(stripTimer);
     if (!e) { if (strip) strip.classList.remove('shown'); return; }
     if (!strip) {
       strip = make('div', 'pioneertv-seekstrip');
-      strip.innerHTML = '<span class="pioneertv-seekstrip-state"></span><div class="pioneertv-seekstrip-body">'
-        + '<div class="pioneertv-media-times"><span></span><span></span></div>'
-        + '<div class="pioneertv-media-track"><div class="pioneertv-media-fill"></div></div></div>';
+      strip.append(make('span', 'pioneertv-seekstrip-state'), make('span', 'pioneertv-seekstrip-time'));
       document.body.appendChild(strip);
     }
     const len = e.duration || 0, at = Math.max(0, Math.min(len || e.time, e.time || 0));
-    strip.querySelector('.pioneertv-media-fill').style.width = len ? `${(at / len) * 100}%` : '0';
-    const [now, left] = strip.querySelectorAll('.pioneertv-media-times span');
-    now.textContent = clock(at);
-    left.textContent = len ? `−${clock(len - at)}` : '';
-    strip.querySelector('.pioneertv-seekstrip-state').innerHTML = GLYPH[e.paused ? 'pause' : 'play'];
+    const [state, time] = strip.children;
+    state.replaceChildren(M.icons.svg(e.paused ? 'pause' : 'play'));
+    time.textContent = len ? `${clock(at)} / ${clock(len)}` : clock(at);
     strip.classList.add('shown');
     stripTimer = setTimeout(() => strip.classList.remove('shown'), 2500);
   }

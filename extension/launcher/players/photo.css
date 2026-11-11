@@ -7,20 +7,13 @@
 .pv-layer.pv-on { opacity: 1; }
 .pv-layer.pv-fade { transition: opacity 0.9s ease; }
 .pv-layer img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
-/* A clip's card: the overlay's .pioneertv-seekstrip (overlay.css), in its
-   pixels, so the two are one. */
 .pv-clip {
-  position: absolute; top: 24px; right: 24px; width: 340px; box-sizing: border-box;
-  display: flex; align-items: center; gap: 14px; padding: 12px 18px 12px 14px; pointer-events: none; color: var(--pioneertv-ink);
-  background: var(--pioneertv-paper-raised); border: 1px solid var(--pioneertv-line-strong); border-radius: var(--pioneertv-radius-m);
+  position: absolute; left: 2rem; top: 1.6rem; display: inline-flex; align-items: center; gap: 0.35rem;
+  padding: 0.3rem 0.6rem 0.3rem 0.45rem; border-radius: var(--pioneertv-radius-pill); background: rgba(13, 11, 10, 0.6);
+  font: 500 0.85rem/1 var(--pioneertv-font-mono); pointer-events: none;
 }
 .pv-clip[hidden] { display: none; }
-.pv-clip-state { flex: none; display: inline-flex; width: 26px; height: 26px; }
-.pv-clip-state svg { width: 100%; height: 100%; }
-.pv-clip-body { flex: 1; min-width: 0; }
-.pv-clip-times { display: flex; justify-content: space-between; gap: 10px; margin: 0 0 8px; font: 400 15px/1 var(--pioneertv-font-mono); color: var(--pioneertv-ink-muted); }
-.pv-clip-track { position: relative; height: 5px; border-radius: 4px; background: var(--pioneertv-line); }
-.pv-clip-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: var(--pioneertv-ink); }
+.pv-clip svg { width: 0.95rem; height: 0.95rem; }
 .pv-caption {
   position: absolute; left: 0; right: 0; bottom: 0; padding: 4rem 4vw 2.2rem;
   background: linear-gradient(to top, rgba(13, 11, 10, 0.85), rgba(13, 11, 10, 0)); opacity: 0; transition: opacity 0.4s ease;
@@ -44,10 +37,6 @@
    choices outlined on it; the picture makes room for it. */
 .pv-with-info .pv-layer { right: 26rem; }
 .pv-with-info .pv-count { right: 28rem; }
-/* A clip's card over the count's place: the count under it; both clear of the panel. */
-.pv-clip:not([hidden]) ~ .pv-count { top: 114px; right: 24px; }
-.pv-with-info .pv-clip { right: 28rem; }
-.pv-with-info .pv-clip:not([hidden]) ~ .pv-count { right: 28rem; }
 .pv-info {
   position: absolute; top: 1.4rem; right: 1.4rem; bottom: 1.4rem; width: 23rem; box-sizing: border-box;
   display: flex; flex-direction: column; padding: 1.6rem 1.6rem 1.4rem; overflow: hidden;
@@ -78,6 +67,7 @@
 /* A clip playing right here, over its picture once it plays. */
 .pv-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: transparent; opacity: 0; }
 .pv-video.pv-on { opacity: 1; }
+.pv-clip-state { display: inline-flex; }
 
 /* Ej foto on its way: the row of holes (as a home page tile's), at the row's right. */
 .pv-action .pv-holes { margin-left: auto; width: 6.3rem; height: 0.9rem; flex: none; overflow: visible; }

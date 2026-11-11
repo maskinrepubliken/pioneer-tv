@@ -42,7 +42,7 @@ what was learned on the way.
 | X / Square | The filled button, wherever there is one: on the box's pages (Spela, Blanda allt, Försök igen, the settings page's Sök efter enheter), the overlay's menus (Spara läge, the media panel's play) and the on-screen keyboard (OK); unmarked (one learns it), the browse page's legend says it. Elsewhere play, pause (Space) or the page's own use. Hold: undo (Ctrl+Z), e.g. what X took off a list |
 | Y / Triangle | On-screen keyboard (on a pad without Home, hold: quick menu) |
 | L1, R1 | TV volume down, up (CEC, repeats while held). Both held together: mute, once (`VolumeChord` in actions.py; either alone waits 90 ms for the other, so a chord moves the volume no step first) |
-| L2, R2 | Over any video (a site's, a film, a clip), the music and on the media panel, wherever the focus is: seek back, on, as fast as they are pressed (the daemon sends how hard, `seek`; the mark on the timeline, or on the small card at the top right with no menu open, glides, and what plays goes where they are let go; a short light touch is ten seconds). Nothing elsewhere. The volume left them for L1/R1, as it hung there and crept up or down |
+| L2, R2 | Over any video (a site's, a film, a clip), the music and on the media panel, wherever the focus is: seek back, on, as fast as they are pressed (the daemon sends how hard, `seek`; the mark on the timeline, or on the small mark at the top left with no menu open, glides, and what plays goes where they are let go; a short light touch is ten seconds). Nothing elsewhere. The volume left them for L1/R1, as it hung there and crept up or down |
 | Right stick | Mouse pointer; click on the stick to left-click. What it (or a mouse) is over is drawn as selected and takes the focus, so the d-pad goes on from there |
 | Start | Nothing on the box; in a game, the console's Start |
 | Select | Nothing on the box; in a game, the console's Select |
@@ -396,7 +396,7 @@ TV. Everything done with it is the overlay's: A or Home over it opens its
 panel ([the media panel](#the-media-panel): the transport, Förra and
 Nästa, Blanda, Upprepa, Sluta spela, Mer…), as over a film; X plays or
 pauses, L2 and R2 spool (the daemon sends `seek` to the overlay while the
-music plays, the small card at the top right shows where), B goes back to
+music plays, the small mark at the top left shows where), B goes back to
 browsing and the music stops. "Spelas nu" itself is only to look at, in
 ink: the cover; what plays, by whom, from which album, a thin line of how
 far; whether Blanda or Upprepa is on; at the right every song after it
@@ -567,15 +567,15 @@ its picture (a `<video>` of Immich's `video/playback`, through
 `/immich/`): X plays and pauses it, L2 and R2 glide a mark through it
 (the daemon's `seek`, the page's while no overlay menu is open; it goes
 where they are let go, a short touch is ten seconds), left and right go
-on as for pictures, the panel is the same (Spela or Pausa first); the
-overlay's small card at the top right (drawn the same here, `.pv-clip`)
-says playing or paused, the time and how far, for as long as the clip is. Played to its end,
+on as for pictures, the panel is the same (Spela or Pausa first); a small
+mark in a corner says playing or paused and the time. Played to its end,
 the viewer goes on to the next. A clip the browser cannot play goes to mpv
 instead (`video.py` `play_immich`, the key as mpv's header; X plays and
 pauses it there, A or Home opens its panel, B stops it), and the viewer is
 there again after. Over a film or a clip in mpv, left, right and X say
-where it is in a small card where the notices are (playing or paused, the
-time, a thin timeline), for a moment.
+where it is for a moment in a small dark pill at the top left, the
+viewer's mark on a clip in its own pixels (playing or paused, the time
+and the length).
 
 ## Video on other sites
 
@@ -602,7 +602,7 @@ up and down do nothing, A or B opens the panel (paused; holding B goes
 back); where it is, the panel says. L2 and R2 spool any video, filling the
 screen or not, a site's or a film in mpv: the daemon sends them to the
 overlay while a page's frame has a video or mpv plays (overlay.py), which
-glides a mark on the small card at the top right and seeks where they are
+glides on the small mark at the top left and seeks where they are
 let go. Where we know the
 site's own controls they are hidden meanwhile (`SITE_UI` in webvideo.js; SVT Play's `desktopUi` and
 top bar, which came and went at every press); its subtitles stay. The
