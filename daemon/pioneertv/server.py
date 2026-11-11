@@ -31,6 +31,17 @@ EXT_DIR = Path(__file__).resolve().parent.parent.parent / "extension"  # repo an
 LOCAL_PEERS = {"127.0.0.1", "::1", "::ffff:127.0.0.1"}
 
 
+# The Bilder pages' changes beyond a picture's own (Server._bilder_admin).
+BILDER_ADMIN = frozenset({"album_new", "album_name", "album_cover", "album_add", "album_remove", "album_delete",
+                          "person_name", "person_hide", "trash_empty", "trash_restore"})
+
+
+def immich_refusal(code: int) -> str:
+    """What Immich's refusal says, in Swedish."""
+    return ("Immich svarar inte" if code == 0 else "Nyckeln får inte ändra i Immich" if code in (401, 403)
+            else "Bara dina egna bilder går att ändra" if code == 400 else f"Immich svarade {code}")
+
+
 class Server:
     def __init__(self, cfg: dict, on_command: Callable[[dict], Coroutine], hooks: dict[str, Any]) -> None:
         self.cfg = cfg
@@ -295,21 +306,22 @@ class Server:
                                    immich.RESPONSE_HEADERS, "immich")
 
     async def api_bilder(self, request: web.Request) -> web.Response:
-        """The picture viewer's few changes in Immich (its A panel), the
-        only writes the Bilder pages have: favourite {id, on}, trash {id}
-        (to Immich's trash, which keeps it a while), not_photo {id} (the
-        original kept in the Google Drive's folder first, drive.py, then to
-        the trash: in the background, one at a time, an event "bilder"
-        {id, action: moved | failed | cancelled} and a toast when it is
-        done; cancel {id} calls one off). /immich/ itself only reads."""
+        """The Bilder pages' changes in Immich, the only writes they have
+        (/immich/ itself only reads). A picture's (the viewer's A panel):
+        favorite {id, on}, archive {id, on}, trash {id} (to Immich's trash,
+        which keeps it a while; forever: gone for good), restore {id} (out
+        of it), not_photo {id}
+        (the original kept in the Google Drive's folder first, drive.py,
+        then to the trash: in the background, one at a time, an event
+        "bilder" {id, action: moved | failed | cancelled} and a toast when
+        it is done; cancel {id} calls one off). The albums, the people and
+        the trash: see _bilder_admin. Each with its owner's key: one's own,
+        or the partner's for theirs."""
         cfg = self.cfg.get("immich") or {}
         url, key = (cfg.get("url") or "").rstrip("/"), cfg.get("api_key", "")
         if not url or not key:
             return web.json_response({"ok": False, "message": "no_key"}, status=503)
         data = await self._json(request)
-        asset = str(data.get("id") or "")
-        if not re.fullmatch(immich.ID, asset):
-            return web.json_response({"ok": False, "message": "okänd bild"}, status=400)
         headers = {"x-api-key": key, "Accept": "application/json", "Accept-Encoding": "identity"}
 
         async def call(method: str, path: str, body=None, headers=headers) -> tuple[int, object]:
@@ -325,6 +337,11 @@ class Server:
                 return 0, None
 
         action = request.match_info["action"]
+        if action in BILDER_ADMIN:
+            return await self._bilder_admin(action, data, url, cfg, call)
+        asset = str(data.get("id") or "")
+        if not re.fullmatch(immich.ID, asset):
+            return web.json_response({"ok": False, "message": "okänd bild"}, status=400)
         if not hasattr(self, "_moves"):
             self._moves: dict[str, asyncio.Task] = {}
         if action == "cancel":
@@ -332,7 +349,7 @@ class Server:
             if task and not task.done():
                 task.cancel()
             return web.json_response({"ok": True})
-        if action not in ("favorite", "trash", "not_photo"):
+        if action not in ("favorite", "archive", "trash", "restore", "not_photo"):
             return web.json_response({"ok": False, "message": "okänd åtgärd"}, status=404)
         # Immich lets only a picture's owner change it: the partner's own
         # pictures with the partner's key (both are the box's users alike).
@@ -347,8 +364,12 @@ class Server:
             headers = {**headers, "x-api-key": partner}
         if action == "favorite":
             code, _ = await call("PUT", f"api/assets/{asset}", {"isFavorite": bool(data.get("on"))}, headers)
+        elif action == "archive":
+            code, _ = await call("PUT", f"api/assets/{asset}", {"visibility": "archive" if data.get("on") else "timeline"}, headers)
         elif action == "trash":
-            code, _ = await call("DELETE", "api/assets", {"ids": [asset], "force": False}, headers)
+            code, _ = await call("DELETE", "api/assets", {"ids": [asset], "force": bool(data.get("forever"))}, headers)
+        elif action == "restore":
+            code, _ = await call("POST", "api/trash/restore/assets", {"ids": [asset]}, headers)
         else:
             if not self.cfg.get("drive", {}).get("token"):
                 return web.json_response({"ok": False, "message": "Google Drive är inte kopplat (Inställningar → Tjänster)"}, status=409)
@@ -357,10 +378,102 @@ class Server:
             return web.json_response({"ok": True, "queued": True})
         if code in (200, 201, 204):
             return web.json_response({"ok": True})
-        message = ("Immich svarar inte" if code == 0 else "Nyckeln får inte ändra i Immich" if code in (401, 403)
-                   else "Bara dina egna bilder går att ändra" if code == 400 else f"Immich svarade {code}")
         log.warning("immich %s %s: %s", action, asset, code)
-        return web.json_response({"ok": False, "message": message}, status=409)
+        return web.json_response({"ok": False, "message": immich_refusal(code)}, status=409)
+
+    async def _bilder_admin(self, action: str, data: dict, url: str, cfg: dict, call) -> web.Response:
+        """The albums, the people and the trash, from the Bilder pages:
+        album_new {name, ids?, way} (an album, with pictures or none; way
+        "partner" makes it the partner's), album_name {album, name},
+        album_cover {album, id}, album_add and album_remove {album, ids},
+        album_delete {album} (the album only: its pictures stay);
+        person_name {person, name}, person_hide {person, on};
+        trash_empty and trash_restore {way} (all of one's trash, gone for
+        good or back). An album or a person with its owner's key."""
+        key, partner = cfg.get("api_key", ""), cfg.get("partner_api_key", "")
+        refuse = lambda message, status=400: web.json_response({"ok": False, "message": message}, status=status)   # noqa: E731
+        keyed = lambda k: {"x-api-key": k, "Accept": "application/json", "Accept-Encoding": "identity"}           # noqa: E731
+        ids = [i for i in (data.get("ids") or []) if isinstance(i, str) and re.fullmatch(immich.ID, i)][:1000]
+        name = str(data.get("name") or "").strip()[:200]
+        if data.get("way") == "partner" and not partner:
+            return refuse("Lägg in partnerns API-nyckel under Inställningar → Tjänster → Immich", 409)
+        way = keyed(partner if data.get("way") == "partner" else key)
+
+        if action.startswith("album_") and action != "album_new":
+            album = str(data.get("album") or "")
+            if not re.fullmatch(immich.ID, album):
+                return refuse("okänt album")
+            k = await self._album_key(url, album, key, partner, call)
+            if not k:
+                return refuse("Albumet går inte att ändra härifrån (någon annans, eller borta)", 409)
+            headers, path = keyed(k), f"api/albums/{album}"
+            if action == "album_name":
+                if not name:
+                    return refuse("Albumet behöver ett namn")
+                request = ("PATCH", path, {"albumName": name})
+            elif action == "album_cover":
+                cover = str(data.get("id") or "")
+                if not re.fullmatch(immich.ID, cover):
+                    return refuse("okänd bild")
+                request = ("PATCH", path, {"albumThumbnailAssetId": cover})
+            elif action == "album_delete":
+                request = ("DELETE", path, None)
+            else:
+                if not ids:
+                    return refuse("inga bilder")
+                request = ("PUT" if action == "album_add" else "DELETE", f"{path}/assets", {"ids": ids})
+        elif action == "album_new":
+            if not name:
+                return refuse("Albumet behöver ett namn")
+            headers, request = way, ("POST", "api/albums", {"albumName": name, "assetIds": ids})
+        elif action in ("person_name", "person_hide"):
+            person = str(data.get("person") or "")
+            if not re.fullmatch(immich.ID, person):
+                return refuse("okänd person")
+            k = None
+            for candidate in (key, partner):
+                if candidate and (await call("GET", f"api/people/{person}", None, keyed(candidate)))[0] == 200:
+                    k = candidate
+                    break
+            if not k:
+                return refuse("Personen går inte att ändra härifrån", 409)
+            body = {"name": name} if action == "person_name" else {"isHidden": bool(data.get("on"))}
+            headers, request = keyed(k), ("PUT", f"api/people/{person}", body)
+        else:
+            headers, request = way, ("POST", "api/trash/empty" if action == "trash_empty" else "api/trash/restore", None)
+
+        code, body = await call(*request, headers)
+        if code not in (200, 201, 204):
+            log.warning("immich %s: %s", action, code)
+            return refuse(immich_refusal(code), 409)
+        out: dict = {"ok": True}
+        if action == "album_new" and isinstance(body, dict):
+            out["id"] = body.get("id")
+        if action in ("album_add", "album_remove") and isinstance(body, list):
+            done = sum(1 for r in body if isinstance(r, dict) and r.get("success"))
+            out["done"] = done
+            if not done:
+                errors = {r.get("error") for r in body if isinstance(r, dict)}
+                message = ("Redan i albumet" if action == "album_add" and errors == {"duplicate"}
+                           else "Inte i albumet" if errors == {"not_found"} else "Det gick inte")
+                return refuse(message, 409)
+        return web.json_response(out)
+
+    async def _album_key(self, url: str, album: str, key: str, partner: str, call) -> str | None:
+        """The key of an album's owner: one's own, or the partner's (an album
+        only shared with one is its owner's to change)."""
+        for candidate in (key, partner):
+            if not candidate:
+                continue
+            code, info = await call("GET", f"api/albums/{album}?withoutAssets=true", None,
+                                    {"x-api-key": candidate, "Accept": "application/json", "Accept-Encoding": "identity"})
+            if code != 200 or not isinstance(info, dict):
+                continue
+            owner = next((u.get("user", {}).get("id") for u in info.get("albumUsers") or [] if u.get("role") == "owner"),
+                         info.get("ownerId"))
+            if owner and owner == await self._immich_user(url, candidate):
+                return candidate
+        return None
 
     async def _move(self, url: str, headers: dict, asset: str) -> None:
         """Ej foto in the background: into the Drive, then to Immich's trash;

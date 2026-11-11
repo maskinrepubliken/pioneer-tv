@@ -4,16 +4,21 @@
 //
 // #/ is today's memories ("för X år sedan"), the albums and the people;
 // #/timeline the months, a year at a time; #/month/<2024-05-01>,
-// #/album/<id>, #/person/<id>, #/memory/<id>, #/favorites and
-// #/search/<words> (Immich's search by what is in the picture) are grids of
-// pictures; #/albums and #/people every album and person. #/partner/...
-// is the partner's own (their favourites, albums and people, through the
-// partner's key: sources/immich.js M.immich.partner); the column has
-// each one's under their name. A picture opens the viewer at it; X on a
-// grid starts a slideshow from its first.
+// #/album/<id>, #/person/<id>, #/memory/<id>, #/favorites, #/archive,
+// #/trash and #/search/<words> (Immich's search by what is in the picture)
+// are grids of pictures; #/albums and #/people every album and person.
+// #/partner/... is the partner's own (their favourites, albums, people,
+// archive and trash, through the partner's key: sources/immich.js
+// M.immich.partner); the column has each one's under their name. A
+// picture opens the viewer at it; X on a grid starts a slideshow from its
+// first. The headings' buttons change Immich (through the daemon,
+// I.change): a new album, an album's name or the album gone, a person's
+// name or the person hidden, the trash emptied or all of it back; what is
+// done to one picture is the viewer's (its A panel).
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const I = M.immich;
+  const V = M.views;
   const photo = M.players.photo;
 
   const MONTHS = ['januari', 'februari', 'mars', 'april', 'maj', 'juni', 'juli', 'augusti', 'september', 'oktober', 'november', 'december'];
@@ -21,19 +26,48 @@ window.PioneerTV = window.PioneerTV || {};
   const many = (n) => (n === 1 ? '1 bild' : `${n} bilder`);
   const ago = (year) => { const n = new Date().getFullYear() - year; return n === 1 ? 'För ett år sedan' : `För ${n} år sedan`; };
 
-  // A picture as the grid's item; A opens the viewer at it, among the rest.
-  const pictures = (assets) => assets.map((a, i) => ({
+  // A picture as the grid's item; A opens the viewer at it, among the rest
+  // (ctx: where they are, for the viewer's panel: an album, the archive,
+  // the trash).
+  const pictures = (assets, ctx) => assets.map((a, i) => ({
     key: `asset:${a.id}`, title: '', picture: I.picture(a.id), video: a.video ? a.seconds || true : false,
-    run: () => photo.open(assets, i),
+    run: () => photo.open(assets, i, { ctx }),
   }));
-  function grid(title, assets, empty = 'Inga bilder här.') {
+  function grid(title, assets, { empty = 'Inga bilder här.', ctx = {}, actions = [], slideshow = true } = {}) {
     return {
-      kind: 'grid', title, look: 'photos', columns: 6, items: pictures(assets), filter: false,
+      kind: 'grid', title, look: 'photos', columns: 6, items: pictures(assets, ctx), filter: false,
       count: () => many(assets.length), empty,
       legend: [['arrows', 'välj'], ['A', 'visa']],
-      actions: assets.length ? [{ label: 'Bildspel', icon: 'play', primary: true, key: 'slideshow', run: () => photo.open(assets, 0, { slideshow: true }) }] : [],
+      actions: [
+        ...(slideshow && assets.length ? [{ label: 'Bildspel', icon: 'play', primary: true, key: 'slideshow', run: () => photo.open(assets, 0, { slideshow: true, ctx }) }] : []),
+        ...actions,
+      ],
     };
   }
+
+  // A heading's button that wants a second A before it does (Ta bort album,
+  // Töm papperskorgen): its words ask for a moment.
+  function twice(label, run) {
+    let armed = 0;
+    return (e) => {
+      const words = e.currentTarget.querySelector('.head-action-label');
+      if (Date.now() - armed > 3000) {
+        armed = Date.now();
+        words.textContent = 'Tryck A igen';
+        setTimeout(() => { if (Date.now() - armed >= 3000 && words.isConnected) words.textContent = label; }, 3000);
+        return;
+      }
+      armed = 0;
+      run();
+    };
+  }
+  // A name on the on-screen keyboard, then the change with it; the view anew.
+  const naming = (placeholder, now, change, said) => async () => {
+    const name = await V.askText(placeholder, now);
+    if (!name || name === now) return;
+    const r = await change(name);
+    if (r.ok) { M.hud.toast(said, 'check'); M.browse.route(); }
+  };
 
   // One's own (#/...) or the partner's (#/partner/...): its client and its hashes.
   const OWN = { src: I, at: '#/' }, PARTNER = { src: I.partner, at: '#/partner/' };
@@ -88,7 +122,7 @@ window.PioneerTV = window.PioneerTV || {};
     const [what, arg] = parts;
     if (what === 'timeline') return timeline();
     if (what === 'month' && arg) return grid(monthName(arg), await I.month(arg));
-    if (['albums', 'album', 'people', 'person', 'favorites'].includes(what)) return theirs(parts, OWN);
+    if (['albums', 'album', 'people', 'person', 'favorites', 'archive', 'trash'].includes(what)) return theirs(parts, OWN);
     if (what === 'memory' && arg) {
       const m = (await I.memories()).find((x) => x.id === arg);
       return m ? grid(ago(m.year), m.assets) : start();
@@ -101,23 +135,76 @@ window.PioneerTV = window.PioneerTV || {};
   }
 
   // One's own or the partner's: their albums, an album, their people, a
-  // person, their favourites.
+  // person, their favourites, their archive and trash; and what may be done
+  // to them (Immich's, through the daemon: I.change).
   async function theirs([what, arg], w) {
     const { src } = w;
+    const way = w === PARTNER ? 'partner' : 'own';
     const title = async (word) => (w === PARTNER ? `${word}: ${(await src.user()).name}` : word);
     if (what === 'albums') {
       const albums = await src.albums();
       return { kind: 'grid', title: await title('Album'), look: 'stacks', shape: 'square', columns: 5, items: albums.map((a) => albumCard(a, w)), filter: true,
-        count: (n, all) => (n === all ? `${all} album` : `${n} av ${all} album`), empty: 'Inga album än.', legend: [['A', 'öppna']] };
+        count: (n, all) => (n === all ? `${all} album` : `${n} av ${all} album`), empty: 'Inga album än.', legend: [['A', 'öppna']],
+        actions: [{ label: 'Nytt album', icon: 'plus', primary: true, key: 'album-new', run: async () => {
+          const name = await V.askText('Det nya albumets namn');
+          if (!name) return;
+          const r = await I.change('album_new', { name, way });
+          if (r.ok && r.id) location.hash = `${w.at}album/${encodeURIComponent(r.id)}`;
+        } }] };
     }
-    if (what === 'album' && arg) { const a = await src.album(arg); return grid(a.name, a.assets); }
+    if (what === 'album' && arg) {
+      const a = await src.album(arg);
+      return grid(a.name, a.assets, {
+        empty: 'Inga bilder i albumet än. Lägg till dem från bildvisaren: A på en bild.',
+        ctx: { album: { id: arg, name: a.name } },
+        actions: [
+          { label: 'Byt namn', icon: 'pencil', key: 'album-name', run: naming('Albumets namn', a.name, (name) => I.change('album_name', { album: arg, name }), 'Albumet har fått nytt namn') },
+          { label: 'Ta bort album', icon: 'trash', key: 'album-delete', run: twice('Ta bort album', async () => {
+            const r = await I.change('album_delete', { album: arg });
+            if (!r.ok) return;
+            M.hud.toast('Albumet är borttaget, bilderna finns kvar', 'check');
+            location.replace(`${w.at}albums`);
+          }) },
+        ],
+      });
+    }
     if (what === 'people') {
       const people = await src.people();
       return { kind: 'grid', title: await title('Personer'), shape: 'round', columns: 6, items: people.map((p) => personCard(p, w)), filter: true,
         count: (n, all) => (n === all ? `${all} personer` : `${n} av ${all} personer`), empty: 'Immich har inte hittat några ansikten än.', legend: [['A', 'öppna']] };
     }
-    if (what === 'person' && arg) { const p = await src.person(arg); return grid(p.name || UNNAMED, p.assets); }
-    return grid(await title('Favoriter'), await src.favorites(), 'Inga favoriter än. Markera en bild med hjärtat.');
+    if (what === 'person' && arg) {
+      const p = await src.person(arg);
+      return grid(p.name || UNNAMED, p.assets, { actions: [
+        { label: p.name ? 'Byt namn' : 'Ge ett namn', icon: 'pencil', key: 'person-name', run: naming('Personens namn', p.name || '', (name) => I.change('person_name', { person: arg, name }), 'Namnet är sparat') },
+        { label: 'Göm personen', icon: 'eyeOff', key: 'person-hide', run: twice('Göm personen', async () => {
+          const r = await I.change('person_hide', { person: arg, on: true });
+          if (!r.ok) return;
+          M.hud.toast('Personen är gömd (visas igen i Immich)', 'check');
+          location.replace(`${w.at}people`);
+        }) },
+      ] });
+    }
+    if (what === 'archive') {
+      return grid(await title('Arkiv'), await src.archived(), { empty: 'Inget i arkivet. Arkivera en bild från bildvisaren: A på den.', ctx: { archive: true } });
+    }
+    if (what === 'trash') {
+      const assets = await src.trashed();
+      return grid(await title('Papperskorgen'), assets, {
+        empty: 'Papperskorgen är tom.', ctx: { trash: true }, slideshow: false,
+        actions: assets.length ? [
+          { label: 'Återställ allt', icon: 'restore', key: 'trash-restore', run: async () => {
+            const r = await I.change('trash_restore', { way });
+            if (r.ok) { M.hud.toast('Allt är återställt', 'check'); M.browse.route(); }
+          } },
+          { label: 'Töm papperskorgen', icon: 'trash', key: 'trash-empty', run: twice('Töm papperskorgen', async () => {
+            const r = await I.change('trash_empty', { way });
+            if (r.ok) { M.hud.toast('Papperskorgen är tömd', 'check'); M.browse.route(); }
+          }) },
+        ] : [],
+      });
+    }
+    return grid(await title('Favoriter'), await src.favorites(), { empty: 'Inga favoriter än. Markera en bild med hjärtat.' });
   }
 
   // The column at the left: the start (Förslag: the memories, the albums,
@@ -127,6 +214,8 @@ window.PioneerTV = window.PioneerTV || {};
     { label: 'Favoriter', icon: 'heart', href: `${w.at}favorites`, key: `rail:${key}favorites` },
     { label: 'Album', icon: 'stack', href: `${w.at}albums`, key: `rail:${key}albums` },
     { label: 'Personer', icon: 'person', href: `${w.at}people`, key: `rail:${key}people` },
+    { label: 'Arkiv', icon: 'archive', href: `${w.at}archive`, key: `rail:${key}archive` },
+    { label: 'Papperskorgen', icon: 'trash', href: `${w.at}trash`, key: `rail:${key}trash` },
   ];
   async function rail() {
     const [me, partner] = await Promise.all([I.user().catch(() => null), I.partner.user().catch(() => null)]);

@@ -2,9 +2,12 @@
 // screen, on ink, as large as they go (Immich's preview, about the screen's
 // size). Left and right go to the one before and after (when and where it
 // was taken says itself for a moment), A opens a side panel: when, where,
-// whose library, the camera, its text, and what may be done to it (Favorit, Ej foto: kept
-// in Google Drive and taken out of Immich, Ta bort: to Immich's trash; a clip's Spela first; up
-// and down choose, A does it, B closes it). X starts or stops the slideshow (a new picture
+// whose library, the camera, its text, and what may be done to it (Favorit;
+// Lägg till i album…, a list of the albums with Nytt album… first; in an
+// album, out of it or its cover; Arkivera, or out of the archive; Ej foto:
+// kept in Google Drive and taken out of Immich; Ta bort: to Immich's
+// trash; in the trash, Återställ and Radera för gott instead; a clip's
+// Spela first; up and down choose, A does it, B goes back or closes it). X starts or stops the slideshow (a new picture
 // every few seconds, slowly closer or further, drifting, the one fading
 // into the next), B goes back to the grid. A clip plays right here, on
 // its picture: X plays and pauses it, L2 and R2 glide a mark through it
@@ -41,6 +44,10 @@ window.PioneerTV = window.PioneerTV || {};
   let root = null, layers = [], front = 0, caption = null, part = {};
   let list = [], at = 0, show = false, timer = 0, captionTimer = 0, said = 0;
   let choice = 0, sure = 0, changed = false;
+  // Where the pictures are (bilder.js): { album: { id, name } }, { archive },
+  // { trash }, or nowhere in particular; and the panel's list, its own
+  // choices or the albums to put the picture in.
+  let ctx = {}, picking = null;    // picking: [{ key, label, icon, album }] while the albums are listed
   // Ej foto on its way to the Drive (the daemon moves it in the background,
   // one at a time): asset id -> { holes, stop }, its row of holes.
   const moving = new Map();
@@ -206,16 +213,45 @@ window.PioneerTV = window.PioneerTV || {};
   // partner's), Kamera and Text, those there are;
   // under them what may be done to it, one marked (up and down).
   function actionsOf(a) {
-    return [
-      // A clip: Spela (or Pausa) first, X's as everywhere in the viewer.
-      ...(a.video ? [{ key: 'play', icon: clipOn() && !clipOn().paused ? 'pause' : 'play', label: clipOn() && !clipOn().paused ? 'Pausa' : 'Spela', value: 'X' }] : []),
-      // Only a shortcut at a row's right (X), never anything else.
+    if (picking) return picking;
+    const playing = clipOn() && !clipOn().paused;
+    // A clip: Spela (or Pausa) first, X's as everywhere in the viewer.
+    const clip = a.video ? [{ key: 'play', icon: playing ? 'pause' : 'play', label: playing ? 'Pausa' : 'Spela', value: 'X' }] : [];
+    // Only a shortcut at a row's right (X), never anything else.
+    if (ctx.trash) {
+      return [...clip,
+        { key: 'restore', icon: 'restore', label: 'Återställ' },
+        { key: 'forever', icon: 'trash', label: sure ? 'Tryck A igen för att radera för gott' : 'Radera för gott' }];
+    }
+    return [...clip,
       { key: 'favorite', icon: 'heart', label: a.favorite ? 'Ta bort som favorit' : 'Gör till favorit' },
+      { key: 'albums', icon: 'stack', label: 'Lägg till i album…' },
+      ...(ctx.album ? [
+        { key: 'album_remove', icon: 'minus', label: 'Ta bort ur albumet' },
+        { key: 'album_cover', icon: 'image', label: 'Använd som albumomslag' },
+      ] : []),
+      { key: 'archive', icon: 'archive', label: ctx.archive ? 'Ta bort ur arkivet' : 'Arkivera' },
       { key: 'not_photo', icon: 'folder', label: moving.has(a.id) ? 'Avbryt flytten' : 'Ej foto, flytta till filer' },
       { key: 'trash', icon: 'backspace', label: sure ? 'Tryck A igen för att ta bort' : 'Ta bort' },
     ];
   }
+  // Lägg till i album…: Nytt album first, then one's own albums and the
+  // partner's (their name after), Tillbaka last (or B).
+  async function pickAlbum() {
+    const [mine, theirs, partner] = await Promise.all([I.albums().catch(() => []), I.partner.albums().catch(() => []),
+      I.partner.user().catch(() => null)]);
+    picking = [
+      { key: 'album_new', icon: 'plus', label: 'Nytt album…' },
+      ...mine.map((al) => ({ key: 'album_add', icon: 'stack', label: al.name, album: al })),
+      ...theirs.map((al) => ({ key: 'album_add', icon: 'stack', label: partner ? `${al.name} · ${partner.name}` : al.name, album: al })),
+      { key: 'back', icon: 'back', label: 'Tillbaka' },
+    ];
+    choice = 0;
+    redraw();
+  }
+  function unpick() { picking = null; choice = 0; redraw(); }
   function infoOf(a, d) {
+    part.info.classList.toggle('pv-picking', !!picking);
     part.infoTitle.textContent = when((d && d.taken) || a.taken) || (a.video ? 'Videoklipp' : 'Bild');
     const rows = [
       ['Plats', d ? [d.city, d.country].filter(Boolean).join(', ') : ''],
@@ -224,10 +260,13 @@ window.PioneerTV = window.PioneerTV || {};
       ['Text', d ? d.text : ''],
     ].filter(([, v]) => v);
     part.infoList.innerHTML = '';
+    if (picking) part.infoTitle.textContent = 'Lägg till i album';
     for (const [k, v] of rows) part.infoList.append(el('dt', '', k), el('dd', '', v));
     if (!d) part.infoList.append(el('dd', 'pv-info-wait', 'Frågar Immich…'));
     part.actions.innerHTML = '';
-    actionsOf(a).forEach((act, i) => {
+    const acts = actionsOf(a);
+    if (choice >= acts.length) choice = 0;
+    acts.forEach((act, i) => {
       const row = el('div', `pv-action${i === choice ? ' pv-marked' : ''}${act.key === 'trash' && sure ? ' pv-sure' : ''}`);
       row.append(M.icons.svg(act.icon), el('span', 'pv-action-label', act.label));
       // On its way: the row of holes punched one at a time, as a tile of
@@ -235,13 +274,14 @@ window.PioneerTV = window.PioneerTV || {};
       if (act.key === 'not_photo' && moving.has(a.id)) row.appendChild(moving.get(a.id).holes);
       if (act.value) row.appendChild(el('span', 'pv-action-value', act.value));
       part.actions.appendChild(row);
+      if (i === choice) requestAnimationFrame(() => row.scrollIntoView({ block: 'nearest' }));
     });
   }
   const redraw = () => infoOf(list[at], details.get(list[at].id) || null);
   function panel(open) {
     part.info.hidden = !open;
     root.classList.toggle('pv-with-info', open);
-    choice = 0; sure = 0;
+    choice = 0; sure = 0; picking = null;
     if (open) { redraw(); caption.classList.remove('pv-shown'); }
   }
 
@@ -268,28 +308,47 @@ window.PioneerTV = window.PioneerTV || {};
     return { svg, stop: () => clearInterval(timer) };
   }
 
-  // What the panel's choice does, in Immich (the daemon's /api/bilder).
-  async function act(key) {
+  // What the panel's choice does, in Immich (the daemon's /api/bilder,
+  // through I.change, which says a refusal itself).
+  const SAID = { album_remove: 'Borttagen ur albumet', album_cover: 'Albumets nya omslag', restore: 'Återställd',
+    forever: 'Raderad för gott', trash: 'Lagd i papperskorgen' };
+  async function act(row) {
     const a = list[at];
     if (!a) return;
+    const key = row.key;
     // Ej foto on its way: A again calls it off.
-    if (key === 'not_photo' && moving.has(a.id)) {
-      fetch('/api/bilder/cancel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: a.id }) });
-      return;
-    }
+    if (key === 'not_photo' && moving.has(a.id)) { I.change('cancel', { id: a.id }); return; }
     if (key === 'play') { playHere(); return; }
-    if (key === 'trash' && !sure) { sure = Date.now(); redraw(); setTimeout(() => { if (sure && Date.now() - sure >= SURE_MS) { sure = 0; redraw(); } }, SURE_MS); return; }
-    sure = 0;
-    const body = { id: a.id, ...(key === 'favorite' ? { on: !a.favorite } : {}) };
-    let r;
-    try {
-      r = await (await fetch(`/api/bilder/${key}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })).json();
-    } catch { r = { ok: false, message: 'Boxen svarar inte' }; }
-    if (!r.ok) {
-      M.hud.toast(r.message === 'no_key' ? 'Immich saknar nyckel' : r.message || 'Det gick inte', 'info');
-      if (list[at]) redraw();
+    if (key === 'albums') { pickAlbum(); return; }
+    if (key === 'back') { unpick(); return; }
+    if ((key === 'trash' || key === 'forever') && !sure) {
+      sure = Date.now();
+      redraw();
+      setTimeout(() => { if (sure && Date.now() - sure >= SURE_MS) { sure = 0; redraw(); } }, SURE_MS);
       return;
     }
+    sure = 0;
+    let r;
+    if (key === 'album_new') {
+      const name = await V.askText('Det nya albumets namn');
+      if (!name) return;
+      r = await I.change('album_new', { name, ids: [a.id] });
+      if (r.ok) { M.hud.toast(`Lagd i det nya albumet ”${name}”`, 'check'); changed = true; unpick(); }
+      return;
+    }
+    if (key === 'album_add') {
+      r = await I.change('album_add', { album: row.album.id, ids: [a.id] });
+      if (r.ok) { M.hud.toast(`Lagd i ”${row.album.name}”`, 'check'); changed = true; unpick(); }
+      return;
+    }
+    const body = key === 'favorite' ? { id: a.id, on: !a.favorite }
+      : key === 'archive' ? { id: a.id, on: !ctx.archive }
+      : key === 'album_remove' ? { album: ctx.album.id, ids: [a.id] }
+      : key === 'album_cover' ? { album: ctx.album.id, id: a.id }
+      : key === 'forever' ? { id: a.id, forever: true }
+      : { id: a.id };
+    r = await I.change(key === 'forever' ? 'trash' : key, body);
+    if (!r.ok) { if (list[at]) redraw(); return; }
     // Ej foto: on its way in the background; the holes until the daemon
     // says it is done (the "bilder" event, below), browsing on meanwhile.
     if (key === 'not_photo') {
@@ -303,9 +362,12 @@ window.PioneerTV = window.PioneerTV || {};
       a.favorite = !a.favorite;
       M.hud.toast(a.favorite ? 'Favorit' : 'Inte favorit längre', 'heart');
       redraw();
+    } else if (key === 'archive') {
+      M.hud.toast(ctx.archive ? 'Tillbaka i tidslinjen' : 'Arkiverad: syns inte i tidslinjen', 'check');
+      if (ctx.archive) gone(a.id);
     } else {
-      M.hud.toast('Lagd i papperskorgen', 'check');
-      gone(a.id);
+      M.hud.toast(SAID[key], 'check');
+      if (key !== 'album_cover') gone(a.id);
     }
   }
   // One out of the list (in the trash, or moved to the Drive): the next
@@ -399,10 +461,11 @@ window.PioneerTV = window.PioneerTV || {};
   const viewer = {
     noKeyboard: true,                // Y (Sök) does nothing over it (main.js)
     isOpen() { return !!root && !root.hidden; },
-    open(assets, index = 0, { slideshow: start = false } = {}) {
+    open(assets, index = 0, { slideshow: start = false, ctx: where = {} } = {}) {
       if (!assets || !assets.length) return;
       build();
       list = assets;
+      ctx = where;
       changed = false;
       at = Math.max(0, Math.min(assets.length - 1, index));
       layers.forEach((l) => { l.innerHTML = ''; l.classList.remove('pv-on', 'pv-fade'); });
@@ -433,7 +496,7 @@ window.PioneerTV = window.PioneerTV || {};
     // marked. X: a clip plays, a picture starts or stops the slideshow.
     onKeyDown(e) {
       const open = !part.info.hidden;
-      if (e.key === 'Escape') { if (open) panel(false); else this.close(); return; }
+      if (e.key === 'Escape') { if (picking) unpick(); else if (open) panel(false); else this.close(); return; }
       if (e.key === ' ') {
         if (e.repeat) return;
         if (list[at] && list[at].video) { playHere(); return; }
@@ -442,6 +505,7 @@ window.PioneerTV = window.PioneerTV || {};
         return;
       }
       if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        if (picking) { picking = null; choice = 0; }
         step(e.key === 'ArrowLeft' ? -1 : 1, false);
         if (M.sound) M.sound.tick(e.key);
         if (show) { clearInterval(timer); timer = setInterval(tick, EVERY_MS); } else if (!open) showCaption();
@@ -456,7 +520,7 @@ window.PioneerTV = window.PioneerTV || {};
         return;
       }
       if (e.key === 'Enter' && !e.repeat) {
-        if (open) act(actionsOf(list[at])[choice].key);
+        if (open) act(actionsOf(list[at])[choice]);
         else panel(true);
       }
     },

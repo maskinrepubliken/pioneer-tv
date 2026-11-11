@@ -507,8 +507,10 @@ The Bilder tile opens the browse page on top of [Immich](https://immich.app)
 (`browse.html?library=bilder`, `libraries/bilder.js` on
 `sources/immich.js`). Its column: Förslag (today's memories, "för X år
 sedan", one's albums, the partner's and one's people) and Tidslinje; then
-under one's name Favoriter, Album and Personer (every face Immich has
-found, named or not; those hidden in Immich left out), and the same under
+under one's name Favoriter, Album, Personer (every face Immich has
+found, named or not; those hidden in Immich left out), Arkiv (out of the
+timeline, `visibility: archive`) and Papperskorgen (Immich's trash,
+`trashedAfter`), and the same under
 the partner's name (`#/partner/...`, through the daemon's
 `/immich-partner/`, the partner's key, reading only as `/immich/`: their
 own albums and people, which one's key does not see). A partner's pictures (Immich's partner sharing) are
@@ -524,7 +526,18 @@ reading only: the albums, the timeline, the people, the memories, an
 asset and its pictures, and the searches (POSTs that only read); never
 uploads, edits, deletions or sharing. Its address and key are under
 Inställningar → Tjänster (an API key made in Immich: Kontoinställningar →
-API-nycklar; reading is all it needs).
+API-nycklar, with every permission: the pages change things too, below).
+
+Immich is kept from here, by the headings' buttons and the viewer's
+panel, each through the daemon (`POST /api/bilder/<action>`, `server.py`
+`_bilder_admin`, with the owner's key: one's own, or the partner's for
+theirs): Album has Nytt album (X: a name on the on-screen keyboard,
+`V.askText`; then the album, empty); an album has Byt namn and Ta bort
+album (A twice; the album only, its pictures stay); a person has Byt namn
+(or Ge ett namn) and Göm personen (A twice; shown again from Immich's own
+pages); the trash has Återställ allt and Töm papperskorgen (A twice; gone
+for good). After a change the albums and the people are asked anew
+(`forget`).
 
 A picture opens the viewer (`players/photo.js`): one over the whole
 screen on ink, Immich's preview (about the screen's size), the next one
@@ -532,7 +545,11 @@ fetched beforehand. Left and right go on (when and where it was taken says
 itself at the foot for a moment). A opens a side panel on paper: its date
 as the heading, then Plats, Bibliotek (whose library it is in: one's own
 or a partner's, from `users/me` and `partners`), Kamera and Text, those
-Immich has; under them, a clip's Spela first (X), then Favorit (on or off), Ej foto, flytta till
+Immich has; under them, a clip's Spela first (X), then Favorit (on or off),
+Lägg till i album… (the albums in the panel instead, Nytt album… first, one's
+own then the partner's with their name, Tillbaka last or B), in an album
+Ta bort ur albumet and Använd som albumomslag, Arkivera (or in the
+archive, Ta bort ur arkivet), Ej foto, flytta till
 filer (the original kept in Google Drive's folder Ej foto first, `drive.py`
 with rclone, scope drive.file: the box sees only what it put there; then
 to Immich's trash) and Ta bort (to Immich's trash, which
@@ -542,9 +559,9 @@ Y (Sök) does nothing over the viewer, Spelas nu or a film on its way
 (`noKeyboard`, main.js). Google Drive's token is under Inställningar →
 Tjänster: `rclone authorize drive eyJzY29wZSI6ImRyaXZlLmZpbGUifQ` on a
 computer with a browser (the base64 asks for drive.file), its answer pasted
-there. Those are the only changes the Bilder pages make, through the
-daemon's `POST /api/bilder/favorite|not_photo|trash` (`server.py`
-`api_bilder`); `/immich/` itself only reads. Immich lets only a picture's
+there. In the trash the panel has Återställ and Radera för gott (A twice)
+instead. The changes go through the daemon's `POST /api/bilder/...`
+(`server.py` `api_bilder`); `/immich/` itself only reads. Immich lets only a picture's
 owner change it, so a partner's own pictures are changed with the
 partner's key (Inställningar → Tjänster → Immich, Partnerns API-nyckel;
 the daemon asks whose a picture is, and whose each key is); without it a

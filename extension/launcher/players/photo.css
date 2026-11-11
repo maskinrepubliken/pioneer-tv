@@ -51,7 +51,15 @@
 .pv-info-list .pv-info-wait { color: rgba(244, 239, 228, 0.6); font-style: italic; margin-top: 1rem; }
 
 /* Its choices: Spela, Favorit, Ej foto, Ta bort; the marked one ringed, as in every menu. */
-.pv-actions { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; }
+.pv-actions {
+  display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; min-height: 0; overflow-y: auto; scrollbar-width: none;
+  padding: 0.6rem; margin: 0.4rem -0.6rem 0;   /* room for the ring */
+}
+.pv-actions::-webkit-scrollbar { display: none; }
+.pv-action { flex: none; }
+.pv-action-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Lägg till i album: the albums alone under the heading. */
+.pv-picking .pv-info-list { display: none; }
 .pv-action {
   display: flex; align-items: center; gap: 0.7rem; padding: 0.7rem 1rem 0.7rem 0.85rem;
   border: 1px solid rgba(244, 239, 228, 0.28); border-radius: var(--pioneertv-radius-pill); background: transparent;

@@ -5,7 +5,8 @@
 // (or dev/preview.py) adds the API key and forwards to Immich (immich.py
 // says what it may reach: reading only); M.immich.partner the same through
 // /immich-partner/, with the partner's key, for their own albums, people
-// and favourites. Knows nothing about the DOM. A picture or a clip, as the
+// and favourites. M.immich.change asks the daemon for a change (an album,
+// a person, a picture, the trash). Knows nothing about the DOM. A picture or a clip, as the
 // pages take it:
 //
 //   { id, video, taken, seconds, favorite, ratio, owner }
@@ -68,8 +69,14 @@ window.PioneerTV = window.PioneerTV || {};
       return out;
     }
 
-    // What changes rarely: fetched once per page.
-    const once = (fn) => { let p = null; return () => (p = p || fn().catch((e) => { p = null; throw e; })); };
+    // What changes rarely: fetched once per page, again after a change here
+    // (forget).
+    const kept = [];
+    const once = (fn) => {
+      let p = null;
+      kept.push(() => { p = null; });
+      return () => (p = p || fn().catch((e) => { p = null; throw e; }));
+    };
 
     const me = once(() => json('api/users/me'));
     return {
@@ -128,6 +135,12 @@ window.PioneerTV = window.PioneerTV || {};
         const [u, all] = await Promise.all([me(), every({ isFavorite: true })]);
         return all.filter((a) => !a.owner || a.owner === u.id);
       },
+      // The archived (out of the timeline) and the trash (Immich keeps it a
+      // while), this key's user's own.
+      archived: () => every({ visibility: 'archive' }),
+      trashed: () => every({ trashedAfter: '1970-01-01T00:00:00.000Z', withDeleted: true }),
+      // The albums, the people and the rest asked anew, after a change.
+      forget() { kept.forEach((f) => f()); },
       // Immich's search by what is in the picture (its smart search).
       async search(words) {
         const r = await post('api/search/smart', { query: words, size: 200, language: 'sv' });
@@ -158,4 +171,17 @@ window.PioneerTV = window.PioneerTV || {};
 
   M.immich = client('immich');
   M.immich.partner = client('immich-partner');
+
+  // A change in Immich (the daemon's /api/bilder: the only writes the pages
+  // have, each with its owner's key): its answer, { ok, message, ... }; a
+  // refusal is said as a notice too.
+  M.immich.change = async (action, body) => {
+    let r;
+    try {
+      r = await (await fetch(`/api/bilder/${action}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) })).json();
+    } catch { r = { ok: false, message: 'Boxen svarar inte' }; }
+    if (!r.ok) M.hud.toast(r.message === 'no_key' ? 'Immich saknar nyckel' : r.message || 'Det gick inte', 'info');
+    if (r.ok && !/^(favorite|not_photo|cancel)$/.test(action)) { M.immich.forget(); M.immich.partner.forget(); }
+    return r;
+  };
 })(window.PioneerTV);

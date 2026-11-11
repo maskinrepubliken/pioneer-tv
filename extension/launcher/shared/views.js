@@ -156,5 +156,32 @@ window.PioneerTV = window.PioneerTV || {};
   const hits = (n) => (n === 0 ? '' : n === 1 ? '1 träff' : `${n} träffar`);
   const NONE = 'Inga träffar';
 
-  M.views = { el, button, legend, cover, message, loading, clear, key, error, searchTitle, hits, NONE };
+  // A name asked for on the on-screen keyboard, into a field out of sight
+  // (the keyboard's top row shows what is typed, the placeholder before):
+  // the words on OK, null on B or nothing typed.
+  let asking = null;               // { field, words, resolve }
+  function askText(placeholder, value = '') {
+    if (asking) return Promise.resolve(null);
+    return new Promise((resolve) => {
+      const field = el('input', 'asked');
+      field.type = 'text';
+      field.placeholder = placeholder;
+      field.value = value;
+      field.style.cssText = 'position: fixed; left: -9999px; top: 0;';
+      document.body.appendChild(field);
+      asking = { field, words: null, resolve };
+      field.addEventListener('keydown', (e) => { if (e.key === 'Enter' && asking) asking.words = field.value.trim() || null; });
+      M.keyboard.open(field);
+    });
+  }
+  // OK on the keyboard closes it first, then says Enter in the field.
+  M.bridge.on('keyboard:close', () => setTimeout(() => {
+    if (!asking) return;
+    const { field, words, resolve } = asking;
+    asking = null;
+    field.remove();
+    resolve(words);
+  }, 0));
+
+  M.views = { el, button, legend, cover, message, loading, clear, key, error, searchTitle, hits, NONE, askText };
 })(window.PioneerTV);

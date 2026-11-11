@@ -342,8 +342,8 @@ def daemon(path: str, query: str, method: str) -> tuple[int, str, bytes] | None:
         found = games + films + albums
         found.sort(key=lambda f: not f["recent"])
         return js({"finds": found})
-    if path.startswith("/api/bilder/"):            # the viewer's changes in Immich (server.py api_bilder)
-        return js({"ok": True})
+    if path.startswith("/api/bilder/"):            # the Bilder pages' changes in Immich (server.py api_bilder)
+        return js({"ok": True, **({"id": IMMICH_ALBUMS[0]["id"]} if path.endswith("/album_new") else {})})
     if path == "/api/video":
         return js({"state": "idle", "item": None, "choice": {}})
     if path == "/api/video/find_subtitles":        # Jellyfin's Open Subtitles, made up
@@ -445,6 +445,10 @@ def immich(path: str, query: str, method: str, body: dict | None = None, partner
             found = [a for a in found if any(p["id"] == body["personIds"][0] for p in a["people"])]
         if body.get("isFavorite"):
             found = [a for a in found if a["isFavorite"]]
+        if body.get("trashedAfter"):                     # the trash, and the archive: a few each
+            found = IMMICH_ASSETS[70:74]
+        if body.get("visibility") == "archive":
+            found = IMMICH_ASSETS[74:78]
         return 200, "application/json", _page(found)
     if path == "api/search/random":
         return js(IMMICH_ASSETS[:40])
