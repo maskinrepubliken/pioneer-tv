@@ -46,7 +46,7 @@ what was learned on the way.
 | Right stick | Mouse pointer; click on the stick to left-click. What it (or a mouse) is over is drawn as selected and takes the focus, so the d-pad goes on from there |
 | Start | Nothing on the box; in a game, the console's Start |
 | Select | Nothing on the box; in a game, the console's Select |
-| Guide / Home / PS / Xbox | The only way to the menus: the quick menu, over whatever is on screen (press again to close it); in a game or a film, the pause panel instead. Hold: the home page. Also wakes the TV and switches input when the pad connects |
+| Guide / Home / PS / Xbox | The only way to the menus: the quick menu, over whatever is on screen (press again to close it); in a game or a film, the pause panel instead; over a view of the browse page with choices (an album's Byt namn, Ta bort album), those as a panel, Mer… the quick menu. Hold: the home page. Also wakes the TV and switches input when the pad connects |
 
 In a film or an episode playing in mpv, A, B and X pause it and open its
 pause panel, left and right seek ten seconds, and
@@ -376,9 +376,16 @@ The Musik tile opens the browse page on top of [Jellyfin](https://jellyfin.org/)
 music library (`browse.html?library=musik`): Blanda allt, then your
 playlists as cards (like Spel's collections), with Album and Artister in
 the column at the left; Album is shelves of covers, Artister their names alone, long, in three columns (they have no pictures; grid.js look names); a playlist or an album lists its songs beside
-its cover, with Spela and Blanda; an artist has Blanda allt (filled, X)
-and Spela allt at the heading's right, round buttons as Sök is with the
-name beside (a view's `actions`, drawn in the heading by `page.js`). On
+its cover, with Spela and Blanda; an artist has Blanda allt (X) and
+Spela allt among its choices. A view's choices (`actions`) have no buttons
+of their own at its heading: the filled one is X's wherever the focus is
+(the legend says it), and Home opens all of them in a panel of the
+overlay, the view's title over them, Mer… (the quick menu) last
+(`page.js` sends them as `page_menu`, overlay.py hands them on, the
+overlay sends the choice back as `pagemenu`; one marked `sure` wants A
+twice there, its row saying Tryck A igen first). Over the picture viewer
+the grid's choices are put away (`M.browse.quiet`): Home is the quick
+menu's. On
 Musik's start, among the playlists, X is Blanda allt, with no button (the
 legend says it). Album and Artister are grids like a
 console's games: Sök filters them. Sök (the round
@@ -392,7 +399,7 @@ film plays while its window is: B leaves it and the music stops, and so it
 does when another page loads (the daemon hears `loaded`; the page also
 says it as it goes) or something else plays (a film, a game, a site's
 video); the TV is not turned off under it, as the sound comes out of the
-TV. Everything done with it is the overlay's: A or Home over it opens its
+TV. Left and right go to the song before and after. Everything else done with it is the overlay's: A or Home over it opens its
 panel ([the media panel](#the-media-panel): the transport, Förra and
 Nästa, Blanda, Upprepa, Sluta spela, Mer…), as over a film; X plays or
 pauses, L2 and R2 spool (the daemon sends `seek` to the overlay while the
@@ -531,10 +538,10 @@ uploads, edits, deletions or sharing. Its address and key are under
 Inställningar → Tjänster (an API key made in Immich: Kontoinställningar →
 API-nycklar, with every permission: the pages change things too, below).
 
-Immich is kept from here, by the headings' buttons and the viewer's
-panel, each through the daemon (`POST /api/bilder/<action>`, `server.py`
+Immich is kept from here, by the views' choices (Home opens them) and the
+viewer's panel, each through the daemon (`POST /api/bilder/<action>`, `server.py`
 `_bilder_admin`, with the owner's key: one's own, or the partner's for
-theirs): Album has Nytt album (X: a name on the on-screen keyboard,
+theirs): Album has Nytt album (X, or Home: a name on the on-screen keyboard,
 `V.askText`; then the album, empty); an album has Byt namn and Ta bort
 album (A twice; the album only, its pictures stay); a person has Byt namn
 (or Ge ett namn) and Göm personen (A twice; then under Mer, Gömda
@@ -550,7 +557,8 @@ as the heading, then Plats, Bibliotek (whose library it is in: one's own
 or a partner's, from `users/me` and `partners`), Kamera and Text, those
 Immich has; under them, a clip's Spela first (X), then Favorit (on or off),
 Lägg till i album… (the albums in the panel instead, Nytt album… first, one's
-own then the partner's with their name, Tillbaka last or B), in an album
+own then the partner's with their name, not the one it is shown from,
+Tillbaka last or B), in an album
 Ta bort ur albumet and Använd som albumomslag, Arkivera (or in the
 archive, Ta bort ur arkivet), Ej foto, flytta till
 filer (the original kept in Google Drive's folder Ej foto first, `drive.py`

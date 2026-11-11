@@ -202,7 +202,7 @@ class Server:
                             await self.broadcast({"type": "event", "name": "saver", "show": True})
                             if idle.resting:
                                 await self.broadcast({"type": "event", "name": "rest", "on": True})
-                elif t in ("overlay_menu", "relay", "toast", "webvideo"):
+                elif t in ("overlay_menu", "relay", "toast", "webvideo", "page_menu"):
                     # A site's video playing: the music (audio.py) gives way.
                     if t == "webvideo" and data.get("present") and data.get("paused") is False:
                         await self.quiet("en video på en sida")

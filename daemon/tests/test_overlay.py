@@ -47,6 +47,18 @@ class Routing(unittest.TestCase):
         r.disconnected(r.overlay)
         self.assertEqual(r.target("seek"), "page")          # no overlay to draw it
 
+    def test_a_views_choices(self):
+        r = Router()
+        [event] = r.handle({"type": "page_menu", "title": "Fjällen", "items": [
+            {"key": "slideshow", "label": "Bildspel", "icon": "play", "primary": True},
+            {"key": "album-delete", "label": "Ta bort album", "icon": "trash", "sure": True},
+            {"label": "no key"}, "nonsense"]})
+        self.assertEqual(event["target"], "overlay")
+        self.assertEqual([i["key"] for i in event["items"]], ["slideshow", "album-delete"])
+        self.assertTrue(event["items"][1]["sure"])
+        self.assertEqual(r.handle({"type": "relay", "name": "pagemenu", "key": "album-delete"}),
+                         [{"type": "event", "name": "pagemenu", "target": "page", "key": "album-delete"}])
+
     def test_a_pages_toast_goes_on(self):
         r = Router()
         self.assertEqual(r.handle({"type": "toast", "text": "Hej", "icon": "info", "ms": 99999}),

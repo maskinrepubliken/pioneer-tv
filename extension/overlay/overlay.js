@@ -64,6 +64,7 @@ window.PioneerTV = window.PioneerTV || {};
     // quick menu one step in (Mer…).
     if (!menu.isOpen() && webVideo()) return webPanel();
     if (!menu.isOpen() && musicOn()) return menu.open(audioSpec());
+    if (!menu.isOpen() && pageMenu) return menu.open(pageSpec());
     menu.toggle();
   });
   b.on('home', () => { if (!held) away(); });
@@ -82,6 +83,35 @@ window.PioneerTV = window.PioneerTV || {};
   });
   // Nothing of a menu stays under the screensaver.
   b.on('saver', (e) => { if (e.show && !held) away(); });
+
+  // A view of ours with choices (browse/page.js: Bildspel, an album's Byt
+  // namn and Ta bort album, ...): Home opens them as a panel, its title the
+  // view's, Mer… the quick menu. A choice wanting A twice says so on its
+  // row first. What is chosen goes back to the page (pagemenu). Forgotten
+  // when another page loads.
+  let pageMenu = null;
+  b.on('pagemenu', (e) => { pageMenu = e.items && e.items.length ? e : null; });
+  b.on('loaded', (e) => { if (pageMenu && (e && e.url || '').split('#')[0] !== pageMenu.url) pageMenu = null; });
+  function pageSpec() {
+    const tell = (key) => b.relay('pagemenu', { key });
+    const items = pageMenu.items.map((it) => {
+      if (!it.sure) return { label: it.label, icon: it.icon || 'dot', primary: it.primary, detail: '', run: () => tell(it.key) };
+      let armed = 0;
+      const row = { label: it.label, icon: it.icon || 'dot', detail: '', keep: true, run: () => {
+        const words = row.el && row.el.querySelector('.pioneertv-menu-label');
+        if (Date.now() - armed > 3000) {
+          armed = Date.now();
+          if (words) words.textContent = 'Tryck A igen';
+          setTimeout(() => { if (words && Date.now() - armed >= 3000) words.textContent = it.label; }, 3000);
+          return;
+        }
+        menu.close();
+        tell(it.key);
+      } };
+      return row;
+    });
+    return { title: pageMenu.title || 'Val', items: [...items, more(null)] };
+  }
 
   // A channel on its way (the home page asks): the screen covered, its name
   // on it, until its video plays filling the screen (the webvideo events,

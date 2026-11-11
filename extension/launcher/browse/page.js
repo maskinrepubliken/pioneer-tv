@@ -25,7 +25,6 @@ window.PioneerTV = window.PioneerTV || {};
   const titleEl = $('title');
   const countEl = $('count');
   const tabsEl = $('tabs');
-  const actionsEl = $('actions');
   const search = $('search');
   const searchBtn = $('search-btn');
   const searchItem = $('search-item');
@@ -42,11 +41,34 @@ window.PioneerTV = window.PioneerTV || {};
   const parts = () => (location.hash || '#/').slice(2).split('/').map(decodeURIComponent);
   const here = () => location.hash || '#/';
 
+  // ------------------------------------------------------------ the view's choices
+  // A view's choices (Bildspel, Byt namn, Ta bort album, an artist's Blanda
+  // allt and Spela allt) have no buttons of their own at its heading: the
+  // filled one is X's wherever the focus is, and all of them are in the
+  // overlay's panel that Home opens over the view (the daemon's page_menu,
+  // overlay.js; what is chosen there comes back as a pagemenu event).
+  //   [{ label, icon, primary, key, run, sure (A twice there) }]
+  let choices = [];
+  function actions(list, title) {
+    choices = (list || []).map((a, i) => ({ ...a, key: a.key || `choice-${i}` }));
+    b.daemon({ type: 'page_menu', title, url: location.href.split('#')[0],
+      items: choices.map(({ key, label, icon, primary, sure }) => ({ key, label, icon, primary, sure })) });
+  }
+  b.on('pagemenu', (e) => { const a = choices.find((c) => c.key === e.key); if (a) a.run(); });
+  // Over the picture viewer and the like, Home is the quick menu's: no choices.
+  const quiet = (on) => actions(on ? [] : current.actions, current.title);
+  let current = {};
+
   // ------------------------------------------------------------ the filled button
-  // A view's filled button (Spela, Blanda allt, Försök igen) is always X's:
-  // X presses it wherever the focus is, before whatever else X means in the
-  // library (Spelas nu), and the legend says it, X and the button's name.
-  const filled = () => [...actionsEl.querySelectorAll('.primar'), ...view.querySelectorAll('.knapp.primar:not([disabled])')].find((b) => b.offsetParent);
+  // The filled choice, or a view's own filled button (Försök igen), is
+  // always X's: X does it wherever the focus is, before whatever else X
+  // means in the library (Spelas nu), and the legend says it.
+  const filled = () => {
+    const a = choices.find((c) => c.primary);
+    if (a) return { label: a.label, click: () => a.run() };
+    const btn = [...view.querySelectorAll('.knapp.primar:not([disabled])')].find((x) => x.offsetParent);
+    return btn && { label: btn.textContent.trim(), click: () => btn.click() };
+  };
 
   // ------------------------------------------------------------ the legend
   let viewLegend = [];
@@ -54,7 +76,8 @@ window.PioneerTV = window.PioneerTV || {};
     if (items) viewLegend = items;
     let extra = library.legend ? library.legend() : [];
     const button = filled();
-    if (button) extra = [['X', button.textContent.trim().toLocaleLowerCase('sv-SE')], ...extra.filter(([key]) => key !== 'X')];
+    if (button) extra = [['X', button.label.toLocaleLowerCase('sv-SE')], ...extra.filter(([key]) => key !== 'X')];
+    if (choices.some((c) => !c.primary)) extra = [...extra, ['Hem', 'val']];
     // Nothing found, nothing to choose (no A); Y changes the words where
     // there are some.
     const nothing = view.querySelector('.dusty');
@@ -66,13 +89,13 @@ window.PioneerTV = window.PioneerTV || {};
   // ------------------------------------------------------------ focus
   const lastFocus = {};
   b.on('nav:focus', (target) => {
-    if (!target || !(view.contains(target) || actionsEl.contains(target))) return;
+    if (!target || !view.contains(target)) return;
     const k = target.closest('[data-key]');
     if (k) lastFocus[here()] = k.dataset.key;
   });
   function restoreFocus(fallback) {
     const key = lastFocus[here()];
-    const target = (key && (view.querySelector(`[data-key="${CSS.escape(key)}"]`) || actionsEl.querySelector(`[data-key="${CSS.escape(key)}"]`))) || fallback;
+    const target = (key && view.querySelector(`[data-key="${CSS.escape(key)}"]`)) || fallback;
     if (target) M.nav.focus(target);
   }
 
@@ -94,7 +117,8 @@ window.PioneerTV = window.PioneerTV || {};
     tabsEl.innerHTML = '';
     if (spec.tabs) tabsEl.appendChild(M.cards.tabs(spec.tabs));
     tabsEl.hidden = !spec.tabs;
-    actions(spec.actions);
+    current = { actions: spec.actions, title: spec.title || library.name };
+    actions(spec.actions, current.title);
     legend(spec.legend || []);
     if (spec.kind === 'message') return V.message(view, spec.text, spec.hint, spec.retry);
     // While typing in the field (a search, a filter) the focus stays there.
@@ -117,25 +141,7 @@ window.PioneerTV = window.PioneerTV || {};
       return;
     }
     const first = spec.kind === 'detail' ? M.detail.render(view, spec) : M.shelf.render(view, spec);
-    const asked = spec.focus && actionsEl.querySelector(`[data-key="${CSS.escape(spec.focus)}"]`);
-    if (!typing && !spec.none) restoreFocus(asked || first || searchBtn);   // nothing found: as a grid, the focus is left be
-  }
-
-  // A view's own buttons, at its heading's right (an artist's Blanda allt and
-  // Spela allt): round, as Sök is, the name beside; the filled one X's.
-  //   [{ label, icon, primary, key, run }]
-  function actions(list) {
-    actionsEl.innerHTML = '';
-    for (const a of list || []) {
-      const btn = V.el('button', `head-action${a.primary ? ' primar' : ''}`);
-      btn.type = 'button';
-      const ring = V.el('span', 'head-action-ring');
-      ring.appendChild(M.icons.svg(a.icon || 'play'));
-      btn.append(ring, V.el('span', 'head-action-label', a.label));
-      if (a.key) btn.dataset.key = a.key;
-      btn.addEventListener('click', a.run);
-      actionsEl.appendChild(btn);
-    }
+    if (!typing && !spec.none) restoreFocus(first || searchBtn);   // nothing found: as a grid, the focus is left be
   }
 
   // ------------------------------------------------------------ routing
@@ -252,7 +258,7 @@ window.PioneerTV = window.PioneerTV || {};
     else history.back();
   });
 
-  M.browse = { route, legend, head: $('head'), view, library };
+  M.browse = { route, legend, quiet, head: $('head'), view, library };
   V.loading(view);
   legend([]);
   route();

@@ -13,8 +13,8 @@
 // column has each one's favourites, albums and people under their name,
 // and Mer (#/more) the rest, for both. A
 // picture opens the viewer at it; X on a grid starts a slideshow from its
-// first. The headings' buttons change Immich (through the daemon,
-// I.change): a new album, an album's name or the album gone, a person's
+// first. A view's choices (Home opens them in the overlay; the filled
+// one X's) change Immich (through the daemon, I.change): a new album, an album's name or the album gone, a person's
 // name or the person hidden, the trash emptied or all of it back; what is
 // done to one picture is the viewer's (its A panel).
 window.PioneerTV = window.PioneerTV || {};
@@ -47,22 +47,6 @@ window.PioneerTV = window.PioneerTV || {};
     };
   }
 
-  // A heading's button that wants a second A before it does (Ta bort album,
-  // Töm papperskorgen): its words ask for a moment.
-  function twice(label, run) {
-    let armed = 0;
-    return (e) => {
-      const words = e.currentTarget.querySelector('.head-action-label');
-      if (Date.now() - armed > 3000) {
-        armed = Date.now();
-        words.textContent = 'Tryck A igen';
-        setTimeout(() => { if (Date.now() - armed >= 3000 && words.isConnected) words.textContent = label; }, 3000);
-        return;
-      }
-      armed = 0;
-      run();
-    };
-  }
   // A name on the on-screen keyboard, then the change with it; the view anew.
   const naming = (placeholder, now, change, said) => async () => {
     const name = await V.askText(placeholder, now);
@@ -193,12 +177,12 @@ window.PioneerTV = window.PioneerTV || {};
         ctx: { album: { id: arg, name: a.name } },
         actions: [
           { label: 'Byt namn', icon: 'pencil', key: 'album-name', run: naming('Albumets namn', a.name, (name) => I.change('album_name', { album: arg, name }), 'Albumet har fått nytt namn') },
-          { label: 'Ta bort album', icon: 'trash', key: 'album-delete', run: twice('Ta bort album', async () => {
+          { label: 'Ta bort album', icon: 'trash', key: 'album-delete', sure: true, run: async () => {
             const r = await I.change('album_delete', { album: arg });
             if (!r.ok) return;
             M.hud.toast('Albumet är borttaget, bilderna finns kvar', 'check');
             location.replace(`${w.at}albums`);
-          }) },
+          } },
         ],
       });
     }
@@ -216,12 +200,12 @@ window.PioneerTV = window.PioneerTV || {};
             const r = await I.change('person_hide', { person: arg, on: false });
             if (r.ok) { M.hud.toast('Personen syns igen', 'check'); location.replace(`${w.at}people`); }
           } }
-          : { label: 'Göm personen', icon: 'eyeOff', key: 'person-hide', run: twice('Göm personen', async () => {
+          : { label: 'Göm personen', icon: 'eyeOff', key: 'person-hide', sure: true, run: async () => {
             const r = await I.change('person_hide', { person: arg, on: true });
             if (!r.ok) return;
             M.hud.toast('Personen är gömd (finns under Mer)', 'check');
             location.replace(`${w.at}people`);
-          }) },
+          } },
       ] });
     }
     if (what === 'hidden') {
@@ -241,10 +225,10 @@ window.PioneerTV = window.PioneerTV || {};
             const r = await I.change('trash_restore', { way });
             if (r.ok) { M.hud.toast('Allt är återställt', 'check'); M.browse.route(); }
           } },
-          { label: 'Töm papperskorgen', icon: 'trash', key: 'trash-empty', run: twice('Töm papperskorgen', async () => {
+          { label: 'Töm papperskorgen', icon: 'trash', key: 'trash-empty', sure: true, run: async () => {
             const r = await I.change('trash_empty', { way });
             if (r.ok) { M.hud.toast('Papperskorgen är tömd', 'check'); M.browse.route(); }
-          }) },
+          } },
         ] : [],
       });
     }

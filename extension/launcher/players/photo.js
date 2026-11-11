@@ -238,12 +238,13 @@ window.PioneerTV = window.PioneerTV || {};
   // Lägg till i album…: Nytt album first, then one's own albums and the
   // partner's (their name after), Tillbaka last (or B).
   async function pickAlbum() {
+    const other = (al) => !ctx.album || al.id !== ctx.album.id;     // not the album it is shown from
     const [mine, theirs, partner] = await Promise.all([I.albums().catch(() => []), I.partner.albums().catch(() => []),
       I.partner.user().catch(() => null)]);
     picking = [
       { key: 'album_new', icon: 'plus', label: 'Nytt album…' },
-      ...mine.map((al) => ({ key: 'album_add', icon: 'stack', label: al.name, album: al })),
-      ...theirs.map((al) => ({ key: 'album_add', icon: 'stack', label: partner ? `${al.name} · ${partner.name}` : al.name, album: al })),
+      ...mine.filter(other).map((al) => ({ key: 'album_add', icon: 'stack', label: al.name, album: al })),
+      ...theirs.filter(other).map((al) => ({ key: 'album_add', icon: 'stack', label: partner ? `${al.name} · ${partner.name}` : al.name, album: al })),
       { key: 'back', icon: 'back', label: 'Tillbaka' },
     ];
     choice = 0;
@@ -472,6 +473,7 @@ window.PioneerTV = window.PioneerTV || {};
       root.hidden = false;
       panel(false);
       M.nav.captured = this;
+      if (M.browse) M.browse.quiet(true);         // Home: the quick menu, not the grid's choices
       if (start && list[at].video) { const i = list.findIndex((a) => !a.video); if (i >= 0) at = i; }
       show = start;
       draw(false);
@@ -484,6 +486,7 @@ window.PioneerTV = window.PioneerTV || {};
       scrub = null; target = null;
       root.hidden = true;
       if (M.nav.captured === this) M.nav.captured = null;
+      if (M.browse) M.browse.quiet(false);
       // Something was changed (a favourite, the trash): the view anew.
       if (changed && M.browse) { M.browse.route(); return; }
       // Back on the grid, on the picture last seen (the grid's items are

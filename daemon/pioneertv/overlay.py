@@ -28,13 +28,27 @@ OVERLAY = ("menu", "toast", "saver", "rest")
 # What the overlay may ask the page (through the extension) to do, and what
 # a page may ask of the overlay (the home page: its Sök panel, and the cover
 # over a channel on its way until it plays in full).
-RELAYS = ("home", "back", "reload", "settings", "keyboard", "navigate", "webvideo")
+RELAYS = ("home", "back", "reload", "settings", "keyboard", "navigate", "webvideo", "pagemenu")
 TO_OVERLAY = ("menu", "cover")
 # The panels a page may open alone in the overlay: the home page's Sök, a
 # site's video's panel (B over it, webvideo.js).
 PANELS = ("search", "media")
 # What the overlay's panel for a site's video may ask of it (content/webvideo.js).
 WEBVIDEO_ACTIONS = ("toggle", "seek", "to", "subs")
+
+
+def page_menu(data: dict) -> dict:
+    """A view's choices, as a page of ours says them (browse/page.js), for
+    the overlay's panel that Home opens over it: a title, the page's
+    address (the overlay forgets them when another page loads) and up to
+    twelve { key, label, icon, primary, sure }."""
+    items = []
+    for it in (data.get("items") or [])[:12] if isinstance(data.get("items"), list) else []:
+        if isinstance(it, dict) and it.get("key") and it.get("label"):
+            items.append({"key": str(it["key"])[:40], "label": str(it["label"])[:60], "icon": str(it.get("icon") or "")[:20],
+                          "primary": bool(it.get("primary")), "sure": bool(it.get("sure"))})
+    return {"type": "event", "name": "pagemenu", "target": "overlay", "title": str(data.get("title") or "")[:80],
+            "url": str(data.get("url") or "")[:1000], "items": items}
 
 
 def webvideo_state(data: dict) -> dict:
@@ -107,6 +121,8 @@ class Router:
             if isinstance(data.get("ms"), (int, float)):
                 event["ms"] = max(500, min(int(data["ms"]), 15000))
             return [event]
+        elif t == "page_menu":
+            return [page_menu(data)]
         elif t == "webvideo":
             event = webvideo_state(data)
             (self.videos.add if event["present"] else self.videos.discard)(event["frame"])
@@ -127,6 +143,8 @@ class Router:
                 event["url"] = url
             if data["name"] == "settings" and isinstance(data.get("section"), str):
                 event["section"] = data["section"][:40]
+            if data["name"] == "pagemenu":
+                event["key"] = str(data.get("key") or "")[:40]
             if data["name"] == "webvideo":
                 if data.get("action") not in WEBVIDEO_ACTIONS:
                     return []

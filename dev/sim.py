@@ -218,7 +218,7 @@ class Daemon:
                 self.broadcast(self.config())
                 if self.saver:
                     self.event("saver", show=True)
-        elif t in ("overlay_menu", "relay", "toast", "webvideo"):
+        elif t in ("overlay_menu", "relay", "toast", "webvideo", "page_menu"):
             if t == "webvideo" and data.get("present") and data.get("paused") is False:
                 self.audio_stop()
             for e in self.router.handle(data):

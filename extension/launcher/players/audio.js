@@ -126,9 +126,9 @@ window.PioneerTV = window.PioneerTV || {};
   };
 
   // ------------------------------------------------------------ Spelas nu
-  // Over the whole page, holding the pad while open: A opens the overlay's
-  // panel (as Home does), X plays or pauses, B goes back to browsing and
-  // the music stops. L2 and R2 are the overlay's while music plays.
+  // Over the whole page, holding the pad while open: left and right go to
+  // the song before and after, A opens the overlay's panel (as Home
+  // does), X plays or pauses, B goes back to browsing and the music stops. L2 and R2 are the overlay's while music plays.
   const length = () => state.duration || (state.item && state.item.seconds) || 0;
   const nowPlaying = {
     noKeyboard: true,                // Y (Sök) does nothing over it (main.js)
@@ -183,7 +183,7 @@ window.PioneerTV = window.PioneerTV || {};
         part.queue.appendChild(li);
       });
       if (!next.length) part.queue.appendChild(el('li', 'empty', state.repeat === 'one' ? 'Den här låten igen' : 'Inget mer i kön'));
-      V.legend(part.legend, [['A', 'meny'], ['X', 'paus · spela'], ['L2', ''], ['R2', 'spola'], ['B', 'bläddra']]);
+      V.legend(part.legend, [['◀ ▶', 'byt låt'], ['A', 'meny'], ['X', 'paus · spela'], ['L2', ''], ['R2', 'spola'], ['B', 'bläddra']]);
       this.progress();
     },
     progress() {
@@ -197,6 +197,7 @@ window.PioneerTV = window.PioneerTV || {};
       if (e.key === ' ') player.toggle();
       else if (e.key === 'Escape') this.close();
       else if (e.key === 'Enter') M.bridge.relay('menu', { panel: 'media' });
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { ask(e.key === 'ArrowLeft' ? 'prev' : 'next'); if (M.sound) M.sound.tick(e.key); }
     },
   };
 
