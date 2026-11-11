@@ -567,8 +567,9 @@ its picture (a `<video>` of Immich's `video/playback`, through
 `/immich/`): X plays and pauses it, L2 and R2 glide a mark through it
 (the daemon's `seek`, the page's while no overlay menu is open; it goes
 where they are let go, a short touch is ten seconds), left and right go
-on as for pictures, the panel is the same (Spela or Pausa first); a small
-mark in a corner says playing or paused and the time. Played to its end,
+on as for pictures, the panel is the same (Spela or Pausa first); the
+overlay's small card at the top right (drawn the same here, `.pv-clip`)
+says playing or paused, the time and how far, for as long as the clip is. Played to its end,
 the viewer goes on to the next. A clip the browser cannot play goes to mpv
 instead (`video.py` `play_immich`, the key as mpv's header; X plays and
 pauses it there, A or Home opens its panel, B stops it), and the viewer is

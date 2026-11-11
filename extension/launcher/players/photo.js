@@ -53,12 +53,14 @@ window.PioneerTV = window.PioneerTV || {};
     layers = [el('div', 'pv-layer'), el('div', 'pv-layer')];
     caption = el('div', 'pv-caption');
     for (const name of ['when', 'where', 'text']) { part[name] = el('p', `pv-${name}`); caption.appendChild(part[name]); }
-    // A clip: a small mark in the top corner (clear of the caption at the
-    // foot), playing or paused, the time.
+    // A clip: the overlay's small card at the top right, as over a film
+    // (overlay.js seekStrip; photo.css draws it the same), playing or
+    // paused, the time, a thin timeline; here for as long as the clip is.
     part.clip = el('div', 'pv-clip');
-    part.clipState = el('span', 'pv-clip-state');
-    part.clipLen = el('span');
-    part.clip.append(part.clipState, part.clipLen);
+    part.clip.dataset.pioneertvTheme = 'paper';
+    part.clip.innerHTML = '<span class="pv-clip-state"></span><div class="pv-clip-body">'
+      + '<div class="pv-clip-times"><span></span><span></span></div><div class="pv-clip-track"><div class="pv-clip-fill"></div></div></div>';
+    [part.clipState, part.clipNow, part.clipLeft, part.clipFill] = part.clip.querySelectorAll('.pv-clip-state, .pv-clip-times span, .pv-clip-fill');
     // The side panel (A): what is known of it, and what may be done to it.
     part.info = el('aside', 'pv-info');
     part.info.hidden = true;
@@ -117,9 +119,18 @@ window.PioneerTV = window.PioneerTV || {};
     const v = clipOn();
     const len = (v && isFinite(v.duration) && v.duration) || a.seconds || 0;
     const now = target != null ? target : v ? v.currentTime : 0;
-    part.clipState.innerHTML = M.icons.svg(v && !v.paused ? 'play' : 'pause').outerHTML;
-    part.clipLen.textContent = v || target != null ? `${clock(now)} / ${clock(len)}` : clock(len);
+    const pos = Math.max(0, Math.min(len || now, now));
+    part.clipState.innerHTML = GLYPH[v && !v.paused ? 'play' : 'pause'];
+    part.clipNow.textContent = clock(pos);
+    part.clipLeft.textContent = len ? `−${clock(len - pos)}` : '';
+    part.clipFill.style.width = len ? `${(pos / len) * 100}%` : '0';
   }
+  // The overlay's play and pause, so the card is the same.
+  const SVG = (inner) => `<svg viewBox="0 0 24 24" aria-hidden="true">${inner}</svg>`;
+  const GLYPH = {
+    play: SVG('<path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/>'),
+    pause: SVG('<rect x="6.5" y="5.5" width="4" height="13" rx="1.2" fill="currentColor"/><rect x="13.5" y="5.5" width="4" height="13" rx="1.2" fill="currentColor"/>'),
+  };
   function playHere() {
     const a = list[at];
     if (!a || !a.video) return;
