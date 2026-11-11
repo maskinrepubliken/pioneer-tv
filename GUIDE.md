@@ -507,16 +507,19 @@ The Bilder tile opens the browse page on top of [Immich](https://immich.app)
 (`browse.html?library=bilder`, `libraries/bilder.js` on
 `sources/immich.js`). Its column: Förslag (today's memories, "för X år
 sedan", one's albums, the partner's and one's people) and Tidslinje; then
-under one's name Favoriter, Album, Personer (every face Immich has
-found, named or not; those hidden in Immich left out), Arkiv (out of the
-timeline, `visibility: archive`) and Papperskorgen (Immich's trash,
-`trashedAfter`), and the same under
+under one's name Favoriter, Album and Personer (every face Immich has
+found, named or not; those hidden in Immich left out), the same under
 the partner's name (`#/partner/...`, through the daemon's
 `/immich-partner/`, the partner's key, reading only as `/immich/`: their
 own albums and people, which one's key does not see). A partner's pictures (Immich's partner sharing) are
 there too: the timeline asks for them (`withPartners`), the searches and
 the favourites have them already; the memories, the albums (those shared
-aside) and the people are one's own. The timeline, a year at a time, its months as cards; a
+aside) and the people are one's own. Mer, last in the column (`#/more`),
+has what is looked at now and then: Nyligen tillagda (`createdAfter`, the
+last 30 days) and Videoklipp for both, then under each one's name their
+Arkiv (out of the timeline, `visibility: archive`), Papperskorgen
+(Immich's trash, `trashedAfter`) and Gömda personer (`withHidden`; a
+hidden person's page has Visa personen). The timeline, a year at a time, its months as cards; a
 month, an album, a person, a memory, the favourites and a search
 (Immich's smart search, by what is in the picture) are grids of pictures
 close together (`grid.js` look `photos`, `cards.js` photo; a clip has its
@@ -534,8 +537,8 @@ panel, each through the daemon (`POST /api/bilder/<action>`, `server.py`
 theirs): Album has Nytt album (X: a name on the on-screen keyboard,
 `V.askText`; then the album, empty); an album has Byt namn and Ta bort
 album (A twice; the album only, its pictures stay); a person has Byt namn
-(or Ge ett namn) and Göm personen (A twice; shown again from Immich's own
-pages); the trash has Återställ allt and Töm papperskorgen (A twice; gone
+(or Ge ett namn) and Göm personen (A twice; then under Mer, Gömda
+personer, where Visa personen brings them back); the trash has Återställ allt and Töm papperskorgen (A twice; gone
 for good). After a change the albums and the people are asked anew
 (`forget`).
 

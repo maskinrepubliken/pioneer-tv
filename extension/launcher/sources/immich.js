@@ -118,7 +118,7 @@ window.PioneerTV = window.PioneerTV || {};
         .filter((p) => !p.isHidden).map((p) => ({ id: p.id, name: p.name || '' }))),
       async person(id) {
         const [p, assets] = await Promise.all([json(`api/people/${encodeURIComponent(id)}`), every({ personIds: [id] })]);
-        return { name: p.name, assets };
+        return { name: p.name, hidden: !!p.isHidden, assets };
       },
       // Today's memories, "för X år sedan": { id, year, assets } (Immich keeps
       // the coming days' and the past days' too: for= asks for today's).
@@ -138,6 +138,15 @@ window.PioneerTV = window.PioneerTV || {};
       // The archived (out of the timeline) and the trash (Immich keeps it a
       // while), this key's user's own.
       archived: () => every({ visibility: 'archive' }),
+      // Added to Immich the last 30 days (one's own and the partner's), and
+      // every clip.
+      recent: () => every({ createdAfter: new Date(Date.now() - 30 * 86400000).toISOString() }),
+      clips: () => every({ type: 'VIDEO' }),
+      // The people hidden in Immich (Göm personen): { id, name }.
+      async hidden() {
+        return ((await json('api/people?size=500&withHidden=true')).people || [])
+          .filter((p) => p.isHidden).map((p) => ({ id: p.id, name: p.name || '' }));
+      },
       trashed: () => every({ trashedAfter: '1970-01-01T00:00:00.000Z', withDeleted: true }),
       // The albums, the people and the rest asked anew, after a change.
       forget() { kept.forEach((f) => f()); },

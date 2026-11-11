@@ -5,11 +5,13 @@
 // #/ is today's memories ("för X år sedan"), the albums and the people;
 // #/timeline the months, a year at a time; #/month/<2024-05-01>,
 // #/album/<id>, #/person/<id>, #/memory/<id>, #/favorites, #/archive,
-// #/trash and #/search/<words> (Immich's search by what is in the picture)
-// are grids of pictures; #/albums and #/people every album and person.
-// #/partner/... is the partner's own (their favourites, albums, people,
-// archive and trash, through the partner's key: sources/immich.js
-// M.immich.partner); the column has each one's under their name. A
+// #/trash, #/recent, #/clips and #/search/<words> (Immich's search by what
+// is in the picture) are grids of pictures; #/albums, #/people and #/hidden
+// every album and person (the hidden ones). #/partner/... is the partner's
+// own (their favourites, albums, people, archive, trash and hidden people,
+// through the partner's key: sources/immich.js M.immich.partner); the
+// column has each one's favourites, albums and people under their name,
+// and Mer (#/more) the rest, for both. A
 // picture opens the viewer at it; X on a grid starts a slideshow from its
 // first. The headings' buttons change Immich (through the daemon,
 // I.change): a new album, an album's name or the album gone, a person's
@@ -122,7 +124,10 @@ window.PioneerTV = window.PioneerTV || {};
     const [what, arg] = parts;
     if (what === 'timeline') return timeline();
     if (what === 'month' && arg) return grid(monthName(arg), await I.month(arg));
-    if (['albums', 'album', 'people', 'person', 'favorites', 'archive', 'trash'].includes(what)) return theirs(parts, OWN);
+    if (['albums', 'album', 'people', 'person', 'favorites', 'archive', 'trash', 'hidden'].includes(what)) return theirs(parts, OWN);
+    if (what === 'more') return more();
+    if (what === 'recent') return grid('Nyligen tillagda', await I.recent(), { empty: 'Inget nytt de senaste 30 dagarna.' });
+    if (what === 'clips') return grid('Videoklipp', await I.clips(), { empty: 'Inga videoklipp.', slideshow: false });
     if (what === 'memory' && arg) {
       const m = (await I.memories()).find((x) => x.id === arg);
       return m ? grid(ago(m.year), m.assets) : start();
@@ -132,6 +137,32 @@ window.PioneerTV = window.PioneerTV || {};
       return { ...grid(M.views.searchTitle(arg), found), count: () => M.views.hits(found.length), empty: M.views.NONE };
     }
     return start();
+  }
+
+  // Mer: what is looked at now and then. For both: the latest added and
+  // every clip; for each one, their archive, their trash and the people
+  // they have hidden.
+  async function more() {
+    const [me, partner] = await Promise.all([I.user().catch(() => null), I.partner.user().catch(() => null)]);
+    const card = (key, title, meta, href) => ({ key: `more:${key}`, title, meta, href, style: 'prose' });
+    const own = (w, who, k) => ({
+      label: who, layout: 'groups', items: [
+        card(`${k}archive`, 'Arkiv', 'utanför tidslinjen', `${w.at}archive`),
+        card(`${k}trash`, 'Papperskorgen', 'tills den töms', `${w.at}trash`),
+        card(`${k}hidden`, 'Gömda personer', 'visas inte under Personer', `${w.at}hidden`),
+      ],
+    });
+    return {
+      kind: 'shelf', title: 'Mer', legend: [['A', 'öppna']],
+      sections: [
+        { label: 'Alla bilder', layout: 'groups', items: [
+          card('recent', 'Nyligen tillagda', 'de senaste 30 dagarna', '#/recent'),
+          card('clips', 'Videoklipp', 'alla klipp', '#/clips'),
+        ] },
+        own(OWN, me ? me.name : 'Mina', ''),
+        ...(partner ? [own(PARTNER, partner.name, 'p-')] : []),
+      ],
+    };
   }
 
   // One's own or the partner's: their albums, an album, their people, a
@@ -177,13 +208,23 @@ window.PioneerTV = window.PioneerTV || {};
       const p = await src.person(arg);
       return grid(p.name || UNNAMED, p.assets, { actions: [
         { label: p.name ? 'Byt namn' : 'Ge ett namn', icon: 'pencil', key: 'person-name', run: naming('Personens namn', p.name || '', (name) => I.change('person_name', { person: arg, name }), 'Namnet är sparat') },
-        { label: 'Göm personen', icon: 'eyeOff', key: 'person-hide', run: twice('Göm personen', async () => {
-          const r = await I.change('person_hide', { person: arg, on: true });
-          if (!r.ok) return;
-          M.hud.toast('Personen är gömd (visas igen i Immich)', 'check');
-          location.replace(`${w.at}people`);
-        }) },
+        p.hidden
+          ? { label: 'Visa personen', icon: 'eye', key: 'person-show', run: async () => {
+            const r = await I.change('person_hide', { person: arg, on: false });
+            if (r.ok) { M.hud.toast('Personen syns igen', 'check'); location.replace(`${w.at}people`); }
+          } }
+          : { label: 'Göm personen', icon: 'eyeOff', key: 'person-hide', run: twice('Göm personen', async () => {
+            const r = await I.change('person_hide', { person: arg, on: true });
+            if (!r.ok) return;
+            M.hud.toast('Personen är gömd (finns under Mer)', 'check');
+            location.replace(`${w.at}people`);
+          }) },
       ] });
+    }
+    if (what === 'hidden') {
+      const people = await src.hidden();
+      return { kind: 'grid', title: await title('Gömda personer'), shape: 'round', columns: 6, items: people.map((p) => personCard(p, w)), filter: false,
+        count: (n) => (n === 1 ? '1 person' : `${n} personer`), empty: 'Ingen är gömd.', legend: [['A', 'öppna']] };
     }
     if (what === 'archive') {
       return grid(await title('Arkiv'), await src.archived(), { empty: 'Inget i arkivet. Arkivera en bild från bildvisaren: A på den.', ctx: { archive: true } });
@@ -209,13 +250,11 @@ window.PioneerTV = window.PioneerTV || {};
 
   // The column at the left: the start (Förslag: the memories, the albums,
   // the people) and the timeline; then one's own favourites, albums and
-  // people under one's name, and the partner's under theirs.
+  // people under one's name, and the partner's under theirs; Mer last.
   const mine = (w, key) => [
     { label: 'Favoriter', icon: 'heart', href: `${w.at}favorites`, key: `rail:${key}favorites` },
     { label: 'Album', icon: 'stack', href: `${w.at}albums`, key: `rail:${key}albums` },
     { label: 'Personer', icon: 'person', href: `${w.at}people`, key: `rail:${key}people` },
-    { label: 'Arkiv', icon: 'archive', href: `${w.at}archive`, key: `rail:${key}archive` },
-    { label: 'Papperskorgen', icon: 'trash', href: `${w.at}trash`, key: `rail:${key}trash` },
   ];
   async function rail() {
     const [me, partner] = await Promise.all([I.user().catch(() => null), I.partner.user().catch(() => null)]);
@@ -226,6 +265,7 @@ window.PioneerTV = window.PioneerTV || {};
       ] },
       { label: me ? me.name : '', items: mine(OWN, '') },
       ...(partner ? [{ label: partner.name, items: mine(PARTNER, 'p-') }] : []),
+      { items: [{ label: 'Mer', icon: 'menu', href: '#/more', key: 'rail:more' }] },
     ];
   }
 

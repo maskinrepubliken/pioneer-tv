@@ -449,6 +449,10 @@ def immich(path: str, query: str, method: str, body: dict | None = None, partner
             found = IMMICH_ASSETS[70:74]
         if body.get("visibility") == "archive":
             found = IMMICH_ASSETS[74:78]
+        if body.get("createdAfter"):
+            found = IMMICH_ASSETS[:12]
+        if body.get("type") == "VIDEO":
+            found = [a for a in found if a["type"] == "VIDEO"]
         return 200, "application/json", _page(found)
     if path == "api/search/random":
         return js(IMMICH_ASSETS[:40])
