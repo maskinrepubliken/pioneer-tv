@@ -1,0 +1,61 @@
+/* Pioneer TV review (review.js): the pictures as a stack of cards on ink;
+   the one in front goes off the way its verdict says, stamped, and the
+   next comes forward. Only transforms and opacity move. */
+
+.rv { position: fixed; inset: 0; z-index: 9; background: #0d0b0a; color: #f4efe4; overflow: hidden; }
+.rv[hidden] { display: none; }
+
+.rv-stack {
+  position: absolute; left: 50%; top: 44%; width: min(62vw, 104vh); height: 70vh;
+  transform: translate(-50%, -50%);
+}
+.rv-card {
+  position: absolute; inset: 0; border-radius: var(--pioneertv-radius-card); overflow: hidden;
+  background: #1c1613; box-shadow: 0 1.2rem 3.2rem rgba(0, 0, 0, 0.6);
+  transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.45s ease;
+  will-change: transform;
+}
+.rv-card img { width: 100%; height: 100%; object-fit: contain; display: block; }
+
+/* Where a card is: in front, behind it (a little lower, smaller, dimmer),
+   at the back before it shows, or off the side its verdict sent it. */
+.rv-front { transform: none; opacity: 1; }
+.rv-behind-1 { transform: translateY(1.6rem) scale(0.95); opacity: 0.75; }
+.rv-behind-2 { transform: translateY(3.2rem) scale(0.9); opacity: 0.45; }
+.rv-behind-3, .rv-behind-last { transform: translateY(4.8rem) scale(0.85); opacity: 0; }
+.rv-lean-right { transform: translateX(2.5vw) rotate(4deg); }
+.rv-lean-left { transform: translateX(-2.5vw) rotate(-4deg); }
+.rv-lean-up { transform: translateY(-3vh) scale(0.98); }
+.rv-out-right { transform: translateX(85vw) rotate(16deg); opacity: 0; }
+.rv-out-left { transform: translateX(-85vw) rotate(-16deg); opacity: 0; }
+.rv-out-up { transform: translateY(-95vh) rotate(-3deg) scale(0.9); opacity: 0; }
+
+/* The verdict on a card, stamped at its top: Bra (forest, at the left as
+   it goes right), Raderas (red, at the right as it goes left), Till filer
+   (ochre, in the middle as it goes up). */
+.rv-stamp {
+  position: absolute; top: 2rem; padding: 0.35rem 0.9rem 0.25rem; border: 0.3rem solid; border-radius: 0.6rem; z-index: 1;
+  font: 900 2.2rem/1 var(--pioneertv-font-display); text-transform: uppercase; letter-spacing: 0.04em;
+  background: rgba(13, 11, 10, 0.35); opacity: 0;
+}
+.rv-stamp-ok { left: 2rem; color: #7fc49a; transform: rotate(-12deg); opacity: 1; }
+.rv-stamp-trash { right: 2rem; color: #f08a78; transform: rotate(12deg); opacity: 1; }
+.rv-stamp-files { left: 50%; color: var(--pioneertv-ochre); transform: translateX(-50%) rotate(-4deg); opacity: 1; }
+
+.rv-clip {
+  position: absolute; left: 1.4rem; bottom: 1.2rem; padding: 0.3rem 0.6rem; border-radius: var(--pioneertv-radius-pill);
+  background: rgba(13, 11, 10, 0.6); font: 500 0.85rem/1 var(--pioneertv-font-mono);
+}
+
+/* When and how far, under the stack; how it went, when done. */
+.rv-info {
+  position: absolute; left: 0; right: 0; top: calc(44% + 35vh + 2.2rem); margin: 0;
+  display: flex; justify-content: center; align-items: baseline; gap: 1.4rem;
+}
+.rv-when { font: italic 1.5rem/1.2 var(--pioneertv-font-prose); }
+.rv-count { font: 400 1rem/1 var(--pioneertv-font-mono); color: rgba(244, 239, 228, 0.65); }
+.rv-done .rv-info { top: 42%; flex-direction: column; align-items: center; gap: 1rem; }
+.rv-done .rv-when { font: 900 3rem/1 var(--pioneertv-font-display); font-style: normal; text-transform: uppercase; }
+.rv-done .rv-count { font-size: 1.2rem; }
+
+.rv-legend { position: absolute; left: 5vw; right: 5vw; bottom: 2.5vh; }

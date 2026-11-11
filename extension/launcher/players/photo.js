@@ -235,8 +235,15 @@ window.PioneerTV = window.PioneerTV || {};
       { key: 'trash', icon: 'backspace', label: sure ? 'Tryck A igen för att ta bort' : 'Ta bort' },
     ];
   }
+  // The album a picture was put in last: marked first in the list, while it
+  // was a quarter of an hour ago or less (kept in the browser, so from page
+  // to page too).
+  const LAST_KEY = 'pioneertv-last-album', LAST_MS = 15 * 60000;
+  const lastAlbum = () => { try { const l = JSON.parse(localStorage.getItem(LAST_KEY) || 'null'); return l && Date.now() - l.at < LAST_MS ? l.id : null; } catch { return null; } };
+  const keepAlbum = (id) => { try { localStorage.setItem(LAST_KEY, JSON.stringify({ id, at: Date.now() })); } catch {} };
   // Lägg till i album…: Nytt album first, then one's own albums and the
-  // partner's (their name after), Tillbaka last (or B).
+  // partner's (their name after), Tillbaka last (or B); the last one chosen
+  // marked, if lately.
   async function pickAlbum() {
     const other = (al) => !ctx.album || al.id !== ctx.album.id;     // not the album it is shown from
     const [mine, theirs, partner] = await Promise.all([I.albums().catch(() => []), I.partner.albums().catch(() => []),
@@ -247,7 +254,8 @@ window.PioneerTV = window.PioneerTV || {};
       ...theirs.filter(other).map((al) => ({ key: 'album_add', icon: 'stack', label: partner ? `${al.name} · ${partner.name}` : al.name, album: al })),
       { key: 'back', icon: 'back', label: 'Tillbaka' },
     ];
-    choice = 0;
+    const last = lastAlbum();
+    choice = Math.max(0, picking.findIndex((row) => row.album && row.album.id === last));
     redraw();
   }
   function unpick() { picking = null; choice = 0; redraw(); }
@@ -334,12 +342,12 @@ window.PioneerTV = window.PioneerTV || {};
       const name = await V.askText('Det nya albumets namn');
       if (!name) return;
       r = await I.change('album_new', { name, ids: [a.id] });
-      if (r.ok) { M.hud.toast(`Lagd i det nya albumet ”${name}”`, 'check'); changed = true; unpick(); }
+      if (r.ok) { M.hud.toast(`Lagd i det nya albumet ”${name}”`, 'check'); changed = true; if (r.id) keepAlbum(r.id); unpick(); }
       return;
     }
     if (key === 'album_add') {
       r = await I.change('album_add', { album: row.album.id, ids: [a.id] });
-      if (r.ok) { M.hud.toast(`Lagd i ”${row.album.name}”`, 'check'); changed = true; unpick(); }
+      if (r.ok) { M.hud.toast(`Lagd i ”${row.album.name}”`, 'check'); changed = true; keepAlbum(row.album.id); unpick(); }
       return;
     }
     const body = key === 'favorite' ? { id: a.id, on: !a.favorite }
@@ -531,6 +539,7 @@ window.PioneerTV = window.PioneerTV || {};
   // The keyboard takes the pad while open; it comes back here.
   M.bridge.on('keyboard:close', () => { if (viewer.isOpen() && !M.nav.captured) M.nav.captured = viewer; });
 
+  viewer.when = when;                // the review's (review.js) too
   M.players = M.players || {};
   M.players.photo = viewer;
 })(window.PioneerTV);

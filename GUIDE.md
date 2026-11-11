@@ -549,6 +549,18 @@ personer, where Visa personen brings them back); the trash has Återställ allt 
 for good). After a change the albums and the people are asked anew
 (`forget`).
 
+Granska (an album's or a month's choice, Home) goes through the pictures
+from the one marked on (`players/review.js`), as a stack of cards on ink,
+to sort them fast: right or A, fine (stamped Bra, it flies off to the
+right); X, to Immich's trash (Raderas, to the left); Y, Ej foto, to the
+Google Drive's folder in the background (Till filer, up); left, back to
+the one before, its stamp on it (fine on it again restores it from the
+trash or calls the move off); B, done, the grid drawn anew if something
+changed. Each card leans its way stamped for a moment, then flies, and the
+next comes forward from the stack (transforms only); after the last, how
+many were looked at, put in the trash and moved. Y is the review's there,
+not Sök (`noKeyboard`, its own `keyboard` listener).
+
 A picture opens the viewer (`players/photo.js`): one over the whole
 screen on ink, Immich's preview (about the screen's size), the next one
 fetched beforehand. Left and right go on (when and where it was taken says
@@ -558,7 +570,8 @@ or a partner's, from `users/me` and `partners`), Kamera and Text, those
 Immich has; under them, a clip's Spela first (X), then Favorit (on or off),
 Lägg till i album… (the albums in the panel instead, Nytt album… first, one's
 own then the partner's with their name, not the one it is shown from,
-Tillbaka last or B), in an album
+Tillbaka last or B; the one chosen last marked first if it was a quarter
+of an hour ago or less, kept in the browser), in an album
 Ta bort ur albumet and Använd som albumomslag, Arkivera (or in the
 archive, Ta bort ur arkivet), Ej foto, flytta till
 filer (the original kept in Google Drive's folder Ej foto first, `drive.py`

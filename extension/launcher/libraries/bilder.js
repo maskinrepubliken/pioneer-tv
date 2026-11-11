@@ -35,13 +35,20 @@ window.PioneerTV = window.PioneerTV || {};
     key: `asset:${a.id}`, title: '', picture: I.picture(a.id), video: a.video ? a.seconds || true : false,
     run: () => photo.open(assets, i, { ctx }),
   }));
-  function grid(title, assets, { empty = 'Inga bilder här.', ctx = {}, actions = [], slideshow = true } = {}) {
+  // Granska (review.js): from the picture marked on the grid on, or the first.
+  function reviewFrom(assets) {
+    const k = M.nav.current && M.nav.current.closest('[data-key^="asset:"]');
+    const i = k ? assets.findIndex((a) => `asset:${a.id}` === k.dataset.key) : -1;
+    M.players.review.open(assets, Math.max(0, i));
+  }
+  function grid(title, assets, { empty = 'Inga bilder här.', ctx = {}, actions = [], slideshow = true, review = false } = {}) {
     return {
       kind: 'grid', title, look: 'photos', columns: 6, items: pictures(assets, ctx), filter: false,
       count: () => many(assets.length), empty,
       legend: [['arrows', 'välj'], ['A', 'visa']],
       actions: [
         ...(slideshow && assets.length ? [{ label: 'Bildspel', icon: 'play', primary: true, key: 'slideshow', run: () => photo.open(assets, 0, { slideshow: true, ctx }) }] : []),
+        ...(review && assets.length ? [{ label: 'Granska', icon: 'check', key: 'review', run: () => reviewFrom(assets) }] : []),
         ...actions,
       ],
     };
@@ -107,7 +114,7 @@ window.PioneerTV = window.PioneerTV || {};
     if (parts[0] === 'partner') return theirs(parts.slice(1), PARTNER);
     const [what, arg] = parts;
     if (what === 'timeline') return timeline();
-    if (what === 'month' && arg) return grid(monthName(arg), await I.month(arg));
+    if (what === 'month' && arg) return grid(monthName(arg), await I.month(arg), { review: true });
     if (['albums', 'album', 'people', 'person', 'favorites', 'archive', 'trash', 'hidden'].includes(what)) return theirs(parts, OWN);
     if (what === 'more') return more();
     if (what === 'recent') return grid('Nyligen tillagda', await I.recent(), { empty: 'Inget nytt de senaste 30 dagarna.' });
@@ -174,7 +181,7 @@ window.PioneerTV = window.PioneerTV || {};
       const a = await src.album(arg);
       return grid(a.name, a.assets, {
         empty: 'Inga bilder i albumet än. Lägg till dem från bildvisaren: A på en bild.',
-        ctx: { album: { id: arg, name: a.name } },
+        ctx: { album: { id: arg, name: a.name } }, review: true,
         actions: [
           { label: 'Byt namn', icon: 'pencil', key: 'album-name', run: naming('Albumets namn', a.name, (name) => I.change('album_name', { album: arg, name }), 'Albumet har fått nytt namn') },
           { label: 'Ta bort album', icon: 'trash', key: 'album-delete', sure: true, run: async () => {
