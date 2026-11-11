@@ -10,8 +10,8 @@ the bridge in each client drops what is not for it. While the overlay's
 menu is open it has Y and B too; the rest of the time Y types into the
 page. Opening the menu pauses what plays (video and audio in the page);
 closing it carries on. L2 and R2 (seek) are the overlay's too while a
-film plays in mpv or a site's page has a video: it spools what plays,
-whatever else is open.
+film or the music plays (mpv) or a site's page has a video: it spools what
+plays, whatever else is open.
 """
 from __future__ import annotations
 
@@ -58,7 +58,7 @@ class Router:
     def __init__(self) -> None:
         self.overlay = None          # the overlay's WebSocket, when connected
         self.overlay_open = False    # its menu is showing
-        self.film = lambda: False    # a film plays in mpv (main.py sets it)
+        self.playing = lambda: False   # a film or the music plays in mpv (main.py sets it)
         self.videos: set[str] = set()   # the page's frames that have a video (webvideo.js)
 
     @property
@@ -82,7 +82,7 @@ class Router:
     def target(self, name: str) -> str:
         if name in OVERLAY or self.overlay_open:
             return "overlay"
-        if name == "seek" and self.overlay is not None and (self.videos or self.film()):
+        if name == "seek" and self.overlay is not None and (self.videos or self.playing()):
             return "overlay"
         return "page"
 

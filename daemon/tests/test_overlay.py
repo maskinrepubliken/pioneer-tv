@@ -34,7 +34,7 @@ class Routing(unittest.TestCase):
     def test_l2_and_r2_spool_any_video(self):
         r = Router()
         r.connected(object())
-        self.assertEqual(r.target("seek"), "page")          # Spelas nu, a picture's clip
+        self.assertEqual(r.target("seek"), "page")          # a picture's clip
         r.handle({"type": "webvideo", "frame": "f1", "present": True})
         self.assertEqual(r.target("seek"), "overlay")       # a site's video, filling the screen or not
         r.handle({"type": "webvideo", "frame": "f1", "present": False})
@@ -42,7 +42,7 @@ class Routing(unittest.TestCase):
         r.handle({"type": "webvideo", "frame": "f2", "present": True})
         r.loaded()                                          # another page
         self.assertEqual(r.target("seek"), "page")
-        r.film = lambda: True                               # a film in mpv
+        r.playing = lambda: True                            # a film or the music in mpv
         self.assertEqual(r.target("seek"), "overlay")
         r.disconnected(r.overlay)
         self.assertEqual(r.target("seek"), "page")          # no overlay to draw it

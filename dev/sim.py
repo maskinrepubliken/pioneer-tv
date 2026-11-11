@@ -156,6 +156,7 @@ class Daemon:
         self.held_film = False
         self.game: dict | None = None
         self.game_state = "idle"
+        self.router.playing = lambda: bool(self.film) or self.audio.state != "idle"
         threading.Thread(target=self._tick, daemon=True).start()
 
     # ------------------------------------------------------------ talking
@@ -226,6 +227,7 @@ class Daemon:
                     self.film_media(e["action"])
         elif t == "loaded":
             self.page = data.get("url") or ""
+            self.router.loaded()
             self.event("loaded", url=self.page, target="overlay")
         elif t == "activity" and data.get("playing"):
             self.audio_stop()

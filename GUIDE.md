@@ -42,7 +42,7 @@ what was learned on the way.
 | X / Square | The filled button, wherever there is one: on the box's pages (Spela, Blanda allt, Försök igen, the settings page's Sök efter enheter), the overlay's menus (Spara läge, the media panel's play) and the on-screen keyboard (OK); unmarked (one learns it), the browse page's legend says it. Elsewhere play, pause (Space) or the page's own use. Hold: undo (Ctrl+Z), e.g. what X took off a list |
 | Y / Triangle | On-screen keyboard (on a pad without Home, hold: quick menu) |
 | L1, R1 | TV volume down, up (CEC, repeats while held). Both held together: mute, once (`VolumeChord` in actions.py; either alone waits 90 ms for the other, so a chord moves the volume no step first) |
-| L2, R2 | Over any video (a site's, a film, a clip) and on the media panel and Spelas nu, wherever the focus is: seek back, on, as fast as they are pressed (the daemon sends how hard, `seek`; the mark on the timeline, or on the small card at the top right with no menu open, glides, and what plays goes where they are let go; a short light touch is ten seconds). Nothing elsewhere. The volume left them for L1/R1, as it hung there and crept up or down |
+| L2, R2 | Over any video (a site's, a film, a clip), the music and on the media panel, wherever the focus is: seek back, on, as fast as they are pressed (the daemon sends how hard, `seek`; the mark on the timeline, or on the small card at the top right with no menu open, glides, and what plays goes where they are let go; a short light touch is ten seconds). Nothing elsewhere. The volume left them for L1/R1, as it hung there and crept up or down |
 | Right stick | Mouse pointer; click on the stick to left-click. What it (or a mouse) is over is drawn as selected and takes the focus, so the d-pad goes on from there |
 | Start | Nothing on the box; in a game, the console's Start |
 | Select | Nothing on the box; in a game, the console's Select |
@@ -392,16 +392,20 @@ film plays while its window is: B leaves it and the music stops, and so it
 does when another page loads (the daemon hears `loaded`; the page also
 says it as it goes) or something else plays (a film, a game, a site's
 video); the TV is not turned off under it, as the sound comes out of the
-TV. Home over it opens its panel in the overlay ([the media
-panel](#the-media-panel): Blanda, Upprepa, Sluta spela, Mer…), as over a
-film. "Spelas nu" covers the screen, laid
-out as the media panel: the cover; what plays, its timeline (L2 and R2
-glide a mark along it, what plays goes where they are let go: the daemon
-sends `seek` to the page while no menu of the overlay is open) and round
-buttons (Förra, −15 s, play or pause, +15 s, Nästa); Blanda and Upprepa;
-at the right every song after it (up to 100), numbered, A on one plays it
-(`jump`). The d-pad goes between them, A presses, X plays or pauses
-wherever the mark is, B goes back to browsing while the music plays on.
+TV. Everything done with it is the overlay's: A or Home over it opens its
+panel ([the media panel](#the-media-panel): the transport, Förra and
+Nästa, Blanda, Upprepa, Sluta spela, Mer…), as over a film; X plays or
+pauses, L2 and R2 spool (the daemon sends `seek` to the overlay while the
+music plays, the small card at the top right shows where), B goes back to
+browsing and the music stops. "Spelas nu" itself is only to look at, in
+ink: the cover; what plays, by whom, from which album, a thin line of how
+far; whether Blanda or Upprepa is on; at the right every song after it
+(up to 100 said, 30 shown, fading out at the foot). Behind them the
+cover's own colours wash over the screen, turning slowly while it plays
+and resting when it pauses, as do four little bars by "Spelas nu": the
+cover drawn in six by six on two canvases the browser stretches (as good
+as a blur, and free), turned by the compositor, so nothing is drawn again
+while it moves; a new cover fades the wash out and in.
 While browsing, X on an album, a playlist or an artist plays it at once;
 elsewhere X is the filled button's (Blanda allt, Spela). Blanda shuffles the songs after the one playing (and puts them
 back in their order), and stays on for the next queue; Upprepa goes off,
@@ -644,7 +648,7 @@ The focus starts on play. The menu (`hud.js`) has the parts for it: a
 `head` in the title's place, an item that draws itself (`render`), and items
 with the same `row` side by side, which the d-pad goes between by where
 they are. A film's and a site's video's panel comes with Home (and A, B or
-X on a film); the music's with Home over Spelas nu. The
+X on a film); the music's with Home or A over Spelas nu. The
 open panel follows what plays in place, part by part; where a seek was put
 stands until the player has got there, and a time that plays runs on
 between its words. mpv seeks over `POST /api/video/seek` and `/to`, the

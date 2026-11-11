@@ -50,14 +50,20 @@ window.PioneerTV = window.PioneerTV || {};
   // everything here.
   const away = () => { if (M.keyboard.isOpen()) M.keyboard.close(); menu.close(); };
   b.on('menu', (e) => {
-    // B over a site's video filling the screen (webvideo.js): its panel.
-    if (e && e.panel === 'media') { if (!menu.isOpen() && webVideo()) webPanel(); return; }
+    // A or B over a site's video filling the screen (webvideo.js), A over
+    // Spelas nu: its panel.
+    if (e && e.panel === 'media') {
+      if (menu.isOpen()) return;
+      if (webVideo()) webPanel();
+      else if (musicOn()) menu.open(audioSpec());
+      return;
+    }
     if (e && e.panel) return M.mainMenu.panel(e.panel);
     if (e && e.open) return menu.isOpen() || menu.open(M.mainMenu.spec());
     // Over a site's video or the music's Spelas nu: its panel (below), the
     // quick menu one step in (Mer…).
     if (!menu.isOpen() && webVideo()) return webPanel();
-    if (!menu.isOpen() && audioState && audioState.state !== 'idle' && audioState.item) return menu.open(audioSpec());
+    if (!menu.isOpen() && musicOn()) return menu.open(audioSpec());
     menu.toggle();
   });
   b.on('home', () => { if (!held) away(); });
@@ -498,8 +504,8 @@ window.PioneerTV = window.PioneerTV || {};
     media.target = Math.max(0, Math.min((lengthOf(src) || 1) - 1, media.target + scrubbing.dir * scrubSpeed(src, scrubbing.amount) * dt));
     refresh();
   }, 50);
-  // L2 and R2 with no menu open, over a film in mpv or a site's video (the
-  // daemon sends them here then): the same glide, on the small card at the
+  // L2 and R2 with no menu open, over a film in mpv, a site's video or the
+  // music (the daemon sends them here then): the same glide, on the small card at the
   // top right, and the seek where they are let go.
   let loose = null;              // { dir, amount, at, src, go, from, target, released }
   async function looseSource() {
@@ -508,7 +514,11 @@ window.PioneerTV = window.PioneerTV || {};
       return { src: { time: film.position || 0, duration: film.duration || 0, paused: !!film.paused }, go: (t) => video('/to', { at: t }) };
     }
     const v = webVideo();
-    if (!v) return null;
+    if (!v) {
+      const s = await fetch('/api/audio').then((r) => r.json()).catch(() => ({}));
+      if (!s.state || s.state === 'idle') return null;
+      return { src: { time: s.time || 0, duration: s.duration || 0, paused: s.state !== 'playing' }, go: (t) => sound('to', { at: t }) };
+    }
     const time = (v.time || 0) + (v.paused ? 0 : (Date.now() - v.at) / 1000);
     return { src: { time, duration: v.duration, live: v.live, end: v.end, paused: v.paused }, go: (t) => tell(v.frame, 'to', t) };
   }
@@ -700,6 +710,7 @@ window.PioneerTV = window.PioneerTV || {};
     if (was !== audioSrc.count && mediaOpen()) refresh();
   });
   fetch('/api/audio').then((r) => r.json()).then((s) => { if (s && s.state) audioState = s; }).catch(() => {});
+  const musicOn = () => !!(audioState && audioState.state !== 'idle' && audioState.item);
   function audioSpec() {
     const src = audioSrc = {
       kind: 'audio', ...fromAudio(audioState),
