@@ -280,14 +280,11 @@ window.PioneerTV = window.PioneerTV || {};
   // Few, and every one looked at: a picture is hung only on a wall along
   // the way the walker is going (every few cells, as the way is planned,
   // well before it can be seen), one to a wall, and the walker stops at
-  // each and looks at it, once. A size is a share of the wall's height; its
-  // frame's width the same.
-  const SIZES = {
-    medium: { h: 0.42, frame: 0.03 },
-    large: { h: 0.56, frame: 0.045 },
-    epic: { h: 0.78, frame: 0.065 },
-    sign: { h: 0.3, frame: 0.02 },
-  };
+  // each and looks at it, once. Its frame is liberty-quests' carved wood
+  // with a gem at each corner (maze/carved-frame.png, its spelläge's
+  // window), drawn into the picture. A size is a share of the wall's
+  // height, the frame's included.
+  const SIZES = { medium: { h: 0.46 }, large: { h: 0.6 }, epic: { h: 0.8 }, sign: { h: 0.32 } };
   const LOOK_S = 7;                      // seconds a picture is looked at
   const EVERY = [3, 7];                  // cells between pictures, at least and at most
   const PHOTO_CALLS = 2;                 // Immich's random pictures, 800 a call
@@ -308,20 +305,7 @@ window.PioneerTV = window.PioneerTV || {};
     'Det finns inget slut, bara fler rum.',
     'Ibland är vägen tillbaka en ny väg.',
   ];
-  // Frames of many kinds: dark wood, black, silver, white (a wide mat),
-  // gilt, and gilt with a dark rim within (the great ones'). [body, edge]
-  // as ABGR.
-  const FRAMES = {
-    wood: { body: 0xff22344f, edge: 0xff142233 },
-    black: { body: 0xff1a1c1e, edge: 0xff3c4246 },
-    silver: { body: 0xffc4c0be, edge: 0xff767066 },
-    white: { body: 0xffdee8ec, edge: 0xff8a9296, wide: 1.8 },
-    gold: { body: 0xff3aa4d8, edge: 0xff1d6a9a },
-    ornate: { body: 0xff3aa4d8, edge: 0xff123a5a, inner: true, wide: 1.3 },
-  };
-  const FRAMED = {
-    medium: ['wood', 'black', 'silver', 'gold', 'white'], large: ['gold', 'silver', 'black', 'ornate'], epic: ['gold', 'ornate'], sign: ['black'],
-  };
+
 
   // ------------------------------------------------------------ textures
   // Each texture at SHADES distances, as rows of 32-bit pixels: the
@@ -396,7 +380,8 @@ window.PioneerTV = window.PioneerTV || {};
       if (g.measureText(`${line} ${w}`).width > PIC - 10 && line) { g.fillText(line, 5, y); line = w; y += 13; } else line = line ? `${line} ${w}` : w;
     }
     g.fillText(line, 5, y);
-    return { data: new Uint32Array(g.getImageData(0, 0, PIC, PIC).data.buffer.slice(0)), ratio: 1.3 };
+    g.strokeStyle = '#1a1a1a'; g.lineWidth = 3; g.strokeRect(1.5, 1.5, PIC - 3, PIC - 3);
+    return { data: new Uint32Array(g.getImageData(0, 0, PIC, PIC).data.buffer.slice(0)), w: PIC, h: PIC, ratio: 1.3 };
   }
 
   M.maze = function (canvas, hud) {
@@ -417,21 +402,35 @@ window.PioneerTV = window.PioneerTV || {};
     // Immich (Bilder's library, a fresh handful each time it starts), each
     // drawn small (PIC by PIC, stretched; its own shape kept as the
     // frame's), once it has loaded; a sign at once.
-    const wallPics = new Map();          // url -> { data, ratio } | null while loading
+    const wallPics = new Map();          // url -> { data, w, h, ratio } | null while loading
+    // The carved frame, a 9-slice of 10 at its own scale (sharp, as
+    // liberty-quests draws it), round a picture PIC high in its own shape.
+    const carved = new Image();
+    carved.src = new URL('maze/carved-frame.png', document.baseURI).href;
+    const FR = 10;
+    function framed(im) {
+      const iw = Math.round(PIC * Math.max(0.55, Math.min(1.6, im.naturalWidth / im.naturalHeight)));
+      const w = iw + 2 * FR, h = PIC + 2 * FR, m = carved.width - FR;
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      const g = c.getContext('2d', { willReadFrequently: true });
+      g.drawImage(im, FR, FR, iw, PIC);
+      g.imageSmoothingEnabled = false;
+      const part = (sx, sy, sw, sh, dx, dy, dw, dh) => g.drawImage(carved, sx, sy, sw, sh, dx, dy, dw, dh);
+      part(0, 0, FR, FR, 0, 0, FR, FR); part(m, 0, FR, FR, w - FR, 0, FR, FR);
+      part(0, m, FR, FR, 0, h - FR, FR, FR); part(m, m, FR, FR, w - FR, h - FR, FR, FR);
+      part(FR, 0, m - FR, FR, FR, 0, w - 2 * FR, FR); part(FR, m, m - FR, FR, FR, h - FR, w - 2 * FR, FR);
+      part(0, FR, FR, m - FR, 0, FR, FR, h - 2 * FR); part(m, FR, FR, m - FR, w - FR, FR, FR, h - 2 * FR);
+      return { data: new Uint32Array(g.getImageData(0, 0, w, h).data.buffer.slice(0)), w, h, ratio: w / h };
+    }
     function wallPicture(f) {
       if (wallPics.has(f.url)) return wallPics.get(f.url);
       if (f.sign) { const s = signPicture(f.sign); wallPics.set(f.url, s); return s; }
+      if (!carved.complete || !carved.width) return null;   // the frame first
       wallPics.set(f.url, null);
       const im = new Image();
       im.onload = () => {
-        try {
-          const c = document.createElement('canvas');
-          c.width = PIC; c.height = PIC;
-          const g = c.getContext('2d', { willReadFrequently: true });
-          g.drawImage(im, 0, 0, PIC, PIC);
-          wallPics.set(f.url, { data: new Uint32Array(g.getImageData(0, 0, PIC, PIC).data.buffer.slice(0)),
-            ratio: Math.max(0.55, Math.min(1.6, im.naturalWidth / im.naturalHeight)) });
-        } catch { /* a picture that may not be read: the wall stays bare */ }
+        try { wallPics.set(f.url, framed(im)); } catch { /* a picture that may not be read: the wall stays bare */ }
       };
       im.src = f.url;
       if (wallPics.size > 500) wallPics.delete(wallPics.keys().next().value);
@@ -475,8 +474,7 @@ window.PioneerTV = window.PioneerTV || {};
         size = room ? (room.kind === 'gallery' ? 'epic' : 'large') : Math.random() < 0.6 ? 'medium' : 'large';
       } else return false;
       const face = dx === 1 ? 1 : dx === -1 ? 0 : dy === 1 ? 3 : 2;
-      const kinds = FRAMED[size];
-      hung.set(faceKey(ci * 2 + 1 + dx, cj * 2 + 1 + dy, face), { item, size, style: FRAMES[kinds[Math.floor(Math.random() * kinds.length)]] });
+      hung.set(faceKey(ci * 2 + 1 + dx, cj * 2 + 1 + dy, face), { item, size });
       return true;
     }
     function painting(mx, my, face) {
@@ -485,7 +483,7 @@ window.PioneerTV = window.PioneerTV || {};
       if (!pic) return null;
       const size = SIZES[h.size], vc = size.h > 0.7 ? 0.5 : 0.44;
       const w = Math.min(0.9, size.h * pic.ratio);
-      return { pic, size, style: h.style, frame: size.frame * (h.style.wide || 1), u0: 0.5 - w / 2, u1: 0.5 + w / 2, v0: vc - size.h / 2, v1: vc + size.h / 2 };
+      return { pic, u0: 0.5 - w / 2, u1: 0.5 + w / 2, v0: vc - size.h / 2, v1: vc + size.h / 2 };
     }
 
     // ---------------------------------------------------------- floating
@@ -786,32 +784,15 @@ window.PioneerTV = window.PioneerTV || {};
         const face = side === 0 ? (stepX > 0 ? 1 : 0) : (stepY > 0 ? 3 : 2);
         const one = !slant && which !== T.door && which !== T.hedge && dist < 9 ? painting(mx, my, face) : null;
         const uf = (u + 0.5) / TEX;
-        const here = one && uf >= one.u0 && uf <= one.u1 ? [one] : null;
-        if (here && here.length) {
-          // Each picture this column crosses: where across it, and its frame's sides.
-          for (const a of here) {
-            const fw = a.frame;
-            a.inX = uf > a.u0 + fw && uf < a.u1 - fw;
-            a.pu = Math.min(PIC - 1, Math.floor(((uf - a.u0 - fw) / (a.u1 - a.u0 - 2 * fw)) * PIC));
-            a.edgeX = uf < a.u0 + fw * 0.35 || uf > a.u1 - fw * 0.35
-              || (a.style.inner && ((uf > a.u0 + fw * 0.7 && uf < a.u0 + fw) || (uf < a.u1 - fw * 0.7 && uf > a.u1 - fw)));
-          }
+        if (one && uf >= one.u0 && uf <= one.u1) {
+          // The picture (its frame drawn into it) where this column crosses it.
+          const { pic } = one;
+          const pu = Math.min(pic.w - 1, Math.floor(((uf - one.u0) / (one.u1 - one.u0)) * pic.w));
           for (let y = top; y < bottom; y++) {
             const vf = v / TEX;
-            let p = 0;
-            for (const a of here) {
-              if (vf < a.v0 || vf > a.v1) continue;
-              const fh = a.frame;
-              if (a.inX && vf > a.v0 + fh && vf < a.v1 - fh) {
-                p = lit(a.pic.data[Math.min(PIC - 1, Math.floor(((vf - a.v0 - fh) / (a.v1 - a.v0 - 2 * fh)) * PIC)) * PIC + a.pu], shade, pale);
-              } else {
-                const edge = a.edgeX || vf < a.v0 + fh * 0.35 || vf > a.v1 - fh * 0.35
-                  || (a.style.inner && ((vf > a.v0 + fh * 0.7 && vf < a.v0 + fh) || (vf < a.v1 - fh * 0.7 && vf > a.v1 - fh)));
-                p = lit(edge ? a.style.edge : a.style.body, shade, pale);
-              }
-              break;
-            }
-            px[y * W + x] = p || levels[(Math.floor(v) & (TEX - 1)) * TEX + u];
+            const p = vf < one.v0 || vf > one.v1 ? 0
+              : pic.data[Math.min(pic.h - 1, Math.floor(((vf - one.v0) / (one.v1 - one.v0)) * pic.h)) * pic.w + pu];
+            px[y * W + x] = p >>> 24 ? lit(p, shade, pale) : levels[(Math.floor(v) & (TEX - 1)) * TEX + u];
             v += step;
           }
         } else {

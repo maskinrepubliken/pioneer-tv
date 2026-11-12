@@ -1055,14 +1055,15 @@ tried again every three seconds.
     walker is going, every three to seven cells, as the way is planned some
     ten cells ahead (before it can be seen); in a room larger, in the
     gallery great, none in the garden or the courtyard; in the pale parts
-    now and then a sign instead. Frames of many kinds: dark wood, black,
-    silver, white with a wide mat, gilt, and gilt with a dark rim within
-    for the great ones; drawn 64 px square, kept in its own shape by its
-    frame. The maze starts somewhere new each time (a cell far off in a
+    now and then a sign instead. Each in liberty-quests' spelläge frame
+    (`overlay/maze/carved-frame.png`, its carved wooden window with a gem
+    at each corner, drawn into the picture as a 9-slice at its own scale,
+    the picture 64 px high in its own shape). The maze starts somewhere new each time (a cell far off in a
     world of its own, `wander()`). At each picture the walker stops, turns
     to it and looks a while (seven seconds): it comes up sharp over the
     maze (saver.js, `hud.look`: a cover's own picture, a photo's Immich
-    preview), in a gilded frame, and under it what it is: a photo's date
+    preview), in the same carved frame with liberty-quests' gilt edging
+    within (`maze/gilt.png`; both four times their scale, sharp), and under it what it is: a photo's date
     and place, a game's, a film's or an album's name and, when it was
     played or seen lately (`covers.py` finds), "spelat nyss" or "sett
     nyss"; or a sign's line;

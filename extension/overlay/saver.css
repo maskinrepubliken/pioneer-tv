@@ -43,13 +43,17 @@
 }
 .pioneertv-saver .maze-look.shown { opacity: 1; }
 .pioneertv-saver .maze-look figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 1.4vh; min-width: 0; }
+/* liberty-quests' spelläge frames (maze/README-frames.txt): its carved
+   wooden window with a gem at each corner, the gilt edging within, both
+   at four times their own scale and kept sharp. */
 .pioneertv-saver .maze-frame {
-  padding: 1.1vw; border-radius: 0.3vw; box-shadow: 0 1.2vw 3vw rgba(0, 0, 0, 0.6);
-  background: linear-gradient(145deg, #e3b54d, #9a6a1d 55%, #d8a43a); border: 0.25vw solid #5a3b12;
+  border: 40px solid transparent; border-image: url('maze/carved-frame.png') 10 round;
+  image-rendering: pixelated; box-shadow: 0 1.2vw 3vw rgba(0, 0, 0, 0.6); background: #2a1a0e;
 }
 .pioneertv-saver .maze-frame img {
   display: block; max-height: calc(62vh / max(1, var(--n) - 1.5)); max-width: calc(78vw / var(--n));
-  object-fit: contain; box-shadow: inset 0 0 0 0.15vw rgba(0, 0, 0, 0.5);
+  object-fit: contain; image-rendering: auto;
+  border: 24px solid transparent; border-image: url('maze/gilt.png') 6 stretch;
 }
 .pioneertv-saver .maze-look figcaption {
   display: flex; flex-direction: column; align-items: center; gap: 0.4vh; max-width: calc(78vw / var(--n));
