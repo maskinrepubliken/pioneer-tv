@@ -1020,7 +1020,8 @@ tried again every three seconds.
     the rooms'; a tile's `style`), so a room is all its own style and the
     way outside it all the way's, and a style changes only at a door: the
     ways between chunks and into rooms are framed in dark wood on both
-    sides (`FRAME`). The
+    sides (`FRAME`), the frame seen only from within the doorway (a tile's
+    `door`): from a way past it, it is a wall like the rest. The
     maze comes in chunks of 8x8 cells, each a perfect maze of its own (a
     seeded backtracker, a few walls knocked through) with two doors to the
     chunks west and north of it, so the whole is one maze, made as it is

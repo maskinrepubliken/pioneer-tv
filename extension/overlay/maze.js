@@ -96,7 +96,8 @@ window.PioneerTV = window.PioneerTV || {};
   // from (a room's inside, the way outside it), so each space is one style.
   const STYLES = [...THEMES, ...ROOMS.map((k) => ({ wall: ROOM_WALL[k], floor: ROOM_FLOOR[k], ceil: ROOM_CEIL[k], light: ROOM_LIGHT[k], pale: PALE_ROOMS.has(k) }))];
   const roomStyle = (kind) => THEMES.length + ROOMS.indexOf(kind);
-  // A door's frame, on both sides of every way from one style to another.
+  // A door's frame, on both sides of every way from one style to another,
+  // seen only from within the doorway (its jambs).
   const FRAME = T.door;
   // The pale textures fade to white with distance (the stones to black).
   const paleTex = (t) => t >= STONES;
@@ -141,7 +142,7 @@ window.PioneerTV = window.PioneerTV || {};
     return c;
   }
   function make(cx, cy) {
-    const wall = new Uint8Array(SIDE * SIDE).fill(1), diag = new Uint8Array(SIDE * SIDE);
+    const wall = new Uint8Array(SIDE * SIDE).fill(1), diag = new Uint8Array(SIDE * SIDE), door = new Uint8Array(SIDE * SIDE);
     const style = new Uint8Array(SIDE * SIDE).fill(Math.floor(wh(cx, cy, 3) * THEMES.length));
     const rand = rng(Math.floor(wh(cx, cy, 2) * 4294967295));
     const frame = (x, y) => { if (wall[y * SIDE + x]) wall[y * SIDE + x] = FRAME + 2; };
@@ -219,6 +220,7 @@ window.PioneerTV = window.PioneerTV || {};
       for (let ly = U; ly <= D; ly++) {
         for (let lx = L; lx <= R; lx++) {
           if ((lx !== L && lx !== R && ly !== U && ly !== D) || wall[ly * SIDE + lx]) continue;
+          door[ly * SIDE + lx] = 1;
           if (lx === L || lx === R) { frame(lx, ly - 1); frame(lx, ly + 1); } else { frame(lx - 1, ly); frame(lx + 1, ly); }
         }
       }
@@ -228,7 +230,7 @@ window.PioneerTV = window.PioneerTV || {};
     for (const side of [0, 1]) {
       for (let d = 0; d < 2; d++) {
         const at = Math.floor(wh(cx, cy, 10 + side * 2 + d) * CHUNK) * 2 + 1;
-        if (side === 0) { wall[at * SIDE] = 0; frame(0, at - 1); frame(0, at + 1); } else { wall[at] = 0; frame(at - 1, 0); frame(at + 1, 0); }
+        if (side === 0) { wall[at * SIDE] = 0; door[at * SIDE] = 1; frame(0, at - 1); frame(0, at + 1); } else { wall[at] = 0; door[at] = 1; frame(at - 1, 0); frame(at + 1, 0); }
       }
     }
     // What was kept through a change of world, as it was.
@@ -242,7 +244,7 @@ window.PioneerTV = window.PioneerTV || {};
       cut.delete((uncut[1] & 7) * CHUNK + (uncut[0] & 7));
       diag[((uncut[1] * 2 + 1) & 15) * SIDE + ((uncut[0] * 2 + 1) & 15)] = 0;
     }
-    return { wall, diag, style, room, cut };
+    return { wall, diag, style, door, room, cut };
   }
   // The chunks far behind go.
   let here = [0, 0];
@@ -258,6 +260,7 @@ window.PioneerTV = window.PioneerTV || {};
   const tile = (tx, ty) => chunk(tx >> 4, ty >> 4).wall[(ty & 15) * SIDE + (tx & 15)];
   const diagAt = (tx, ty) => chunk(tx >> 4, ty >> 4).diag[(ty & 15) * SIDE + (tx & 15)];
   const styleAt = (tx, ty) => chunk(tx >> 4, ty >> 4).style[(ty & 15) * SIDE + (tx & 15)];
+  const doorAt = (tx, ty) => chunk(tx >> 4, ty >> 4).door[(ty & 15) * SIDE + (tx & 15)];
   const floorAt = (tx, ty) => STYLES[styleAt(tx, ty)].floor;
   const ceilAt = (tx, ty) => STYLES[styleAt(tx, ty)].ceil;
   // Cells are the odd tiles; two cells meet where the tile between is open
@@ -749,7 +752,10 @@ window.PioneerTV = window.PioneerTV || {};
           hit = tile(mx, my);
           if (hit) {
             // A plain wall in the style of the space it is seen from.
-            which = hit === 1 ? STYLES[side === 0 ? styleAt(mx - stepX, my) : styleAt(mx, my - stepY)].wall : hit - 2;
+            // A door's frame only seen from within its doorway: from anywhere
+            // else it is a wall like the rest.
+            const fx = side === 0 ? mx - stepX : mx, fy = side === 0 ? my : my - stepY;
+            which = hit === 1 || (hit === FRAME + 2 && !doorAt(fx, fy)) ? STYLES[styleAt(fx, fy)].wall : hit - 2;
           } else {
             const d = diagAt(mx, my);
             if (d) {
