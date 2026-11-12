@@ -300,7 +300,7 @@ window.PioneerTV = window.PioneerTV || {};
   // height, the frame's included.
   const SIZES = { medium: { h: 0.46 }, large: { h: 0.6 }, epic: { h: 0.8 }, sign: { h: 0.32 } };
   const LOOK_S = 7;                      // seconds a picture is looked at
-  const EVERY = [3, 7];                  // cells between pictures, at least and at most
+  const EVERY = [2, 4];                  // cells between pictures, at least and at most
   const PHOTO_CALLS = 2;                 // Immich's random pictures, 800 a call
   // Antichamber's way: a line on a sign, now and then, on the pale walls.
   const SIGNS = [

@@ -1060,7 +1060,7 @@ tried again every three seconds.
     screensaver starts, through `/immich/`), else, with no Immich, the
     covers kept on the box (`/api/finds?n=600`), each hung once (the next
     of the lot). A picture is hung only on a wall of a cell on the way the
-    walker is going, every three to seven cells, as the way is planned some
+    walker is going, every two to four cells, as the way is planned some
     ten cells ahead (before it can be seen); in a room larger, in the
     gallery great, none in the garden or the courtyard; in the pale parts
     now and then a sign instead. Each in liberty-quests' spelläge frame
