@@ -1018,10 +1018,14 @@ tried again every three seconds.
     paper floor, fading to white far off instead of black. A wall is drawn
     in the style of the space it is seen from (`STYLES`: the parts' and
     the rooms'; a tile's `style`), so a room is all its own style and the
-    way outside it all the way's, and a style changes only at a door: the
-    ways between chunks and into rooms are framed in dark wood on both
-    sides (`FRAME`), the frame seen only from within the doorway (a tile's
-    `door`): from a way past it, it is a wall like the rest. The
+    way outside it all the way's, and a style changes only at a door: each
+    way between chunks and into a room has a magic portal across the middle
+    of its doorway (a tile's `door`, which way it lies), floated through.
+    The raycaster notes the first portal a ray crosses and, once the wall
+    behind is drawn, draws it over that column (`drawPortal`): what is
+    behind it wobbling up and down as through water, a shimmer of violet,
+    blue and cyan over it in three slow waves, brighter at its edges, faint
+    far off; it costs only where a portal is seen. The
     maze comes in chunks of 8x8 cells, each a perfect maze of its own (a
     seeded backtracker, a few walls knocked through) with two doors to the
     chunks west and north of it, so the whole is one maze, made as it is

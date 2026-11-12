@@ -19,7 +19,7 @@ TEX = 64
 # None for one drawn here.
 CHOSEN = [
     ("stone", "Bricks", 24), ("moss", "Bricks", 3), ("dirt", "Bricks", 21), ("sand", "Bricks", 15),
-    ("flags", "Tile", 10), ("blocks", "Bricks", 7), ("door", "Wood", 14), ("slate", "Bricks", 23),
+    ("flags", "Tile", 10), ("blocks", "Bricks", 7), ("wood", "Wood", 14), ("slate", "Bricks", 23),
     ("brick", "Bricks", 6), ("tiles", "Tile", 6), ("planks", "Wood", 9), ("marble", "Tile", 13),
     ("grass", "Grass", 18), ("hedge", "Grass", 21), ("sky", None, None), ("beams", "Wood", 10),
     ("checker", "Tile", 19),

@@ -52,7 +52,7 @@ window.PioneerTV = window.PioneerTV || {};
   // Screaming Brain Studios' Tiny Texture Pack, CC0, made 64 px smoothly by
   // dev/maze-textures.py), then the pale ones, drawn here (paleTextures).
   const T = {
-    stone: 0, moss: 1, dirt: 2, sand: 3, flags: 4, blocks: 5, door: 6, slate: 7, brick: 8,
+    stone: 0, moss: 1, dirt: 2, sand: 3, flags: 4, blocks: 5, wood: 6, slate: 7, brick: 8,
     tiles: 9, planks: 10, marble: 11, grass: 12, hedge: 13, sky: 14, beams: 15, checker: 16,
     white: 17, paper: 18, red: 19, blue: 20, yellow: 21, black: 22, day: 23,
   };
@@ -84,7 +84,7 @@ window.PioneerTV = window.PioneerTV || {};
   // sky. Each its walls, floor, ceiling and light; some with pillars; some
   // with their corners cut at 45 degrees, now and then (CUT).
   const ROOMS = ['hall', 'garden', 'ballroom', 'treasury', 'gallery', 'crypt', 'library', 'cellar', 'red', 'white', 'courtyard'];
-  const ROOM_WALL = { garden: T.hedge, ballroom: T.sand, hall: T.stone, treasury: T.brick, gallery: T.brick, crypt: T.slate, library: T.planks, cellar: T.dirt, red: T.red, white: T.white, courtyard: T.stone };
+  const ROOM_WALL = { garden: T.hedge, ballroom: T.sand, hall: T.stone, treasury: T.brick, gallery: T.brick, crypt: T.slate, library: T.wood, cellar: T.dirt, red: T.red, white: T.white, courtyard: T.stone };
   const ROOM_FLOOR = { garden: T.grass, ballroom: T.checker, hall: T.flags, treasury: T.tiles, gallery: T.marble, crypt: T.flags, library: T.planks, cellar: T.flags, red: T.paper, white: T.paper, courtyard: T.grass };
   const ROOM_CEIL = { garden: T.sky, ballroom: T.beams, hall: T.blocks, treasury: T.blocks, gallery: T.beams, crypt: T.blocks, library: T.beams, cellar: T.beams, red: T.paper, white: T.paper, courtyard: T.day };
   const ROOM_LIGHT = { garden: 1.3, ballroom: 2.8, hall: 1.6, treasury: 2.0, gallery: 3.0, crypt: 0.9, library: 1.8, cellar: 1.0, red: 4.5, white: 5, courtyard: 4.5 };
@@ -96,9 +96,10 @@ window.PioneerTV = window.PioneerTV || {};
   // from (a room's inside, the way outside it), so each space is one style.
   const STYLES = [...THEMES, ...ROOMS.map((k) => ({ wall: ROOM_WALL[k], floor: ROOM_FLOOR[k], ceil: ROOM_CEIL[k], light: ROOM_LIGHT[k], pale: PALE_ROOMS.has(k) }))];
   const roomStyle = (kind) => THEMES.length + ROOMS.indexOf(kind);
-  // A door's frame, on both sides of every way from one style to another,
-  // seen only from within the doorway (its jambs).
-  const FRAME = T.door;
+  // Every way from one style to another (into a room, from one part to
+  // another) is a door: a portal across the middle of the doorway, drawn
+  // over what is behind it, which wobbles through it as through water in a
+  // shimmer of violet and blue; floated through.
   // The pale textures fade to white with distance (the stones to black).
   const paleTex = (t) => t >= STONES;
 
@@ -145,7 +146,6 @@ window.PioneerTV = window.PioneerTV || {};
     const wall = new Uint8Array(SIDE * SIDE).fill(1), diag = new Uint8Array(SIDE * SIDE), door = new Uint8Array(SIDE * SIDE);
     const style = new Uint8Array(SIDE * SIDE).fill(Math.floor(wh(cx, cy, 3) * THEMES.length));
     const rand = rng(Math.floor(wh(cx, cy, 2) * 4294967295));
-    const frame = (x, y) => { if (wall[y * SIDE + x]) wall[y * SIDE + x] = FRAME + 2; };
     // A perfect maze over its cells (tiles 1, 3 .. 15).
     const seen = new Uint8Array(CHUNK * CHUNK);
     const start = [Math.floor(rand() * CHUNK), Math.floor(rand() * CHUNK)];
@@ -216,21 +216,21 @@ window.PioneerTV = window.PioneerTV || {};
           }
         }
       }
-      // Each way in, a door: the ring's walls either side of it framed.
+      // Each way in, a door: its portal across it (1: a way east and west,
+      // the portal north to south; 2: the other way).
       for (let ly = U; ly <= D; ly++) {
         for (let lx = L; lx <= R; lx++) {
           if ((lx !== L && lx !== R && ly !== U && ly !== D) || wall[ly * SIDE + lx]) continue;
-          door[ly * SIDE + lx] = 1;
-          if (lx === L || lx === R) { frame(lx, ly - 1); frame(lx, ly + 1); } else { frame(lx - 1, ly); frame(lx + 1, ly); }
+          door[ly * SIDE + lx] = lx === L || lx === R ? 1 : 2;
         }
       }
     }
     // Doors to the chunk west and the chunk north (another part, another
-    // style): two each, framed.
+    // style): two each, each with its portal.
     for (const side of [0, 1]) {
       for (let d = 0; d < 2; d++) {
         const at = Math.floor(wh(cx, cy, 10 + side * 2 + d) * CHUNK) * 2 + 1;
-        if (side === 0) { wall[at * SIDE] = 0; door[at * SIDE] = 1; frame(0, at - 1); frame(0, at + 1); } else { wall[at] = 0; door[at] = 1; frame(at - 1, 0); frame(at + 1, 0); }
+        if (side === 0) { wall[at * SIDE] = 0; door[at * SIDE] = 1; } else { wall[at] = 0; door[at] = 2; }
       }
     }
     // What was kept through a change of world, as it was.
@@ -708,6 +708,38 @@ window.PioneerTV = window.PioneerTV || {};
     const torch = (t) => 1 + (0.03 * Math.sin(t * 1.3) + 0.015 * Math.sin(t * 3.1 + 1.7)) * Math.max(0, 2 - light);
     const shadeOf = (dist, seen) => Math.min(SHADES - 1, Math.max(0, Math.floor((dist * 0.95 / seen) ** 1.1 * SHADES / 6)));
 
+    // A door's portal where a ray crosses it: the middle of the doorway's
+    // tile, across the way (its distance as the walls', and where along it).
+    function portalIn(tx, ty, rx, ry) {
+      const o = doorAt(tx, ty);
+      if (!o) return null;
+      const d = o === 1 ? (tx + 0.5 - me.x) / rx : (ty + 0.5 - me.y) / ry;
+      const along = o === 1 ? me.y + d * ry - ty : me.x + d * rx - tx;
+      return d > 0.05 && along >= 0 && along <= 1 ? { d, u: along } : null;
+    }
+    // The portal over a column: what is behind it wobbling up and down as
+    // through water, a shimmer of violet, blue and cyan over it (three slow
+    // waves across and down), brighter at its edges; faint far off.
+    const behind = new Uint32Array(H);
+    function drawPortal(x, p, horizon, t) {
+      const lh = H / p.d, y0 = horizon - lh / 2;
+      const top = Math.max(0, Math.floor(y0)), bottom = Math.min(H, Math.ceil(y0 + lh));
+      for (let y = 0; y < H; y++) behind[y] = px[y * W + x];
+      const near = Math.max(0.25, 1 - p.d / 14);
+      const edgeU = Math.min(p.u, 1 - p.u);
+      for (let y = top; y < bottom; y++) {
+        const v = (y - y0) / lh;
+        const wob = Math.round(Math.sin(v * 13 + t * 2.6 + p.u * 8) * 2.2);
+        const src = behind[Math.min(H - 1, Math.max(0, y + wob))];
+        const s = (Math.sin(p.u * 7 + t * 1.6) + Math.sin(v * 9 - t * 2.1) + Math.sin((p.u + v) * 5 + t * 0.9) + 3) / 6;
+        const edge = Math.max(0, 1 - Math.min(edgeU, v, 1 - v) * 8);
+        const a = Math.min(0.85, (0.32 + 0.18 * s + 0.4 * edge) * near);
+        const r = 140 - 60 * s, g = 90 + 130 * s, b = 255;
+        const sr = src & 255, sg = (src >>> 8) & 255, sb = (src >>> 16) & 255;
+        px[y * W + x] = 0xff000000 | ((sb + (b - sb) * a) << 16) | ((sg + (g - sg) * a) << 8) | (sr + (r - sr) * a);
+      }
+    }
+
     function draw(t) {
       const seen = light * torch(t) + flash * 3;
       const dirX = Math.cos(me.a), dirY = Math.sin(me.a);
@@ -747,16 +779,15 @@ window.PioneerTV = window.PioneerTV || {};
         let sdx = (rx < 0 ? me.x - mx : mx + 1 - me.x) * ddx;
         let sdy = (ry < 0 ? me.y - my : my + 1 - me.y) * ddy;
         let side = 0, hit = 0, dist = 0, wx = 0, slant = false, which = T.stone;
+        let portal = portalIn(mx, my, rx, ry);    // the first door's portal on the way, if any
         for (let i = 0; i < 64 && !hit; i++) {
           if (sdx < sdy) { sdx += ddx; mx += stepX; side = 0; } else { sdy += ddy; my += stepY; side = 1; }
           hit = tile(mx, my);
           if (hit) {
             // A plain wall in the style of the space it is seen from.
-            // A door's frame only seen from within its doorway: from anywhere
-            // else it is a wall like the rest.
-            const fx = side === 0 ? mx - stepX : mx, fy = side === 0 ? my : my - stepY;
-            which = hit === 1 || (hit === FRAME + 2 && !doorAt(fx, fy)) ? STYLES[styleAt(fx, fy)].wall : hit - 2;
+            which = hit === 1 ? STYLES[side === 0 ? styleAt(mx - stepX, my) : styleAt(mx, my - stepY)].wall : hit - 2;
           } else {
+            if (!portal) portal = portalIn(mx, my, rx, ry);
             const d = diagAt(mx, my);
             if (d) {
               // '/': x + y = mx + my + 1; '\': x - y = mx - my.
@@ -785,10 +816,10 @@ window.PioneerTV = window.PioneerTV || {};
         let v = 0;
         if (top < 0) { v = -top * step; top = 0; }
         if (bottom > H) bottom = H;
-        // A picture on this face (not on a door, a hedge, a diagonal), and
+        // A picture on this face (not on a hedge, a diagonal), and
         // whether this column crosses it.
         const face = side === 0 ? (stepX > 0 ? 1 : 0) : (stepY > 0 ? 3 : 2);
-        const one = !slant && which !== T.door && which !== T.hedge && dist < 9 ? painting(mx, my, face) : null;
+        const one = !slant && which !== T.hedge && dist < 9 ? painting(mx, my, face) : null;
         const uf = (u + 0.5) / TEX;
         if (one && uf >= one.u0 && uf <= one.u1) {
           // The picture (its frame drawn into it) where this column crosses it.
@@ -807,6 +838,7 @@ window.PioneerTV = window.PioneerTV || {};
             v += step;
           }
         }
+        if (portal && portal.d < dist) drawPortal(x, portal, horizon, t);
       }
       ctx.putImageData(frame, 0, 0);
     }
