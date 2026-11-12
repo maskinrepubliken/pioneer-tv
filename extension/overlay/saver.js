@@ -1,11 +1,11 @@
 // Pioneer TV screensaver, drawn by the overlay over every window, one of
 // two (Inställningar → TV, ui.screensaver):
 //
-//   labyrint (the default): a maze without end, walked by itself, its
-//   walls hung full of pictures (maze.js); now and then the walker stops
+//   labyrint (the default): a maze without end, floated through by itself,
+//   its walls hung with pictures (maze.js); now and then the walker stops
 //   and looks at a wall, and its pictures come up sharp over it, with what
 //   each is: when a picture was taken and where, a game or a film by its
-//   name and whether it was played or seen lately.
+//   name and whether it was played or seen lately; or a sign's line.
 //   eld: the Mandelbrot set like an open fire (mandelbrot.js) and a line of
 //   the Tao Te Ching (tao.js).
 //
@@ -88,6 +88,12 @@ window.PioneerTV = window.PioneerTV || {};
     looking.style.setProperty('--n', String(items.length));
     const loads = items.map((it) => {
       const fig = document.createElement('figure');
+      // A sign on a pale wall: its line, large.
+      if (it.sign) {
+        fig.appendChild(Object.assign(document.createElement('div'), { className: 'maze-sign', textContent: it.sign }));
+        looking.appendChild(fig);
+        return Promise.resolve();
+      }
       const frame = document.createElement('div');
       frame.className = 'maze-frame';
       const im = document.createElement('img');

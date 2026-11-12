@@ -1002,25 +1002,45 @@ tried again every three seconds.
   /api/saver/preview`; the next press takes it away, the press that asked
   is let be, and the TV is not turned off for it):
   - **Labyrint** (the default, `overlay/maze.js`): a maze without end in
-    the manner of Ultima Underworld, walked by itself. A raycaster on a
-    320x180 canvas scaled up with square pixels, twenty frames a second
-    (about 2 ms a frame on a laptop; on the box the overlay's WebKit about
-    10 % of a core), dark but for a flickering torch. Its parts (zones of
-    5x5 cells) are each in their own stones: walls, floor and ceiling per
-    tile, from sixteen textures. The maze comes in chunks of 8x8 cells, each
-    a perfect maze of its own (a seeded backtracker, a few walls knocked
-    through) with two doors to the chunks west and north of it, so the
-    whole is one maze, made as it is walked into and forgotten behind.
-    Nearly half the chunks have a room in their middle: a hall of pillars,
-    a garden of grass and hedges under the stars, a ballroom floored in
-    marble, or a treasury where many things lie (`visit(kind)` goes
-    straight to one, for the catalogue). The walker steers by a point a little ahead
-    along its way (round corners, no turning on the spot facing a wall),
-    goes for the nearest cell not yet walked; slowly, a stroll. The walls are hung full of pictures,
+    the manner of Ultima Underworld and of Antichamber, floated through by
+    itself. A raycaster on a 320x180 canvas scaled up with square pixels,
+    twenty frames a second (about 2.5 ms a frame on a laptop; on the box
+    the overlay's WebKit about 10 % of a core). Its parts (zones of 5x5
+    cells) are each in their own stones and their own light, from a
+    flickering torch's dark to broad day (`THEMES`, `light`: how far one
+    sees; the light follows the walker smoothly from part to part), and
+    some are pale, Antichamber's: white walls drawn round in black, a blue
+    or a yellow one now and then, a black one drawn round in white, a paper
+    floor; far off they fade to white instead of black. Walls, floor and
+    ceiling per tile, from the sixteen stone textures and the pale ones
+    drawn in the script (`paleTextures`, the day's sky among them). The
+    maze comes in chunks of 8x8 cells, each a perfect maze of its own (a
+    seeded backtracker, a few walls knocked through) with two doors to the
+    chunks west and north of it, so the whole is one maze, made as it is
+    walked into and forgotten behind. Nearly half the chunks have a room in
+    their middle: a hall of pillars, a garden of grass and hedges under the
+    stars, a ballroom floored in marble, a treasury, a long gallery, a crypt
+    of slate pillars, a library in wood, a cellar of earth, Antichamber's
+    red room, a white hall of black pillars, a courtyard under the day's
+    sky, each with its own light (`visit(kind)` goes straight to one, for
+    the catalogue). Some have their corners cut at 45 degrees (`CUT`): a
+    diagonal across each corner cell (met within its tile by the
+    raycaster), the cell left out of the ways, and a way that came in there
+    moved one cell along. The walker floats: it glides straight from cell
+    to cell as far as the way goes, easing up to speed and down again, and
+    turns on the spot, always a right angle or two, eased too; it goes for
+    the nearest cell not yet been to. Come to a dead end and turning back,
+    now and then (about half the times) the world behind it changes while
+    it has its back to it (`swapWorld`, halfway through the turn: a new
+    world, `epoch`, the cell it stands in, the tiles round it and what
+    hangs on its walls kept as they were), with a breath of light. On the
+    pale walls hang signs now and then, a line on each (`SIGNS`, in
+    Antichamber's way: "Den som vänder sig om ser en annan väg"); the walker
+    always stops at one, and its line comes up large on a white card. The walls are hung full of pictures,
     one kind only: Bilder's photos (Immich's `search/random`, two calls of
     800, a fresh lot each time the screensaver starts, through `/immich/`),
     else, with no Immich, the covers kept on the box (`/api/finds?n=600`).
-    They are drawn into the wall's columns as the torch lights them: along
+    They are drawn into the wall's columns as the light reaches them: along
     the ways about a third of the faces, mostly one picture, now and then
     two side by side, two above each other, three in a row or a triptych;
     in the rooms more of them, but not every face (and none on the garden's
@@ -1029,10 +1049,8 @@ tried again every three seconds.
     wood, black, silver, white with a wide mat, gilt, and gilt with a dark
     rim within for the great ones. None on a door. Each is drawn 64 px
     square, kept in its own shape by its frame. The maze starts somewhere
-    new each time (a cell far off, `wander()`), and has more parts and rooms:
-    besides the hall of pillars, the garden, the ballroom and the treasury,
-    a long gallery, a crypt of slate pillars, a library in wood and a cellar
-    of earth. Most cells (not the one after a look) the walker stops at a wall of
+    new each time (a cell far off in a world of its own, `wander()`). Most
+    cells (not the one after a look) the walker stops at a wall of
     its cell with pictures on it, turns to it and looks a while (seven
     seconds): what hangs there comes up sharp over the maze (saver.js,
     `hud.look`: a covers' own picture, a photo's Immich preview), each in

@@ -59,4 +59,10 @@
 }
 .pioneertv-saver .maze-look figcaption b { font: italic 400 1.9vw/1.15 var(--pioneertv-font-prose); }
 .pioneertv-saver .maze-look figcaption span { font: 400 1.05vw/1.2 var(--pioneertv-font-mono); letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.8; }
+/* A sign from a pale wall (Antichamber's way): its line on a white card,
+   drawn round in black. */
+.pioneertv-saver .maze-sign {
+  max-width: 46vw; padding: 3.2vw 4vw; background: #f6f3ec; color: #151515; border: 0.35vw solid #151515;
+  font: italic 400 2.8vw/1.25 var(--pioneertv-font-prose); text-align: center; box-shadow: 0 1.2vw 3vw rgba(0, 0, 0, 0.35);
+}
 .pioneertv-saver.resting .maze, .pioneertv-saver.resting .maze-look { display: none; }
