@@ -59,8 +59,8 @@ window.PioneerTV = window.PioneerTV || {};
   const STONES = 17;                     // the stones (textures.png), darkening to black
   // Parts of the maze, each in one style and its own light (how far one
   // sees: 1 a torch's, 4 and more a bright day): its walls, its floor and
-  // its ceiling. A part is a chunk (8 by 8 cells), come into and left
-  // through doors, so a change of style is always at a door. The pale ones
+  // its ceiling. A part is 3 by 3 chunks (24 by 24 cells), come into and
+  // left through doors, so a change of style is always at a door. The pale ones
   // are Antichamber's: white (or blue, or black) drawn round in a line.
   const THEMES = [
     { wall: T.brick, floor: T.flags, ceil: T.blocks, light: 2.0 },     // Windows' 3D Maze: red brick, grey stone
@@ -142,9 +142,11 @@ window.PioneerTV = window.PioneerTV || {};
     lastKey = k; lastChunk = c;
     return c;
   }
+  // A chunk's part: its style among THEMES, the same for 3 by 3 chunks.
+  const themeAt = (cx, cy) => Math.floor(wh(Math.floor(cx / 3), Math.floor(cy / 3), 3) * THEMES.length);
   function make(cx, cy) {
     const wall = new Uint8Array(SIDE * SIDE).fill(1), diag = new Uint8Array(SIDE * SIDE), door = new Uint8Array(SIDE * SIDE);
-    const style = new Uint8Array(SIDE * SIDE).fill(Math.floor(wh(cx, cy, 3) * THEMES.length));
+    const style = new Uint8Array(SIDE * SIDE).fill(themeAt(cx, cy));
     const rand = rng(Math.floor(wh(cx, cy, 2) * 4294967295));
     // A perfect maze over its cells (tiles 1, 3 .. 15).
     const seen = new Uint8Array(CHUNK * CHUNK);
@@ -175,7 +177,7 @@ window.PioneerTV = window.PioneerTV || {};
     // style of its own, its ways in framed as doors.
     let room = null;
     const cut = new Set();
-    if (!(cx === 0 && cy === 0) && wh(cx, cy, 6) < 0.45) {
+    if (!(cx === 0 && cy === 0) && wh(cx, cy, 6) < 0.3) {
       const kind = ROOMS[Math.floor(wh(cx, cy, 7) * ROOMS.length)];
       // A gallery long, the rest 3 or 4 cells a side.
       const w = kind === 'gallery' ? 5 + Math.floor(rand() * 2) : 3 + Math.floor(rand() * 2);
@@ -225,12 +227,14 @@ window.PioneerTV = window.PioneerTV || {};
         }
       }
     }
-    // Doors to the chunk west and the chunk north (another part, another
-    // style): two each, each with its portal.
+    // Doors to the chunk west and the chunk north: two each, each with its
+    // portal where that chunk is of another part.
     for (const side of [0, 1]) {
       for (let d = 0; d < 2; d++) {
         const at = Math.floor(wh(cx, cy, 10 + side * 2 + d) * CHUNK) * 2 + 1;
-        if (side === 0) { wall[at * SIDE] = 0; door[at * SIDE] = 1; } else { wall[at] = 0; door[at] = 2; }
+        // A portal only where the part changes; within one, a plain way.
+        if (side === 0) { wall[at * SIDE] = 0; if (themeAt(cx - 1, cy) !== themeAt(cx, cy)) door[at * SIDE] = 1; }
+        else { wall[at] = 0; if (themeAt(cx, cy - 1) !== themeAt(cx, cy)) door[at] = 2; }
       }
     }
     // What was kept through a change of world, as it was.
@@ -261,8 +265,15 @@ window.PioneerTV = window.PioneerTV || {};
   const diagAt = (tx, ty) => chunk(tx >> 4, ty >> 4).diag[(ty & 15) * SIDE + (tx & 15)];
   const styleAt = (tx, ty) => chunk(tx >> 4, ty >> 4).style[(ty & 15) * SIDE + (tx & 15)];
   const doorAt = (tx, ty) => chunk(tx >> 4, ty >> 4).door[(ty & 15) * SIDE + (tx & 15)];
-  const floorAt = (tx, ty) => STYLES[styleAt(tx, ty)].floor;
-  const ceilAt = (tx, ty) => STYLES[styleAt(tx, ty)].ceil;
+  // A point's style (x, y in tiles): its tile's, but in a doorway each half
+  // the side's it lies on, so a style changes just where the portal is.
+  function styleHere(x, y) {
+    const tx = Math.floor(x), ty = Math.floor(y);
+    const c = chunk(tx >> 4, ty >> 4), i = (ty & 15) * SIDE + (tx & 15);
+    const o = c.door[i];
+    if (!o) return c.style[i];
+    return o === 1 ? styleAt(x - tx < 0.5 ? tx - 1 : tx + 1, ty) : styleAt(tx, y - ty < 0.5 ? ty - 1 : ty + 1);
+  }
   // Cells are the odd tiles; two cells meet where the tile between is open
   // (and neither is a corner cut off).
   const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
@@ -755,13 +766,13 @@ window.PioneerTV = window.PioneerTV || {};
         if (p < 1) { for (let x = 0; x < W; x++) px[y * W + x] = 0xff000000; continue; }
         const rowDist = half / p;
         const shade = shadeOf(rowDist, seen);
-        const at = below ? floorAt : ceilAt;
+        const part = below ? 'floor' : 'ceil';
         let fx = me.x + rowDist * (dirX - planeX), fy = me.y + rowDist * (dirY - planeY);
         const sx = (rowDist * 2 * planeX) / W, sy = (rowDist * 2 * planeY) / W;
         const row = y * W;
         let lastT = -1, levels = null;
         for (let x = 0; x < W; x++) {
-          const k = at(Math.floor(fx), Math.floor(fy));
+          const k = STYLES[styleHere(fx, fy)][part];
           if (k !== lastT) { lastT = k; levels = tex[k][k === T.sky ? Math.min(shade, 8) : k === T.day ? Math.min(shade, 4) : shade]; }
           const u = (fx * TEX) & (TEX - 1), v = (fy * TEX) & (TEX - 1);
           px[row + x] = levels[v * TEX + u];
@@ -785,7 +796,10 @@ window.PioneerTV = window.PioneerTV || {};
           hit = tile(mx, my);
           if (hit) {
             // A plain wall in the style of the space it is seen from.
-            which = hit === 1 ? STYLES[side === 0 ? styleAt(mx - stepX, my) : styleAt(mx, my - stepY)].wall : hit - 2;
+            // (Seen from a doorway, in the style of the half it is met in.)
+            const d = side === 0 ? sdx - ddx : sdy - ddy;
+            const fx = side === 0 ? mx - stepX + 0.5 : me.x + d * rx, fy = side === 0 ? me.y + d * ry : my - stepY + 0.5;
+            which = hit === 1 ? STYLES[styleHere(fx, fy)].wall : hit - 2;
           } else {
             if (!portal) portal = portalIn(mx, my, rx, ry);
             const d = diagAt(mx, my);

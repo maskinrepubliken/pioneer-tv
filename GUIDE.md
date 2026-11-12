@@ -1011,7 +1011,7 @@ tried again every three seconds.
     (`overlay/maze/textures.png`, built by `dev/maze-textures.py` from the
     pack's zip, Pillow): red brick, grey stone floors and ceilings in the
     manner of Windows' 3D Maze, sand, slate, wood, marble, moss, a
-    black-and-white checkered floor. Each part (a chunk, 8x8 cells) is in one style and its own
+    black-and-white checkered floor. Each part (3x3 chunks, 24x24 cells, `themeAt`) is in one style and its own
     light, from a flickering torch's dark to broad day (`THEMES`, `light`:
     how far one sees; the light follows the walker smoothly), some of them
     pale, Antichamber's: white (or blue, or black) drawn round in a line, a
@@ -1019,8 +1019,11 @@ tried again every three seconds.
     in the style of the space it is seen from (`STYLES`: the parts' and
     the rooms'; a tile's `style`), so a room is all its own style and the
     way outside it all the way's, and a style changes only at a door: each
-    way between chunks and into a room has a magic portal across the middle
-    of its doorway (a tile's `door`, which way it lies), floated through.
+    way from one part to another and into a room has a magic portal across
+    the middle of its doorway (a tile's `door`, which way it lies; the ways
+    between chunks of one part are plain), floated through; the doorway's
+    floor, ceiling and sides are each side's on its side of the portal
+    (`styleHere`), so the style changes just where the portal is.
     The raycaster notes the first portal a ray crosses and, once the wall
     behind is drawn, draws it over that column (`drawPortal`): what is
     behind it wobbling up and down as through water, a shimmer of violet,
@@ -1029,7 +1032,7 @@ tried again every three seconds.
     maze comes in chunks of 8x8 cells, each a perfect maze of its own (a
     seeded backtracker, a few walls knocked through) with two doors to the
     chunks west and north of it, so the whole is one maze, made as it is
-    walked into and forgotten behind. Nearly half the chunks have a room in
+    walked into and forgotten behind. Nearly a third of the chunks have a room in
     their middle: a hall of pillars, a garden of grass and hedges under the
     stars, a ballroom floored in marble, a treasury, a long gallery, a crypt
     of slate pillars, a library in wood, a cellar of earth, Antichamber's
