@@ -1003,12 +1003,15 @@ tried again every three seconds.
   is let be, and the TV is not turned off for it):
   - **Labyrint** (the default, `overlay/maze.js`): a maze without end in
     the manner of Ultima Underworld and of Antichamber, floated through by
-    itself. A raycaster on a 480x270 canvas scaled up smoothly, twenty
-    frames a second (about 3.5 ms a frame on a laptop). Simple, not
-    pixelated: its textures are drawn in the script, smooth faces of one
-    colour with their courses, joints and boards in thin lines
-    (`stoneTextures`), at 64 steps of distance so flat faces show no
-    bands. Each part (a chunk, 8x8 cells) is in one style and its own
+    itself. A raycaster on a 320x180 canvas scaled up smoothly (not
+    pixelated), twenty frames a second (about 3 ms a frame on a laptop).
+    The stone textures are Screaming Brain Studios' [Tiny Texture Pack
+    1](https://opengameart.org/content/tiny-texture-pack-1) (CC0), its
+    128 px ones made 64 px smoothly with every colour kept
+    (`overlay/maze/textures.png`, built by `dev/maze-textures.py` from the
+    pack's zip, Pillow): red brick, grey stone floors and ceilings in the
+    manner of Windows' 3D Maze, sand, slate, wood, marble, moss, a
+    black-and-white checkered floor. Each part (a chunk, 8x8 cells) is in one style and its own
     light, from a flickering torch's dark to broad day (`THEMES`, `light`:
     how far one sees; the light follows the walker smoothly), some of them
     pale, Antichamber's: white (or blue, or black) drawn round in a line, a
@@ -1034,7 +1037,7 @@ tried again every three seconds.
     laid out a few tiles ahead, straight lines from cell to cell and a
     quarter circle a tile across at each corner (the heading turning a
     right angle along it), and it slows only where it stops, to look at a
-    wall or to turn back out of a dead end (on the spot, a right angle in
+    picture or to turn back out of a dead end (on the spot, a right angle in
     some two seconds, eased). It goes for the nearest cell not yet been to,
     a dead end only now and then (the maze has more loops for it). Come to a dead end and turning back,
     now and then (about half the times) the world behind it changes while
@@ -1042,29 +1045,27 @@ tried again every three seconds.
     world, `epoch`, the cell it stands in, the tiles round it and what
     hangs on its walls kept as they were), with a breath of light. On the
     pale walls hang signs now and then, a line on each (`SIGNS`, in
-    Antichamber's way: "Den som vänder sig om ser en annan väg"); the walker
-    always stops at one, and its line comes up large on a white card. The walls are hung full of pictures,
-    one kind only: Bilder's photos (Immich's `search/random`, two calls of
-    800, a fresh lot each time the screensaver starts, through `/immich/`),
-    else, with no Immich, the covers kept on the box (`/api/finds?n=600`).
-    They are drawn into the wall's columns as the light reaches them: along
-    the ways about a third of the faces, mostly one picture, now and then
-    two side by side, two above each other, three in a row or a triptych;
-    in the rooms more of them, but not every face (and none on the garden's
-    hedges), each kind of room hung its own way (the gallery's great ones,
-    the library's salons, the crypt's and the cellar's few and small). Frames of many kinds: dark
-    wood, black, silver, white with a wide mat, gilt, and gilt with a dark
-    rim within for the great ones. None on a door. Each is drawn 64 px
-    square, kept in its own shape by its frame. The maze starts somewhere
-    new each time (a cell far off in a world of its own, `wander()`). Now
-    and then (at most every fourth cell, three times in ten) the walker stops at a wall of
-    its cell with pictures on it, turns to it and looks a while (seven
-    seconds): what hangs there comes up sharp over the maze (saver.js,
-    `hud.look`: a covers' own picture, a photo's Immich preview), each in
-    a gilded frame, and under it what it is: a photo's date and place, a
-    game's, a film's or an album's name and, when it was played or seen
-    lately (`covers.py` finds: first what was played lately, RomM's last
-    played and Jellyfin's begun and seen), "spelat nyss" or "sett nyss";
+    Antichamber's way: "Den som vänder sig om ser en annan väg"); its line
+    comes up large on a white card. The pictures are few, one to a wall, and
+    every one looked at, once: one kind only, Bilder's photos (Immich's
+    `search/random`, two calls of 800, a fresh lot each time the
+    screensaver starts, through `/immich/`), else, with no Immich, the
+    covers kept on the box (`/api/finds?n=600`), each hung once (the next
+    of the lot). A picture is hung only on a wall of a cell on the way the
+    walker is going, every three to seven cells, as the way is planned some
+    ten cells ahead (before it can be seen); in a room larger, in the
+    gallery great, none in the garden or the courtyard; in the pale parts
+    now and then a sign instead. Frames of many kinds: dark wood, black,
+    silver, white with a wide mat, gilt, and gilt with a dark rim within
+    for the great ones; drawn 64 px square, kept in its own shape by its
+    frame. The maze starts somewhere new each time (a cell far off in a
+    world of its own, `wander()`). At each picture the walker stops, turns
+    to it and looks a while (seven seconds): it comes up sharp over the
+    maze (saver.js, `hud.look`: a cover's own picture, a photo's Immich
+    preview), in a gilded frame, and under it what it is: a photo's date
+    and place, a game's, a film's or an album's name and, when it was
+    played or seen lately (`covers.py` finds), "spelat nyss" or "sett
+    nyss"; or a sign's line;
     faded in and out.
   - **Eld** (`overlay/mandelbrot.js`): the Mandelbrot set like an open fire
     and a line of the Tao Te Ching, at a quarter of the screen's width and

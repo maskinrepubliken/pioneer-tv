@@ -21,23 +21,25 @@
 // it gone and another there instead (the cell it stands in kept as it was,
 // so the change is never seen happen), with a breath of light.
 //
-// A raycaster on a small canvas (480 by 270, scaled up smoothly: simple,
-// not pixelated), twenty frames a second: the walls one column at a time
+// A raycaster on a small canvas (320 by 180, scaled up smoothly, not
+// pixelated), twenty frames a second: the walls one column at a time
 // (a cut corner's diagonal met within its tile), the floor and ceiling a
 // row at a time, the pictures over the walls. The maze comes in chunks of
 // 8 by 8 cells, each a perfect maze of its own (a seeded backtracker) with
 // a few doors to the chunks west and north of it, so the whole is one
-// maze, made as it is walked into and forgotten behind. Its textures are
-// drawn here, simply: smooth faces and thin lines, nothing pixelated.
+// maze, made as it is walked into and forgotten behind. The stone textures
+// are Screaming Brain Studios' Tiny Texture Pack (CC0), made 64 px
+// smoothly, every colour kept (maze/textures.png, dev/maze-textures.py);
+// the pale ones are drawn here.
 //
 //   M.maze(canvas, hud) -> { start, stop, visit, swap, debug }   (visit, swap, debug: the catalogue's, tests')
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
-  const W = 480, H = 270;                // the picture, in pixels (scaled up smoothly)
-  const PIC = 96;                        // a picture on a wall, drawn this many pixels square
+  const W = 320, H = 180;                // the picture, in pixels (scaled up smoothly)
+  const PIC = 64;                        // a picture on a wall, drawn this many pixels square
   const FPS = 20;
-  const TEX = 32;                        // a texture's side (they are simple)
-  const SHADES = 64;                     // steps of darkness (or of white, far off in the pale parts)
+  const TEX = 64;                        // a texture's side
+  const SHADES = 32;                     // steps of darkness (or of white, far off in the pale parts)
   const CHUNK = 8, SIDE = CHUNK * 2;     // cells, tiles to a chunk
   const FOV = 0.7;                       // the camera plane's half width
   // Floating: an even, unhurried glide, round the corners too, eased only
@@ -46,31 +48,34 @@ window.PioneerTV = window.PioneerTV || {};
   const EASE = 0.7;                      // tiles to come up to speed, and to slow
   const TURN_S = 2.3;                    // seconds a right angle takes
 
-  // The textures, drawn here: the stones (stoneTextures), then the pale
-  // ones (paleTextures).
+  // The textures: the stones (maze/textures.png, one under the other:
+  // Screaming Brain Studios' Tiny Texture Pack, CC0, made 64 px smoothly by
+  // dev/maze-textures.py), then the pale ones, drawn here (paleTextures).
   const T = {
     stone: 0, moss: 1, dirt: 2, sand: 3, flags: 4, blocks: 5, door: 6, slate: 7, brick: 8,
-    tiles: 9, planks: 10, marble: 11, grass: 12, hedge: 13, sky: 14, beams: 15,
-    white: 16, paper: 17, red: 18, blue: 19, yellow: 20, black: 21, day: 22,
+    tiles: 9, planks: 10, marble: 11, grass: 12, hedge: 13, sky: 14, beams: 15, checker: 16,
+    white: 17, paper: 18, red: 19, blue: 20, yellow: 21, black: 22, day: 23,
   };
-  const STONES = 16;                     // the stones, darkening to black
+  const STONES = 17;                     // the stones (textures.png), darkening to black
   // Parts of the maze, each in one style and its own light (how far one
   // sees: 1 a torch's, 4 and more a bright day): its walls, its floor and
   // its ceiling. A part is a chunk (8 by 8 cells), come into and left
   // through doors, so a change of style is always at a door. The pale ones
   // are Antichamber's: white (or blue, or black) drawn round in a line.
   const THEMES = [
+    { wall: T.brick, floor: T.flags, ceil: T.blocks, light: 2.0 },     // Windows' 3D Maze: red brick, grey stone
     { wall: T.stone, floor: T.flags, ceil: T.blocks, light: 1.1 },
-    { wall: T.brick, floor: T.tiles, ceil: T.beams, light: 1.8 },
-    { wall: T.sand, floor: T.planks, ceil: T.beams, light: 2.8 },
+    { wall: T.sand, floor: T.tiles, ceil: T.beams, light: 2.8 },
     { wall: T.slate, floor: T.flags, ceil: T.slate, light: 1.4 },
     { wall: T.planks, floor: T.planks, ceil: T.beams, light: 2.0 },
-    { wall: T.marble, floor: T.tiles, ceil: T.day, light: 4.0 },
-    { wall: T.moss, floor: T.dirt, ceil: T.day, light: 3.4 },
+    { wall: T.marble, floor: T.checker, ceil: T.day, light: 4.0 },
+    { wall: T.moss, floor: T.grass, ceil: T.day, light: 3.4 },
+    { wall: T.dirt, floor: T.flags, ceil: T.beams, light: 1.2 },
     { wall: T.white, floor: T.paper, ceil: T.paper, light: 4.5, pale: true },
     { wall: T.blue, floor: T.paper, ceil: T.paper, light: 4.5, pale: true },
     { wall: T.black, floor: T.paper, ceil: T.black, light: 3.6, pale: true },
   ];
+
   // Rooms that turn up now and then, a chunk's open middle: a hall of
   // pillars, a garden under the stars with hedges round it, a ballroom
   // floored in marble, a treasury, a long gallery of great pictures, a crypt
@@ -80,7 +85,7 @@ window.PioneerTV = window.PioneerTV || {};
   // with their corners cut at 45 degrees, now and then (CUT).
   const ROOMS = ['hall', 'garden', 'ballroom', 'treasury', 'gallery', 'crypt', 'library', 'cellar', 'red', 'white', 'courtyard'];
   const ROOM_WALL = { garden: T.hedge, ballroom: T.sand, hall: T.stone, treasury: T.brick, gallery: T.brick, crypt: T.slate, library: T.planks, cellar: T.dirt, red: T.red, white: T.white, courtyard: T.stone };
-  const ROOM_FLOOR = { garden: T.grass, ballroom: T.marble, hall: T.flags, treasury: T.tiles, gallery: T.marble, crypt: T.flags, library: T.planks, cellar: T.dirt, red: T.paper, white: T.paper, courtyard: T.grass };
+  const ROOM_FLOOR = { garden: T.grass, ballroom: T.checker, hall: T.flags, treasury: T.tiles, gallery: T.marble, crypt: T.flags, library: T.planks, cellar: T.flags, red: T.paper, white: T.paper, courtyard: T.grass };
   const ROOM_CEIL = { garden: T.sky, ballroom: T.beams, hall: T.blocks, treasury: T.blocks, gallery: T.beams, crypt: T.blocks, library: T.beams, cellar: T.beams, red: T.paper, white: T.paper, courtyard: T.day };
   const ROOM_LIGHT = { garden: 1.3, ballroom: 2.8, hall: 1.6, treasury: 2.0, gallery: 3.0, crypt: 0.9, library: 1.8, cellar: 1.0, red: 4.5, white: 5, courtyard: 4.5 };
   const PILLARS = { hall: T.stone, crypt: T.slate, white: T.black };
@@ -272,54 +277,20 @@ window.PioneerTV = window.PioneerTV || {};
   const paleAt = (ci, cj) => !!STYLES[styleAt(ci * 2 + 1, cj * 2 + 1)].pale;
 
   // ------------------------------------------------------------ the pictures on the walls
-  // A wall's face (its tile, and which way it looks: 0 east, 1 west, 2
-  // south, 3 north) carries its pictures, the same every time in a world:
-  // along the ways about a third of the faces, mostly one picture; in a
-  // room more, larger, and great ones in gilded frames. A size is a share
-  // of the wall's height; its frame's width the same.
+  // Few, and every one looked at: a picture is hung only on a wall along
+  // the way the walker is going (every few cells, as the way is planned,
+  // well before it can be seen), one to a wall, and the walker stops at
+  // each and looks at it, once. A size is a share of the wall's height; its
+  // frame's width the same.
   const SIZES = {
-    tiny: { h: 0.2, frame: 0.02 },
-    small: { h: 0.26, frame: 0.025 },
-    medium: { h: 0.4, frame: 0.03 },
+    medium: { h: 0.42, frame: 0.03 },
     large: { h: 0.56, frame: 0.045 },
-    epic: { h: 0.8, frame: 0.065 },
+    epic: { h: 0.78, frame: 0.065 },
+    sign: { h: 0.3, frame: 0.02 },
   };
-  // A way of hanging: its pictures' sizes, where their middles are on the
-  // face (u across, v down) and how wide one may be (a place's own, else
-  // the hanging's).
-  const one = (size) => ({ w: 0.9, slots: [[size, 0.5, SIZES[size].h > 0.7 ? 0.5 : 0.44]] });
-  const HANGINGS = {
-    small: one('small'), medium: one('medium'), large: one('large'), epic: one('epic'),
-    pair: { w: 0.42, slots: [['small', 0.27, 0.44], ['small', 0.73, 0.44]] },
-    row: { w: 0.28, slots: [['small', 0.18, 0.44], ['small', 0.5, 0.44], ['small', 0.82, 0.44]] },
-    square: { w: 0.38, slots: [['tiny', 0.29, 0.31], ['tiny', 0.71, 0.31], ['tiny', 0.29, 0.6], ['tiny', 0.71, 0.6]] },
-    gallery: { w: 0.42, slots: [['medium', 0.27, 0.44], ['medium', 0.73, 0.44]] },
-    tall: { w: 0.5, slots: [['small', 0.5, 0.3], ['small', 0.5, 0.62]] },
-    triptych: { w: 0.24, slots: [['tiny', 0.15, 0.44], ['medium', 0.5, 0.44, 0.36], ['tiny', 0.85, 0.44]] },
-    salon: { w: 0.26, slots: [['tiny', 0.19, 0.31], ['tiny', 0.5, 0.31], ['tiny', 0.81, 0.31], ['tiny', 0.19, 0.6], ['tiny', 0.5, 0.6], ['tiny', 0.81, 0.6]] },
-    sign: { w: 0.5, sign: true, slots: [['small', 0.5, 0.42, 0.42]] },
-  };
-  const pick = (k, table) => { for (const [name, upTo] of table) if (k < upTo) return HANGINGS[name]; return null; };
-  const LOOK_S = 7;                      // seconds a wall is looked at
+  const LOOK_S = 7;                      // seconds a picture is looked at
+  const EVERY = [3, 7];                  // cells between pictures, at least and at most
   const PHOTO_CALLS = 2;                 // Immich's random pictures, 800 a call
-  // How the ways are hung, and each kind of room (the garden's hedges bare);
-  // on the pale walls now and then a sign instead.
-  const WAYS = [['small', 0.1], ['medium', 0.2], ['pair', 0.25], ['large', 0.29], ['tall', 0.32], ['row', 0.34], ['triptych', 0.36]];
-  const ROOMS_HUNG = {
-    gallery: [['epic', 0.3], ['large', 0.55], ['gallery', 0.65], ['triptych', 0.72]],
-    crypt: [['small', 0.2], ['medium', 0.3]],
-    library: [['salon', 0.15], ['square', 0.3], ['medium', 0.5]],
-    cellar: [['small', 0.25]],
-    red: [['epic', 0.2], ['large', 0.35]],
-    white: [['sign', 0.12], ['large', 0.3], ['medium', 0.45]],
-    other: [['epic', 0.15], ['large', 0.3], ['medium', 0.42], ['gallery', 0.5], ['triptych', 0.56]],
-  };
-  function hangs(tx, ty, face, room, pale) {
-    const k = wh(tx * 4 + face, ty, 22);
-    if (room) return room.kind === 'garden' || room.kind === 'courtyard' ? null : pick(k, ROOMS_HUNG[room.kind] || ROOMS_HUNG.other);
-    if (pale && k < 0.08) return HANGINGS.sign;
-    return pick(pale ? k - 0.08 : k, WAYS);
-  }
   // Antichamber's way: a line on a sign, now and then, on the pale walls.
   const SIGNS = [
     'Det du letar efter finns ofta bakom dig.',
@@ -338,8 +309,8 @@ window.PioneerTV = window.PioneerTV || {};
     'Ibland är vägen tillbaka en ny väg.',
   ];
   // Frames of many kinds: dark wood, black, silver, white (a wide mat),
-  // gilt, and gilt with a dark rim within (the great ones'); the smaller a
-  // picture, the plainer its frame may be. [body, edge] as ABGR.
+  // gilt, and gilt with a dark rim within (the great ones'). [body, edge]
+  // as ABGR.
   const FRAMES = {
     wood: { body: 0xff22344f, edge: 0xff142233 },
     black: { body: 0xff1a1c1e, edge: 0xff3c4246 },
@@ -349,8 +320,7 @@ window.PioneerTV = window.PioneerTV || {};
     ornate: { body: 0xff3aa4d8, edge: 0xff123a5a, inner: true, wide: 1.3 },
   };
   const FRAMED = {
-    tiny: ['wood', 'black', 'white', 'silver'], small: ['wood', 'black', 'white', 'silver', 'gold'],
-    medium: ['wood', 'black', 'silver', 'gold', 'white'], large: ['gold', 'silver', 'black', 'ornate'], epic: ['gold', 'ornate'],
+    medium: ['wood', 'black', 'silver', 'gold', 'white'], large: ['gold', 'silver', 'black', 'ornate'], epic: ['gold', 'ornate'], sign: ['black'],
   };
 
   // ------------------------------------------------------------ textures
@@ -384,52 +354,14 @@ window.PioneerTV = window.PioneerTV || {};
     }
     return tables;
   }
-  // The stones, drawn simply: smooth faces of one colour, their courses,
-  // joints and boards in thin lines (in T's order).
-  function stoneTextures() {
-    const c = document.createElement('canvas');
-    c.width = TEX; c.height = TEX * STONES;
-    const g = c.getContext('2d');
-    let y0 = 0;
-    const fill = (colour) => { g.fillStyle = colour; g.fillRect(0, y0, TEX, TEX); };
-    const rect = (x, y, w, h, colour) => { g.fillStyle = colour; g.fillRect(x, y0 + y, w, h); };
-    // Courses of blocks h high, w long, each row's joints half along.
-    const courses = (h, w, colour, wide = 1) => {
-      for (let y = 0; y < TEX; y += h) {
-        rect(0, y, TEX, wide, colour);
-        for (let x = (y / h) % 2 ? w / 2 : 0; x < TEX; x += w) rect(x, y, wide, h, colour);
-      }
-    };
-    const grid = (n, colour, wide = 1) => { for (let i = 0; i < TEX; i += n) { rect(0, i, TEX, wide, colour); rect(i, 0, wide, TEX, colour); } };
-    const looks = [
-      () => { fill('#8b857b'); courses(8, 16, 'rgba(40,36,30,0.35)'); },             // stone
-      () => { fill('#6e7c58'); courses(8, 16, 'rgba(30,40,20,0.35)'); },             // moss
-      () => { fill('#74624c'); },                                                     // dirt
-      () => { fill('#d6bd88'); courses(16, 32, 'rgba(120,90,40,0.22)'); },           // sand
-      () => { fill('#a29a8b'); grid(16, 'rgba(50,45,38,0.35)'); },                    // flags
-      () => { fill('#7a736b'); grid(16, 'rgba(30,28,25,0.35)'); },                    // blocks
-      () => { fill('#5e3d24'); rect(0, 0, 3, TEX, '#3b2414'); rect(TEX - 3, 0, 3, TEX, '#3b2414'); rect(7, 0, 1, TEX, 'rgba(0,0,0,0.25)'); }, // a door's frame
-      () => { fill('#5c6570'); grid(16, 'rgba(20,25,30,0.4)'); },                     // slate
-      () => { fill('#9c5b44'); courses(4, 8, 'rgba(225,205,185,0.5)'); },            // brick
-      () => { fill('#ddd5c6'); for (let y = 0; y < TEX; y += 8) for (let x = (y / 8) % 2 ? 8 : 0; x < TEX; x += 16) rect(x, y, 8, 8, '#b9ae9b'); }, // tiles
-      () => { fill('#8b5e3c'); for (let x = 0; x < TEX; x += 8) rect(x, 0, 1, TEX, 'rgba(40,24,12,0.45)'); }, // planks
-      () => { fill('#e7e2d7'); grid(32, 'rgba(150,140,125,0.35)'); },                // marble
-      () => { fill('#5d8a49'); },                                                     // grass
-      () => { fill('#3f6a36'); },                                                     // hedge
-      () => { fill('#0f1734'); for (let i = 0; i < 5; i++) rect((i * 19) % TEX, (i * 13) % TEX, 1, 1, '#e8e4d8'); }, // the night's sky
-      () => { fill('#5b4431'); for (let x = 0; x < TEX; x += 16) rect(x, 0, 2, TEX, 'rgba(25,15,8,0.5)'); }, // beams
-    ];
-    looks.forEach((draw, i) => { y0 = i * TEX; draw(); });
-    return c;
-  }
   // The pale ones, drawn: white walls drawn round in black (each tile's
   // edges, Antichamber's lines), a paper floor, red, blue and yellow
   // walls, a black one drawn round in white, the day's sky.
   function paleTextures() {
     const c = document.createElement('canvas');
     const kinds = [
-      ['#ece9e2', '#222222', 1], ['#f3f0ea', '#b8b2a8', 1], ['#c3362b', '#4a120d', 1], ['#2f6fd6', '#122e66', 1],
-      ['#f0c53a', '#6b5410', 1], ['#1c1c1e', '#e9e6df', 1], null,
+      ['#ece9e2', '#222222', 2], ['#f3f0ea', '#b8b2a8', 1], ['#c3362b', '#4a120d', 2], ['#2f6fd6', '#122e66', 2],
+      ['#f0c53a', '#6b5410', 2], ['#1c1c1e', '#e9e6df', 2], null,
     ];
     c.width = TEX; c.height = TEX * kinds.length;
     const g = c.getContext('2d');
@@ -440,7 +372,7 @@ window.PioneerTV = window.PioneerTV || {};
         sky.addColorStop(0, '#a9cdf2'); sky.addColorStop(1, '#cfe3f7');
         g.fillStyle = sky; g.fillRect(0, y, TEX, TEX);
         g.fillStyle = 'rgba(255,255,255,0.55)';
-        for (const [x, cy, r] of [[9, 10, 4.5], [14, 9, 5.5], [20, 11, 4], [23, 23, 3.5], [27, 22, 4.5]]) { g.beginPath(); g.arc(x, y + cy, r, 0, Math.PI * 2); g.fill(); }
+        for (const [x, cy, r] of [[18, 20, 9], [28, 18, 11], [40, 22, 8], [46, 46, 7], [54, 44, 9]]) { g.beginPath(); g.arc(x, y + cy, r, 0, Math.PI * 2); g.fill(); }
         return;
       }
       const [fill, line, wide] = k;
@@ -457,13 +389,13 @@ window.PioneerTV = window.PioneerTV || {};
     c.width = PIC; c.height = PIC;
     const g = c.getContext('2d', { willReadFrequently: true });
     g.fillStyle = '#f6f3ec'; g.fillRect(0, 0, PIC, PIC);
-    g.fillStyle = '#1a1a1a'; g.font = 'bold 16px sans-serif'; g.textBaseline = 'top';
+    g.fillStyle = '#1a1a1a'; g.font = 'bold 11px sans-serif'; g.textBaseline = 'top';
     const words = text.split(' ');
-    let line = '', y = 12;
+    let line = '', y = 8;
     for (const w of words) {
-      if (g.measureText(`${line} ${w}`).width > PIC - 16 && line) { g.fillText(line, 8, y); line = w; y += 19; } else line = line ? `${line} ${w}` : w;
+      if (g.measureText(`${line} ${w}`).width > PIC - 10 && line) { g.fillText(line, 5, y); line = w; y += 13; } else line = line ? `${line} ${w}` : w;
     }
-    g.fillText(line, 8, y);
+    g.fillText(line, 5, y);
     return { data: new Uint32Array(g.getImageData(0, 0, PIC, PIC).data.buffer.slice(0)), ratio: 1.3 };
   }
 
@@ -473,7 +405,10 @@ window.PioneerTV = window.PioneerTV || {};
     const frame = ctx.createImageData(W, H);
     const px = new Uint32Array(frame.data.buffer);
     const zbuf = new Float32Array(W);
-    const tex = [...shadeTables(stoneTextures(), false), ...shadeTables(paleTextures(), true)];
+    let tex = null;
+    const img = new Image();
+    img.onload = () => { tex = [...shadeTables(img, false).slice(0, STONES), ...shadeTables(paleTextures(), true)]; };
+    img.src = new URL('maze/textures.png', document.baseURI).href;
 
     // Where one is: in tiles, facing a, at a cell (ci, cj).
     const me = { x: 1.5, y: 1.5, a: 0, ci: 0, cj: 0 };
@@ -511,40 +446,46 @@ window.PioneerTV = window.PioneerTV || {};
       if (pale) return 0xff000000 | ((b * k + FOG[2] * (1 - k)) << 16) | ((g * k + FOG[1] * (1 - k)) << 8) | (r * k + FOG[0] * (1 - k));
       return 0xff000000 | (Math.min(255, b * k * 0.82) << 16) | (Math.min(255, g * k * 0.95) << 8) | Math.min(255, r * k * 1.08);
     };
-    let pool = [];                       // what hangs: the finds, or Immich's
+    let pool = [], next = 0;             // what hangs: the finds, or Immich's; the next not yet hung
     let finds = [];
+    // What hangs, by face (its tile, and which way it looks: 0 east, 1
+    // west, 2 south, 3 north): { item, size, style }, and the faces looked at.
+    let hung = new Map();
+    const looked = new Set();
     // The faces of the cell a change of world happened in, hung as they
-    // were: face key -> what hung there.
+    // were.
     let held = new Map();
-    // What hangs on a face: its way of hanging and, for each place in it,
-    // the one from the pool (or the sign), or null.
-    function hungAt(mx, my, face, front) {
-      const k = `${mx},${my},${face}`;
-      if (held.has(k)) return held.get(k);
-      const ci = Math.floor(front[0] / 2), cj = Math.floor(front[1] / 2);
-      const hanging = hangs(mx, my, face, roomAt(ci, cj), paleAt(ci, cj));
-      if (!hanging) return null;
-      if (hanging.sign) {
-        const n = Math.floor(wh(mx * 4 + face, my, 40) * SIGNS.length);
-        return { hanging, items: [{ sign: SIGNS[n], url: `sign:${n}` }] };
-      }
-      if (!pool.length) return null;
-      return { hanging, items: hanging.slots.map((_, i) => pool[Math.floor(wh(mx * 4 + face, my, 23 + i) * pool.length)]) };
+    const faceKey = (mx, my, face) => `${mx},${my},${face}`;
+    const hungAt = (mx, my, face) => { const k = faceKey(mx, my, face); return held.get(k) || hung.get(k) || null; };
+    // A picture on a wall of a cell on the way: the next of the pool, a
+    // sign now and then in the pale parts; larger in a room, great in a
+    // gallery.
+    function hang(ci, cj) {
+      const walls = DIRS.filter(([dx, dy]) => !open(ci, cj, dx, dy) && !isCut(ci + dx, cj + dy));
+      if (!walls.length) return false;
+      const [dx, dy] = walls[Math.floor(Math.random() * walls.length)];
+      const room = roomAt(ci, cj);
+      if (room && (room.kind === 'garden' || room.kind === 'courtyard')) return false;
+      let item, size;
+      if (paleAt(ci, cj) && Math.random() < 0.35) {
+        const n = Math.floor(Math.random() * SIGNS.length);
+        item = { sign: SIGNS[n], url: `sign:${n}` }; size = 'sign';
+      } else if (pool.length) {
+        item = pool[next++ % pool.length];
+        size = room ? (room.kind === 'gallery' ? 'epic' : 'large') : Math.random() < 0.6 ? 'medium' : 'large';
+      } else return false;
+      const face = dx === 1 ? 1 : dx === -1 ? 0 : dy === 1 ? 3 : 2;
+      const kinds = FRAMED[size];
+      hung.set(faceKey(ci * 2 + 1 + dx, cj * 2 + 1 + dy, face), { item, size, style: FRAMES[kinds[Math.floor(Math.random() * kinds.length)]] });
+      return true;
     }
-    function painting(mx, my, face, front) {
-      const hung = hungAt(mx, my, face, front);
-      if (!hung) return null;
-      const { hanging, items } = hung;
-      const out = [];
-      hanging.slots.forEach(([name, uc, vc, most], i) => {
-        const pic = wallPicture(items[i]);
-        if (!pic) return;
-        const size = SIZES[name], h = size.h, w = Math.min(most || hanging.w, h * pic.ratio);
-        const kinds = hanging.sign ? ['black'] : FRAMED[name];
-        const style = FRAMES[kinds[Math.floor(wh(mx * 4 + face, my, 30 + i) * kinds.length)]];
-        out.push({ pic, size, style, frame: size.frame * (style.wide || 1), u0: uc - w / 2, u1: uc + w / 2, v0: vc - h / 2, v1: vc + h / 2 });
-      });
-      return out.length ? out : null;
+    function painting(mx, my, face) {
+      const h = hungAt(mx, my, face);
+      const pic = h && wallPicture(h.item);
+      if (!pic) return null;
+      const size = SIZES[h.size], vc = size.h > 0.7 ? 0.5 : 0.44;
+      const w = Math.min(0.9, size.h * pic.ratio);
+      return { pic, size, style: h.style, frame: size.frame * (h.style.wide || 1), u0: 0.5 - w / 2, u1: 0.5 + w / 2, v0: vc - size.h / 2, v1: vc + size.h / 2 };
     }
 
     // ---------------------------------------------------------- floating
@@ -552,7 +493,7 @@ window.PioneerTV = window.PioneerTV || {};
     const visited = new Set();           // cells been to, or on the way laid out
     let look = null;                     // { a, items } while turning to a wall or looking at it
     let pause = 0;                       // seconds left looking
-    let since = 0;                       // cells passed since the last look
+    let gap = EVERY[0];                  // cells on the way still to go before the next picture
     let light = 1.5, flash = 0;          // how far one sees now; a change of world's breath of light
     // The way ahead as it will be floated, laid out a few tiles before one
     // gets there: straight lines from cell to cell and, at a corner, a
@@ -591,7 +532,8 @@ window.PioneerTV = window.PioneerTV || {};
       }
       return null;
     }
-    // More of the way, from where it ends now.
+    // More of the way, from where it ends now; a picture hung on a wall
+    // along it every few cells.
     function extendPath() {
       const [fi, fj] = path.length ? path[path.length - 1] : [tail ? tail.ci : me.ci, tail ? tail.cj : me.cj];
       // Not into a dead end, mostly (a quarter of them: where the world may
@@ -600,7 +542,12 @@ window.PioneerTV = window.PioneerTV || {};
         && (DIRS.filter(([dx, dy]) => open(i, j, dx, dy)).length > 1 || wh(i, j, 50) < 0.25);
       const more = route(fi, fj, wanted, 40) || route(fi, fj, (i, j) => !visited.has(`${i},${j}`), 40)
         || DIRS.filter(([dx, dy]) => open(fi, fj, dx, dy)).slice(0, 1).map(([dx, dy]) => [fi + dx, fj + dy]);
+      for (const [i, j] of more) {
+        visited.add(`${i},${j}`);
+        if (--gap <= 0 && hang(i, j)) gap = EVERY[0] + Math.floor(Math.random() * (EVERY[1] - EVERY[0] + 1));
+      }
       path.push(...more);
+      return more.length > 0;
     }
     // Come to a cell: been there; and the chunks round it kept.
     function arrive(ci, cj) {
@@ -611,20 +558,16 @@ window.PioneerTV = window.PioneerTV || {};
       }
       here = [Math.floor((ci * 2 + 1) / SIDE), Math.floor((cj * 2 + 1) / SIDE)];
     }
-    // A wall of a cell with something on it, to stop at and look at: now
-    // and then (at most every fourth cell; floating on is the rule), a sign
-    // always.
-    function lookIn(ci, cj) {
-      since++;
-      const walls = DIRS.filter(([dx, dy]) => !open(ci, cj, dx, dy)).map(([dx, dy]) => {
+    // A picture on a wall of a cell, not looked at yet: to stop at.
+    function lookAt(ci, cj) {
+      for (const [dx, dy] of DIRS) {
+        if (open(ci, cj, dx, dy)) continue;
         const face = dx === 1 ? 1 : dx === -1 ? 0 : dy === 1 ? 3 : 2;
-        const hung = hungAt(ci * 2 + 1 + dx, cj * 2 + 1 + dy, face, [ci * 2 + 1, cj * 2 + 1]);
-        return hung && hung.items.some(Boolean) ? { a: Math.atan2(dy, dx), items: hung.items.filter(Boolean), sign: !!hung.hanging.sign } : null;
-      }).filter(Boolean);
-      const sign = walls.find((w) => w.sign);
-      if (!sign && (since < 4 || Math.random() > 0.3 || !walls.length)) return null;
-      since = 0;
-      return sign || walls[Math.floor(Math.random() * walls.length)];
+        const k = faceKey(ci * 2 + 1 + dx, cj * 2 + 1 + dy, face);
+        const h = held.get(k) || hung.get(k);
+        if (h && !looked.has(k)) return { a: Math.atan2(dy, dx), items: [h.item], key: k };
+      }
+      return null;
     }
     const angleTo = (from, to) => Math.atan2(Math.sin(to - from), Math.cos(to - from));
     const easeTurn = (p) => (p < 0.5 ? 4 * p * p * p : 1 - (-2 * p + 2) ** 3 / 2);
@@ -655,7 +598,7 @@ window.PioneerTV = window.PioneerTV || {};
     // into a cell's middle where it stops.
     function lay() {
       while (!ending && laid - odo < 5) {
-        if (path.length < 3) extendPath();
+        while (path.length < 10 && extendPath());   // planned (and hung) well ahead of what can be seen
         const { ci, cj, dx, dy } = tail;
         const x = ci * 2 + 1.5, y = cj * 2 + 1.5;
         if (tail.look) { line(x - dx, y - dy, x, y); ending = { look: tail.look }; break; }
@@ -678,7 +621,7 @@ window.PioneerTV = window.PioneerTV || {};
         path.shift();
         marks.push({ s: laid + 0.8, ci: ni, cj: nj });
         visited.add(`${ni},${nj}`);
-        tail = { ci: ni, cj: nj, dx: ox, dy: oy, look: lookIn(ni, nj) };
+        tail = { ci: ni, cj: nj, dx: ox, dy: oy, look: lookAt(ni, nj) };
       }
     }
     // Standing still: on, turned to the way first (out of a dead end, now
@@ -698,7 +641,7 @@ window.PioneerTV = window.PioneerTV || {};
       for (const m of marks) arrive(m.ci, m.cj);
       pieces = []; marks = []; ending = null; v = 0;
       me.x = me.ci * 2 + 1.5; me.y = me.cj * 2 + 1.5;
-      if (e.look) { look = e.look; turn(look.a, () => { hud.look(look.items); pause = LOOK_S; }); return; }
+      if (e.look) { look = e.look; looked.add(look.key); turn(look.a, () => { hud.look(look.items); pause = LOOK_S; }); return; }
       onward();
     }
     function walk(dt) {
@@ -747,10 +690,11 @@ window.PioneerTV = window.PioneerTV || {};
         if (open(me.ci, me.cj, dx, dy)) { back = [me.ci + dx, me.cj + dy]; continue; }
         const face = dx === 1 ? 1 : dx === -1 ? 0 : dy === 1 ? 3 : 2;
         const tx = me.ci * 2 + 1 + dx, ty = me.cj * 2 + 1 + dy;
-        hold.set(`${tx},${ty},${face}`, hungAt(tx, ty, face, [me.ci * 2 + 1, me.cj * 2 + 1]));
+        const h = hungAt(tx, ty, face);
+        if (h) hold.set(faceKey(tx, ty, face), h);
       }
       epoch++;
-      kept = keep; held = hold; uncut = back;
+      kept = keep; held = hold; uncut = back; hung = new Map();
       chunks.clear(); lastKey = NaN;
       visited.clear(); visited.add(`${me.ci},${me.cj}`);
       path = [];
@@ -785,7 +729,7 @@ window.PioneerTV = window.PioneerTV || {};
         let lastT = -1, levels = null;
         for (let x = 0; x < W; x++) {
           const k = at(Math.floor(fx), Math.floor(fy));
-          if (k !== lastT) { lastT = k; levels = tex[k][k === T.sky ? Math.min(shade, SHADES / 4) : k === T.day ? Math.min(shade, SHADES / 8) : shade]; }
+          if (k !== lastT) { lastT = k; levels = tex[k][k === T.sky ? Math.min(shade, 8) : k === T.day ? Math.min(shade, 4) : shade]; }
           const u = (fx * TEX) & (TEX - 1), v = (fy * TEX) & (TEX - 1);
           px[row + x] = levels[v * TEX + u];
           fx += sx; fy += sy;
@@ -831,7 +775,7 @@ window.PioneerTV = window.PioneerTV || {};
         const pale = paleTex(which);
         // The sides facing north and south a little darker (or whiter), as
         // walls in the old games were; a diagonal between.
-        const shade = Math.min(SHADES - 1, shadeOf(dist, seen) + (slant ? 3 : side * 5));
+        const shade = Math.min(SHADES - 1, shadeOf(dist, seen) + (slant ? 1 : side * 2));
         const levels = tex[which][shade];
         const step = TEX / lineH;
         let v = 0;
@@ -840,10 +784,9 @@ window.PioneerTV = window.PioneerTV || {};
         // A picture on this face (not on a door, a hedge, a diagonal), and
         // whether this column crosses it.
         const face = side === 0 ? (stepX > 0 ? 1 : 0) : (stepY > 0 ? 3 : 2);
-        const front = side === 0 ? [mx - stepX, my] : [mx, my - stepY];
-        const all = !slant && which !== T.door && which !== T.hedge && dist < 9 ? painting(mx, my, face, front) : null;
+        const one = !slant && which !== T.door && which !== T.hedge && dist < 9 ? painting(mx, my, face) : null;
         const uf = (u + 0.5) / TEX;
-        const here = all && all.filter((a) => uf >= a.u0 && uf <= a.u1);
+        const here = one && uf >= one.u0 && uf <= one.u1 ? [one] : null;
         if (here && here.length) {
           // Each picture this column crosses: where across it, and its frame's sides.
           for (const a of here) {
@@ -903,7 +846,7 @@ window.PioneerTV = window.PioneerTV || {};
       }
       const seenUrl = new Set();
       const once = photos.filter((p) => !seenUrl.has(p.url) && seenUrl.add(p.url));
-      if (once.length) { pool = once; return; }
+      if (once.length) { pool = once; next = 0; return; }
       try {
         const r = await fetch('/api/finds?n=600');
         const d = await r.json();
@@ -915,6 +858,7 @@ window.PioneerTV = window.PioneerTV || {};
       const now = performance.now();
       const dt = Math.min(0.2, (now - last) / 1000);
       last = now;
+      if (!tex) return;
       walk(dt);
       // The light comes and goes with the parts one floats through.
       light += (lightAt(me.ci, me.cj) - light) * Math.min(1, dt * 0.7);
@@ -930,7 +874,7 @@ window.PioneerTV = window.PioneerTV || {};
     }
     function settle() {
       if (look) hud.leave();
-      path = []; pause = 0; look = null; since = 0; turning = null;
+      path = []; pause = 0; look = null; gap = EVERY[0]; turning = null;
       pieces = []; marks = []; ending = null; tail = null; v = 0; laid = odo;
       light = lightAt(me.ci, me.cj);
     }
@@ -940,7 +884,7 @@ window.PioneerTV = window.PioneerTV || {};
     function wander() {
       const far = () => Math.floor((Math.random() * 2 - 1) * 60000);
       epoch = Math.floor(Math.random() * 1000);
-      kept = new Map(); held = new Map(); uncut = null;
+      kept = new Map(); held = new Map(); uncut = null; hung = new Map(); looked.clear();
       chunks.clear(); lastKey = NaN;
       me.ci = far(); me.cj = far();
       if (isCut(me.ci, me.cj)) me.ci += me.ci > 0 ? -1 : 1;

@@ -166,7 +166,7 @@
         { name: 'En sajts direktsändning', under: FILM_PICTURE, url: OVERLAY,
           setup: ({ P }) => { P.bridge.emit('webvideo', { ...WEBVIDEO, live: true, duration: null, time: 3500, end: 3620, subs: [], title: 'SVT1' }); P.bridge.emit('menu', {}); } },
       ] },
-    { part: 'Komponenter', group: 'Skärmsläckaren', files: 'overlay/saver.js · overlay/saver.css · overlay/maze.js · overlay/mandelbrot.js · overlay/tao.js · daemon idle.py · daemon covers.py (finds)',
+    { part: 'Komponenter', group: 'Skärmsläckaren', files: 'overlay/saver.js · overlay/saver.css · overlay/maze.js · overlay/maze/textures.png (dev/maze-textures.py) · overlay/mandelbrot.js · overlay/tao.js · daemon idle.py · daemon covers.py (finds)',
       used: 'Över allt, ritad av overlayn, när ingen handkontroll är ansluten och inget spelas. En handkontroll som slås på tar bort den. Labyrint (standard) eller Eld, under Inställningar → TV. När boxen vilar blir den ett helskärmsmeddelande (Vilar, där).',
       items: [
         { name: 'Labyrinten', under: HOME, url: OVERLAY, setup: ({ P }) => { P.saver.as('labyrint'); P.saver.show(); },
