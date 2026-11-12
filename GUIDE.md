@@ -1003,17 +1003,21 @@ tried again every three seconds.
   is let be, and the TV is not turned off for it):
   - **Labyrint** (the default, `overlay/maze.js`): a maze without end in
     the manner of Ultima Underworld and of Antichamber, floated through by
-    itself. A raycaster on a 320x180 canvas scaled up with square pixels,
-    twenty frames a second (about 2.5 ms a frame on a laptop; on the box
-    the overlay's WebKit about 10 % of a core). Its parts (zones of 5x5
-    cells) are each in their own stones and their own light, from a
-    flickering torch's dark to broad day (`THEMES`, `light`: how far one
-    sees; the light follows the walker smoothly from part to part), and
-    some are pale, Antichamber's: white walls drawn round in black, a blue
-    or a yellow one now and then, a black one drawn round in white, a paper
-    floor; far off they fade to white instead of black. Walls, floor and
-    ceiling per tile, from the sixteen stone textures and the pale ones
-    drawn in the script (`paleTextures`, the day's sky among them). The
+    itself. A raycaster on a 480x270 canvas scaled up smoothly, twenty
+    frames a second (about 3.5 ms a frame on a laptop). Simple, not
+    pixelated: its textures are drawn in the script, smooth faces of one
+    colour with their courses, joints and boards in thin lines
+    (`stoneTextures`), at 64 steps of distance so flat faces show no
+    bands. Each part (a chunk, 8x8 cells) is in one style and its own
+    light, from a flickering torch's dark to broad day (`THEMES`, `light`:
+    how far one sees; the light follows the walker smoothly), some of them
+    pale, Antichamber's: white (or blue, or black) drawn round in a line, a
+    paper floor, fading to white far off instead of black. A wall is drawn
+    in the style of the space it is seen from (`STYLES`: the parts' and
+    the rooms'; a tile's `style`), so a room is all its own style and the
+    way outside it all the way's, and a style changes only at a door: the
+    ways between chunks and into rooms are framed in dark wood on both
+    sides (`FRAME`). The
     maze comes in chunks of 8x8 cells, each a perfect maze of its own (a
     seeded backtracker, a few walls knocked through) with two doors to the
     chunks west and north of it, so the whole is one maze, made as it is
@@ -1026,10 +1030,13 @@ tried again every three seconds.
     the catalogue). Some have their corners cut at 45 degrees (`CUT`): a
     diagonal across each corner cell (met within its tile by the
     raycaster), the cell left out of the ways, and a way that came in there
-    moved one cell along. The walker floats: it glides straight from cell
-    to cell as far as the way goes, easing up to speed and down again, and
-    turns on the spot, always a right angle or two, eased too; it goes for
-    the nearest cell not yet been to. Come to a dead end and turning back,
+    moved one cell along. The walker floats at one even speed: the way is
+    laid out a few tiles ahead, straight lines from cell to cell and a
+    quarter circle a tile across at each corner (the heading turning a
+    right angle along it), and it slows only where it stops, to look at a
+    wall or to turn back out of a dead end (on the spot, a right angle in
+    some two seconds, eased). It goes for the nearest cell not yet been to,
+    a dead end only now and then (the maze has more loops for it). Come to a dead end and turning back,
     now and then (about half the times) the world behind it changes while
     it has its back to it (`swapWorld`, halfway through the turn: a new
     world, `epoch`, the cell it stands in, the tiles round it and what
@@ -1049,8 +1056,8 @@ tried again every three seconds.
     wood, black, silver, white with a wide mat, gilt, and gilt with a dark
     rim within for the great ones. None on a door. Each is drawn 64 px
     square, kept in its own shape by its frame. The maze starts somewhere
-    new each time (a cell far off in a world of its own, `wander()`). Most
-    cells (not the one after a look) the walker stops at a wall of
+    new each time (a cell far off in a world of its own, `wander()`). Now
+    and then (at most every fourth cell, three times in ten) the walker stops at a wall of
     its cell with pictures on it, turns to it and looks a while (seven
     seconds): what hangs there comes up sharp over the maze (saver.js,
     `hud.look`: a covers' own picture, a photo's Immich preview), each in
@@ -1058,10 +1065,7 @@ tried again every three seconds.
     game's, a film's or an album's name and, when it was played or seen
     lately (`covers.py` finds: first what was played lately, RomM's last
     played and Jellyfin's begun and seen), "spelat nyss" or "sett nyss";
-    faded in and out. Nothing lies on the floor any more. The
-    textures are Screaming Brain Studios' [Tiny Texture Pack
-    1](https://opengameart.org/content/tiny-texture-pack-1) (CC0), made
-    64 px and fewer colours (`overlay/maze/textures.png`).
+    faded in and out.
   - **Eld** (`overlay/mandelbrot.js`): the Mandelbrot set like an open fire
     and a line of the Tao Te Ching, at a quarter of the screen's width and
     ten frames a second, the line in a solid colour (a blend over the
