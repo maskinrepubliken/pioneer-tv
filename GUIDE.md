@@ -1147,6 +1147,24 @@ The stick is sampled at 60 Hz by the daemon; the extension sums the steps and
 applies them once per animation frame, and runs the hit test behind hover at
 most every 80 ms, so a busy page does not queue up pointer motion.
 
+A site's frame of its own (an iframe from another domain, as SVT Play's
+login, `loggain.svtplay.se`, in a modal) is out of reach of all of that,
+which lives in the top frame, while the frame gets the keys once it has
+the focus. `content/frames.js` runs in every frame (with `spatial-nav.js`):
+in a frame of its own the d-pad moves its focus, with the ring, and going
+past its edge goes on in the page from the frame; the pointer's moves and
+presses over an iframe arrive from the top frame (`cursor.js` hands them
+on) and act where it points; a text field in it is typed into from the
+top frame's on-screen keyboard (Y, or A on the field with the automatic
+keyboard), through a field of ours out of sight whose every change goes
+in at once, OK sending it as Enter. In the top frame the d-pad stops at an
+iframe large enough to hold something (150x100) and goes into it, and an
+open modal (`dialog[open]`, `aria-modal`) keeps the d-pad within it. The
+frames and the top frame talk only through the background worker
+(`frame-up` and `frame-down`, by frame id; an iframe is matched to its
+frame by origin and size), never `postMessage`, so a page can neither see
+nor pose as either.
+
 ## Overlays and fullscreen
 
 A page in fullscreen shows only its fullscreen element, which the browser puts

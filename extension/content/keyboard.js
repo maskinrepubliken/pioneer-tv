@@ -85,6 +85,8 @@ window.PioneerTV = window.PioneerTV || {};
 
     toggle() {
       if (this.isOpen()) return this.close();
+      // A text field in a frame of its own (a login form): typed into from here (frames.js).
+      if (M.frames && M.frames.type && M.frames.type()) return;
       const active = this.deepActive();
       if (M.nav.isTextField(active)) return this.open(active);
       // A page of ours whose search is a round button types into its own

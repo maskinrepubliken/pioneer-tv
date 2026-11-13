@@ -6,6 +6,7 @@
 // that overlap on the cross axis. Works on pages that never planned for it.
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
+  if (M.nav) return;                   // run again for the frames (frames.js): the first one stays
   const FOCUSABLE = [
     'a[href]', 'button', 'input', 'select', 'textarea', 'summary', 'video', 'audio',
     '[tabindex]:not([tabindex="-1"])', '[role="button"]', '[role="link"]',
@@ -50,9 +51,22 @@ window.PioneerTV = window.PioneerTV || {};
       return true;
     },
 
+    // An open modal (a site's dialog): the d-pad stays in it.
+    modal() {
+      const open = [...document.querySelectorAll('dialog[open], [aria-modal="true"]')].filter((d) => this.isVisible(d));
+      return open[open.length - 1] || null;
+    },
+
     candidates() {
       const out = [];
-      for (const el of document.querySelectorAll(FOCUSABLE)) {
+      const scope = this.modal() || document;
+      // A frame of its own large enough to hold something (a login form): its
+      // inside is the frame's own (frames.js), so the frame is a stop.
+      for (const f of scope.querySelectorAll('iframe')) {
+        const r = f.getBoundingClientRect();
+        if (r.width >= 150 && r.height >= 100 && this.isVisible(f)) out.push(f);
+      }
+      for (const el of scope.querySelectorAll(FOCUSABLE)) {
         if (el.disabled || el.getAttribute('aria-disabled') === 'true') continue;
         if (!this.isVisible(el)) continue;
         // Skip elements wrapped by another focusable (icon inside a button).
@@ -108,6 +122,7 @@ window.PioneerTV = window.PioneerTV || {};
         el.setAttribute('tabindex', '-1');
       }
       try { el.focus({ preventScroll: true }); } catch { el.focus(); }
+      if (el.tagName === 'IFRAME' && M.frames && M.frames.enter) M.frames.enter(el);
       if (opts.scroll !== false) el.scrollIntoView({ block: 'center', inline: 'center', behavior: 'auto' });
       M.bridge && M.bridge.emit('nav:focus', el);
     },

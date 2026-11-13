@@ -140,6 +140,8 @@ window.PioneerTV = window.PioneerTV || {};
     pending.settle = 0;
     hoverAt = performance.now();
     const t = under();
+    // Over a frame of its own: the move is the frame's (frames.js).
+    if (t && t.tagName === 'IFRAME' && M.frames && M.frames.pointer(t, state.x, state.y, 'move')) { state.hover = t; return; }
     if (t !== state.hover) {
       if (state.hover) fire(state.hover, 'mouseout', { relatedTarget: t });
       if (t) { fire(t, 'mouseover', { relatedTarget: state.hover }); fire(t, 'mouseenter'); }
@@ -160,6 +162,16 @@ window.PioneerTV = window.PioneerTV || {};
     flush();                      // click where the arrow is, not where it was a frame ago
     const t = under();
     const which = name === 'right' ? 2 : 0;
+    // A press over a frame of its own: the frame gets the keys, and the
+    // press is its own (frames.js).
+    if (which === 0 && t && t.tagName === 'IFRAME' && M.frames) {
+      if (down) { try { t.focus({ preventScroll: true }); } catch {} }
+      if (M.frames.pointer(t, state.x, state.y, down ? 'down' : 'up')) {
+        state.pressed = down;
+        ensure().classList.toggle('pioneertv-cursor-press', down);
+        return;
+      }
+    }
     if (down) {
       state.pressed = true;
       ensure().classList.add('pioneertv-cursor-press');

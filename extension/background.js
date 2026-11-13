@@ -192,6 +192,14 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
     case 'api':
       apiProxy(msg).then(reply);
       return true; // async reply
+    // A frame of its own and the top frame of its tab (content/frames.js):
+    // up from the frame to the top frame, saying which frame; down to it.
+    case 'frame-up':
+      if (sender.tab && sender.frameId) chrome.tabs.sendMessage(sender.tab.id, { type: 'frame-up', frameId: sender.frameId, payload: msg.payload }, { frameId: 0 }).catch(() => {});
+      break;
+    case 'frame-down':
+      if (sender.tab && sender.frameId === 0 && Number.isInteger(msg.frameId) && msg.frameId > 0) chrome.tabs.sendMessage(sender.tab.id, msg.payload, { frameId: msg.frameId }).catch(() => {});
+      break;
   }
   return false;
 });
