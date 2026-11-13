@@ -36,7 +36,7 @@
 window.PioneerTV = window.PioneerTV || {};
 (function (M) {
   const W = 320, H = 180;                // the picture, in pixels (scaled up smoothly)
-  const PIC = 64;                        // a picture on a wall, drawn this many pixels square
+  const PIC = 96;                        // a picture on a wall, drawn this many pixels high (sampled smoothly)
   const FPS = 20;
   const TEX = 64;                        // a texture's side
   const SHADES = 32;                     // steps of darkness (or of white, far off in the pale parts)
@@ -387,14 +387,14 @@ window.PioneerTV = window.PioneerTV || {};
     c.width = PIC; c.height = PIC;
     const g = c.getContext('2d', { willReadFrequently: true });
     g.fillStyle = '#f6f3ec'; g.fillRect(0, 0, PIC, PIC);
-    g.fillStyle = '#1a1a1a'; g.font = 'bold 11px sans-serif'; g.textBaseline = 'top';
+    g.fillStyle = '#1a1a1a'; g.font = 'bold 16px sans-serif'; g.textBaseline = 'top';
     const words = text.split(' ');
-    let line = '', y = 8;
+    let line = '', y = 12;
     for (const w of words) {
-      if (g.measureText(`${line} ${w}`).width > PIC - 10 && line) { g.fillText(line, 5, y); line = w; y += 13; } else line = line ? `${line} ${w}` : w;
+      if (g.measureText(`${line} ${w}`).width > PIC - 16 && line) { g.fillText(line, 8, y); line = w; y += 19; } else line = line ? `${line} ${w}` : w;
     }
-    g.fillText(line, 5, y);
-    g.strokeStyle = '#1a1a1a'; g.lineWidth = 3; g.strokeRect(1.5, 1.5, PIC - 3, PIC - 3);
+    g.fillText(line, 8, y);
+    g.strokeStyle = '#1a1a1a'; g.lineWidth = 4; g.strokeRect(2, 2, PIC - 4, PIC - 4);
     return { data: new Uint32Array(g.getImageData(0, 0, PIC, PIC).data.buffer.slice(0)), w: PIC, h: PIC, ratio: 1.3 };
   }
 
@@ -508,21 +508,21 @@ window.PioneerTV = window.PioneerTV || {};
     let gap = EVERY[0];                  // cells on the way still to go before the next picture
     let light = 1.5, flash = 0;          // how far one sees now; a change of world's breath of light
     // The way ahead as it will be floated, laid out a few tiles before one
-    // gets there: straight lines from cell to cell and, at a corner, a
-    // quarter circle a tile across through it, so the speed never drops;
-    // each piece { s0, len, at(s) -> [x, y, a] } from the distance floated
-    // (odo). The cells come to on it, at their distances (marks). It ends
-    // only where one stops: at a wall to look at, or a dead end to turn
-    // back from (ending).
+    // gets there: in the grid, straight from cell to cell as far as the way
+    // goes straight, at one speed; each piece { s0, len, at(s) -> [x, y, a] }
+    // from the distance floated (odo). The cells come to on it, at their
+    // distances (marks). It ends where one stops, in a cell's middle: at a
+    // corner (to turn on the spot), at a wall to look at, or a dead end to
+    // turn back from (ending).
     let pieces = [], marks = [], odo = 0, laid = 0, v = 0;
     let tail = null;                     // where it ends: { ci, cj, dx, dy, rest, look } (rest: from standing)
-    let ending = null;                   // { look } | { back } | { rest }
+    let ending = null;                   // { look } | { rest }
     let turning = null;                  // a turn on the spot: { a0, by, t, dur, then, swap }
     const A = (SPEED * SPEED) / (2 * EASE); // the speeding up and slowing down
 
     // A way to the nearest cell not yet been to, breadth first from a cell,
     // no further than `far` steps.
-    function route(fi, fj, wanted, far) {
+    function route(fi, fj, wanted, far, through = () => true) {
       const from = `${fi},${fj}`;
       const back = new Map([[from, null]]);
       const queue = [[fi, fj, 0]];
@@ -535,7 +535,7 @@ window.PioneerTV = window.PioneerTV || {};
         }
         if (d >= far) continue;
         for (const [dx, dy] of DIRS) {
-          if (!open(i, j, dx, dy)) continue;
+          if (!open(i, j, dx, dy) || !through(i, j, dx, dy)) continue;
           const k = `${i + dx},${j + dy}`;
           if (back.has(k)) continue;
           back.set(k, `${i},${j}`);
@@ -549,10 +549,13 @@ window.PioneerTV = window.PioneerTV || {};
     function extendPath() {
       const [fi, fj] = path.length ? path[path.length - 1] : [tail ? tail.ci : me.ci, tail ? tail.cj : me.cj];
       // Not into a dead end, mostly (a quarter of them: where the world may
-      // change behind one): it means stopping and turning back.
-      const wanted = (i, j) => !visited.has(`${i},${j}`)
-        && (DIRS.filter(([dx, dy]) => open(i, j, dx, dy)).length > 1 || wh(i, j, 50) < 0.25);
-      const more = route(fi, fj, wanted, 40) || route(fi, fj, (i, j) => !visited.has(`${i},${j}`), 40)
+      // change behind one): it means stopping and turning back. And the part
+      // one is in seen all through before a portal to the next (a door on a
+      // chunk's border; a room's are gone through as they come).
+      const unseen = (i, j) => !visited.has(`${i},${j}`);
+      const wanted = (i, j) => unseen(i, j) && (DIRS.filter(([dx, dy]) => open(i, j, dx, dy)).length > 1 || wh(i, j, 50) < 0.25);
+      const within = (i, j, dx, dy) => { const tx = i * 2 + 1 + dx, ty = j * 2 + 1 + dy; return !(doorAt(tx, ty) && ((tx & 15) === 0 || (ty & 15) === 0)); };
+      const more = route(fi, fj, wanted, 80, within) || route(fi, fj, unseen, 80, within) || route(fi, fj, unseen, 40)
         || DIRS.filter(([dx, dy]) => open(fi, fj, dx, dy)).slice(0, 1).map(([dx, dy]) => [fi + dx, fj + dy]);
       for (const [i, j] of more) {
         visited.add(`${i},${j}`);
@@ -596,18 +599,14 @@ window.PioneerTV = window.PioneerTV || {};
       const len = Math.hypot(x1 - x0, y1 - y0), a = Math.atan2(y1 - y0, x1 - x0);
       push(len, (s) => [x0 + ((x1 - x0) * s) / len, y0 + ((y1 - y0) * s) / len, a]);
     }
-    function arc(cx, cy, from, sweep) {           // a quarter of a circle a tile across, from the angle `from` round its middle
-      const len = Math.abs(sweep);
-      push(len, (s) => { const t = from + (sweep * s) / len; return [cx + Math.cos(t), cy + Math.sin(t), t + (Math.sign(sweep) * Math.PI) / 2]; });
-    }
     // Off from standing in a cell, facing the way on.
     function begin() {
       pieces = []; marks = []; laid = odo; ending = null;
       tail = { ci: me.ci, cj: me.cj, dx: Math.round(Math.cos(me.a)), dy: Math.round(Math.sin(me.a)), rest: true };
     }
     // Laid out a few tiles ahead: from one tile before a cell's middle on
-    // to one tile before the next one's, straight on or round the corner;
-    // into a cell's middle where it stops.
+    // to one tile before the next one's, straight on; into a cell's middle
+    // where it stops (a corner turned on the spot, a wall, a dead end).
     function lay() {
       while (!ending && laid - odo < 5) {
         while (path.length < 10 && extendPath());   // planned (and hung) well ahead of what can be seen
@@ -622,13 +621,10 @@ window.PioneerTV = window.PioneerTV || {};
           line(x, y, x + dx, y + dy);
         } else if (ox === dx && oy === dy) {
           line(x - dx, y - dy, x + dx, y + dy);
-        } else if (ox === -dx && oy === -dy) {   // back the way it came: stop, and turn
+        } else {                                 // a corner, or back the way it came: stop, and turn
           line(x - dx, y - dy, x, y);
-          ending = { back: true };
+          ending = { rest: true };
           break;
-        } else {
-          const from = Math.atan2(-oy, -ox);
-          arc(x - dx + ox, y - dy + oy, from, angleTo(from, Math.atan2(dy, dx)));
         }
         path.shift();
         marks.push({ s: laid + 0.8, ci: ni, cj: nj });
@@ -816,6 +812,7 @@ window.PioneerTV = window.PioneerTV || {};
           wx = side === 0 ? me.y + dist * ry : me.x + dist * rx;
           wx -= Math.floor(wx);
         }
+        if (!(dist > 0.02)) dist = 0.02;             // never on a wall's face (nor NaN): it would leave the column to the floor
         zbuf[x] = dist;
         const lineH = Math.floor(H / dist);
         let top = Math.floor(horizon - lineH / 2), bottom = top + lineH;
@@ -834,16 +831,33 @@ window.PioneerTV = window.PioneerTV || {};
         // whether this column crosses it.
         const face = side === 0 ? (stepX > 0 ? 1 : 0) : (stepY > 0 ? 3 : 2);
         const one = !slant && which !== T.hedge && dist < 9 ? painting(mx, my, face) : null;
-        const uf = (u + 0.5) / TEX;
+        // Across a face as one standing before it sees it, left to right
+        // (the texture's u is turned on some faces; a picture never is).
+        const uf = side === 0 ? (stepX > 0 ? wx : 1 - wx) : (stepY > 0 ? 1 - wx : wx);
         if (one && uf >= one.u0 && uf <= one.u1) {
-          // The picture (its frame drawn into it) where this column crosses it.
+          // The picture (its frame drawn into it) where this column crosses
+          // it, sampled smoothly between its pixels.
           const { pic } = one;
-          const pu = Math.min(pic.w - 1, Math.floor(((uf - one.u0) / (one.u1 - one.u0)) * pic.w));
+          const sx = Math.max(0, Math.min(pic.w - 1.001, ((uf - one.u0) / (one.u1 - one.u0)) * pic.w - 0.5));
+          const x0 = Math.floor(sx), x1 = Math.min(pic.w - 1, x0 + 1), fx = sx - x0;
           for (let y = top; y < bottom; y++) {
             const vf = v / TEX;
-            const p = vf < one.v0 || vf > one.v1 ? 0
-              : pic.data[Math.min(pic.h - 1, Math.floor(((vf - one.v0) / (one.v1 - one.v0)) * pic.h)) * pic.w + pu];
-            px[y * W + x] = p >>> 24 ? lit(p, shade, pale) : levels[(Math.floor(v) & (TEX - 1)) * TEX + u];
+            let p = 0;
+            if (vf >= one.v0 && vf <= one.v1) {
+              const sy = Math.max(0, Math.min(pic.h - 1.001, ((vf - one.v0) / (one.v1 - one.v0)) * pic.h - 0.5));
+              const y0 = Math.floor(sy), y1 = Math.min(pic.h - 1, y0 + 1), fy = sy - y0;
+              const d = pic.data, a = d[y0 * pic.w + x0];
+              if (d[Math.round(sy) * pic.w + Math.round(sx)] >>> 24) {
+                const b = d[y0 * pic.w + x1], c = d[y1 * pic.w + x0], e = d[y1 * pic.w + x1];
+                const mix = (sh) => {
+                  const top = ((a >>> sh) & 255) * (1 - fx) + ((b >>> sh) & 255) * fx;
+                  const bot = ((c >>> sh) & 255) * (1 - fx) + ((e >>> sh) & 255) * fx;
+                  return (top * (1 - fy) + bot * fy) & 255;
+                };
+                p = 0xff000000 | (mix(16) << 16) | (mix(8) << 8) | mix(0);
+              }
+            }
+            px[y * W + x] = p ? lit(p, shade, pale) : levels[(Math.floor(v) & (TEX - 1)) * TEX + u];
             v += step;
           }
         } else {

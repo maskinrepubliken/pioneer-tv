@@ -1041,13 +1041,15 @@ tried again every three seconds.
     the catalogue). Some have their corners cut at 45 degrees (`CUT`): a
     diagonal across each corner cell (met within its tile by the
     raycaster), the cell left out of the ways, and a way that came in there
-    moved one cell along. The walker floats at one even speed: the way is
-    laid out a few tiles ahead, straight lines from cell to cell and a
-    quarter circle a tile across at each corner (the heading turning a
-    right angle along it), and it slows only where it stops, to look at a
-    picture or to turn back out of a dead end (on the spot, a right angle in
-    some two seconds, eased). It goes for the nearest cell not yet been to,
-    a dead end only now and then (the maze has more loops for it). Come to a dead end and turning back,
+    moved one cell along. The walker moves in the grid: it glides straight
+    from cell to cell at one speed as far as the way goes straight, easing
+    to a stop in a cell's middle at a corner, at a picture or at a dead end,
+    and turns on the spot, a right angle in some two seconds, eased. It goes
+    for the nearest cell not yet been to, a dead end only now and then (the
+    maze has more loops for it), and sees the part it is in all through
+    before it goes through a portal to the next (the search keeps from the
+    doors on a chunk's border while there is anything left on this side;
+    a room's portals are gone through as they come). Come to a dead end and turning back,
     now and then (about half the times) the world behind it changes while
     it has its back to it (`swapWorld`, halfway through the turn: a new
     world, `epoch`, the cell it stands in, the tiles round it and what
@@ -1066,7 +1068,9 @@ tried again every three seconds.
     now and then a sign instead. Each in liberty-quests' spelläge frame
     (`overlay/maze/carved-frame.png`, its carved wooden window with a gem
     at each corner, drawn into the picture as a 9-slice at its own scale,
-    the picture 64 px high in its own shape). The maze starts somewhere new each time (a cell far off in a
+    the picture 96 px high in its own shape, sampled smoothly between its
+    pixels as it is drawn, and the right way round: across a face as one
+    standing before it sees it, whichever way the wall's texture runs). The maze starts somewhere new each time (a cell far off in a
     world of its own, `wander()`). At each picture the walker stops, turns
     to it and looks a while (seven seconds): it comes up sharp over the
     maze (saver.js, `hud.look`: a cover's own picture, a photo's Immich
