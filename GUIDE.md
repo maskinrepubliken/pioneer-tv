@@ -1004,7 +1004,10 @@ tried again every three seconds.
   - **Labyrint** (the default, `overlay/maze.js`): a maze without end in
     the manner of Ultima Underworld and of Antichamber, floated through by
     itself. A raycaster on a 320x180 canvas scaled up smoothly (not
-    pixelated), twenty frames a second (about 3 ms a frame on a laptop).
+    pixelated), twenty frames a second (about 3 ms a frame on a laptop). A
+    wall covers every row it reaches into, measured exactly, and the floor
+    is measured from each row's middle, so no row of the floor beyond a
+    wall shows under it.
     The stone textures are Screaming Brain Studios' [Tiny Texture Pack
     1](https://opengameart.org/content/tiny-texture-pack-1) (CC0), its
     128 px ones made 64 px smoothly with every colour kept
@@ -1041,10 +1044,17 @@ tried again every three seconds.
     the catalogue). Some have their corners cut at 45 degrees (`CUT`): a
     diagonal across each corner cell (met within its tile by the
     raycaster), the cell left out of the ways, and a way that came in there
-    moved one cell along. The walker moves in the grid: it glides straight
-    from cell to cell at one speed as far as the way goes straight, easing
-    to a stop in a cell's middle at a corner, at a picture or at a dead end,
-    and turns on the spot, a right angle in some two seconds, eased. It goes
+    moved one cell along. And there are ways at 45 degrees, up to four a
+    chunk: a block of 2x2 cells crossed corner to corner (`links`, by the
+    corner tile it passes through), the four straight ways inside the
+    block closed for it and its sides diagonal walls in the four tiles
+    beside that corner; the maze's backtracker may take it as any other
+    way (mostly does), so the maze stays one, and they keep clear of the
+    rooms. The walker moves in the grid: it glides straight from cell to
+    cell at one speed as far as the way goes straight (at 45 degrees too),
+    easing to a stop in a cell's middle at a corner, at a picture or at a
+    dead end, and turns on the spot, 45 or 90 degrees at a time as the way
+    asks, some two seconds a right angle, eased. It goes
     for the nearest cell not yet been to, a dead end only now and then (the
     maze has more loops for it), and sees the part it is in all through
     before it goes through a portal to the next (the search keeps from the

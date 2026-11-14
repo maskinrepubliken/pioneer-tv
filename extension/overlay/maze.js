@@ -148,6 +148,31 @@ window.PioneerTV = window.PioneerTV || {};
     const wall = new Uint8Array(SIDE * SIDE).fill(1), diag = new Uint8Array(SIDE * SIDE), door = new Uint8Array(SIDE * SIDE);
     const style = new Uint8Array(SIDE * SIDE).fill(themeAt(cx, cy));
     const rand = rng(Math.floor(wh(cx, cy, 2) * 4294967295));
+    const links = new Map();             // a way at 45 degrees: its corner tile -> its way ('/' 1, '\\' 2)
+    // Now and then a room in the middle, chosen first (the ways at 45
+    // degrees keep clear of it): 3 or 4 cells a side, a gallery long.
+    let spec = null;
+    if (!(cx === 0 && cy === 0) && wh(cx, cy, 6) < 0.3) {
+      const kind = ROOMS[Math.floor(wh(cx, cy, 7) * ROOMS.length)];
+      const w = kind === 'gallery' ? 5 + Math.floor(rand() * 2) : 3 + Math.floor(rand() * 2);
+      const h = kind === 'gallery' ? 2 + Math.floor(rand() * 2) : 3 + Math.floor(rand() * 2);
+      spec = { kind, w, h, x0: 1 + Math.floor(rand() * (CHUNK - w - 1)), y0: 1 + Math.floor(rand() * (CHUNK - h - 1)) };
+    }
+    // Ways at 45 degrees, a few a chunk: a block of 2 by 2 cells crossed
+    // corner to corner ('\\' 2: its top left to its bottom right; '/' 1:
+    // its top right to its bottom left), the four straight ways inside it
+    // closed for it, its sides diagonal walls in the four tiles beside the
+    // corner it passes through. The maze may take it as any other way.
+    const blocks = [];
+    for (let n = 0; n < 12 && blocks.length < 4; n++) {
+      const i = Math.floor(rand() * (CHUNK - 1)), j = Math.floor(rand() * (CHUNK - 1));
+      const nearRoom = spec && i + 1 >= spec.x0 - 1 && i <= spec.x0 + spec.w && j + 1 >= spec.y0 - 1 && j <= spec.y0 + spec.h;
+      if (nearRoom || blocks.some((b) => Math.abs(b.i - i) < 3 && Math.abs(b.j - j) < 3)) continue;
+      blocks.push({ i, j, t: rand() < 0.5 ? 2 : 1 });
+    }
+    const blockOf = (x, y) => blocks.find((b) => x >= b.i && x <= b.i + 1 && y >= b.j && y <= b.j + 1);
+    const across = (b) => (b.t === 2 ? [[b.i, b.j], [b.i + 1, b.j + 1]] : [[b.i + 1, b.j], [b.i, b.j + 1]]);
+    const slant = 1 + STYLES[style[0]].wall;
     // A perfect maze over its cells (tiles 1, 3 .. 15).
     const seen = new Uint8Array(CHUNK * CHUNK);
     const start = [Math.floor(rand() * CHUNK), Math.floor(rand() * CHUNK)];
@@ -156,33 +181,45 @@ window.PioneerTV = window.PioneerTV || {};
     wall[(start[1] * 2 + 1) * SIDE + start[0] * 2 + 1] = 0;
     while (stack.length) {
       const [x, y] = stack[stack.length - 1];
+      const b = blockOf(x, y);
       const next = DIRS.filter(([dx, dy]) => {
         const nx = x + dx, ny = y + dy;
-        return nx >= 0 && ny >= 0 && nx < CHUNK && ny < CHUNK && !seen[ny * CHUNK + nx];
+        return nx >= 0 && ny >= 0 && nx < CHUNK && ny < CHUNK && !seen[ny * CHUNK + nx] && !(b && blockOf(nx, ny) === b);
       });
-      if (!next.length) { stack.pop(); continue; }
-      const [dx, dy] = next[Math.floor(rand() * next.length)];
+      let slantTo = null;
+      if (b) {                                 // its block's way at 45 degrees, from either end
+        const ends = across(b), k = ends.findIndex(([ex, ey]) => ex === x && ey === y);
+        if (k >= 0 && !seen[ends[1 - k][1] * CHUNK + ends[1 - k][0]]) slantTo = [ends[1 - k][0] - x, ends[1 - k][1] - y];
+      }
+      if (!next.length && !slantTo) { stack.pop(); continue; }
+      // The way at 45 degrees taken mostly, where it can be.
+      const [dx, dy] = slantTo && (!next.length || rand() < 0.75) ? slantTo : next[Math.floor(rand() * next.length)];
       const nx = x + dx, ny = y + dy;
       seen[ny * CHUNK + nx] = 1;
       wall[(ny * 2 + 1) * SIDE + nx * 2 + 1] = 0;
-      wall[(y * 2 + 1 + dy) * SIDE + x * 2 + 1 + dx] = 0;
+      if (dx && dy) {
+        // Through the corner between, the four tiles beside it its sides.
+        const X = x * 2 + 1, Y = y * 2 + 1, NX = nx * 2 + 1, NY = ny * 2 + 1;
+        wall[(Y + dy) * SIDE + X + dx] = 0;
+        links.set((Y + dy) * SIDE + X + dx, b.t);
+        for (const [tx, ty] of [[X + dx, Y], [X, Y + dy], [NX - dx, NY], [NX, NY - dy]]) {
+          wall[ty * SIDE + tx] = 0;
+          diag[ty * SIDE + tx] = (b.t << 5) | slant;
+        }
+      } else wall[(y * 2 + 1 + dy) * SIDE + x * 2 + 1 + dx] = 0;
       stack.push([nx, ny]);
     }
     // Walls knocked through, so there are loops and fewer dead ends.
     for (let i = 0; i < 14; i++) {
       const x = 1 + Math.floor(rand() * (SIDE - 2)), y = 1 + Math.floor(rand() * (SIDE - 2));
-      if ((x + y) % 2 === 1) wall[y * SIDE + x] = 0;
+      if ((x + y) % 2 === 1 && !diag[y * SIDE + x]) wall[y * SIDE + x] = 0;
     }
     // Now and then a room in the middle, its walls inside taken away, in a
     // style of its own, its ways in framed as doors.
     let room = null;
     const cut = new Set();
-    if (!(cx === 0 && cy === 0) && wh(cx, cy, 6) < 0.3) {
-      const kind = ROOMS[Math.floor(wh(cx, cy, 7) * ROOMS.length)];
-      // A gallery long, the rest 3 or 4 cells a side.
-      const w = kind === 'gallery' ? 5 + Math.floor(rand() * 2) : 3 + Math.floor(rand() * 2);
-      const h = kind === 'gallery' ? 2 + Math.floor(rand() * 2) : 3 + Math.floor(rand() * 2);
-      const x0 = 1 + Math.floor(rand() * (CHUNK - w - 1)), y0 = 1 + Math.floor(rand() * (CHUNK - h - 1));
+    if (spec) {
+      const { kind, w, h, x0, y0 } = spec;
       room = { kind, x0: cx * CHUNK + x0, y0: cy * CHUNK + y0, x1: cx * CHUNK + x0 + w - 1, y1: cy * CHUNK + y0 + h - 1 };
       const L = x0 * 2, R = (x0 + w - 1) * 2 + 2, U = y0 * 2, D = (y0 + h - 1) * 2 + 2;
       for (let ly = U; ly <= D; ly++) {
@@ -242,13 +279,14 @@ window.PioneerTV = window.PioneerTV || {};
       const [tx, ty] = k.split(',').map(Number);
       if (tx >> 4 !== cx || ty >> 4 !== cy) continue;
       const i = (ty & 15) * SIDE + (tx & 15);
-      wall[i] = v.wall; style[i] = v.style; diag[i] = 0;
+      wall[i] = v.wall; style[i] = v.style; diag[i] = v.diag || 0;
+      if (v.link) links.set(i, v.link); else links.delete(i);
     }
     if (uncut && (uncut[0] * 2 + 1) >> 4 === cx && (uncut[1] * 2 + 1) >> 4 === cy) {
       cut.delete((uncut[1] & 7) * CHUNK + (uncut[0] & 7));
       diag[((uncut[1] * 2 + 1) & 15) * SIDE + ((uncut[0] * 2 + 1) & 15)] = 0;
     }
-    return { wall, diag, style, door, room, cut };
+    return { wall, diag, style, door, room, cut, links };
   }
   // The chunks far behind go.
   let here = [0, 0];
@@ -281,7 +319,15 @@ window.PioneerTV = window.PioneerTV || {};
     const c = chunk((ci * 2 + 1) >> 4, (cj * 2 + 1) >> 4);
     return c.cut.size > 0 && c.cut.has((cj & 7) * CHUNK + (ci & 7));
   };
-  const open = (ci, cj, dx, dy) => tile(ci * 2 + 1 + dx, cj * 2 + 1 + dy) === 0 && !isCut(ci + dx, cj + dy);
+  const open = (ci, cj, dx, dy) => tile(ci * 2 + 1 + dx, cj * 2 + 1 + dy) === 0 && !diagAt(ci * 2 + 1 + dx, cj * 2 + 1 + dy) && !isCut(ci + dx, cj + dy);
+  // A way at 45 degrees from a cell: through its corner that way, a way
+  // laid there (the chunk's links), lying that way.
+  const DIAGS = [[1, 1], [-1, -1], [1, -1], [-1, 1]];
+  const ALL = [...DIRS, ...DIAGS];
+  const linkAt = (tx, ty) => chunk(tx >> 4, ty >> 4).links.get((ty & 15) * SIDE + (tx & 15)) || 0;
+  const way = (ci, cj, dx, dy) => (dx && dy ? linkAt(ci * 2 + 1 + dx, cj * 2 + 1 + dy) === (dx === dy ? 2 : 1) : open(ci, cj, dx, dy));
+  // A wall of a cell that is a wall (not a way, nor a diagonal's side).
+  const solid = (ci, cj, dx, dy) => !open(ci, cj, dx, dy) && tile(ci * 2 + 1 + dx, cj * 2 + 1 + dy) !== 0;
   const roomAt = (ci, cj) => {
     const r = chunk((ci * 2 + 1) >> 4, (cj * 2 + 1) >> 4).room;
     return r && ci >= r.x0 && ci <= r.x1 && cj >= r.y0 && cj <= r.y1 ? r : null;
@@ -474,7 +520,7 @@ window.PioneerTV = window.PioneerTV || {};
     // sign now and then in the pale parts; larger in a room, great in a
     // gallery.
     function hang(ci, cj) {
-      const walls = DIRS.filter(([dx, dy]) => !open(ci, cj, dx, dy) && !isCut(ci + dx, cj + dy));
+      const walls = DIRS.filter(([dx, dy]) => solid(ci, cj, dx, dy) && !isCut(ci + dx, cj + dy));
       if (!walls.length) return false;
       const [dx, dy] = walls[Math.floor(Math.random() * walls.length)];
       const room = roomAt(ci, cj);
@@ -518,6 +564,7 @@ window.PioneerTV = window.PioneerTV || {};
     let tail = null;                     // where it ends: { ci, cj, dx, dy, rest, look } (rest: from standing)
     let ending = null;                   // { look } | { rest }
     let turning = null;                  // a turn on the spot: { a0, by, t, dur, then, swap }
+    let slanted = 0;                     // ways at 45 degrees taken (debug)
     const A = (SPEED * SPEED) / (2 * EASE); // the speeding up and slowing down
 
     // A way to the nearest cell not yet been to, breadth first from a cell,
@@ -534,8 +581,8 @@ window.PioneerTV = window.PioneerTV || {};
           return out;
         }
         if (d >= far) continue;
-        for (const [dx, dy] of DIRS) {
-          if (!open(i, j, dx, dy) || !through(i, j, dx, dy)) continue;
+        for (const [dx, dy] of ALL) {
+          if (!way(i, j, dx, dy) || !through(i, j, dx, dy)) continue;
           const k = `${i + dx},${j + dy}`;
           if (back.has(k)) continue;
           back.set(k, `${i},${j}`);
@@ -553,10 +600,10 @@ window.PioneerTV = window.PioneerTV || {};
       // one is in seen all through before a portal to the next (a door on a
       // chunk's border; a room's are gone through as they come).
       const unseen = (i, j) => !visited.has(`${i},${j}`);
-      const wanted = (i, j) => unseen(i, j) && (DIRS.filter(([dx, dy]) => open(i, j, dx, dy)).length > 1 || wh(i, j, 50) < 0.25);
+      const wanted = (i, j) => unseen(i, j) && (ALL.filter(([dx, dy]) => way(i, j, dx, dy)).length > 1 || wh(i, j, 50) < 0.25);
       const within = (i, j, dx, dy) => { const tx = i * 2 + 1 + dx, ty = j * 2 + 1 + dy; return !(doorAt(tx, ty) && ((tx & 15) === 0 || (ty & 15) === 0)); };
       const more = route(fi, fj, wanted, 80, within) || route(fi, fj, unseen, 80, within) || route(fi, fj, unseen, 40)
-        || DIRS.filter(([dx, dy]) => open(fi, fj, dx, dy)).slice(0, 1).map(([dx, dy]) => [fi + dx, fj + dy]);
+        || ALL.filter(([dx, dy]) => way(fi, fj, dx, dy)).slice(0, 1).map(([dx, dy]) => [fi + dx, fj + dy]);
       for (const [i, j] of more) {
         visited.add(`${i},${j}`);
         if (--gap <= 0 && hang(i, j)) gap = EVERY[0] + Math.floor(Math.random() * (EVERY[1] - EVERY[0] + 1));
@@ -576,7 +623,7 @@ window.PioneerTV = window.PioneerTV || {};
     // A picture on a wall of a cell, not looked at yet: to stop at.
     function lookAt(ci, cj) {
       for (const [dx, dy] of DIRS) {
-        if (open(ci, cj, dx, dy)) continue;
+        if (!solid(ci, cj, dx, dy)) continue;
         const face = dx === 1 ? 1 : dx === -1 ? 0 : dy === 1 ? 3 : 2;
         const k = faceKey(ci * 2 + 1 + dx, cj * 2 + 1 + dy, face);
         const h = held.get(k) || hung.get(k);
@@ -627,7 +674,8 @@ window.PioneerTV = window.PioneerTV || {};
           break;
         }
         path.shift();
-        marks.push({ s: laid + 0.8, ci: ni, cj: nj });
+        marks.push({ s: laid + 0.8 * Math.hypot(ox, oy), ci: ni, cj: nj });
+        if (ox && oy) slanted++;
         visited.add(`${ni},${nj}`);
         tail = { ci: ni, cj: nj, dx: ox, dy: oy, look: lookAt(ni, nj) };
       }
@@ -640,7 +688,9 @@ window.PioneerTV = window.PioneerTV || {};
       const [ni, nj] = path[0];
       const want = Math.atan2(nj - me.cj, ni - me.ci);
       if (Math.abs(angleTo(me.a, want)) < 0.01) { begin(); return; }
-      const dead = DIRS.filter(([ex, ey]) => open(me.ci, me.cj, ex, ey)).length === 1;
+      // (Only out of a straight one: a way at 45 degrees is not kept whole.)
+      const ways = ALL.filter(([ex, ey]) => way(me.ci, me.cj, ex, ey));
+      const dead = ways.length === 1 && !(ways[0][0] && ways[0][1]);
       turn(want, begin, dead && Math.abs(angleTo(me.a, want)) > 2.5 && Math.random() < 0.55);
     }
     // At the end of the way laid out: in the cell's middle, and what it was for.
@@ -690,12 +740,13 @@ window.PioneerTV = window.PioneerTV || {};
       for (let dy = -1; dy <= 1; dy++) {
         for (let dx = -1; dx <= 1; dx++) {
           const tx = me.ci * 2 + 1 + dx, ty = me.cj * 2 + 1 + dy;
-          keep.set(tileKey(tx, ty), { wall: tile(tx, ty), style: styleAt(tx, ty) });
+          keep.set(tileKey(tx, ty), { wall: tile(tx, ty), style: styleAt(tx, ty), diag: diagAt(tx, ty), link: linkAt(tx, ty) });
         }
       }
       let back = null;
       for (const [dx, dy] of DIRS) {
         if (open(me.ci, me.cj, dx, dy)) { back = [me.ci + dx, me.cj + dy]; continue; }
+        if (!solid(me.ci, me.cj, dx, dy)) continue;
         const face = dx === 1 ? 1 : dx === -1 ? 0 : dy === 1 ? 3 : 2;
         const tx = me.ci * 2 + 1 + dx, ty = me.cj * 2 + 1 + dy;
         const h = hungAt(tx, ty, face);
@@ -757,9 +808,10 @@ window.PioneerTV = window.PioneerTV || {};
       // marble or grass; the stars over a garden and the day's sky lit by
       // themselves).
       for (let y = 0; y < H; y++) {
-        const below = y > horizon;
-        const p = below ? y - horizon : horizon - y;
-        if (p < 1) { for (let x = 0; x < W; x++) px[y * W + x] = 0xff000000; continue; }
+        // From the row's middle, as the walls are measured (below), so the
+        // floor met just under a wall is always nearer than the wall.
+        const below = y + 0.5 > horizon;
+        const p = below ? y + 0.5 - horizon : horizon - y - 0.5;
         const rowDist = half / p;
         const shade = shadeOf(rowDist, seen);
         const part = below ? 'floor' : 'ceil';
@@ -814,8 +866,10 @@ window.PioneerTV = window.PioneerTV || {};
         }
         if (!(dist > 0.02)) dist = 0.02;             // never on a wall's face (nor NaN): it would leave the column to the floor
         zbuf[x] = dist;
-        const lineH = Math.floor(H / dist);
-        let top = Math.floor(horizon - lineH / 2), bottom = top + lineH;
+        // The wall over every row it reaches into, measured exactly (a wall
+        // rounded short left a row of the floor beyond it under it).
+        const lineH = H / dist, wallTop = horizon - lineH / 2;
+        let top = Math.floor(wallTop), bottom = Math.ceil(wallTop + lineH);
         let u = Math.floor(wx * TEX);
         if (!slant && ((side === 0 && rx > 0) || (side === 1 && ry < 0))) u = TEX - 1 - u;
         const pale = paleTex(which);
@@ -824,8 +878,8 @@ window.PioneerTV = window.PioneerTV || {};
         const shade = Math.min(SHADES - 1, shadeOf(dist, seen) + (slant ? 1 : side * 2));
         const levels = tex[which][shade];
         const step = TEX / lineH;
-        let v = 0;
-        if (top < 0) { v = -top * step; top = 0; }
+        let v = (top - wallTop) * step;
+        if (top < 0) { v -= top * step; top = 0; }
         if (bottom > H) bottom = H;
         // A picture on this face (not on a hedge, a diagonal), and
         // whether this column crosses it.
@@ -915,7 +969,7 @@ window.PioneerTV = window.PioneerTV || {};
     }
     // Facing a way open, squarely.
     function faceOpen() {
-      const ways = DIRS.filter(([dx, dy]) => open(me.ci, me.cj, dx, dy));
+      const ways = ALL.filter(([dx, dy]) => way(me.ci, me.cj, dx, dy));
       const [dx, dy] = ways[Math.floor(Math.random() * ways.length)] || DIRS[0];
       me.a = Math.atan2(dy, dx);
     }
@@ -953,7 +1007,24 @@ window.PioneerTV = window.PioneerTV || {};
     // Straight into a room of a kind (the catalogue of views, tests): the
     // nearest chunk that has one, in its middle; cut: one with its corners
     // cut, looking at one of them.
+    // kind 'slant': a way at 45 degrees, at its end, looking along it.
     function visit(kind, { cut = false } = {}) {
+      if (kind === 'slant') {
+        for (const [k, c] of chunks) {
+          for (const [i, t] of c.links) {
+            const cx = Math.floor(k / 65536) - 32768, cy = (k % 65536) - 32768;
+            const tx = cx * SIDE + (i % SIDE), ty = cy * SIDE + Math.floor(i / SIDE);   // its corner
+            const dx = t === 2 ? 1 : -1;
+            me.ci = (tx - dx - 1) / 2; me.cj = (ty - 2) / 2;
+            me.x = me.ci * 2 + 1.5; me.y = me.cj * 2 + 1.5;
+            arrive(me.ci, me.cj);
+            settle();
+            me.a = Math.atan2(1, dx);
+            return true;
+          }
+        }
+        return false;
+      }
       for (let r = 1; r < 12; r++) {
         for (let cy = -r; cy <= r; cy++) {
           for (let cx = -r; cx <= r; cx++) {
@@ -971,6 +1042,6 @@ window.PioneerTV = window.PioneerTV || {};
       }
       return false;
     }
-    return { start, stop, visit, swap: swapWorld, debug: () => ({ ...me, path: path.slice(0, 4), move: turning ? 'turn' : pieces.length ? 'glide' : null, v, pause, cost, light, epoch }) };
+    return { start, stop, visit, swap: swapWorld, debug: () => ({ ...me, path: path.slice(0, 4), move: turning ? 'turn' : pieces.length ? 'glide' : null, v, pause, cost, light, epoch, slanted }) };
   };
 })(window.PioneerTV);
